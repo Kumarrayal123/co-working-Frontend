@@ -138,8 +138,8 @@ function UsersNavbar() {
                   <Link to="/bookings" className="flex items-center gap-3 px-3 py-2 text-sm text-gray-600 rounded-lg hover:bg-gray-50 hover:text-emerald-600 transition-colors">
                     <Calendar size={16} /> My Bookings
                   </Link>
-                  <Link to="/manage-bookings" className="flex items-center gap-3 px-3 py-2 text-sm text-gray-600 rounded-lg hover:bg-gray-50 hover:text-emerald-600 transition-colors">
-                    <Building size={16} /> Manage Bookings
+                  <Link to="/addcabin" className="flex items-center gap-3 px-3 py-2 text-sm text-gray-600 rounded-lg hover:bg-gray-50 hover:text-emerald-600 transition-colors">
+                    <Building size={16} /> AddCabin
                   </Link>
                   <Link to="/mycabin" className="flex items-center gap-3 px-3 py-2 text-sm text-gray-600 rounded-lg hover:bg-gray-50 hover:text-emerald-600 transition-colors">
                     <Building size={16} /> My Cabin
@@ -201,8 +201,8 @@ function UsersNavbar() {
               <Link to="/bookings" onClick={() => setOpen(false)} className="flex items-center gap-3 text-gray-600">
                 <Calendar size={20} /> My Bookings
               </Link>
-              <Link to="/manage-bookings" onClick={() => setOpen(false)} className="flex items-center gap-3 text-gray-600">
-                <Building size={20} /> Manage Bookings
+              <Link to="/addcabin" onClick={() => setOpen(false)} className="flex items-center gap-3 text-gray-600">
+                <Building size={20} /> AddCabin
               </Link>
               <Link to="/mycabin" onClick={() => setOpen(false)} className="flex items-center gap-3 text-gray-600">
                 <Building size={20} /> My Cabin

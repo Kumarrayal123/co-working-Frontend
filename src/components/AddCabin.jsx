@@ -208,7 +208,7 @@ function AddCabin() {
 
               {/* Submit Button */}
               <div className="pt-4">
-                <button
+                <button onClick={()=>navigate("/spaces")}
                   type="submit"
                   disabled={loading}
                   className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg shadow-emerald-200 transition-all flex items-center justify-center gap-2 ${loading
@@ -220,7 +220,7 @@ function AddCabin() {
                     <span className="animate-pulse">Publishing Listing...</span>
                   ) : (
                     <>
-                      <CheckCircle size={20} /> Publish Listing
+                      <CheckCircle size={20} /> Add Cabin
                     </>
                   )}
                 </button>

@@ -27,7 +27,7 @@ function App() {
         <Route path="/" element={<Navigate to="/register" />} /> {/* redirect root */}
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/home" element={<Home />}></Route>
+        {/* <Route path="/home" element={<Home />}></Route> */}
         <Route path="/usernavbar" element={<UsersNavbar />}></Route>
         <Route path="/addcabin" element={<AddCabin />}></Route>
         <Route path="/hero" element={<Hero />}></Route>

@@ -43,14 +43,7 @@ function AdminAddCabin() {
     data.append("address", formData.address);
     data.append("price", formData.price);
 
-    // Admin might not need to attach a specific userId if they are the platform owner,
-    // but we can attach it if the backend requires it. 
-    // For now, we'll exclude it unless the backend strictly demands it like the User flow.
-    // If the backend originally didn't require it for Admin, we are safe.
-
-    // Uncomment if Admin also needs to own the cabin:
-    // const userId = localStorage.getItem("userId");
-    // data.append("userId", userId);
+ 
 
     images.forEach((image) => {
       data.append("images", image);

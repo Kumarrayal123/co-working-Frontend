@@ -1,6 +1,9 @@
-import React from 'react';
-import AdminNavbar from './AdminNavbar';
-import { Users, Building, Calendar, DollarSign, TrendingUp } from 'lucide-react';
+
+
+import React, { useEffect, useState } from "react";
+import AdminNavbar from "./AdminNavbar";
+import { Users, Building, Calendar, DollarSign, TrendingUp } from "lucide-react";
+import axios from "axios";
 
 const StatCard = ({ title, value, icon: Icon, color, trend }) => (
     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
@@ -24,6 +27,30 @@ const StatCard = ({ title, value, icon: Icon, color, trend }) => (
 );
 
 const AdminDashboard = () => {
+
+    const [totalUsers, setTotalUsers] = useState(0);
+    const [totalBookings,setTotakBookings] = useState(0)
+
+    useEffect(() => {
+        axios
+            .get("http://localhost:5000/api/auth/all")
+            .then((res) => {
+                console.log("Users Data:", res.data);
+                setTotalUsers(res.data.length); // Count users
+            })
+            .catch((err) => console.log("Error fetching users:", err));
+    }, []);
+
+    useEffect(()=>{
+        axios.get("http://localhost:5000/api/bookings")
+        .then((res)=>{
+            console.log("Users Bookings",res.data)
+            setTotakBookings(res.data.length)
+        })
+        .catch((err) => console.log("No Bookings Found:", err));
+
+    })
+
     return (
         <div className="min-h-screen bg-gray-50">
             <AdminNavbar />
@@ -38,11 +65,12 @@ const AdminDashboard = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
                     <StatCard
                         title="Total Users"
-                        value="152"
+                        value={totalUsers}
                         icon={Users}
                         color="bg-blue-500"
                         trend="+12%"
                     />
+
                     <StatCard
                         title="Active Cabins"
                         value="45"
@@ -50,13 +78,15 @@ const AdminDashboard = () => {
                         color="bg-emerald-500"
                         trend="+3"
                     />
+
                     <StatCard
                         title="Total Bookings"
-                        value="1,240"
+                        value={totalBookings}
                         icon={Calendar}
                         color="bg-indigo-500"
                         trend="+18%"
                     />
+
                     <StatCard
                         title="Revenue"
                         value="$48.2k"
@@ -68,6 +98,7 @@ const AdminDashboard = () => {
 
                 {/* Recent Activity / Placeholder Sections */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    
                     {/* Main Chart Area Placeholder */}
                     <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 min-h-[400px]">
                         <h3 className="text-lg font-bold text-gray-900 mb-6">Revenue Analytics</h3>
@@ -76,7 +107,7 @@ const AdminDashboard = () => {
                         </div>
                     </div>
 
-                    {/* Pending Actions */}
+                    {/* Recent Actions */}
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                         <h3 className="text-lg font-bold text-gray-900 mb-6">Recent Actions</h3>
                         <div className="space-y-6">
@@ -84,14 +115,18 @@ const AdminDashboard = () => {
                                 <div key={i} className="flex items-center gap-4">
                                     <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
                                     <div>
-                                        <p className="text-sm font-medium text-gray-900">New booking for Cabin A{i}</p>
+                                        <p className="text-sm font-medium text-gray-900">
+                                            New booking for Cabin A{i}
+                                        </p>
                                         <p className="text-xs text-gray-500">2 hours ago</p>
                                     </div>
                                 </div>
                             ))}
                         </div>
                     </div>
+
                 </div>
+
             </main>
         </div>
     );

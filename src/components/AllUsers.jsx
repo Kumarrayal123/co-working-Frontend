@@ -60,7 +60,7 @@ function AllUsers() {
 
   useEffect(() => {
     axios
-      .get("http://localhost:5000/api/auth/all-users")
+      .get("http://localhost:5000/api/auth/all")
       .then((res) => {
         setUsers(res.data);
         setLoading(false);
@@ -76,6 +76,8 @@ function AllUsers() {
     user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const documentKeys = ["adharCard", "panCard", "mbbsCertificate", "pmcRegistration", "nmrId"];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -154,31 +156,29 @@ function AllUsers() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2 flex-wrap">
-                            {u.documents?.length > 0 ? (
-                              u.documents.map((doc, i) => {
-                                const path = doc.replace(/\\/g, "/");
-                                const ext = path.split(".").pop().toLowerCase();
-                                const isImage = ["jpg", "jpeg", "png", "gif"].includes(ext);
+                            {documentKeys.map((key) => {
+                              if (!u[key]) return null;
+                              const path = u[key].replace(/\\/g, "/");
+                              const ext = path.split(".").pop().toLowerCase();
+                              const isImage = ["jpg", "jpeg", "png", "gif"].includes(ext);
 
-                                return (
-                                  <a
-                                    key={i}
-                                    href={`http://localhost:5000/${path}`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className={`flex items-center gap-1 px-2 py-1 rounded border text-xs font-medium transition-colors ${isImage
-                                        ? "bg-purple-50 text-purple-700 border-purple-100 hover:bg-purple-100"
-                                        : "bg-blue-50 text-blue-700 border-blue-100 hover:bg-blue-100"
-                                      }`}
-                                  >
-                                    {isImage ? <FileText size={12} /> : <Download size={12} />}
-                                    {ext.toUpperCase()}
-                                  </a>
-                                );
-                              })
-                            ) : (
-                              <span className="text-gray-400 text-xs italic">No docs</span>
-                            )}
+                              return (
+                                <a
+                                  key={key}
+                                  href={`http://localhost:5000/${path}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className={`flex items-center gap-1 px-2 py-1 rounded border text-xs font-medium transition-colors ${
+                                    isImage
+                                      ? "bg-purple-50 text-purple-700 border-purple-100 hover:bg-purple-100"
+                                      : "bg-blue-50 text-blue-700 border-blue-100 hover:bg-blue-100"
+                                  }`}
+                                >
+                                  {isImage ? <FileText size={12} /> : <Download size={12} />}
+                                  {key}
+                                </a>
+                              );
+                            })}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -202,4 +202,5 @@ function AllUsers() {
 }
 
 export default AllUsers;
+
 

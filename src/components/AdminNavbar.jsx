@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Menu, X, LayoutDashboard, Users, PlusSquare, LogOut, Shield } from "lucide-react";
+import { Menu, X, LayoutDashboard, Users, PlusSquare, LogOut, Shield,CalendarCheck } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 function AdminNavbar() {
@@ -25,6 +25,8 @@ function AdminNavbar() {
     { name: "Dashboard", path: "/admindashboard", icon: LayoutDashboard },
     { name: "User Management", path: "/allusers", icon: Users },
     { name: "Add Cabin", path: "/addcabin", icon: PlusSquare },
+     { name: "Bookings", path: "/allbookings", icon: CalendarCheck },
+    // { nmae:  "Bookings", path:'/bookings',icon:CalendarCheck},
   ];
 
   return (

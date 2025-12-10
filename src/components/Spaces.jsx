@@ -4,6 +4,7 @@ import UsersNavbar from "./UsersNavbar";
 import { MapPin, Users, ArrowRight, Home, Search, Filter } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
+
 const Spaces = () => {
   const [cabins, setCabins] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -85,7 +86,7 @@ const Spaces = () => {
                 key={cabin._id}
               >
                 {/* Image */}
-                <div className="relative h-60 overflow-hidden bg-slate-100">
+                {/* <div className="relative h-60 overflow-hidden bg-slate-100">
                   <img
                     src={`http://localhost:5000/${cabin.images[0]}`}
                     alt={cabin.name}
@@ -98,7 +99,27 @@ const Spaces = () => {
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                     Available
                   </div>
+                </div> */}
+                <div
+                  className="relative h-60 overflow-hidden bg-slate-100 cursor-pointer"
+                  onClick={() => navigate(`/cabin/${cabin._id}`)}
+                >
+                  <img
+                    src={`http://localhost:5000/${cabin.images[0]}`}
+                    alt={cabin.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                    onError={(e) => {
+                      e.target.src =
+                        "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
+                    }}
+                  />
+
+                  <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-bold text-emerald-700 shadow-sm border border-emerald-100 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                    Available
+                  </div>
                 </div>
+
 
                 {/* Card Body */}
                 <div className="p-6 flex flex-col flex-grow">
@@ -133,8 +154,18 @@ const Spaces = () => {
                         <span className="text-sm text-slate-400 font-medium">/mo</span>
                       </div>
                     </div>
+                    <button
+                      onClick={() => navigate(`/book/${cabin._id}`)}
+                      className="px-4 py-2 bg-emerald-600 text-white rounded-full hover:bg-emerald-700 transition-all"
+                    >
+                      Book Now
+                    </button>
 
-                    <button className="h-10 w-10 flex items-center justify-center rounded-full bg-emerald-50 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300">
+
+                    <button
+                      onClick={() => navigate(`/cabin/${cabin._id}`)}
+                      className="h-10 w-10 flex items-center justify-center rounded-full bg-emerald-50 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300"
+                    >
                       <ArrowRight size={20} />
                     </button>
                   </div>

@@ -1,3 +1,8 @@
+
+
+
+
+
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -37,31 +42,31 @@ function AddCabin() {
     setLoading(true);
 
     const data = new FormData();
+    // Append all form fields
     data.append("name", formData.name);
     data.append("description", formData.description);
     data.append("capacity", formData.capacity);
     data.append("address", formData.address);
     data.append("price", formData.price);
 
-    const userId = localStorage.getItem("userId");
-    data.append("userId", userId);
-
-    images.forEach((image) => {
-      data.append("images", image);
-    });
+    // Append images
+    images.forEach((img) => data.append("images", img));
 
     try {
+      // Send token in header for authentication
+      const token = localStorage.getItem("token");
       await axios.post("http://localhost:5000/api/cabins", data, {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       alert("Cabin added successfully!");
-      setFormData({ name: "", description: "", capacity: "", address: "", price: "" });
-      setImages([]);
-      navigate("/home");
+      navigate("/spaces");
     } catch (err) {
       console.error(err);
-      alert("Error adding cabin. Please try again.");
+      alert("Error adding cabin");
     } finally {
       setLoading(false);
     }
@@ -208,12 +213,12 @@ function AddCabin() {
 
               {/* Submit Button */}
               <div className="pt-4">
-                <button onClick={()=>navigate("/spaces")}
+                <button
                   type="submit"
                   disabled={loading}
                   className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg shadow-emerald-200 transition-all flex items-center justify-center gap-2 ${loading
-                      ? "bg-emerald-400 text-white cursor-not-allowed"
-                      : "bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-emerald-300 transform hover:-translate-y-1"
+                    ? "bg-emerald-400 text-white cursor-not-allowed"
+                    : "bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-emerald-300 transform hover:-translate-y-1"
                     }`}
                 >
                   {loading ? (
@@ -235,5 +240,3 @@ function AddCabin() {
 }
 
 export default AddCabin;
-
-

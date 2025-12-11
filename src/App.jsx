@@ -19,12 +19,13 @@ import BookCabin from "./components/BookCabin";
 import Bookings from "./components/AllBookings";
 import AllBookings from "./components/AllBookings";
 import CabinDetails from "./components/CabinDetails";
+import MyBookings from "./components/MyBookings";
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Navigate to="/register" />} /> {/* redirect root */}
+        <Route path="/" element={<Navigate to="/spaces" />} /> {/* redirect root */}
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
         {/* <Route path="/home" element={<Home />}></Route> */}
@@ -42,6 +43,7 @@ function App() {
         <Route path="/book/:id" element={<BookCabin />} />
         <Route path="/cabin/:id" element={<CabinDetails />} />
         <Route path="/allbookings" element={<AllBookings />}></Route>
+        <Route path="/mybookings" element={<MyBookings/>}></Route>
       </Routes>
     </Router>
   );

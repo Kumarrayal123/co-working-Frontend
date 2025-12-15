@@ -451,6 +451,7 @@ import React, { useState, useEffect } from "react";
 import UsersNavbar from "./UsersNavbar";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
+import { useNavigation } from "react-router-dom";
 
 // Icons
 import {
@@ -477,6 +478,8 @@ const BookCabin = () => {
     const [startTime, setStartTime] = useState("");
     const [endDate, setEndDate] = useState("");
     const [endTime, setEndTime] = useState("");
+
+  
 
     useEffect(() => {
         axios
@@ -514,7 +517,7 @@ const BookCabin = () => {
             );
 
             alert("Booking Confirmed Successfully!");
-            navigate("/spaces");
+            navigate("/mybookings");
 
         } catch (error) {
             console.log(error);

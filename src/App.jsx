@@ -1,25 +1,23 @@
-import React from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import Register from "./components/Register";
-import Login from "./components/Login";
-import Home from "./components/Home";
-import UsersNavbar from "./components/UsersNavbar";
+import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import AddCabin from "./components/AddCabin";
+import AdminDashboard from "./components/AdminDashboard";
+import AdminLogin from "./components/AdminLogin";
+import AdminNavbar from "./components/AdminNavbar";
 import Hero from "./components/Hero";
+import Login from "./components/Login";
+import Register from "./components/Register";
 import SpacesSection from "./components/SpaceSection";
 import Spaces from "./components/Spaces";
-import AdminLogin from "./components/AdminLogin";
-import AdminDashboard from "./components/AdminDashboard";
-import AdminNavbar from "./components/AdminNavbar";
+import UsersNavbar from "./components/UsersNavbar";
 // import { User } from "lucide-react";
-import AllUsers from "./components/AllUsers";
 import AdminAddCabin from "./components/AdminAddCabin";
-import MyCabin from "./components/MyCabin";
-import BookCabin from "./components/BookCabin";
-import Bookings from "./components/AllBookings";
 import AllBookings from "./components/AllBookings";
+import AllUsers from "./components/AllUsers";
+import BookCabin from "./components/BookCabin";
 import CabinDetails from "./components/CabinDetails";
 import MyBookings from "./components/MyBookings";
+import MyCabin from "./components/MyCabin";
+import MyProfile from "./components/MyProfile";
 
 function App() {
   return (
@@ -44,6 +42,7 @@ function App() {
         <Route path="/cabin/:id" element={<CabinDetails />} />
         <Route path="/allbookings" element={<AllBookings />}></Route>
         <Route path="/mybookings" element={<MyBookings/>}></Route>
+        <Route path="/myprofile" element={<MyProfile/>}></Route>
       </Routes>
     </Router>
   );

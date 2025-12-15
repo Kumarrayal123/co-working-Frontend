@@ -47,8 +47,8 @@
 
 
 
-import React, { useState, useEffect } from "react";
-import { Menu, X, ChevronDown, User, LogOut, Building, Calendar } from "lucide-react";
+import { Building, Calendar, ChevronDown, LogOut, Menu, User, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 function UsersNavbar() {

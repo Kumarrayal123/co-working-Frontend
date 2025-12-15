@@ -29,7 +29,8 @@ const StatCard = ({ title, value, icon: Icon, color, trend }) => (
 const AdminDashboard = () => {
 
     const [totalUsers, setTotalUsers] = useState(0);
-    const [totalBookings,setTotakBookings] = useState(0)
+    const [totalBookings, setTotalBookings] = useState(0);
+    const [recentBookings, setRecentBookings] = useState([]);
 
     useEffect(() => {
         axios
@@ -41,15 +42,39 @@ const AdminDashboard = () => {
             .catch((err) => console.log("Error fetching users:", err));
     }, []);
 
-    useEffect(()=>{
-        axios.get("http://localhost:5000/api/bookings")
-        .then((res)=>{
-            console.log("Users Bookings",res.data)
-            setTotakBookings(res.data.length)
-        })
-        .catch((err) => console.log("No Bookings Found:", err));
+    // useEffect(()=>{
+    //     axios.get("http://localhost:5000/api/bookings")
+    //     .then((res)=>{
+    //         console.log("Users Bookings",res.data)
+    //         setTotalBookings(res.data.length)
+    //     })
+    //     .catch((err) => console.log("No Bookings Found:", err));
 
-    })
+    // },[])
+
+    useEffect(() => {
+        axios.get("http://localhost:5000/api/bookings")
+            .then(res => {
+                console.log("Users Bookings", res.data);
+                setTotalBookings(res.data.length);
+            })
+            .catch(err => console.log("No Bookings Found:", err));
+    }, []);
+
+
+    useEffect(() => {
+        axios
+            .get("http://localhost:5000/api/bookings")
+            .then((res) => {
+                console.log("Bookings:", res.data);
+                // Sort by date descending and take first 4
+                const sorted = res.data
+                    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                    .slice(0, 4);
+                setRecentBookings(sorted);
+            })
+            .catch((err) => console.log("Error fetching bookings:", err));
+    }, []);
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -98,7 +123,7 @@ const AdminDashboard = () => {
 
                 {/* Recent Activity / Placeholder Sections */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    
+
                     {/* Main Chart Area Placeholder */}
                     <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 min-h-[400px]">
                         <h3 className="text-lg font-bold text-gray-900 mb-6">Revenue Analytics</h3>
@@ -109,7 +134,7 @@ const AdminDashboard = () => {
 
                     {/* Recent Actions */}
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                        <h3 className="text-lg font-bold text-gray-900 mb-6">Recent Actions</h3>
+                        <h3 className="text-lg font-bold text-gray-900 mb-6">Recent Bookings</h3>
                         <div className="space-y-6">
                             {[1, 2, 3, 4].map((i) => (
                                 <div key={i} className="flex items-center gap-4">

@@ -19,8 +19,9 @@ const AdminLogin = () => {
                 password,
             });
 
-            // Save admin details in localStorage
+            // Save admin details and token
             localStorage.setItem("admin", JSON.stringify(res.data.admin));
+            localStorage.setItem("token", res.data.token);
 
             // Redirect to Dashboard
             window.location.href = "/admindashboard";

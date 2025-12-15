@@ -21,6 +21,7 @@ function AddCabin() {
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  
 
   // Handle text input
   const handleChange = (e) => {
@@ -95,7 +96,7 @@ function AddCabin() {
               {/* Name & Address */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Property Name</label>
+                  <label className="text-sm font-medium text-gray-700">Building Name</label>
                   <input
                     type="text"
                     name="name"
@@ -126,24 +127,24 @@ function AddCabin() {
               {/* Capacity & Price */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Seating Capacity</label>
+                  <label className="text-sm font-medium text-gray-700">Cabin Name</label>
                   <div className="relative">
                     <Users size={18} className="absolute left-3 top-3.5 text-gray-400" />
                     <input
-                      type="number"
-                      name="capacity"
-                      placeholder="e.g. 4"
-                      value={formData.capacity}
+                      type="text"
+                      name="cabin"
+                      placeholder="e.g. cabin - 1"
+                      value={formData.cabin}
                       onChange={handleChange}
                       required
-                      min="1"
+                    
                       className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all outline-none"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Monthly Price (₹)</label>
+                  <label className="text-sm font-medium text-gray-700">Price per hour (₹)</label>
                   <input
                     type="number"
                     name="price"

@@ -4,13 +4,17 @@ import { useNavigate } from "react-router-dom";
 import AdminNavbar from "./AdminNavbar";
 import { Upload, Home, MapPin, Users, FileText, CheckCircle, X, DollarSign } from "lucide-react";
 
+
 function AdminAddCabin() {
+  const token = localStorage.getItem("token");
+
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     capacity: "",
     address: "",
     price: "",
+    cabin: "", // Added cabin to state
   });
 
   const [images, setImages] = useState([]);
@@ -37,13 +41,13 @@ function AdminAddCabin() {
     setLoading(true);
 
     const data = new FormData();
-    data.append("name", formData.name);
+    data.append("name", `${formData.name} - ${formData.cabin}`);
     data.append("description", formData.description);
     data.append("capacity", formData.capacity);
     data.append("address", formData.address);
     data.append("price", formData.price);
 
- 
+
 
     images.forEach((image) => {
       data.append("images", image);
@@ -51,7 +55,10 @@ function AdminAddCabin() {
 
     try {
       await axios.post("http://localhost:5000/api/cabins", data, {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       alert("Cabin added successfully!");
@@ -89,7 +96,7 @@ function AdminAddCabin() {
               {/* Name & Address */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Cabin Name</label>
+                  <label className="text-sm font-medium text-gray-700">Building Name</label>
                   <input
                     type="text"
                     name="name"
@@ -120,7 +127,24 @@ function AdminAddCabin() {
               {/* Capacity & Price */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Seating Capacity</label>
+                  <label className="text-sm font-medium text-gray-700">Cabin Name</label>
+                  <div className="relative">
+                    <Users size={18} className="absolute left-3 top-3.5 text-gray-400" />
+                    <input
+                      type="text"
+                      name="cabin"
+                      placeholder="e.g. Meeting Room"
+                      value={formData.cabin}
+                      onChange={handleChange}
+                      required
+
+                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Capacity (Persons)</label>
                   <div className="relative">
                     <Users size={18} className="absolute left-3 top-3.5 text-gray-400" />
                     <input
@@ -130,14 +154,13 @@ function AdminAddCabin() {
                       value={formData.capacity}
                       onChange={handleChange}
                       required
-                      min="1"
                       className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Monthly Price (₹)</label>
+                  <label className="text-sm font-medium text-gray-700">Price per hour (₹)</label>
                   <div className="relative">
                     <DollarSign size={18} className="absolute left-3 top-3.5 text-gray-400" />
                     <input

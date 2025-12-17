@@ -94,15 +94,15 @@
 //   };
 
 //   return (
-//     <div className="min-h-screen bg-gray-50 flex flex-col">
+//     <div className="flex flex-col min-h-screen bg-gray-50">
 //       <UsersNavbar />
 
-//       <div className="flex-grow pt-28 pb-12 px-4 sm:px-6 lg:px-8">
+//       <div className="flex-grow px-4 pb-12 pt-28 sm:px-6 lg:px-8">
 //         <div className="max-w-3xl mx-auto">
-//           <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+//           <div className="overflow-hidden bg-white border border-gray-100 shadow-xl rounded-2xl">
 //             {/* Header */}
-//             <div className="bg-emerald-600 px-8 py-6 text-white">
-//               <h2 className="text-2xl font-bold flex items-center gap-2">
+//             <div className="px-8 py-6 text-white bg-emerald-600">
+//               <h2 className="flex items-center gap-2 text-2xl font-bold">
 //                 <Home size={24} /> List Your Property
 //               </h2>
 //               <p className="mt-1 text-emerald-100">
@@ -114,7 +114,7 @@
 //             <form onSubmit={handleSubmit} className="p-8 space-y-6">
 
 //               {/* Name & Address */}
-//               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+//               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
 //                 <div className="space-y-2">
 //                   <label className="text-sm font-medium text-gray-700">Property Name</label>
 //                   <input
@@ -124,7 +124,7 @@
 //                     value={formData.name}
 //                     onChange={handleChange}
 //                     required
-//                     className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all outline-none"
+//                     className="w-full px-4 py-3 transition-all border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
 //                   />
 //                 </div>
 //                 <div className="space-y-2">
@@ -138,14 +138,14 @@
 //                       value={formData.address}
 //                       onChange={handleChange}
 //                       required
-//                       className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all outline-none"
+//                       className="w-full py-3 pl-10 pr-4 transition-all border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
 //                     />
 //                   </div>
 //                 </div>
 //               </div>
 
 //               {/* Capacity & Price */}
-//               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+//               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
 //                 <div className="space-y-2">
 //                   <label className="text-sm font-medium text-gray-700">Seating Capacity</label>
 //                   <div className="relative">
@@ -158,7 +158,7 @@
 //                       onChange={handleChange}
 //                       required
 //                       min="1"
-//                       className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all outline-none"
+//                       className="w-full py-3 pl-10 pr-4 transition-all border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
 //                     />
 //                   </div>
 //                 </div>
@@ -171,7 +171,7 @@
 //                     placeholder="e.g. 15000"
 //                     value={formData.price}
 //                     onChange={handleChange}
-//                     className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all outline-none"
+//                     className="w-full px-4 py-3 transition-all border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
 //                   />
 //                 </div>
 //               </div>
@@ -180,7 +180,7 @@
 // <div className="space-y-2">
 //   <label className="text-sm font-medium text-gray-700">Amenities</label>
 
-//   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+//   <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
 //     {[
 //       { key: "wifi", label: "Wi-Fi" },
 //       { key: "parking", label: "Parking" },
@@ -218,7 +218,7 @@
 //                     value={formData.description}
 //                     onChange={handleChange}
 //                     rows="4"
-//                     className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all outline-none"
+//                     className="w-full py-3 pl-10 pr-4 transition-all border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
 //                   />
 //                 </div>
 //               </div>
@@ -226,7 +226,7 @@
 //               {/* File Upload */}
 //               <div className="space-y-2">
 //                 <label className="text-sm font-medium text-gray-700">Upload Photos</label>
-//                 <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:bg-gray-50 transition-colors cursor-pointer relative group">
+//                 <div className="relative p-6 text-center transition-colors border-2 border-gray-200 border-dashed cursor-pointer rounded-xl hover:bg-gray-50 group">
 //                   <input
 //                     type="file"
 //                     multiple
@@ -234,7 +234,7 @@
 //                     onChange={handleImageChange}
 //                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
 //                   />
-//                   <div className="flex flex-col items-center gap-2 text-gray-500 group-hover:text-emerald-600 transition-colors">
+//                   <div className="flex flex-col items-center gap-2 text-gray-500 transition-colors group-hover:text-emerald-600">
 //                     <Upload size={32} />
 //                     <span className="text-sm font-medium">Click to upload photos</span>
 //                   </div>
@@ -242,13 +242,13 @@
 
 //                 {/* Image Previews */}
 //                 {images.length > 0 && (
-//                   <div className="grid grid-cols-4 sm:grid-cols-6 gap-3 mt-4">
+//                   <div className="grid grid-cols-4 gap-3 mt-4 sm:grid-cols-6">
 //                     {images.map((file, index) => (
-//                       <div key={index} className="relative group aspect-square rounded-lg overflow-hidden border border-gray-200">
+//                       <div key={index} className="relative overflow-hidden border border-gray-200 rounded-lg group aspect-square">
 //                         <img
 //                           src={URL.createObjectURL(file)}
 //                           alt="preview"
-//                           className="w-full h-full object-cover"
+//                           className="object-cover w-full h-full"
 //                         />
 //                         <button
 //                           type="button"
@@ -321,17 +321,6 @@ function AddCabin() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // ✅ TOGGLE AMENITY
-  const toggleAmenity = (key) => {
-    setFormData((prev) => ({
-      ...prev,
-      amenities: {
-        ...prev.amenities,
-        [key]: !prev.amenities[key],
-      },
-    }));
-  };
-
   // Handle text input
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -383,16 +372,16 @@ function AddCabin() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="flex flex-col min-h-screen bg-gray-50">
       <UsersNavbar />
 
-      <div className="flex-grow pt-28 pb-12 px-4 sm:px-6 lg:px-8">
+      <div className="flex-grow px-4 pb-12 pt-28 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto">
-          <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+          <div className="overflow-hidden bg-white border border-gray-100 shadow-xl rounded-2xl">
 
             {/* Header */}
-            <div className="bg-emerald-600 px-8 py-6 text-white">
-              <h2 className="text-2xl font-bold flex items-center gap-2">
+            <div className="px-8 py-6 text-white bg-emerald-600">
+              <h2 className="flex items-center gap-2 text-2xl font-bold">
                 <Home size={24} /> List Your Property
               </h2>
               <p className="mt-1 text-emerald-100">
@@ -404,8 +393,8 @@ function AddCabin() {
             <form onSubmit={handleSubmit} className="p-8 space-y-6">
 
               {/* Name & Address */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Property Name</label>
                   <input
                     type="text"
@@ -413,7 +402,7 @@ function AddCabin() {
                     value={formData.name}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 rounded-lg border"
+                    className="w-full px-4 py-3 border rounded-lg"
                   />
                 </div>
 
@@ -427,38 +416,39 @@ function AddCabin() {
                       value={formData.address}
                       onChange={handleChange}
                       required
-                      className="w-full pl-10 pr-4 py-3 rounded-lg border"
+                      className="w-full py-3 pl-10 pr-4 border rounded-lg"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Capacity & Price */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Seating Capacity</label>
                   <div className="relative">
                     <Users size={18} className="absolute left-3 top-3.5 text-gray-400" />
                     <input
                       type="number"
                       name="capacity"
+                      placeholder="e.g. 4"
                       value={formData.capacity}
                       onChange={handleChange}
                       required
                       min="1"
-                      className="w-full pl-10 pr-4 py-3 rounded-lg border"
+                      className="w-full py-3 pl-10 pr-4 transition-all border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                     />
                   </div>
                 </div>
 
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Monthly Price</label>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Monthly Price (₹)</label>
                   <input
                     type="number"
                     name="price"
                     value={formData.price}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-lg border"
+                    className="w-full px-4 py-3 border rounded-lg"
                   />
                 </div>
               </div>
@@ -466,7 +456,7 @@ function AddCabin() {
               {/* Amenities */}
               <div>
                 <label className="text-sm font-medium text-gray-700">Amenities</label>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-2">
+                <div className="grid grid-cols-2 gap-4 mt-2 md:grid-cols-3">
                   {[
                     { key: "wifi", label: "Wi-Fi" },
                     { key: "parking", label: "Parking" },
@@ -501,7 +491,7 @@ function AddCabin() {
                     value={formData.description}
                     onChange={handleChange}
                     rows="4"
-                    className="w-full pl-10 pr-4 py-3 rounded-lg border"
+                    className="w-full py-3 pl-10 pr-4 border rounded-lg"
                   />
                 </div>
               </div>
@@ -516,7 +506,7 @@ function AddCabin() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-emerald-600 text-white py-4 rounded-xl font-bold"
+                className="w-full py-4 font-bold text-white bg-emerald-600 rounded-xl"
               >
                 {loading ? "Publishing..." : "Add Cabin"}
               </button>

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import AdminNavbar from "./AdminNavbar";
-import { Upload, Home, MapPin, Users, FileText, CheckCircle, X, DollarSign } from "lucide-react";
+import { Upload, Home, MapPin, Users, FileText, CheckCircle, X, IndianRupee,Building2 } from "lucide-react";
 
 
 function AdminAddCabin() {
@@ -14,7 +14,16 @@ function AdminAddCabin() {
     capacity: "",
     address: "",
     price: "",
-    cabin: "", // Added cabin to state
+    cabin: "", 
+       amenities: {
+      wifi: false,
+      parking: false,
+      lockers: false,
+      privateWashroom: false,
+      secureAccess: false,
+      comfortSeating: false,
+    },
+    
   });
 
   const [images, setImages] = useState([]);
@@ -24,6 +33,16 @@ function AdminAddCabin() {
   // Handle text input
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+    const toggleAmenity = (key) => {
+    setFormData((prev) => ({
+      ...prev,
+      amenities: {
+        ...prev.amenities,
+        [key]: !prev.amenities[key],
+      },
+    }));
   };
 
   // Handle multiple images
@@ -47,8 +66,7 @@ function AdminAddCabin() {
     data.append("address", formData.address);
     data.append("price", formData.price);
 
-
-
+     data.append("amenities", JSON.stringify(formData.amenities));
     images.forEach((image) => {
       data.append("images", image);
     });
@@ -129,7 +147,7 @@ function AdminAddCabin() {
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Cabin Name</label>
                   <div className="relative">
-                    <Users size={18} className="absolute left-3 top-3.5 text-gray-400" />
+                    <Building2 size={18} className="absolute left-3 top-3.5 text-gray-400" />
                     <input
                       type="text"
                       name="cabin"
@@ -162,7 +180,7 @@ function AdminAddCabin() {
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Price per hour (₹)</label>
                   <div className="relative">
-                    <DollarSign size={18} className="absolute left-3 top-3.5 text-gray-400" />
+                    <IndianRupee  size={18} className="absolute left-3 top-3.5 text-gray-400" />
                     <input
                       type="number"
                       name="price"
@@ -172,6 +190,32 @@ function AdminAddCabin() {
                       className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none"
                     />
                   </div>
+                </div>
+              </div>
+                <div>
+                <label className="text-sm font-medium">Amenities</label>
+                <div className="grid grid-cols-2 gap-4 mt-2 md:grid-cols-3">
+                  {[
+                    { key: "wifi", label: "Wi-Fi" },
+                    { key: "parking", label: "Parking" },
+                    { key: "lockers", label: "Lockers" },
+                    { key: "privateWashroom", label: "Private Washroom" },
+                    { key: "secureAccess", label: "Secure Access" },
+                    { key: "comfortSeating", label: "Comfort Seating" },
+                  ].map((item) => (
+                    <button
+                      key={item.key}
+                      type="button"
+                      onClick={() => toggleAmenity(item.key)}
+                      className={`px-4 py-3 rounded-lg border font-medium transition ${
+                        formData.amenities[item.key]
+                          ? "bg-emerald-100 border-emerald-500 text-emerald-700"
+                          : "border-gray-300 text-gray-600"
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
                 </div>
               </div>
 

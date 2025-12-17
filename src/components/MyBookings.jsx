@@ -347,7 +347,7 @@ const MyBookings = () => {
                       </div>
                     </div>
 
-                    <div className="flex justify-between items-center pt-1">
+                    {/* <div className="flex justify-between items-center pt-1">
                       <p className="flex items-center gap-1 text-emerald-700 font-semibold text-lg">
                         <IndianRupee size={18} />
                         {b.cabinId?.price}
@@ -356,7 +356,18 @@ const MyBookings = () => {
                       <span className="px-4 py-1 text-sm rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">
                         Confirmed
                       </span>
-                    </div>
+                    </div> */}
+                    <div className="flex justify-between items-center pt-1">
+  <p className="flex items-center gap-1 text-emerald-700 font-semibold text-lg">
+    <IndianRupee size={18} />
+    {b.totalPrice?.toLocaleString("en-IN")}
+  </p>
+
+  <span className="px-4 py-1 text-sm rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">
+    Confirmed
+  </span>
+</div>
+
                   </div>
                 </div>
               ))}

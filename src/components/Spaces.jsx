@@ -151,7 +151,7 @@ const Spaces = () => {
                       <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-0.5">Price</p>
                       <div className="flex items-baseline gap-1">
                         <span className="text-2xl font-bold text-slate-900">₹{cabin.price || '5,000'}</span>
-                        <span className="text-sm text-slate-400 font-medium">/mo</span>
+                        <span className="text-sm text-slate-400 font-medium">/hour</span>
                       </div>
                     </div>
                     <button

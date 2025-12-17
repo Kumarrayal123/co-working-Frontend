@@ -18,6 +18,9 @@ import CabinDetails from "./components/CabinDetails";
 import MyBookings from "./components/MyBookings";
 import MyCabin from "./components/MyCabin";
 import MyProfile from "./components/MyProfile";
+import { AdminCabins } from "./components/AdminCabins";
+import { AdminBookings } from "./components/AdminBookings";
+
 
 function App() {
   return (
@@ -43,6 +46,9 @@ function App() {
         <Route path="/allbookings" element={<AllBookings />}></Route>
         <Route path="/mybookings" element={<MyBookings/>}></Route>
         <Route path="/myprofile" element={<MyProfile/>}></Route>
+        <Route path="/admincabin" element={<AdminCabins/>}></Route>
+        <Route path="/adminbookings" element={<AdminBookings/>}></Route>
+       
       </Routes>
     </Router>
   );

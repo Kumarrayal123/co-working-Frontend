@@ -300,7 +300,7 @@ const MyCabin = () => {
       <div className="pt-28 pb-12 max-w-7xl mx-auto px-4">
         <div className="flex justify-between mb-8">
           <h1 className="text-3xl font-bold text-gray-900">
-            My Properties
+            My Cabins
           </h1>
 
           <Link

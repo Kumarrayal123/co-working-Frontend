@@ -727,19 +727,252 @@
 
 
 
-import React, { useState, useEffect } from "react";
-import UsersNavbar from "./UsersNavbar";
+// import React, { useState, useEffect } from "react";
+// import UsersNavbar from "./UsersNavbar";
+// import axios from "axios";
+// import { useParams, useNavigate } from "react-router-dom";
+
+// // Icons
+// import {
+//     Wifi,
+//     Car,
+//     Lock,
+//     ShieldCheck,
+//     Armchair,
+//     ShowerHead,
+//     MapPin,
+//     Users
+// } from "lucide-react";
+
+// const BookCabin = () => {
+//     const { id } = useParams();
+//     const navigate = useNavigate();
+
+//     const PRICE_PER_HOUR = 5000;
+
+//     const [cabin, setCabin] = useState(null);
+//     const [activeImage, setActiveImage] = useState(0);
+
+//     const [name, setName] = useState("");
+//     const [mobile, setMobile] = useState("");
+//     const [startDate, setStartDate] = useState("");
+//     const [startTime, setStartTime] = useState("");
+//     const [endDate, setEndDate] = useState("");
+//     const [endTime, setEndTime] = useState("");
+
+//     const [totalHours, setTotalHours] = useState(0);
+//     const [totalPrice, setTotalPrice] = useState(0);
+
+//     // Fetch cabin
+//     useEffect(() => {
+//         axios
+//             .get(`http://localhost:5000/api/cabins/${id}`)
+//             .then((res) => setCabin(res.data))
+//             .catch((err) => console.log(err));
+//     }, [id]);
+
+//     // ⭐ CALCULATE HOURS & PRICE (MAIN LOGIC)
+//     useEffect(() => {
+//         if (startDate && startTime && endDate && endTime) {
+//             const start = new Date(`${startDate}T${startTime}`);
+//             const end = new Date(`${endDate}T${endTime}`);
+
+//             if (end <= start) {
+//                 setTotalHours(0);
+//                 setTotalPrice(0);
+//                 return;
+//             }
+
+//             const diffMs = end - start;
+//             const hours = diffMs / (1000 * 60 * 60);
+
+//             const billableHours = Math.ceil(hours); // round up
+//             setTotalHours(billableHours);
+//             setTotalPrice(billableHours * PRICE_PER_HOUR);
+//         }
+//     }, [startDate, startTime, endDate, endTime]);
+
+//     // ⭐ BOOKING FUNCTION
+//     const handleBooking = async (e) => {
+//         e.preventDefault();
+
+//         const user = JSON.parse(localStorage.getItem("user"));
+//         const userId = user?._id;
+
+//         if (!userId) {
+//             alert("Please login before booking a cabin.");
+//             navigate("/login");
+//             return;
+//         }
+
+//         const bookingData = {
+//             cabinId: id,
+//             name,
+//             mobile,
+//             startDate,
+//             startTime,
+//             endDate,
+//             endTime,
+//             totalHours,
+//             totalPrice
+//         };
+
+//         try {
+//             await axios.post(
+//                 `http://localhost:5000/api/bookings/createbooking/${userId}`,
+//                 bookingData
+//             );
+
+//             alert("Booking Confirmed Successfully!");
+//             navigate("/mybookings");
+//         } catch (error) {
+//             console.log(error);
+//             alert("Something went wrong. Please try again.");
+//         }
+//     };
+
+//     return (
+//         <div className="min-h-screen bg-slate-50">
+//             <UsersNavbar />
+
+//             <div className="max-w-7xl mx-auto px-4 md:px-10 py-20">
+//                 <h2 className="text-4xl font-bold mb-10 text-emerald-700 text-center">
+//                     Book Your Workspace
+//                 </h2>
+
+//                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+
+//                     {/* LEFT DETAILS */}
+//                     <div className="bg-white p-6 rounded-2xl shadow-lg border">
+//                         {cabin && (
+//                             <>
+//                                 <div className="w-full h-72 rounded-xl overflow-hidden mb-5">
+//                                     <img
+//                                         src={`http://localhost:5000/${cabin.images?.[activeImage]}`}
+//                                         alt="cabin"
+//                                         className="w-full h-full object-cover"
+//                                     />
+//                                 </div>
+
+//                                 <div className="grid grid-cols-3 gap-3 mb-6">
+//                                     {cabin.images?.slice(0, 3).map((img, index) => (
+//                                         <img
+//                                             key={index}
+//                                             src={`http://localhost:5000/${img}`}
+//                                             alt="thumb"
+//                                             onClick={() => setActiveImage(index)}
+//                                             className="h-24 w-full object-cover rounded-xl cursor-pointer border"
+//                                         />
+//                                     ))}
+//                                 </div>
+
+//                                 <h3 className="text-3xl font-semibold">{cabin.name}</h3>
+
+//                                 <p className="flex gap-2 mt-2">
+//                                     <MapPin className="text-emerald-600" />
+//                                     {cabin.address}
+//                                 </p>
+
+//                                 <p className="flex gap-2 mt-2">
+//                                     <Users className="text-emerald-600" />
+//                                     Capacity: {cabin.capacity}
+//                                 </p>
+//                             </>
+//                         )}
+//                     </div>
+
+//                     {/* RIGHT FORM */}
+//                     <div className="bg-white p-8 rounded-2xl shadow-lg border">
+//                         <form onSubmit={handleBooking} className="space-y-6">
+
+//                             <input
+//                                 type="text"
+//                                 placeholder="Your Name"
+//                                 className="w-full p-3 border rounded-xl"
+//                                 value={name}
+//                                 onChange={(e) => setName(e.target.value)}
+//                                 required
+//                             />
+
+//                             <input
+//                                 type="text"
+//                                 placeholder="Mobile Number"
+//                                 className="w-full p-3 border rounded-xl"
+//                                 value={mobile}
+//                                 onChange={(e) => setMobile(e.target.value)}
+//                                 required
+//                             />
+
+//                             <div className="grid grid-cols-2 gap-4">
+//                                 <input
+//                                     type="date"
+//                                     className="p-3 border rounded-xl"
+//                                     value={startDate}
+//                                     onChange={(e) => setStartDate(e.target.value)}
+//                                     required
+//                                 />
+//                                 <input
+//                                     type="time"
+//                                     className="p-3 border rounded-xl"
+//                                     value={startTime}
+//                                     onChange={(e) => setStartTime(e.target.value)}
+//                                     required
+//                                 />
+//                             </div>
+
+//                             <div className="grid grid-cols-2 gap-4">
+//                                 <input
+//                                     type="date"
+//                                     className="p-3 border rounded-xl"
+//                                     value={endDate}
+//                                     onChange={(e) => setEndDate(e.target.value)}
+//                                     required
+//                                 />
+//                                 <input
+//                                     type="time"
+//                                     className="p-3 border rounded-xl"
+//                                     value={endTime}
+//                                     onChange={(e) => setEndTime(e.target.value)}
+//                                     required
+//                                 />
+//                             </div>
+
+//                             {/* PRICE DISPLAY */}
+//                             {totalHours > 0 && (
+//                                 <div className="bg-emerald-50 border p-4 rounded-xl">
+//                                     <p><b>Total Hours:</b> {totalHours}</p>
+//                                     <p className="text-xl font-bold text-emerald-700">
+//                                         Total Price: ₹{totalPrice.toLocaleString("en-IN")}
+//                                     </p>
+//                                 </div>
+//                             )}
+
+//                             <button
+//                                 type="submit"
+//                                 className="w-full bg-emerald-600 text-white py-3 rounded-xl text-lg hover:bg-emerald-700"
+//                             >
+//                                 Confirm Booking
+//                             </button>
+
+//                         </form>
+//                     </div>
+
+//                 </div>
+//             </div>
+//         </div>
+//     );
+// };
+
+// export default BookCabin;
+
+
 import axios from "axios";
-import { useParams, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import UsersNavbar from "./UsersNavbar";
 
 // Icons
 import {
-    Wifi,
-    Car,
-    Lock,
-    ShieldCheck,
-    Armchair,
-    ShowerHead,
     MapPin,
     Users
 } from "lucide-react";
@@ -762,6 +995,7 @@ const BookCabin = () => {
 
     const [totalHours, setTotalHours] = useState(0);
     const [totalPrice, setTotalPrice] = useState(0);
+    const [availabilityError, setAvailabilityError] = useState("");
 
     // Fetch cabin
     useEffect(() => {
@@ -773,63 +1007,74 @@ const BookCabin = () => {
 
     // ⭐ CALCULATE HOURS & PRICE (MAIN LOGIC)
     useEffect(() => {
-        if (startDate && startTime && endDate && endTime) {
-            const start = new Date(`${startDate}T${startTime}`);
-            const end = new Date(`${endDate}T${endTime}`);
+    if (startDate && startTime && endDate && endTime) {
+        const start = new Date(`${startDate}T${startTime}`);
+        const end = new Date(`${endDate}T${endTime}`);
 
-            if (end <= start) {
-                setTotalHours(0);
-                setTotalPrice(0);
-                return;
-            }
-
-            const diffMs = end - start;
-            const hours = diffMs / (1000 * 60 * 60);
-
-            const billableHours = Math.ceil(hours); // round up
-            setTotalHours(billableHours);
-            setTotalPrice(billableHours * PRICE_PER_HOUR);
-        }
-    }, [startDate, startTime, endDate, endTime]);
-
-    // ⭐ BOOKING FUNCTION
-    const handleBooking = async (e) => {
-        e.preventDefault();
-
-        const user = JSON.parse(localStorage.getItem("user"));
-        const userId = user?._id;
-
-        if (!userId) {
-            alert("Please login before booking a cabin.");
-            navigate("/login");
+        if (end <= start) {
+            setTotalHours(0);
+            setTotalPrice(0);
             return;
         }
 
-        const bookingData = {
-            cabinId: id,
-            name,
-            mobile,
-            startDate,
-            startTime,
-            endDate,
-            endTime,
-            totalHours,
-            totalPrice
-        };
+        const diffMs = end - start;
+        const hours = diffMs / (1000 * 60 * 60);
 
-        try {
-            await axios.post(
-                `http://localhost:5000/api/bookings/createbooking/${userId}`,
-                bookingData
-            );
+        const billableHours = Math.ceil(hours);
+        setTotalHours(billableHours);
+        setTotalPrice(billableHours * PRICE_PER_HOUR);
 
-            alert("Booking Confirmed Successfully!");
-            navigate("/mybookings");
-        } catch (error) {
-            console.log(error);
-            alert("Something went wrong. Please try again.");
-        }
+        // ⭐ ADD THIS
+        setAvailabilityError("");
+    }
+}, [startDate, startTime, endDate, endTime]);
+
+    // ⭐ BOOKING FUNCTION
+   const handleBooking = async (e) => {
+    e.preventDefault();
+
+    const user = JSON.parse(localStorage.getItem("user"));
+    const userId = user?._id;
+
+    if (!userId) {
+        alert("Please login before booking a cabin.");
+        navigate("/login");
+        return;
+    }
+
+    const bookingData = {
+        cabinId: id,
+        name,
+        mobile,
+        startDate,
+        startTime,
+        endDate,
+        endTime,
+        totalHours,
+        totalPrice
     };
+
+    try {
+        await axios.post(
+            `http://localhost:5000/api/bookings/createbooking/${userId}`,
+            bookingData
+        );
+
+        alert("Booking Confirmed Successfully!");
+        navigate("/mybookings");
+
+    } catch (error) {
+        console.log(error);
+
+        if (error.response?.data?.error) {
+            setAvailabilityError(error.response.data.error);
+        } else {
+            setAvailabilityError("Booking failed. Please try again.");
+        }
+    }
+};
+
+
 
     return (
         <div className="min-h-screen bg-slate-50">
@@ -884,6 +1129,13 @@ const BookCabin = () => {
                     {/* RIGHT FORM */}
                     <div className="bg-white p-8 rounded-2xl shadow-lg border">
                         <form onSubmit={handleBooking} className="space-y-6">
+                        
+                        {availabilityError && (
+    <div className="bg-red-50 border border-red-300 text-red-700 p-3 rounded-xl">
+        {availabilityError}
+    </div>
+)}
+
 
                             <input
                                 type="text"
@@ -948,11 +1200,17 @@ const BookCabin = () => {
                             )}
 
                             <button
-                                type="submit"
-                                className="w-full bg-emerald-600 text-white py-3 rounded-xl text-lg hover:bg-emerald-700"
-                            >
-                                Confirm Booking
-                            </button>
+    type="submit"
+    disabled={!!availabilityError}
+    className={`w-full py-3 rounded-xl text-lg text-white
+      ${availabilityError
+        ? "bg-gray-400 cursor-not-allowed"
+        : "bg-emerald-600 hover:bg-emerald-700"}
+    `}
+>
+    Confirm Booking
+</button>
+
 
                         </form>
                     </div>

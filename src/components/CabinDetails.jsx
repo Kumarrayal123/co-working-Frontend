@@ -1,294 +1,21 @@
-
-
-// import React, { useEffect, useState } from "react";
-// import { useParams, useNavigate } from "react-router-dom";
-// import axios from "axios";
-// import { Wifi, Car, Lock, UserCheck, AirVent } from "lucide-react"; // icons
-
-// export default function CabinDetails() {
-//   const { id } = useParams();
-//   const navigate = useNavigate();
-
-//   const [cabin, setCabin] = useState(null);
-//   const [activeImage, setActiveImage] = useState(0);
-
-//   const getImageUrl = (img) => {
-//     if (!img) return null;
-//     if (img.startsWith("http")) return img;
-//     return `http://localhost:5000/${img.replace(/\\/g, "/")}`; // fix Windows path
-//   };
-
-//   useEffect(() => {
-//     const fetchCabin = async () => {
-//       try {
-//         const response = await axios.get(`http://localhost:5000/api/cabins/${id}`);
-//         setCabin(response.data);
-//       } catch (error) {
-//         console.error("Error fetching cabin:", error);
-//       }
-//     };
-//     fetchCabin();
-//   }, [id]);
-
-//   if (!cabin) return <p className="text-center p-10">Loading...</p>;
-
-//   const displayImages = cabin.images || [];
-
-//   // Features with icons
-//   const features = [
-//     { name: "Parking", available: true, icon: <Car className="w-6 h-6 text-green-600" /> },
-//     { name: "Lockers", available: true, icon: <Lock className="w-6 h-6 text-green-600" /> },
-//     { name: "Private Washrooms", available: true, icon: <UserCheck className="w-6 h-6 text-green-600" /> },
-//     { name: "Wi-Fi", available: true, icon: <Wifi className="w-6 h-6 text-green-600" /> },
-//     { name: "Air Conditioning", available: true, icon: <AirVent className="w-6 h-6 text-green-600" /> },
-//   ];
-
-//   return (
-//     <div className="bg-gray-50 min-h-screen p-6 md:p-10">
-//       <button
-//         onClick={() => navigate(-1)}
-//         className="mb-6 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
-//       >
-//         ⬅ Back
-//       </button>
-
-//       <div className="max-w-5xl mx-auto bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
-//         {/* Cabin Name */}
-//         <h1 className="text-4xl font-bold text-gray-800 mb-4">{cabin.name}</h1>
-
-//         {/* Main Image */}
-//         {displayImages.length > 0 && (
-//           <div className="aspect-video w-full rounded-2xl overflow-hidden shadow-lg border border-gray-100 mb-4">
-//             <img
-//               src={getImageUrl(displayImages[activeImage])}
-//               alt={cabin.name}
-//               className="w-full h-full object-cover"
-//             />
-//           </div>
-//         )}
-
-//         {/* Details */}
-//         <div className="space-y-2 mb-6">
-//           <p><strong>Description:</strong> {cabin.description}</p>
-//           <p><strong>Capacity:</strong> {cabin.capacity}</p>
-//           <p><strong>Address:</strong> {cabin.address}</p>
-//         </div>
-
-//         {/* Features Section */}
-//         <div className="mt-8">
-//           <h2 className="text-2xl font-semibold text-gray-800 mb-4">Features</h2>
-//           <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-//             {features
-//               .filter(f => f.available)
-//               .map((feature, index) => (
-//                 <div
-//                   key={index}
-//                   className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl shadow-sm hover:shadow-md transition"
-//                 >
-//                   {feature.icon}
-//                   <span className="text-gray-700 font-medium">{feature.name}</span>
-//                 </div>
-//               ))}
-//           </div>
-//         </div>
-
-//         {/* Book Now Button */}
-//         <button
-//           onClick={() => navigate(`/book/${cabin._id}`)}
-//           className="mt-8 w-full py-3 bg-green-700 text-white rounded-xl hover:bg-green-800 transition"
-//         >
-//           Book Now
-//         </button>
-//       </div>
-//     </div>
-//   );
-// }
-
-
-
-
-// import React, { useEffect, useState } from "react";
-// import UsersNavbar from "./UsersNavbar";
-// import axios from "axios";
-// import { useParams, useNavigate } from "react-router-dom";
-// import {
-//   MapPin,
-//   Users,
-//   Wifi,
-//   Car,
-//   Lock,
-//   ShieldCheck,
-//   Armchair,
-//   Bath,
-//   ArrowLeft,
-// } from "lucide-react";
-
-// export default function CabinDetails() {
-//   const { id } = useParams();
-//   const navigate = useNavigate();
-
-//   const [cabin, setCabin] = useState(null);
-//   const [activeImage, setActiveImage] = useState(0);
-
-//   const getImageUrl = (img) => {
-//     if (!img) return "";
-//     if (img.startsWith("http")) return img;
-//     return `http://localhost:5000/${img.replace(/\\/g, "/")}`;
-//   };
-
-//   useEffect(() => {
-//     axios
-//       .get(`http://localhost:5000/api/cabins/${id}`)
-//       .then((res) => setCabin(res.data))
-//       .catch((err) => console.error(err));
-//   }, [id]);
-
-//   if (!cabin)
-//     return (
-//       <div className="flex justify-center items-center h-screen">
-//         <div className="animate-spin w-12 h-12 border-t-2 border-b-2 border-emerald-600 rounded-full"></div>
-//       </div>
-//     );
-
-//   const features = [
-//     { name: "Wi-Fi", icon: <Wifi className="w-6 h-6 text-emerald-600" /> },
-//     { name: "Parking", icon: <Car className="w-6 h-6 text-emerald-600" /> },
-//     { name: "Lockers", icon: <Lock className="w-6 h-6 text-emerald-600" /> },
-//     { name: "Private Washrooms", icon: <Bath className="w-6 h-6 text-emerald-600" /> },
-//     { name: "Secure Access", icon: <ShieldCheck className="w-6 h-6 text-emerald-600" /> },
-//     { name: "Comfort Seating", icon: <Armchair className="w-6 h-6 text-emerald-600" /> },
-//   ];
-
-//   return (
-//     <div className="min-h-screen bg-slate-50">
-//         <UsersNavbar/>
-//       {/* BACK BUTTON */}
-//       <div className="p-6">
-//         <button
-//           onClick={() => navigate(-1)}
-//           className="flex items-center gap-2 text-slate-600 hover:text-emerald-600 transition"
-//         >
-//           <ArrowLeft size={20} />
-//           Back
-//         </button>
-//       </div>
-
-//       {/* MAIN CONTENT */}
-//       <div className="max-w-6xl mx-auto bg-white shadow-xl rounded-3xl border border-slate-100 overflow-hidden mb-20">
-
-//         {/* HERO IMAGE */}
-//         <div className="relative h-[420px] bg-slate-100">
-//           <img
-//             src={getImageUrl(cabin.images[activeImage])}
-//             alt={cabin.name}
-//             className="w-full h-full object-cover"
-//             onError={(e) =>
-//               (e.target.src =
-//                 "https://images.unsplash.com/photo-1505691723518-36a5ac3be353?auto=format&fit=crop&q=80&w=1200")
-//             }
-//           />
-
-//           {/* BADGE */}
-//           <div className="absolute top-6 left-6 bg-emerald-600 text-white px-4 py-1.5 rounded-full shadow-lg text-sm font-semibold">
-//             Premium Workspace
-//           </div>
-//         </div>
-
-//         {/* CONTENT */}
-//         <div className="p-10">
-//           {/* NAME & ADDRESS */}
-//           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-//             <h1 className="text-4xl font-bold text-slate-900">{cabin.name}</h1>
-
-//             <div className="flex items-center gap-2 text-slate-600">
-//               <MapPin size={20} className="text-emerald-600" />
-//               <span className="font-medium">{cabin.address}</span>
-//             </div>
-//           </div>
-
-//           {/* OVERVIEW */}
-//           <div className="mt-6 flex flex-wrap items-center gap-6">
-//             <div className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-lg border border-slate-200">
-//               <Users size={18} className="text-emerald-600" />
-//               <span className="text-slate-700 font-medium">
-//                 {cabin.capacity} Seats
-//               </span>
-//             </div>
-
-//             <div className="flex items-baseline gap-1">
-//               <span className="text-3xl font-bold text-slate-900">
-//                 ₹{cabin.price || 5000}
-//               </span>
-//               <span className="text-slate-500 text-sm">/month</span>
-//             </div>
-//           </div>
-
-//           {/* DESCRIPTION */}
-//           <p className="mt-6 text-slate-600 text-lg leading-relaxed">
-//             {cabin.description}
-//           </p>
-
-//           {/* THUMBNAIL IMAGES */}
-//           <div className="flex gap-4 mt-8 overflow-x-auto pb-2">
-//             {cabin.images.map((img, index) => (
-//               <img
-//                 key={index}
-//                 src={getImageUrl(img)}
-//                 alt=""
-//                 onClick={() => setActiveImage(index)}
-//                 className={`w-32 h-24 object-cover rounded-xl cursor-pointer border transition 
-//                 ${
-//                   activeImage === index
-//                     ? "border-emerald-600 shadow-md"
-//                     : "border-slate-200 opacity-80 hover:opacity-100"
-//                 }`}
-//               />
-//             ))}
-//           </div>
-
-//           {/* FEATURES SECTION */}
-//           <div className="mt-12">
-//             <h2 className="text-2xl font-bold text-slate-900 mb-5">
-//               Workspace Features
-//             </h2>
-
-//             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
-//               {features.map((f, i) => (
-//                 <div
-//                   key={i}
-//                   className="flex items-center gap-3 p-5 bg-slate-50 rounded-2xl border border-slate-200 hover:shadow-lg hover:border-emerald-500 transition-all"
-//                 >
-//                   {f.icon}
-//                   <span className="font-medium text-slate-700">{f.name}</span>
-//                 </div>
-//               ))}
-//             </div>
-//           </div>
-
-//           {/* BOOK BUTTON */}
-//           <div className="mt-12">
-//             <button
-//               onClick={() => navigate(`/book/${cabin._id}`)}
-//               className="w-full bg-emerald-600 text-white text-lg py-4 rounded-2xl hover:bg-emerald-700 shadow-lg transition-all"
-//             >
-//               Book Cabin
-//             </button>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
-
 import axios from "axios";
 import {
   Armchair,
   ArrowLeft,
+  ArrowRight,
   Bath,
+  Bus,
   Car,
+  CheckCircle,
+  Clock,
+  Coffee,
+  Globe,
   Lock,
   MapPin,
+  Monitor,
+  Printer,
   ShieldCheck,
+  Star,
   Users,
   Wifi,
 } from "lucide-react";
@@ -301,176 +28,258 @@ export default function CabinDetails() {
   const navigate = useNavigate();
 
   const [cabin, setCabin] = useState(null);
+  const [relatedCabins, setRelatedCabins] = useState([]);
   const [activeImage, setActiveImage] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   const getImageUrl = (img) => {
     if (!img) return "";
     if (img.startsWith("http")) return img;
-    return `http://localhost:5000/${img.replace(/\\/g, "/")}`;
+    return `http://localhost:5050/${img.replace(/\\/g, "/")}`;
   };
 
   useEffect(() => {
-    axios
-      .get(`http://localhost:5000/api/cabins/${id}`)
-      .then((res) => setCabin(res.data))
-      .catch((err) => console.error(err));
+    window.scrollTo(0, 0);
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [cabinRes, spacesRes] = await Promise.all([
+          axios.get(`http://localhost:5050/api/cabins/${id}`),
+          axios.get("http://localhost:5050/api/cabins"),
+        ]);
+        setCabin(cabinRes.data);
+        // Suggested cabins: excluding current one
+        setRelatedCabins(spacesRes.data.filter((c) => c._id !== id).slice(0, 3));
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
   }, [id]);
 
-  if (!cabin) {
+  if (loading || !cabin) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin w-12 h-12 border-t-2 border-b-2 border-emerald-600 rounded-full"></div>
+      <div className="flex flex-col justify-center items-center h-screen bg-slate-50 gap-4">
+        <div className="animate-spin w-14 h-14 border-t-4 border-emerald-600 border-r-transparent rounded-full"></div>
+        <p className="text-slate-400 font-black tracking-widest uppercase text-xs">Synchronizing Details...</p>
       </div>
     );
   }
 
-  // 🔥 AMENITIES MAP (DB key → UI)
   const amenityMap = {
-    wifi: {
-      label: "Wi-Fi",
-      icon: <Wifi className="w-6 h-6 text-emerald-600" />,
-    },
-    parking: {
-      label: "Parking",
-      icon: <Car className="w-6 h-6 text-emerald-600" />,
-    },
-    lockers: {
-      label: "Lockers",
-      icon: <Lock className="w-6 h-6 text-emerald-600" />,
-    },
-    privateWashroom: {
-      label: "Private Washroom",
-      icon: <Bath className="w-6 h-6 text-emerald-600" />,
-    },
-    secureAccess: {
-      label: "Secure Access",
-      icon: <ShieldCheck className="w-6 h-6 text-emerald-600" />,
-    },
-    comfortSeating: {
-      label: "Comfort Seating",
-      icon: <Armchair className="w-6 h-6 text-emerald-600" />,
-    },
+    wifi: { label: "Ultra-Fast Wi-Fi", icon: <Wifi size={20} /> },
+    parking: { label: "Dedicated Parking", icon: <Car size={20} /> },
+    lockers: { label: "Secure Lockers", icon: <Lock size={20} /> },
+    privateWashroom: { label: "Executive Washroom", icon: <Bath size={20} /> },
+    secureAccess: { label: "Biometric Access", icon: <ShieldCheck size={20} /> },
+    comfortSeating: { label: "Ergonomic Chairs", icon: <Armchair size={20} /> },
   };
 
-  // ✅ Only true amenities
   const activeAmenities = Object.keys(cabin.amenities || {}).filter(
     (key) => cabin.amenities[key]
   );
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-[#fcfdfe] font-sans selection:bg-emerald-100 selection:text-emerald-900 pb-32">
       <UsersNavbar />
 
-      {/* BACK BUTTON */}
-      <div className="p-6">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-slate-600 hover:text-emerald-600 transition"
-        >
-          <ArrowLeft size={20} />
-          Back
-        </button>
-      </div>
-
-      {/* MAIN CARD */}
-      <div className="max-w-6xl mx-auto bg-white shadow-xl rounded-3xl border border-slate-100 overflow-hidden mb-20">
-        {/* HERO IMAGE */}
-        <div className="relative h-[420px] bg-slate-100">
-          <img
-            src={getImageUrl(cabin.images?.[activeImage])}
-            alt={cabin.name}
-            className="w-full h-full object-cover"
-            onError={(e) =>
-              (e.target.src =
-                "https://images.unsplash.com/photo-1505691723518-36a5ac3be353?auto=format&fit=crop&q=80&w=1200")
-            }
-          />
-          <div className="absolute top-6 left-6 bg-emerald-600 text-white px-4 py-1.5 rounded-full shadow-lg text-sm font-semibold">
-            Premium Workspace
+      <div className="max-w-[1400px] mx-auto px-6 pt-32">
+        {/* Breadcrumb / Back */}
+        <div className="mb-10 flex items-center justify-between">
+          <button
+            onClick={() => navigate(-1)}
+            className="group flex items-center gap-3 text-slate-400 hover:text-emerald-600 transition-all font-black uppercase text-[10px] tracking-widest"
+          >
+            <div className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center group-hover:border-emerald-200 group-hover:bg-emerald-50 transition-all">
+              <ArrowLeft size={14} />
+            </div>
+            Back to Discovery
+          </button>
+          <div className="flex items-center gap-2 text-[10px] font-black text-slate-300 uppercase tracking-widest">
+            <span className="text-slate-400">TimelySpaces</span> / <span className="text-slate-400">Elite</span> / <span className="text-emerald-600">{cabin.name}</span>
           </div>
         </div>
 
-        {/* CONTENT */}
-        <div className="p-10">
-          {/* NAME & ADDRESS */}
-          <div className="flex flex-col md:flex-row justify-between gap-4">
-            <h1 className="text-4xl font-bold text-slate-900">{cabin.name}</h1>
-            <div className="flex items-center gap-2 text-slate-600">
-              <MapPin size={20} className="text-emerald-600" />
-              <span>{cabin.address}</span>
+        {/* Main Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
+
+          {/* Left Column: Images & Identity */}
+          <div className="lg:col-span-7 space-y-10">
+            <div className="group relative aspect-[16/10] bg-slate-100 rounded-[3rem] overflow-hidden shadow-2xl shadow-slate-200 border border-slate-100">
+              <img
+                src={getImageUrl(cabin.images?.[activeImage])}
+                alt={cabin.name}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-[2s]"
+                onError={(e) =>
+                  (e.target.src = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1200")
+                }
+              />
+
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent opacity-60"></div>
+
+              <div className="absolute bottom-10 left-10 right-10 flex items-end justify-between gap-6 pointer-events-none">
+                <div className="pointer-events-auto">
+                  <span className="inline-block px-4 py-1.5 rounded-full bg-emerald-500/90 text-white text-[10px] font-black uppercase tracking-[0.2em] mb-4 shadow-xl">
+                    Premium Suite
+                  </span>
+                  <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight drop-shadow-2xl uppercase italic">
+                    {cabin.name}
+                  </h1>
+                </div>
+              </div>
             </div>
-          </div>
 
-          {/* OVERVIEW */}
-          <div className="mt-6 flex flex-wrap items-center gap-6">
-            <div className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-lg border">
-              <Users size={18} className="text-emerald-600" />
-              <span>{cabin.capacity} Seats</span>
-            </div>
-
-            <div className="text-3xl font-bold text-slate-900">
-              ₹{cabin.price || 5000}
-              <span className="text-sm text-slate-500"> / month</span>
-            </div>
-          </div>
-
-          {/* DESCRIPTION */}
-          <p className="mt-6 text-slate-600 text-lg">{cabin.description}</p>
-
-          {/* THUMBNAILS */}
-          {cabin.images?.length > 0 && (
-            <div className="flex gap-4 mt-8 overflow-x-auto">
-              {cabin.images.map((img, index) => (
-                <img
-                  key={index}
-                  src={getImageUrl(img)}
-                  onClick={() => setActiveImage(index)}
-                  className={`w-32 h-24 rounded-xl object-cover cursor-pointer border ${
-                    activeImage === index
-                      ? "border-emerald-600"
-                      : "border-slate-200"
-                  }`}
-                  alt=""
-                />
-              ))}
-            </div>
-          )}
-
-          {/* AMENITIES */}
-          <div className="mt-12">
-            <h2 className="text-2xl font-bold mb-5">Workspace Features</h2>
-
-            {activeAmenities.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
-                {activeAmenities.map((key) => (
+            {/* Thumbnail Gallery */}
+            {cabin.images?.length > 1 && (
+              <div className="flex gap-6 overflow-x-auto pb-4 px-2 no-scrollbar">
+                {cabin.images.map((img, index) => (
                   <div
-                    key={key}
-                    className="flex items-center gap-3 p-5 bg-slate-50 rounded-2xl border hover:border-emerald-500 hover:shadow-md transition"
+                    key={index}
+                    onClick={() => setActiveImage(index)}
+                    className={`relative flex-shrink-0 w-32 h-24 rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 border-2 ${activeImage === index ? "border-emerald-500 scale-105 shadow-lg shadow-emerald-100" : "border-transparent opacity-60 hover:opacity-100"
+                      }`}
                   >
-                    {amenityMap[key].icon}
-                    <span className="font-medium">
-                      {amenityMap[key].label}
-                    </span>
+                    <img src={getImageUrl(img)} className="w-full h-full object-cover" alt="" />
                   </div>
                 ))}
               </div>
-            ) : (
-              <p className="text-slate-500">No amenities available</p>
             )}
+
+            {/* Description Card */}
+            <div className="bg-white p-12 rounded-[3rem] border border-slate-100 shadow-xl shadow-slate-100/50">
+              <h3 className="text-xs font-black text-emerald-600 uppercase tracking-[0.2em] mb-8">About the Environment</h3>
+              <p className="text-xl text-slate-800 font-light leading-relaxed mb-10">
+                {cabin.description || "A meticulously curated executive workspace featuring premium ergonomics, industrial acoustic treatment, and state-of-the-art digital infrastructure designed for maximum cognitive performance."}
+              </p>
+
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-8 pt-10 border-t border-slate-50">
+                <div className="space-y-2">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Primary Address</span>
+                  <div className="flex items-start gap-2 text-slate-700 font-bold">
+                    <MapPin size={16} className="text-emerald-500 flex-shrink-0 mt-0.5" />
+                    <span>{cabin.address}</span>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Strategic Seating</span>
+                  <div className="flex items-center gap-2 text-slate-700 font-bold">
+                    <Users size={16} className="text-emerald-500" />
+                    <span>{cabin.capacity} Executive Placements</span>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Access Protocol</span>
+                  <div className="flex items-center gap-2 text-slate-700 font-bold">
+                    <Clock size={16} className="text-emerald-500" />
+                    <span>24/7 Priority Entry</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* BOOK BUTTON */}
-          <div className="mt-12">
-            <button
-              onClick={() => navigate(`/book/${cabin._id}`)}
-              className="w-full bg-emerald-600 text-white text-lg py-4 rounded-2xl hover:bg-emerald-700 transition"
-            >
-              Book Cabin
-            </button>
+          {/* Right Column: Features & CTA */}
+          <div className="lg:col-span-1"></div> {/* Spacer */}
+
+          <div className="lg:col-span-4 lg:sticky lg:top-32 h-fit space-y-8">
+            <div className="bg-slate-900 rounded-[3rem] p-10 text-white shadow-2xl shadow-emerald-900/10 border border-emerald-500/10 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/20 rounded-full blur-3xl -mr-16 -mt-16"></div>
+
+              <div className="relative z-10 mb-10">
+                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.3em] block mb-2">Investment Detail</span>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-5xl font-black">₹{cabin.price}</span>
+                  <span className="text-slate-500 font-bold">/ MONTH</span>
+                </div>
+              </div>
+
+              <div className="space-y-6 mb-12">
+                <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-6 pb-4 border-b border-white/5">Workspace Features</h4>
+                <div className="space-y-4">
+                  {activeAmenities.map((key) => (
+                    <div key={key} className="flex items-center gap-4 group">
+                      <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white transition-all duration-300">
+                        {amenityMap[key].icon}
+                      </div>
+                      <span className="text-sm font-bold text-slate-300 tracking-tight">{amenityMap[key].label}</span>
+                      <CheckCircle size={14} className="ml-auto text-emerald-500/30" />
+                    </div>
+                  ))}
+                  {activeAmenities.length === 0 && <p className="text-slate-500 italic text-sm">Standard Executive amenities apply.</p>}
+                </div>
+              </div>
+
+              <button
+                onClick={() => navigate(`/book/${cabin._id}`)}
+                className="w-full py-6 rounded-3xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-lg transition-all active:scale-95 shadow-2xl shadow-emerald-500/20 flex items-center justify-center gap-3 group"
+              >
+                Book Workspace <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+              </button>
+
+              <p className="mt-8 text-center text-slate-500 font-bold text-[10px] uppercase tracking-widest">Instant Activation after Approval</p>
+            </div>
+
+            <div className="bg-emerald-50 rounded-3xl p-8 border border-emerald-100 flex items-center gap-6">
+              <div className="w-14 h-14 bg-white rounded-2xl shadow-sm flex items-center justify-center text-emerald-600">
+                <ShieldCheck size={28} />
+              </div>
+              <div>
+                <h5 className="font-black text-emerald-900 text-sm tracking-tight uppercase">Verified Space</h5>
+                <p className="text-emerald-700/70 text-xs font-bold leading-relaxed">This property has been vetted for enterprise compliance.</p>
+              </div>
+            </div>
           </div>
         </div>
+
+        {/* RELATED SPACES SECTION */}
+        {relatedCabins.length > 0 && (
+          <div className="mt-40">
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-8">
+              <div>
+                <span className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.3em] block mb-4">Discovery Engine</span>
+                <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">Suggested <span className="text-emerald-600">Continuations</span></h2>
+              </div>
+              <button
+                onClick={() => navigate("/spaces")}
+                className="flex items-center gap-2 font-black text-xs text-slate-400 uppercase tracking-widest hover:text-emerald-600 transition-colors"
+              >
+                View All Catalogue <ArrowRight size={14} />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+              {relatedCabins.map((rc) => (
+                <div
+                  key={rc._id}
+                  onClick={() => navigate(`/cabin/${rc._id}`)}
+                  className="group bg-white rounded-[2.5rem] border border-slate-100 overflow-hidden shadow-lg shadow-slate-100/50 hover:shadow-2xl transition-all duration-500 cursor-pointer"
+                >
+                  <div className="h-48 overflow-hidden relative">
+                    <img src={getImageUrl(rc.images?.[0])} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[2s]" alt="" />
+                    <div className="absolute top-4 right-4 px-3 py-1 bg-white/90 backdrop-blur-md rounded-lg text-[10px] font-black text-emerald-800 border border-white/20">
+                      Available
+                    </div>
+                  </div>
+                  <div className="p-8">
+                    <h4 className="text-xl font-black text-slate-900 mb-2 truncate uppercase tracking-tight">{rc.name}</h4>
+                    <div className="flex items-center gap-2 text-slate-400 text-xs font-bold mb-6">
+                      <MapPin size={14} /> {rc.address?.split(',')[0]}
+                    </div>
+                    <div className="flex items-center justify-between pt-6 border-t border-slate-50">
+                      <span className="text-2xl font-black text-slate-900">₹{rc.price}</span>
+                      <div className="flex items-center gap-1.5 text-xs font-black text-emerald-600 uppercase tracking-widest">
+                        Explore <ArrowRight size={14} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
-

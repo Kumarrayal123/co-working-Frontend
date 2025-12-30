@@ -13,7 +13,7 @@ const Spaces = () => {
 
   useEffect(() => {
     axios
-      .get("http://localhost:5000/api/cabins")
+      .get("http://localhost:5050/api/cabins")
       .then((res) => {
         setCabins(res.data);
         setLoading(false);
@@ -88,7 +88,7 @@ const Spaces = () => {
                 {/* Image */}
                 {/* <div className="relative h-60 overflow-hidden bg-slate-100">
                   <img
-                    src={`http://localhost:5000/${cabin.images[0]}`}
+                    src={`http://localhost:5050/${cabin.images[0]}`}
                     alt={cabin.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                     onError={(e) => {
@@ -105,7 +105,7 @@ const Spaces = () => {
                   onClick={() => navigate(`/cabin/${cabin._id}`)}
                 >
                   <img
-                    src={`http://localhost:5000/${cabin.images[0]}`}
+                    src={`http://localhost:5050/${cabin.images[0]}`}
                     alt={cabin.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                     onError={(e) => {

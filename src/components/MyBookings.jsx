@@ -14,7 +14,7 @@
 //     const fetchBookings = async () => {
 //       try {
 //         const res = await axios.get(
-//           `http://localhost:5000/api/bookings/userbookings/${userId}`
+//           `http://localhost:5050/api/bookings/userbookings/${userId}`
 //         );
 //         setBookings(res.data.bookings);
 //       } catch (error) {
@@ -82,7 +82,7 @@
 //     const fetchBookings = async () => {
 //       try {
 //         const res = await axios.get(
-//           `http://localhost:5000/api/bookings/userbookings/${userId}`
+//           `http://localhost:5050/api/bookings/userbookings/${userId}`
 //         );
 //         setBookings(res.data.bookings);
 //       } catch (error) {
@@ -133,7 +133,7 @@
 //                     <img
 //                       src={
 //                         b.cabinId?.images?.[0]
-//                           ? `http://localhost:5000/${b.cabinId.images[0]}`
+//                           ? `http://localhost:5050/${b.cabinId.images[0]}`
 //                           : "https://via.placeholder.com/300x300?text=No+Image"
 //                       }
 //                       alt="cabin"
@@ -243,10 +243,10 @@ const MyBookings = () => {
 
     const fetchBookings = async () => {
       try {
-        console.log("📌 API HIT →", `http://localhost:5000/api/bookings/userbookings/${userId}`);
+        console.log("📌 API HIT →", `http://localhost:5050/api/bookings/userbookings/${userId}`);
 
         const res = await axios.get(
-          `http://localhost:5000/api/bookings/userbookings/${userId}`
+          `http://localhost:5050/api/bookings/userbookings/${userId}`
         );
 
         setBookings(res.data.bookings || []);
@@ -296,7 +296,7 @@ const MyBookings = () => {
                     <img
                       src={
                         b.cabinId?.images?.[0]
-                          ? `http://localhost:5000/${b.cabinId.images[0]}`
+                          ? `http://localhost:5050/${b.cabinId.images[0]}`
                           : "https://via.placeholder.com/300x300?text=No+Image"
                       }
                       alt="cabin"

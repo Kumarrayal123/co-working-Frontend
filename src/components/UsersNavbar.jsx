@@ -69,7 +69,7 @@ function UsersNavbar() {
 
   const navLinks = [
     { name: "Register", path: "/register" },
-    { name: "Login",path:"/login"},
+    { name: "Login", path: "/login" },
     { name: "Spaces", path: "/spaces" },
   ];
 
@@ -139,6 +139,9 @@ function UsersNavbar() {
                   <Link to="/mybookings" className="flex items-center gap-3 px-3 py-2 text-sm text-gray-600 rounded-lg hover:bg-gray-50 hover:text-emerald-600 transition-colors">
                     <Calendar size={16} /> My Bookings
                   </Link>
+                  <Link to="/doctorbookings" className="flex items-center gap-3 px-3 py-2 text-sm text-gray-600 rounded-lg hover:bg-gray-50 hover:text-emerald-600 transition-colors">
+                    <Calendar size={16} /> Bookings
+                  </Link>
                   <Link to="/addcabin" className="flex items-center gap-3 px-3 py-2 text-sm text-gray-600 rounded-lg hover:bg-gray-50 hover:text-emerald-600 transition-colors">
                     <Building size={16} /> AddCabin
                   </Link>
@@ -201,6 +204,9 @@ function UsersNavbar() {
               </Link>
               <Link to="/mybookings" onClick={() => setOpen(false)} className="flex items-center gap-3 text-gray-600">
                 <Calendar size={20} /> My Bookings
+              </Link>
+              <Link to="/doctorbookings" onClick={() => setOpen(false)} className="flex items-center gap-3 text-gray-600">
+                <Calendar size={20} /> Bookings
               </Link>
               <Link to="/addcabin" onClick={() => setOpen(false)} className="flex items-center gap-3 text-gray-600">
                 <Building size={20} /> AddCabin

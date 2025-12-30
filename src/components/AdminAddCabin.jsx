@@ -72,7 +72,7 @@ function AdminAddCabin() {
     });
 
     try {
-      await axios.post("http://localhost:5000/api/cabins", data, {
+      await axios.post("http://localhost:5050/api/cabins", data, {
         headers: {
           "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${token}`,

@@ -20,6 +20,7 @@ import MyCabin from "./components/MyCabin";
 import MyProfile from "./components/MyProfile";
 import { AdminCabins } from "./components/AdminCabins";
 import { AdminBookings } from "./components/AdminBookings";
+import DoctorBookings from "./components/DoctorBookings";
 
 
 function App() {
@@ -44,11 +45,12 @@ function App() {
         <Route path="/book/:id" element={<BookCabin />} />
         <Route path="/cabin/:id" element={<CabinDetails />} />
         <Route path="/allbookings" element={<AllBookings />}></Route>
-        <Route path="/mybookings" element={<MyBookings/>}></Route>
-        <Route path="/myprofile" element={<MyProfile/>}></Route>
-        <Route path="/admincabin" element={<AdminCabins/>}></Route>
-        <Route path="/adminbookings" element={<AdminBookings/>}></Route>
-       
+        <Route path="/mybookings" element={<MyBookings />}></Route>
+        <Route path="/myprofile" element={<MyProfile />}></Route>
+        <Route path="/admincabin" element={<AdminCabins />}></Route>
+        <Route path="/adminbookings" element={<AdminBookings />}></Route>
+        <Route path="/doctorbookings" element={<DoctorBookings />}></Route>
+
       </Routes>
     </Router>
   );

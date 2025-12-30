@@ -22,7 +22,7 @@ const MyProfile = () => {
     }
 
     axios
-      .get("http://localhost:5000/api/auth/me", {
+      .get("http://localhost:5050/api/auth/me", {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setUser(res.data.user))

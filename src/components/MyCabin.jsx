@@ -5,7 +5,7 @@
 //   const [cabins, setCabins] = useState([]);
 
 //   useEffect(() => {
-//   axios.get("http://localhost:5000/api/cabins")
+//   axios.get("http://localhost:5050/api/cabins")
 //     .then((res) => setCabins(res.data))
 //     .catch((err) => console.error(err));
 // }, []);
@@ -31,7 +31,7 @@
 //             >
 //               {cabin.images && cabin.images[0] && (
 //                 <img
-//                   src={`http://localhost:5000/${cabin.images[0]}`}
+//                   src={`http://localhost:5050/${cabin.images[0]}`}
 //                   alt={cabin.name}
 //                   style={{ width: "100%", height: "150px", objectFit: "cover", borderRadius: "5px" }}
 //                 />
@@ -68,7 +68,7 @@
 //     if (token) {
 //       // 2️⃣ Make a request to the protected route
 //       axios
-//         .get("http://localhost:5000/api/cabins/user", {
+//         .get("http://localhost:5050/api/cabins/user", {
 //           headers: {
 //             Authorization: `Bearer ${token}`, // send token in header
 //           },
@@ -100,7 +100,7 @@
 //             >
 //               {cabin.images && cabin.images[0] && (
 //                 <img
-//                   src={`http://localhost:5000/${cabin.images[0]}`}
+//                   src={`http://localhost:5050/${cabin.images[0]}`}
 //                   alt={cabin.name}
 //                   style={{ width: "100%", height: "150px", objectFit: "cover", borderRadius: "5px" }}
 //                 />
@@ -145,7 +145,7 @@
 //     }
 
 //     axios
-//       .get("http://localhost:5000/api/cabins/user", {
+//       .get("http://localhost:5050/api/cabins/user", {
 //         headers: { Authorization: `Bearer ${token}` },
 //       })
 //       .then((res) => {
@@ -203,7 +203,7 @@
 //                 className="bg-white rounded-xl border shadow-sm overflow-hidden"
 //               >
 //                 <img
-//                   src={`http://localhost:5000/${cabin.images[0]}`}
+//                   src={`http://localhost:5050/${cabin.images[0]}`}
 //                   onError={(e) => {
 //                     e.target.src =
 //                       "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=800";
@@ -271,7 +271,7 @@ const MyCabin = () => {
     const fetchCabins = async () => {
       try {
         const res = await axios.get(
-          "http://localhost:5000/api/cabins/user",
+          "http://localhost:5050/api/cabins/user",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -343,7 +343,7 @@ const MyCabin = () => {
                 className="bg-white rounded-xl border shadow-sm overflow-hidden"
               >
                 <img
-                  src={`http://localhost:5000/${cabin.images?.[0]}`}
+                  src={`http://localhost:5050/${cabin.images?.[0]}`}
                   onError={(e) => {
                     e.target.src =
                       "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=800";

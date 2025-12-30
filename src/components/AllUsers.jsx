@@ -28,7 +28,7 @@
 //   const fetchUsers = () => {
 //     setLoading(true);
 //     axios
-//       .get("http://localhost:5000/api/auth/all")
+//       .get("http://localhost:5050/api/auth/all")
 //       .then((res) => {
 //         setUsers(res.data);
 //         setLoading(false);
@@ -96,7 +96,7 @@
     
 //     setUpdateLoading(true);
 //     axios
-//       .put(`http://localhost:5000/api/auth/update-status/${selectedUser._id}`, statusData)
+//       .put(`http://localhost:5050/api/auth/update-status/${selectedUser._id}`, statusData)
 //       .then((res) => {
 //         // Update local state
 //         setUsers(prevUsers => 
@@ -120,7 +120,7 @@
 //   const deleteUser = (userId) => {
 //     if (window.confirm("Are you sure you want to delete this user?")) {
 //       axios
-//         .delete(`http://localhost:5000/api/auth/delete/${userId}`)
+//         .delete(`http://localhost:5050/api/auth/delete/${userId}`)
 //         .then(() => {
 //           // Remove from local state
 //           setUsers(prevUsers => prevUsers.filter(user => user._id !== userId));
@@ -438,7 +438,7 @@
 //                       if (!documentPath) return null;
                       
 //                       const fileName = formatFileName(documentPath);
-//                       const fileUrl = `http://localhost:5000/${documentPath.replace(/\\/g, "/")}`;
+//                       const fileUrl = `http://localhost:5050/${documentPath.replace(/\\/g, "/")}`;
 //                       const isImage = fileName.match(/\.(jpg|jpeg|png|gif|bmp|svg)$/i);
                       
 //                       return (
@@ -716,7 +716,7 @@ function AllUsers() {
   const fetchUsers = () => {
     setLoading(true);
     axios
-      .get("http://localhost:5000/api/auth/all")
+      .get("http://localhost:5050/api/auth/all")
       .then((res) => {
         setUsers(res.data);
         setLoading(false);
@@ -794,7 +794,7 @@ const updateSingleDocumentStatus = (docKey, status) => {
   };
 
   axios
-    .put(`http://localhost:5000/api/auth/update-status/${selectedUser._id}`, payload)
+    .put(`http://localhost:5050/api/auth/update-status/${selectedUser._id}`, payload)
     .then(() => {
       setUsers(prev =>
         prev.map(u =>
@@ -814,7 +814,7 @@ const updateSingleDocumentStatus = (docKey, status) => {
   const deleteUser = (userId) => {
     if (window.confirm("Are you sure you want to delete this user?")) {
       axios
-        .delete(`http://localhost:5000/api/auth/delete/${userId}`)
+        .delete(`http://localhost:5050/api/auth/delete/${userId}`)
         .then(() => {
           // Remove from local state
           setUsers(prevUsers => prevUsers.filter(user => user._id !== userId));
@@ -1070,7 +1070,7 @@ const updateSingleDocumentStatus = (docKey, status) => {
             if (!documentPath) return null;
 
             const fileName = formatFileName(documentPath);
-            const fileUrl = `http://localhost:5000/${documentPath.replace(/\\/g, "/")}`;
+            const fileUrl = `http://localhost:5050/${documentPath.replace(/\\/g, "/")}`;
             const documentStatus = selectedUser[`${key}Status`] || "pending";
 
             return (

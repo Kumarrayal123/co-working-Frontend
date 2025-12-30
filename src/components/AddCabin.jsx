@@ -76,7 +76,7 @@
 //     try {
 //       // Send token in header for authentication
 //       const token = localStorage.getItem("token");
-//       await axios.post("http://localhost:5000/api/cabins", data, {
+//       await axios.post("http://localhost:5050/api/cabins", data, {
 //         headers: {
 //           "Content-Type": "multipart/form-data",
 //           Authorization: `Bearer ${token}`,
@@ -355,7 +355,7 @@
 
 //     try {
 //       const token = localStorage.getItem("token");
-//       await axios.post("http://localhost:5000/api/cabins", data, {
+//       await axios.post("http://localhost:5050/api/cabins", data, {
 //         headers: {
 //           Authorization: `Bearer ${token}`,
 //         },
@@ -589,7 +589,7 @@ function AddCabin() {
 
     try {
       const token = localStorage.getItem("token");
-      await axios.post("http://localhost:5000/api/cabins", data, {
+      await axios.post("http://localhost:5050/api/cabins", data, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

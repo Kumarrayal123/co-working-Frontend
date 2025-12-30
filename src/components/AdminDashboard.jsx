@@ -34,7 +34,7 @@ const AdminDashboard = () => {
 
     useEffect(() => {
         axios
-            .get("http://localhost:5000/api/auth/all")
+            .get("http://localhost:5050/api/auth/all")
             .then((res) => {
                 console.log("Users Data:", res.data);
                 setTotalUsers(res.data.length); // Count users
@@ -43,7 +43,7 @@ const AdminDashboard = () => {
     }, []);
 
     // useEffect(()=>{
-    //     axios.get("http://localhost:5000/api/bookings")
+    //     axios.get("http://localhost:5050/api/bookings")
     //     .then((res)=>{
     //         console.log("Users Bookings",res.data)
     //         setTotalBookings(res.data.length)
@@ -53,7 +53,7 @@ const AdminDashboard = () => {
     // },[])
 
     useEffect(() => {
-        axios.get("http://localhost:5000/api/bookings")
+        axios.get("http://localhost:5050/api/bookings")
             .then(res => {
                 console.log("Users Bookings", res.data);
                 setTotalBookings(res.data.length);
@@ -64,7 +64,7 @@ const AdminDashboard = () => {
 
     useEffect(() => {
         axios
-            .get("http://localhost:5000/api/bookings")
+            .get("http://localhost:5050/api/bookings")
             .then((res) => {
                 console.log("Bookings:", res.data);
                 // Sort by date descending and take first 4

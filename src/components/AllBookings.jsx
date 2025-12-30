@@ -10,7 +10,7 @@
 
 //   useEffect(() => {
 //     axios
-//       .get("http://localhost:5000/api/bookings")
+//       .get("http://localhost:5050/api/bookings")
 //       .then((res) => {
 //         setBookings(res.data);
 //         setLoading(false);
@@ -242,7 +242,7 @@ const AllBookings = () => {
 
   useEffect(() => {
     axios
-      .get("http://localhost:5000/api/bookings")
+      .get("http://localhost:5050/api/bookings")
       .then((res) => {
         // ✅ access bookings array correctly
         setBookings(res.data.bookings || []);

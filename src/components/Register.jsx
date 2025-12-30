@@ -1,10 +1,11 @@
 import axios from "axios";
-import { CheckCircle, Lock, Mail, MapPin, Phone, Upload, User, LogIn } from "lucide-react";
+import { CheckCircle, Lock, Mail, MapPin, Phone, Upload, User, Stethoscope } from "lucide-react";
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import UsersNavbar from "./UsersNavbar";
 
 function Register() {
+  const [role, setRole] = useState("user"); // Default to normal user
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -37,10 +38,14 @@ function Register() {
     setLoading(true);
 
     const data = new FormData();
+    data.append("role", role);
     Object.keys(formData).forEach((key) => data.append(key, formData[key]));
-    Object.keys(files).forEach((key) => {
-      if (files[key]) data.append(key, files[key]);
-    });
+
+    if (role === "doctor") {
+      Object.keys(files).forEach((key) => {
+        if (files[key]) data.append(key, files[key]);
+      });
+    }
 
     try {
       const res = await axios.post("http://localhost:5050/api/auth/register", data, {
@@ -60,26 +65,44 @@ function Register() {
     <div className="min-h-screen bg-slate-50 flex flex-col relative overflow-hidden font-sans">
       <UsersNavbar />
 
-      {/* Decorative background Elements (Matched from Login) */}
+      {/* Decorative background Elements */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
         <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] rounded-full bg-emerald-500/5 blur-3xl"></div>
         <div className="absolute top-[20%] -right-[5%] w-[30%] h-[30%] rounded-full bg-indigo-500/5 blur-3xl"></div>
       </div>
 
       <div className="flex-grow flex items-center justify-center py-20 px-4 sm:px-6 lg:px-8 z-10 relative">
-        <div className="max-w-[900px] w-full bg-white p-8 md:p-12 rounded-3xl shadow-2xl border border-slate-100">
+        <div className={`w-full bg-white p-8 md:p-12 rounded-3xl shadow-2xl border border-slate-100 transition-all duration-500 ${role === 'doctor' ? 'max-w-[900px]' : 'max-w-[500px]'}`}>
 
-          <div className="text-center mb-12">
+          <div className="text-center mb-10">
             <div className="mx-auto h-14 w-14 bg-emerald-50 rounded-2xl flex items-center justify-center mb-5 shadow-sm rotate-3 transform hover:rotate-6 transition-transform">
-              <User size={26} className="text-emerald-600" />
+              {role === 'doctor' ? <Stethoscope size={26} className="text-emerald-600" /> : <User size={26} className="text-emerald-600" />}
             </div>
             <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Create Account</h2>
-            <p className="mt-3 text-slate-500 text-base">Register your medical professional profile</p>
+            <p className="mt-3 text-slate-500 text-base">Join the Timely Health community</p>
+          </div>
+
+          {/* Role Toggle Selector */}
+          <div className="flex p-1 bg-slate-100 rounded-xl mb-10">
+            <button
+              type="button"
+              onClick={() => setRole("user")}
+              className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${role === 'user' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+             User
+            </button>
+            <button
+              type="button"
+              onClick={() => setRole("doctor")}
+              className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${role === 'doctor' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              Doctor / Owner
+            </button>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-12">
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+            <div className={`grid grid-cols-1 gap-10 ${role === 'doctor' ? 'lg:grid-cols-2' : ''}`}>
 
               {/* Profile Section */}
               <div className="space-y-6">
@@ -137,30 +160,32 @@ function Register() {
                 </div>
               </div>
 
-              {/* Documentation Section */}
-              <div className="space-y-6">
-                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <Upload size={16} /> Documents Verification
-                </h3>
+              {/* Documentation Section (Only for Doctor) */}
+              {role === 'doctor' && (
+                <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <Upload size={16} /> Documents Verification
+                  </h3>
 
-                <div className="space-y-4">
-                  <FileInput label="Aadhar Card" name="adharCard" file={files.adharCard} onChange={handleFileChange} />
-                  <FileInput label="PAN Card" name="panCard" file={files.panCard} onChange={handleFileChange} />
-                  <FileInput label="MBBS Certificate" name="mbbsCertificate" file={files.mbbsCertificate} onChange={handleFileChange} />
-                  <FileInput label="PMC Registration" name="pmcRegistration" file={files.pmcRegistration} onChange={handleFileChange} />
-                  <FileInput label="NMR ID Card" name="nmrId" file={files.nmrId} onChange={handleFileChange} />
+                  <div className="space-y-4">
+                    <FileInput label="Aadhar Card" name="adharCard" file={files.adharCard} onChange={handleFileChange} />
+                    <FileInput label="PAN Card" name="panCard" file={files.panCard} onChange={handleFileChange} />
+                    <FileInput label="MBBS Certificate" name="mbbsCertificate" file={files.mbbsCertificate} onChange={handleFileChange} />
+                    <FileInput label="PMC Registration" name="pmcRegistration" file={files.pmcRegistration} onChange={handleFileChange} />
+                    <FileInput label="NMR ID Card" name="nmrId" file={files.nmrId} onChange={handleFileChange} />
+                  </div>
                 </div>
-              </div>
+              )}
 
             </div>
 
-            <div className="pt-6 border-t border-slate-100 text-center">
+            <div className={`pt-6 border-t border-slate-100 text-center ${role === 'user' ? 'mt-6' : ''}`}>
               <button
                 type="submit"
                 disabled={loading}
-                className={`w-full max-w-md mx-auto flex justify-center py-3.5 px-4 border border-transparent text-base font-semibold rounded-xl text-white ${loading ? 'bg-emerald-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 hover:scale-[1.02] active:scale-[0.98]'} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-all shadow-lg shadow-emerald-500/20`}
+                className={`w-full flex justify-center py-3.5 px-4 border border-transparent text-base font-semibold rounded-xl text-white ${loading ? 'bg-emerald-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 hover:scale-[1.02] active:scale-[0.98]'} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-all shadow-lg shadow-emerald-500/20`}
               >
-                {loading ? "Registering..." : "Sign Up"}
+                {loading ? "Registering..." : (role === "doctor" ? "Submit Professional Registry" : "Sign Up")}
               </button>
 
               <p className="mt-8 text-slate-500 text-sm">
@@ -178,7 +203,6 @@ function Register() {
   );
 }
 
-/* Simplified InputField (Matched from Login) */
 const InputField = ({ icon, ...props }) => (
   <div className="relative group">
     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -194,7 +218,6 @@ const InputField = ({ icon, ...props }) => (
   </div>
 );
 
-/* Simplified FileInput */
 const FileInput = ({ label, name, file, onChange }) => (
   <div className="space-y-1">
     <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">{label}</label>

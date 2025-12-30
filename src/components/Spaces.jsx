@@ -52,7 +52,7 @@ const Spaces = () => {
                 <Search size={20} className="text-slate-400" />
               </div>
               <input
-                type="text"
+                type="text" 
                 placeholder="Search by name or location..."
                 className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all text-slate-900"
                 value={searchTerm}

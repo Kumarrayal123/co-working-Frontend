@@ -156,21 +156,21 @@ export default function CabinDetails() {
 
               <div className="grid grid-cols-2 md:grid-cols-3 gap-8 pt-10 border-t border-slate-50">
                 <div className="space-y-2">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Primary Address</span>
+                  <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest block">Primary Address</span>
                   <div className="flex items-start gap-2 text-slate-700 font-bold">
                     <MapPin size={16} className="text-emerald-500 flex-shrink-0 mt-0.5" />
                     <span>{cabin.address}</span>
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Strategic Seating</span>
+                  <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest block">Strategic Seating</span>
                   <div className="flex items-center gap-2 text-slate-700 font-bold">
                     <Users size={16} className="text-emerald-500" />
                     <span>{cabin.capacity} Executive Placements</span>
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Access Protocol</span>
+                  <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest block">Access Protocol</span>
                   <div className="flex items-center gap-2 text-slate-700 font-bold">
                     <Clock size={16} className="text-emerald-500" />
                     <span>24/7 Priority Entry</span>

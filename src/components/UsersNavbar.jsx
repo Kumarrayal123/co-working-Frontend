@@ -89,7 +89,7 @@ function UsersNavbar() {
               <div className="relative bg-white rounded-lg p-1">
                 {/* Use existing logo asset or text fallback if image fails handling needs more logic, sticking to image for now but styling it */}
                 <img
-                  src="/src/assets/logo.png"
+                  src="/src/assets/Logo.png"
                   alt="Logo"
                   className="h-8 w-auto object-contain"
                   onError={(e) => {
@@ -181,6 +181,22 @@ function UsersNavbar() {
           >
             <X size={20} />
           </button>
+
+          {/* Mobile Logo */}
+          <div className="mb-12">
+            <Link to="/" onClick={() => setOpen(false)} className="flex items-center gap-2 group">
+              <div className="relative">
+                <div className="absolute -inset-1 bg-gradient-to-r from-emerald-600 to-teal-500 rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-200"></div>
+                <div className="relative bg-white rounded-lg p-1">
+                  <img
+                    src="/src/assets/Logo.png"
+                    alt="Logo"
+                    className="h-8 w-auto object-contain"
+                  />
+                </div>
+              </div>
+            </Link>
+          </div>
 
           <div className="flex flex-col space-y-6">
             {navLinks.map((link) => (

@@ -188,10 +188,10 @@ export default function CabinDetails() {
               <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/20 rounded-full blur-3xl -mr-16 -mt-16"></div>
 
               <div className="relative z-10 mb-10">
-                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.3em] block mb-2">Investment Detail</span>
+                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.3em] block mb-2">Cabin Price</span>
                 <div className="flex items-baseline gap-2">
                   <span className="text-5xl font-black">₹{cabin.price}</span>
-                  <span className="text-slate-500 font-bold">/ MONTH</span>
+                  <span className="text-slate-500 font-bold">/ HOUR</span>
                 </div>
               </div>
 

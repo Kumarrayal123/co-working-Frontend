@@ -39,7 +39,8 @@ const Spaces = () => {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
               <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-3">
-                Explore Workspaces
+                {/* Explore Workspaces */}
+                 Explore
               </h1>
               <p className="text-lg text-slate-500 max-w-2xl">
                 Find the perfect environment to boost your productivity. From private cabins to open desks.

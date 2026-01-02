@@ -803,7 +803,7 @@ function AddCabin() {
                     <span className="animate-pulse">Adding Cabin...</span>
                   ) : (
                     <>
-                      <CheckCircle size={20} /> Add Cabin Spec
+                      <CheckCircle size={20} /> Add Cabin Space
                     </>
                   )}
                 </button>

@@ -36,6 +36,9 @@ export default {
                     950: '#172554',
                 }
             },
+            fontFamily: {
+                sans: ['Outfit', 'sans-serif'],
+            },
         },
     },
     plugins: [],

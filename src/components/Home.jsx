@@ -16,7 +16,7 @@
 //     const userId = localStorage.getItem("userId");
 //     if (userId) {
 //       axios
-//         .get(`http://localhost:5050/api/auth/user/${userId}`)
+//         .get(`http://localhost:5000/api/auth/user/${userId}`)
 //         .then((res) => setUser(res.data))
 //         .catch((err) => console.log(err));
 //     }
@@ -61,14 +61,14 @@ function Home() {
     const userId = localStorage.getItem("userId");
     if (userId) {
       axios
-        .get(`http://localhost:5050/api/auth/user/${userId}`)
+        .get(`http://localhost:5000/api/auth/user/${userId}`)
         .then((res) => setUser(res.data))
         .catch((err) => console.log(err));
     }
 
     // Fetch cabins
     axios
-      .get("http://localhost:5050/api/cabins")
+      .get("http://localhost:5000/api/cabins")
       .then((res) => {
         setCabins(res.data);
         setLoading(false);
@@ -130,7 +130,7 @@ function Home() {
                     {/* Image Container */}
                     <div className="relative h-64 overflow-hidden bg-gray-100">
                       <img
-                        src={`http://localhost:5050/${cabin.images[0]}`}
+                        src={`http://localhost:5000/${cabin.images[0]}`}
                         alt={cabin.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         onError={(e) => {

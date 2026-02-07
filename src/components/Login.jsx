@@ -1,136 +1,14 @@
-
-
-// import React, { useState } from "react";
-// import axios from "axios";
-// import { useNavigate, Link } from "react-router-dom";
-// import { Mail, Lock, LogIn } from "lucide-react";
-
-// function Login() {
-//   const [email, setEmail] = useState("");
-//   const [password, setPassword] = useState("");
-//   const [error, setError] = useState("");
-//   const [loading, setLoading] = useState(false);
-//   const navigate = useNavigate();
-
-//   const handleLogin = async (e) => {
-//     e.preventDefault();
-//     setLoading(true);
-//     setError("");
-
-//     try {
-//       const res = await axios.post("http://localhost:5050/api/auth/login", {
-//         email,
-//         password,
-//       });
-
-//       localStorage.setItem("token", res.data.token);
-//       localStorage.setItem("userId", res.data.user._id); // Assuming backend sends user object or ID
-
-//       // alert("Login Successful!"); // Removed alert for smoother UX, can use Toast if needed
-
-//       // Navigate to Home component
-//       navigate("/spaces");
-//     } catch (err) {
-//       setError(err.response?.data?.message || "Login failed! Please check your credentials.");
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   return (
-//     <div className="min-h-screen bg-slate-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-//       {/* Decorative background elements */}
-//       <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
-//         <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] rounded-full bg-emerald-500/5 blur-3xl"></div>
-//         <div className="absolute top-[20%] -right-[5%] w-[30%] h-[30%] rounded-full bg-indigo-500/5 blur-3xl"></div>
-//       </div>
-
-//       <div className="max-w-[440px] w-full bg-white p-10 rounded-3xl shadow-2xl border border-slate-100 z-10 relative">
-//         <div className="text-center mb-10">
-//           <div className="mx-auto h-14 w-14 bg-emerald-50 rounded-2xl flex items-center justify-center mb-5 shadow-sm rotate-3 transform hover:rotate-6 transition-transform">
-//             <LogIn size={26} className="text-emerald-600" />
-//           </div>
-//           <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Welcome Back</h2>
-//           <p className="mt-3 text-slate-500 text-base">
-//             Sign in to access your workspace
-//           </p>
-//         </div>
-
-//         {error && (
-//           <div className="mb-6 p-4 bg-red-50 text-red-600 text-sm font-medium rounded-xl border border-red-100 flex items-center gap-2 animate-pulse">
-//             <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-//             {error}
-//           </div>
-//         )}
-
-//         <form onSubmit={handleLogin} className="space-y-6">
-//           <div className="space-y-5">
-//             {/* Email */}
-//             <div className="relative group">
-//               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-//                 <Mail size={18} className="text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
-//               </div>
-//               <input
-//                 type="email"
-//                 placeholder="Email Address"
-//                 value={email}
-//                 onChange={(e) => setEmail(e.target.value)}
-//                 required
-//                 className="block w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all shadow-sm"
-//               />
-//             </div>
-
-//             {/* Password */}
-//             <div className="relative group">
-//               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-//                 <Lock size={18} className="text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
-//               </div>
-//               <input
-//                 type="password"
-//                 placeholder="Password"
-//                 value={password}
-//                 onChange={(e) => setPassword(e.target.value)}
-//                 required
-//                 className="block w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all shadow-sm"
-//               />
-//             </div>
-//           </div>
-
-//           <div className="pt-2">
-//             <button
-//               type="submit"
-//               disabled={loading}
-//               className={`w-full flex justify-center py-3.5 px-4 border border-transparent text-base font-semibold rounded-xl text-white ${loading ? 'bg-emerald-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 hover:scale-[1.02] active:scale-[0.98]'} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-all shadow-lg shadow-emerald-500/20`}
-//             >
-//               {loading ? "Signing in..." : "Sign In"}
-//             </button>
-//           </div>
-//         </form>
-
-//         <div className="text-center mt-8 pt-6 border-t border-slate-100">
-//           <p className="text-slate-500 text-sm">
-//             Don't have an account?{" "}
-//             <Link to="/register" className="font-semibold text-emerald-600 hover:text-emerald-700 transition-colors hover:underline">
-//               Create an account
-//             </Link>
-//           </p>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
-
-// export default Login;
-
-
 import axios from "axios";
-import { Lock, LogIn, Mail } from "lucide-react";
+import { Lock, Mail, ShieldCheck, User } from "lucide-react";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import Logo from "../assets/Logo.png";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState("user"); // 'user' or 'admin'
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -141,128 +19,153 @@ function Login() {
     setError("");
 
     try {
-      const res = await axios.post("http://localhost:5050/api/auth/login", {
+      // Determine endpoint based on role
+      const endpoint = role === 'admin'
+        ? "http://localhost:5000/api/admin/login"
+        : "http://localhost:5000/api/auth/login";
+
+      const res = await axios.post(endpoint, {
         email,
         password,
       });
 
-      // ✅ SAVE TOKEN
+      // Save token & user details
       localStorage.setItem("token", res.data.token);
 
-      // ✅ SAVE USER IN CORRECT FORMAT (VERY IMPORTANT)
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          _id: res.data.user.id,   // mapping id → _id
-          name: res.data.user.name,
-          email: res.data.user.email,
-        })
-      );
+      if (role === 'admin') {
+        localStorage.setItem("admin", JSON.stringify(res.data.admin));
+        toast.success("Admin login successful 🚀");
+        navigate("/admindashboard");
+      } else {
+        localStorage.setItem("user", JSON.stringify(res.data.user)); // Save user data
+        toast.success("Login successful! Welcome back.");
+        navigate("/spaces");
+      }
 
-      // Navigate to spaces page
-      navigate("/spaces");
     } catch (err) {
-      setError(
+      console.error("Login Error:", err);
+      const errorMsg =
         err.response?.data?.message ||
-          "Login failed! Please check your credentials."
-      );
+        "Login failed! Please check credentials.";
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-      {/* Decorative background */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
-        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] rounded-full bg-emerald-500/5 blur-3xl"></div>
-        <div className="absolute top-[20%] -right-[5%] w-[30%] h-[30%] rounded-full bg-indigo-500/5 blur-3xl"></div>
-      </div>
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+      <div className="max-w-[440px] w-full bg-white p-8 rounded-3xl shadow-xl border">
 
-      <div className="max-w-[440px] w-full bg-white p-10 rounded-3xl shadow-2xl border border-slate-100 z-10 relative">
-        <div className="text-center mb-10">
-          <div className="mx-auto h-14 w-14 bg-emerald-50 rounded-2xl flex items-center justify-center mb-5 shadow-sm rotate-3 transform hover:rotate-6 transition-transform">
-            <LogIn size={26} className="text-emerald-600" />
-          </div>
-          <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-            Welcome Back
+        {/* Header */}
+        <div className="text-center mb-8">
+          <img src={Logo} alt="Logo" className="w-20 mx-auto mb-4" />
+          <h2 className="text-3xl font-extrabold text-slate-900">
+            {role === 'admin' ? "Admin Portal" : "Welcome Back"}
           </h2>
-          <p className="mt-3 text-slate-500 text-base">
-            Sign in to access your workspace
+          <p className="text-slate-500 text-sm">
+            {role === 'admin' ? "Secure administrator access" : "Sign in to your account"}
           </p>
+          {role === 'admin' && (
+            <p className="text-xs text-indigo-500 mt-2 font-medium bg-indigo-50 py-1 px-2 rounded-lg inline-block">
+              🔒 Connecting to timelyhealth.in via Secure Proxy
+            </p>
+          )}
         </div>
 
+        {/* Role Toggle */}
+        <div className="flex p-1 mb-6 bg-slate-100 rounded-xl">
+          <button
+            type="button"
+            onClick={() => setRole("user")}
+            className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all flex items-center justify-center gap-2 ${role === "user"
+              ? "bg-white text-indigo-600 shadow-sm"
+              : "text-slate-500 hover:text-slate-700"
+              }`}
+          >
+            <User size={16} /> User
+          </button>
+          <button
+            type="button"
+            onClick={() => setRole("admin")}
+            className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all flex items-center justify-center gap-2 ${role === "admin"
+              ? "bg-white text-indigo-600 shadow-sm"
+              : "text-slate-500 hover:text-slate-700"
+              }`}
+          >
+            <ShieldCheck size={16} /> Admin
+          </button>
+        </div>
+
+        {/* Error */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 text-red-600 text-sm font-medium rounded-xl border border-red-100 flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+          <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleLogin} className="space-y-6">
-          <div className="space-y-5">
-            {/* Email */}
-            <div className="relative group">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Mail size={18} className="text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
-              </div>
-              <input
-                type="email"
-                placeholder="Email Address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="block w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all shadow-sm"
-              />
-            </div>
+        {/* Form */}
+        <form onSubmit={handleLogin} className="space-y-5">
 
-            {/* Password */}
-            <div className="relative group">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Lock size={18} className="text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
-              </div>
-              <input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="block w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all shadow-sm"
-              />
-            </div>
+          {/* Email */}
+          <div className="relative">
+            <Mail className="absolute left-3 top-3.5 text-slate-400" size={18} />
+            <input
+              type="email"
+              placeholder={role === 'admin' ? "Admin Email" : "User Email"}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full pl-10 pr-4 py-3 bg-slate-50 border rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
+            />
           </div>
 
-          <div className="pt-2">
-            <button
-              type="submit"
-              disabled={loading}
-              className={`w-full flex justify-center py-3.5 px-4 border border-transparent text-base font-semibold rounded-xl text-white ${
-                loading
-                  ? "bg-emerald-400 cursor-not-allowed"
-                  : "bg-emerald-600 hover:bg-emerald-700 hover:scale-[1.02] active:scale-[0.98]"
-              } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-all shadow-lg shadow-emerald-500/20`}
-            >
-              {loading ? "Signing in..." : "Sign In"}
-            </button>
+          {/* Password */}
+          <div className="relative">
+            <Lock className="absolute left-3 top-3.5 text-slate-400" size={18} />
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="w-full pl-10 pr-4 py-3 bg-slate-50 border rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
+            />
           </div>
+
+          {/* Button */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full flex justify-center items-center gap-2 py-3 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 disabled:opacity-60 transition-all"
+          >
+            {loading ? (
+              "Authenticating..."
+            ) : (
+              <>
+                {role === 'admin' ? <ShieldCheck size={18} /> : <User size={18} />}
+                Sign In as {role === 'admin' ? "Admin" : "User"}
+              </>
+            )}
+          </button>
         </form>
 
-        <div className="text-center mt-8 pt-6 border-t border-slate-100">
-          <p className="text-slate-500 text-sm">
+        {/* Register Link (User Only) */}
+        {role === 'user' && (
+          <p className="mt-6 text-center text-sm text-slate-500">
             Don't have an account?{" "}
-            <Link
-              to="/register"
-              className="font-semibold text-emerald-600 hover:text-emerald-700 hover:underline transition-colors"
+            <span
+              onClick={() => navigate("/register")}
+              className="text-indigo-600 font-semibold cursor-pointer hover:underline"
             >
-              Create an account
-            </Link>
+              Register here
+            </span>
           </p>
-        </div>
+        )}
       </div>
     </div>
   );
 }
 
 export default Login;
-
-

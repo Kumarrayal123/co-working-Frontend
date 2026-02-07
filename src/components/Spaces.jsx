@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import UsersNavbar from "./UsersNavbar";
-import { MapPin, Users, ArrowRight, Home, Search, Filter } from "lucide-react";
+import { MapPin, Users, ArrowRight, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
+import AdminNavbar from "./AdminNavbar";
 
 const Spaces = () => {
   const [cabins, setCabins] = useState([]);
@@ -13,7 +13,7 @@ const Spaces = () => {
 
   useEffect(() => {
     axios
-      .get("http://localhost:5050/api/cabins")
+      .get("http://localhost:5000/api/cabins")
       .then((res) => {
         setCabins(res.data);
         setLoading(false);
@@ -30,32 +30,37 @@ const Spaces = () => {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans">
-      <UsersNavbar />
+    <div className="min-h-screen bg-slate-50 font-sans selection:bg-emerald-100 selection:text-emerald-900">
+      {/* <UsersNavbar /> */}
+      <AdminNavbar />
 
-      {/* Header Section */}
-      <div className="pt-28 pb-12 bg-white border-b border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-            <div>
-              <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-3">
-                Explore Workspaces
-                 
-              </h1>
-              <p className="text-lg text-slate-500 max-w-2xl">
-                Find the perfect environment to boost your productivity. From private cabins to open desks.
-              </p>
-            </div>
+      {/* Hero / Header Section */}
+      <div className="pt-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+          <div className="max-w-2xl">
+            {/* <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-[1.1] mb-4">
+              Find your perfect <br />
+              <span className="text-emerald-600">Space</span>
+            </h1> */}
+            <h2 className="pt-4 text-2xl font-bold text-slate-900 tracking-tight mb-2">
+              Find your perfect spaces
+            </h2>
 
-            {/* Search Bar */}
-            <div className="relative w-full md:w-96">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search size={20} className="text-slate-400" />
+            <p className="text-base text-slate-500 font-medium leading-relaxed max-w-lg">
+              Discover professionally equipped cabins and desks designed for focus, collaboration, and growth.
+            </p>
+          </div>
+
+          {/* Refined Search Bar */}
+          <div className="w-full md:w-[380px]">
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <Search size={18} className="text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
               </div>
               <input
-                type="text" 
-                placeholder="Search by name or location..."
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all text-slate-900"
+                type="text"
+                placeholder="Search location or cabin name..."
+                className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl shadow-sm text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -65,109 +70,81 @@ const Spaces = () => {
       </div>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
         {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-600"></div>
+          <div className="flex justify-center items-center py-20">
+            <div className="animate-spin rounded-full h-10 w-10 border-t-4 border-emerald-600 border-r-transparent"></div>
           </div>
         ) : filteredCabins.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm">
-            <div className="mx-auto h-20 w-20 bg-slate-50 rounded-full flex items-center justify-center mb-6">
-              <Home size={32} className="text-slate-300" />
+          <div className="text-center py-20 bg-white rounded-[2rem] border border-slate-100 shadow-sm max-w-xl mx-auto">
+            <div className="mx-auto h-16 w-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+              <Search size={28} className="text-slate-400" />
             </div>
-            <h3 className="text-xl font-bold text-slate-900 mb-2">No spaces found</h3>
-            <p className="text-slate-500">Try adjusting your search terms or check back later.</p>
+            <h3 className="text-lg font-bold text-slate-900 mb-1">No spaces found</h3>
+            <p className="text-sm text-slate-500">We couldn't find any cabins matching "{searchTerm}".</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredCabins.map((cabin) => (
               <div
-                className="group bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full"
                 key={cabin._id}
+                onClick={() => navigate(`/cabin/${cabin._id}`)}
+                className="group bg-white rounded-[1.5rem] border border-slate-100 overflow-hidden hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col h-full"
               >
-                {/* Image */}
-                {/* <div className="relative h-60 overflow-hidden bg-slate-100">
+                {/* Image Section */}
+                <div className="relative h-56 overflow-hidden">
+                  <div className="absolute inset-0 bg-slate-200 animate-pulse" />
                   <img
-                    src={`http://localhost:5050/${cabin.images[0]}`}
+                    src={`http://localhost:5000/${cabin.images[0]}`}
                     alt={cabin.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                    className="w-full h-full object-cover relative z-10 group-hover:scale-105 transition-transform duration-500"
                     onError={(e) => {
                       e.target.src = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
                     }}
                   />
-                  <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-bold text-emerald-700 shadow-sm border border-emerald-100 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/50 via-transparent to-transparent z-20 opacity-60 group-hover:opacity-40 transition-opacity" />
+
+                  <div className="absolute top-3 right-3 z-30 bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold text-emerald-700 shadow-sm flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                     Available
                   </div>
-                </div> */}
-                <div
-                  className="relative h-60 overflow-hidden bg-slate-100 cursor-pointer"
-                  onClick={() => navigate(`/cabin/${cabin._id}`)}
-                >
-                  <img
-                    src={`http://localhost:5050/${cabin.images[0]}`}
-                    alt={cabin.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                    onError={(e) => {
-                      e.target.src =
-                        "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
-                    }}
-                  />
 
-                  <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-bold text-emerald-700 shadow-sm border border-emerald-100 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                    Available
+                  <div className="absolute bottom-3 left-3 z-30 text-white">
+                    <p className="text-[10px] font-bold uppercase tracking-widest opacity-90 mb-0.5">Coworking</p>
+                    <h3 className="text-lg font-bold leading-tight">{cabin.name}</h3>
                   </div>
                 </div>
 
-
-                {/* Card Body */}
-                <div className="p-6 flex flex-col flex-grow">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-xl font-bold text-slate-900 group-hover:text-emerald-600 transition-colors line-clamp-1">
-                      {cabin.name}
-                    </h3>
+                {/* Content Section */}
+                <div className="p-5 flex flex-col flex-grow">
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="p-2 bg-emerald-50 rounded-lg shrink-0 text-emerald-600">
+                      <MapPin size={16} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900 line-clamp-1">{cabin.address?.split(',')[0] || "Location"}</p>
+                      <p className="text-xs text-slate-500 line-clamp-1">{cabin.address}</p>
+                    </div>
                   </div>
 
-                  <p className="text-slate-500 text-sm line-clamp-2 mb-6">
-                    {cabin.description || "Experience a premium workspace designed for focus and collaboration."}
+                  <p className="text-slate-500 text-xs leading-relaxed mb-4 line-clamp-2">
+                    {cabin.description || "Experience a premium workspace designed for focus and collaboration, featuring modern amenities."}
                   </p>
 
-                  {/* Features */}
-                  <div className="flex items-center gap-5 text-sm text-slate-600 mb-6 mt-auto">
-                    <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
-                      <Users size={16} className="text-emerald-500" />
-                      <span className="font-medium">{cabin.capacity} Seats</span>
-                    </div>
-                    <div className="flex items-center gap-2" title={cabin.address}>
-                      <MapPin size={16} className="text-emerald-500 shrink-0" />
-                      <span className="truncate max-w-[140px]">{cabin.address}</span>
-                    </div>
-                  </div>
-
-                  {/* Footer */}
-                  <div className="pt-5 border-t border-slate-100 flex items-center justify-between">
+                  <div className="mt-auto pt-4 border-t border-slate-50 flex items-center justify-between">
                     <div>
-                      <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-0.5">Price</p>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-2xl font-bold text-slate-900">₹{cabin.price || '5,000'}</span>
-                        <span className="text-sm text-slate-400 font-medium">/hour</span>
+                      <div className="flex items-baseline gap-0.5">
+                        <span className="text-xl font-bold text-slate-900">₹{cabin.price || '0'}</span>
+                        <span className="text-[10px] text-slate-400 font-bold uppercase">/ Month</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-[10px] font-medium text-slate-500 mt-0.5">
+                        <Users size={10} />
+                        {cabin.capacity} Seats
                       </div>
                     </div>
-                    <button
-                      onClick={() => navigate(`/book/${cabin._id}`)}
-                      className="px-4 py-2 bg-emerald-600 text-white rounded-full hover:bg-emerald-700 transition-all"
-                    >
-                      Book Now
-                    </button>
 
-
-                    <button
-                      onClick={() => navigate(`/cabin/${cabin._id}`)}
-                      className="h-10 w-10 flex items-center justify-center rounded-full bg-emerald-50 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300"
-                    >
-                      <ArrowRight size={20} />
+                    <button className="h-10 w-10 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                      <ArrowRight size={16} />
                     </button>
                   </div>
                 </div>

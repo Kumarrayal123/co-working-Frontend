@@ -1,380 +1,168 @@
-// import React, { useEffect, useState } from "react";
-// import axios from "axios";
-
-// const MyBookings = () => {
-//   const [bookings, setBookings] = useState([]);
-//   const [loading, setLoading] = useState(true);
-
-//   const user = JSON.parse(localStorage.getItem("user")); // Logged in user
-//   const userId = user?._id;
-
-//   useEffect(() => {
-//     if (!userId) return;
-
-//     const fetchBookings = async () => {
-//       try {
-//         const res = await axios.get(
-//           `http://localhost:5050/api/bookings/userbookings/${userId}`
-//         );
-//         setBookings(res.data.bookings);
-//       } catch (error) {
-//         console.log(error);
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-
-//     fetchBookings();
-//   }, [userId]);
-
-//   if (loading) return <p>Loading...</p>;
-
-//   return (
-//     <div className="p-4">
-//       <h1 className="text-2xl font-bold mb-4">My Bookings</h1>
-
-//       {bookings.length === 0 ? (
-//         <p>No bookings found.</p>
-//       ) : (
-//         bookings.map((b) => (
-//           <div key={b._id} className="shadow-md p-4 mb-3 rounded-lg border">
-//             <h2 className="text-xl font-semibold">
-//               {b.cabinId?.name}
-//             </h2>
-
-//             <p><strong>Start:</strong> {b.startDate} {b.startTime}</p>
-//             <p><strong>End:</strong> {b.endDate} {b.endTime}</p>
-
-//             <p><strong>Price:</strong> ₹{b.cabinId?.price}</p>
-//           </div>
-//         ))
-//       )}
-//     </div>
-//   );
-// };
-
-// export default MyBookings;
-
-
-
-// import React, { useEffect, useState } from "react";
-// import axios from "axios";
-// import UsersNavbar from "./UsersNavbar";
-// import {
-//   Calendar,
-//   MapPin,
-//   IndianRupee,
-//   User,
-//   Clock,
-//   Home,
-// } from "lucide-react";
-
-// const MyBookings = () => {
-//   const [bookings, setBookings] = useState([]);
-//   const [loading, setLoading] = useState(true);
-
-//   const user = JSON.parse(localStorage.getItem("user"));
-//   const userId = user?._id;
-
-//   useEffect(() => {
-//     if (!userId) return;
-
-//     const fetchBookings = async () => {
-//       try {
-//         const res = await axios.get(
-//           `http://localhost:5050/api/bookings/userbookings/${userId}`
-//         );
-//         setBookings(res.data.bookings);
-//       } catch (error) {
-//         console.log(error);
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-
-//     fetchBookings();
-//   }, [userId]);
-
-//   if (loading)
-//     return (
-//       <p className="text-center py-10 text-lg font-medium animate-pulse">
-//         Fetching your bookings...
-//       </p>
-//     );
-
-//   return (
-//     <div className="min-h-screen bg-gray-50 flex flex-col">
-//       <UsersNavbar />
-
-//       <div className="flex-grow pt-28 px-4 sm:px-6 lg:px-8 pb-12">
-//         <div className="max-w-3xl mx-auto">
-
-//           {/* Heading */}
-//           <h1 className="text-3xl font-bold text-emerald-700 mb-6 flex items-center gap-2">
-//             <Home size={28} /> My Bookings
-//           </h1>
-
-//           {/* No Bookings */}
-//           {bookings.length === 0 ? (
-//             <p className="text-gray-600 text-center mt-10 text-lg">
-//               You haven’t made any bookings yet.
-//             </p>
-//           ) : (
-//             <div className="space-y-5">
-//               {bookings.map((b) => (
-//                 <div
-//                   key={b._id}
-//                   className="bg-white flex flex-col sm:flex-row gap-4 items-start 
-//                   shadow-sm hover:shadow-md transition-all 
-//                   rounded-2xl border border-gray-100 p-4 hover:-translate-y-1"
-//                 >
-//                   {/* Image */}
-//                   <div className="w-full sm:w-36 h-36 rounded-xl overflow-hidden shadow-sm">
-//                     <img
-//                       src={
-//                         b.cabinId?.images?.[0]
-//                           ? `http://localhost:5050/${b.cabinId.images[0]}`
-//                           : "https://via.placeholder.com/300x300?text=No+Image"
-//                       }
-//                       alt="cabin"
-//                       className="w-full h-full object-cover"
-//                     />
-//                   </div>
-
-//                   {/* Content */}
-//                   <div className="flex-1 space-y-2">
-
-//                     {/* Property Name */}
-//                     <div>
-//                       <h2 className="text-xl font-semibold text-gray-800 leading-tight">
-//                         {b.cabinId?.name}
-//                       </h2>
-//                       <p className="text-gray-500 text-sm flex items-center gap-1 mt-0.5">
-//                         <MapPin size={15} />
-//                         {b.cabinId?.address}
-//                       </p>
-//                     </div>
-
-//                     {/* User */}
-//                     <p className="flex items-center gap-1 text-gray-600 text-sm">
-//                       <User size={15} /> {user?.name}
-//                     </p>
-
-//                     {/* Dates */}
-//                     <div className="flex flex-wrap gap-3 mt-1">
-//                       {/* Start */}
-//                       <div className="bg-gray-100 px-3 py-2 rounded-lg border flex items-center gap-2">
-//                         <Calendar className="text-emerald-600" size={18} />
-//                         <div>
-//                           <p className="font-semibold text-sm">{b.startDate}</p>
-//                           <p className="text-gray-500 text-xs">{b.startTime}</p>
-//                         </div>
-//                       </div>
-
-//                       {/* End */}
-//                       <div className="bg-gray-100 px-3 py-2 rounded-lg border flex items-center gap-2">
-//                         <Clock className="text-emerald-600" size={18} />
-//                         <div>
-//                           <p className="font-semibold text-sm">{b.endDate}</p>
-//                           <p className="text-gray-500 text-xs">{b.endTime}</p>
-//                         </div>
-//                       </div>
-//                     </div>
-
-//                     {/* Footer */}
-//                     <div className="flex justify-between items-center pt-1">
-//                       <p className="flex items-center gap-1 text-emerald-700 font-semibold text-lg">
-//                         <IndianRupee size={18} />
-//                         {b.cabinId?.price}
-//                       </p>
-
-//                       <span className="px-4 py-1 text-sm rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">
-//                         Confirmed
-//                       </span>
-//                     </div>
-//                   </div>
-//                 </div>
-//               ))}
-//             </div>
-//           )}
-
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default MyBookings;
-
 
 import axios from "axios";
 import {
   Calendar,
   Clock,
-  Home,
   IndianRupee,
   MapPin,
-  User,
+  Ticket,
+  User
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import UsersNavbar from "./UsersNavbar";
+import AdminNavbar from "./AdminNavbar";
 
 const MyBookings = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Fix: Safe parsing for localStorage
-  const user = (() => {
+  // Safe parsing for localStorage
+  // Check for User OR Admin
+  const currentUser = (() => {
     try {
-      return JSON.parse(localStorage.getItem("user"));
+      const u = localStorage.getItem("user");
+      const a = localStorage.getItem("admin");
+      if (u) return JSON.parse(u);
+      if (a) return JSON.parse(a);
+      return null;
     } catch (err) {
       return null;
     }
   })();
 
-  const userId = user?._id;
+  const userId = currentUser?._id || currentUser?.id;
 
   useEffect(() => {
-    if (!userId) {
-      console.log("❌ No userId found → API not called");
-      setLoading(false);
-      return;
-    }
-
     const fetchBookings = async () => {
       try {
-        console.log("📌 API HIT →", `http://localhost:5050/api/bookings/userbookings/${userId}`);
+        const token = localStorage.getItem("token");
+        if (!token) return;
 
         const res = await axios.get(
-          `http://localhost:5050/api/bookings/userbookings/${userId}`
+          `http://localhost:5000/api/bookings/user`,
+          { headers: { Authorization: `Bearer ${token}` } }
         );
-
         setBookings(res.data.bookings || []);
       } catch (error) {
-        console.log("API ERROR:", error);
+        console.error("API ERROR:", error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchBookings();
-  }, [userId]);
+  }, []);
 
   if (loading)
     return (
-      <p className="text-center py-10 text-lg font-medium animate-pulse">
-        Fetching your bookings...
-      </p>
+      <div className="min-h-screen bg-slate-50 flex justify-center items-center">
+        <div className="flex gap-2 items-center text-emerald-600 font-medium text-sm animate-pulse">
+          <div className="w-1.5 h-1.5 rounded-full bg-emerald-600"></div>
+          Loading bookings...
+        </div>
+      </div>
     );
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <UsersNavbar />
+    <div className="min-h-screen bg-slate-50 font-sans">
+      {/* <UsersNavbar /> */}
+      <AdminNavbar />
 
-      <div className="flex-grow pt-28 px-4 sm:px-6 lg:px-8 pb-12">
-        <div className="max-w-3xl mx-auto">
+      <div className="pt-24 px-4 sm:px-6 lg:px-8 pb-16 max-w-4xl mx-auto">
 
-          <h1 className="text-3xl font-bold text-emerald-700 mb-6 flex items-center gap-2">
-            <Home size={28} /> My Bookings
-          </h1>
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-8">
+          <div className="p-2.5 bg-emerald-100/50 rounded-xl text-emerald-600">
+            <Ticket size={24} />
+          </div>
+          <div>
+            <h2 className="pt-4 text-2xl font-bold text-slate-900 tracking-tight mb-2">
+              {localStorage.getItem('admin') ? 'Admin Bookings' : 'Bookings'}
+            </h2>
+            <p className="text-sm text-slate-500 mt-1">Manage your reservations</p>
+          </div>
+        </div>
 
-          {bookings.length === 0 ? (
-            <p className="text-gray-600 text-center mt-10 text-lg">
-              You haven’t made any bookings yet.
-            </p>
-          ) : (
-            <div className="space-y-5">
-              {bookings.map((b) => (
-                <div
-                  key={b._id}
-                  className="bg-white flex flex-col sm:flex-row gap-4 items-start 
-                  shadow-sm hover:shadow-md transition-all 
-                  rounded-2xl border border-gray-100 p-4 hover:-translate-y-1"
-                >
-                  {/* Image */}
-                  <div className="w-full sm:w-36 h-36 rounded-xl overflow-hidden shadow-sm">
-                    <img
-                      src={
-                        b.cabinId?.images?.[0]
-                          ? `http://localhost:5050/${b.cabinId.images[0]}`
-                          : "https://via.placeholder.com/300x300?text=No+Image"
-                      }
-                      alt="cabin"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
+        {bookings.length === 0 ? (
+          <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-12 text-center">
+            <div className="mx-auto h-16 w-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+              <Calendar size={28} className="text-slate-300" />
+            </div>
+            <h2 className="text-lg font-bold text-slate-900 mb-1">No bookings found</h2>
+            <p className="text-sm text-slate-500 max-w-xs mx-auto">You haven't made any reservations yet. Explore our spaces.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {bookings.map((b) => (
+              <div
+                key={b._id}
+                className="group bg-white rounded-[1.5rem] border border-slate-100 p-2 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 flex flex-col sm:flex-row gap-4"
+              >
+                {/* Image */}
+                <div className="w-full sm:w-40 h-40 rounded-2xl overflow-hidden relative shrink-0">
+                  <img
+                    src={
+                      b.cabinId?.images?.[0]
+                        ? `http://localhost:5000/${b.cabinId.images[0]}`
+                        : "https://via.placeholder.com/300x300?text=No+Image"
+                    }
+                    alt="cabin"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors" />
+                </div>
 
-                  {/* Content */}
-                  <div className="flex-1 space-y-2">
-
+                {/* Content */}
+                <div className="flex-1 py-2 pr-4 flex flex-col justify-center">
+                  <div className="flex justify-between items-start mb-3">
                     <div>
-                      <h2 className="text-xl font-semibold text-gray-800 leading-tight">
+                      <h2 className="text-lg font-bold text-slate-900 leading-tight">
                         {b.cabinId?.name}
                       </h2>
-                      <p className="text-gray-500 text-sm flex items-center gap-1 mt-0.5">
-                        <MapPin size={15} />
+                      <div className="flex items-center gap-1 text-slate-500 text-xs font-medium mt-0.5">
+                        <MapPin size={12} className="text-emerald-500" />
                         {b.cabinId?.address}
-                      </p>
-                    </div>
-
-                    <p className="flex items-center gap-1 text-gray-600 text-sm">
-                      <User size={15} /> {user?.name}
-                    </p>
-
-                    <div className="flex flex-wrap gap-3 mt-1">
-                      <div className="bg-gray-100 px-3 py-2 rounded-lg border flex items-center gap-2">
-                        <Calendar className="text-emerald-600" size={18} />
-                        <div>
-                          <p className="font-semibold text-sm">
-                            {b.startDate}
-                          </p>
-                          <p className="text-gray-500 text-xs">
-                            {b.startTime}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="bg-gray-100 px-3 py-2 rounded-lg border flex items-center gap-2">
-                        <Clock className="text-emerald-600" size={18} />
-                        <div>
-                          <p className="font-semibold text-sm">
-                            {b.endDate}
-                          </p>
-                          <p className="text-gray-500 text-xs">
-                            {b.endTime}
-                          </p>
-                        </div>
                       </div>
                     </div>
+                    <div className="px-2.5 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-emerald-100">
+                      Confirmed
+                    </div>
+                  </div>
 
-                    {/* <div className="flex justify-between items-center pt-1">
-                      <p className="flex items-center gap-1 text-emerald-700 font-semibold text-lg">
-                        <IndianRupee size={18} />
-                        {b.cabinId?.price}
-                      </p>
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Start</p>
+                      <div className="flex items-center gap-1.5 text-slate-900 font-semibold text-sm">
+                        <Calendar size={14} className="text-emerald-500" />
+                        {b.startDate} <span className="text-slate-300 text-xs">|</span> {b.startTime}
+                      </div>
+                    </div>
+                    <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">End</p>
+                      <div className="flex items-center gap-1.5 text-slate-900 font-semibold text-sm">
+                        <Clock size={14} className="text-emerald-500" />
+                        {b.endDate} <span className="text-slate-300 text-xs">|</span> {b.endTime}
+                      </div>
+                    </div>
+                  </div>
 
-                      <span className="px-4 py-1 text-sm rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">
-                        Confirmed
-                      </span>
-                    </div> */}
-                    <div className="flex justify-between items-center pt-1">
-  <p className="flex items-center gap-1 text-emerald-700 font-semibold text-lg">
-    <IndianRupee size={18} />
-    {b.totalPrice?.toLocaleString("en-IN")}
-  </p>
-
-  <span className="px-4 py-1 text-sm rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">
-    Confirmed
-  </span>
-</div>
-
+                  <div className="flex items-center justify-between pt-3 border-t border-slate-50">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
+                        <User size={12} />
+                      </div>
+                      <span className="text-xs font-medium text-slate-600">{currentUser?.name || "Member"}</span>
+                    </div>
+                    <div className="flex items-center gap-0.5 text-slate-900 font-bold text-base">
+                      <IndianRupee size={16} className="text-emerald-600" />
+                      {b.totalPrice?.toLocaleString("en-IN")}
+                    </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-
-        </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

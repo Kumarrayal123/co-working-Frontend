@@ -1,7 +1,8 @@
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import AddCabin from "./components/AddCabin";
 import AdminDashboard from "./components/AdminDashboard";
-import AdminLogin from "./components/AdminLogin";
 import AdminNavbar from "./components/AdminNavbar";
 import Hero from "./components/Hero";
 import Login from "./components/Login";
@@ -26,6 +27,7 @@ import DoctorBookings from "./components/DoctorBookings";
 function App() {
   return (
     <Router>
+      <ToastContainer position="top-right" autoClose={3000} />
       <Routes>
         <Route path="/" element={<Navigate to="/spaces" />} /> {/* redirect root */}
         <Route path="/register" element={<Register />} />
@@ -36,7 +38,6 @@ function App() {
         <Route path="/hero" element={<Hero />}></Route>
         <Route path="/spacesection" element={<SpacesSection />}></Route>
         <Route path="/spaces" element={<Spaces />}></Route>
-        <Route path="/adminlogin" element={<AdminLogin />}></Route>
         <Route path="/admindashboard" element={<AdminDashboard />}></Route>
         <Route path="/adminnavbar" element={<AdminNavbar />}></Route>
         <Route path="allusers" element={<AllUsers />}></Route>

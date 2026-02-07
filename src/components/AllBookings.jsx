@@ -1,239 +1,7 @@
-// import React, { useEffect, useState } from "react";
-// import axios from "axios";
-// import AdminNavbar from "./AdminNavbar";
-// import { Search, Calendar, User, Phone, Clock, MapPin, ArrowRight } from "lucide-react";
-
-// const AllBookings = () => {
-//   const [bookings, setBookings] = useState([]);
-//   const [loading, setLoading] = useState(true);
-//   const [searchTerm, setSearchTerm] = useState("");
-
-//   useEffect(() => {
-//     axios
-//       .get("http://localhost:5050/api/bookings")
-//       .then((res) => {
-//         setBookings(res.data);
-//         setLoading(false);
-//       })
-//       .catch((err) => {
-//         console.error("Error fetching bookings:", err);
-//         setLoading(false);
-//       });
-//   }, []);
-
-//   const filteredBookings = bookings.filter((b) =>
-//     b.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//     b.cabinId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//     b.mobile?.includes(searchTerm)
-//   );
-
-//   const formatDate = (dateString) => {
-//     if (!dateString) return "N/A";
-//     const date = new Date(dateString);
-//     if (!isNaN(date.getTime())) {
-//       return date.toLocaleDateString("en-IN", {
-//         year: 'numeric',
-//         month: 'short',
-//         day: 'numeric'
-//       });
-//     }
-//     return dateString;
-//   };
-
-//   return (
-//     <div className="min-h-screen bg-gray-50">
-//       <AdminNavbar />
-
-//       <main className="pt-28 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-//         {/* Header Section */}
-//         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-//           <div>
-//             <h1 className="text-3xl font-bold text-gray-900">All Bookings</h1>
-//             <p className="mt-1 text-gray-500">Manage and view all cabin reservations</p>
-//           </div>
-
-//           {/* Search Bar */}
-//           <div className="relative">
-//             <input
-//               type="text"
-//               placeholder="Search bookings..."
-//               className="w-full md:w-64 pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm"
-//               value={searchTerm}
-//               onChange={(e) => setSearchTerm(e.target.value)}
-//             />
-//             <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
-//           </div>
-//         </div>
-
-//         {/* Loading State */}
-//         {loading ? (
-//           <div className="flex justify-center items-center h-64">
-//             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-//           </div>
-//         ) : (
-//           <>
-//             {/* Desktop Table View (Hidden on Mobile) */}
-//             <div className="hidden md:block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-//               <table className="w-full">
-//                 <thead className="bg-gray-50 border-b border-gray-100">
-//                   <tr>
-//                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Cabin Info</th>
-//                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">User Details</th>
-//                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Booking Duration</th>
-//                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-//                   </tr>
-//                 </thead>
-//                 <tbody className="divide-y divide-gray-100">
-//                   {filteredBookings.length > 0 ? (
-//                     filteredBookings.map((b) => (
-//                       <tr key={b._id} className="hover:bg-gray-50/50 transition-colors">
-//                         <td className="px-6 py-4">
-//                           <div className="flex items-center gap-3">
-//                             <div className="p-2 bg-indigo-50 rounded-lg">
-//                               <MapPin size={20} className="text-indigo-600" />
-//                             </div>
-//                             <div>
-//                               <p className="font-semibold text-gray-900">{b.cabinId?.name || "Unknown Cabin"}</p>
-//                               <p className="text-xs text-gray-500">ID: {b.cabinId?._id?.slice(-6)}</p>
-//                             </div>
-//                           </div>
-//                         </td>
-//                         <td className="px-6 py-4">
-//                           <div className="flex items-center gap-3">
-//                             <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold text-xs">
-//                               {b.name?.charAt(0).toUpperCase()}
-//                             </div>
-//                             <div>
-//                               <p className="text-sm font-medium text-gray-900">{b.name}</p>
-//                               <p className="text-xs text-gray-500 flex items-center gap-1">
-//                                 <Phone size={10} /> {b.mobile}
-//                               </p>
-//                             </div>
-//                           </div>
-//                         </td>
-//                         <td className="px-6 py-4">
-//                           <div className="flex flex-col md:flex-row md:items-center gap-6">
-//                             {/* Start Date/Time */}
-//                             <div className="flex items-center gap-3">
-//                               <div className="p-1.5 bg-indigo-50 rounded text-indigo-600">
-//                                 <Clock size={16} />
-//                               </div>
-//                               <div className="flex flex-col">
-//                                 <span className="text-xs font-semibold text-gray-400 uppercase">From</span>
-//                                 <span className="text-sm font-medium text-gray-900">
-//                                   {formatDate(b.startDate || b.date)}
-//                                   <span className="text-gray-400 font-normal ml-1">at {b.startTime || b.time || "N/A"}</span>
-//                                 </span>
-//                               </div>
-//                             </div>
-
-//                             {/* Arrow Indicator */}
-//                             <ArrowRight size={16} className="text-gray-300 hidden md:block" />
-
-//                             {/* End Date/Time */}
-//                             <div className="flex items-center gap-3">
-//                               <div className="p-1.5 bg-indigo-50 rounded text-indigo-600">
-//                                 <Clock size={16} />
-//                               </div>
-//                               <div className="flex flex-col">
-//                                 <span className="text-xs font-semibold text-gray-400 uppercase">To</span>
-//                                 <span className="text-sm font-medium text-gray-900">
-//                                   {formatDate(b.endDate)}
-//                                   <span className="text-gray-400 font-normal ml-1">at {b.endTime || "N/A"}</span>
-//                                 </span>
-//                               </div>
-//                             </div>
-//                           </div>
-//                         </td>
-//                         <td className="px-6 py-4">
-//                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
-//                             Confirmed
-//                           </span>
-//                         </td>
-//                       </tr>
-//                     ))
-//                   ) : (
-//                     <tr>
-//                       <td colSpan="4" className="px-6 py-12 text-center text-gray-500">
-//                         No bookings found matching your search.
-//                       </td>
-//                     </tr>
-//                   )}
-//                 </tbody>
-//               </table>
-//             </div>
-
-//             {/* Mobile Card View (Visible on Mobile) */}
-//             <div className="md:hidden space-y-4">
-//               {filteredBookings.length > 0 ? (
-//                 filteredBookings.map((b) => (
-//                   <div key={b._id} className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
-//                     <div className="flex justify-between items-start mb-4">
-//                       <div className="flex items-center gap-3">
-//                         <div className="p-2 bg-indigo-50 rounded-lg">
-//                           <MapPin size={20} className="text-indigo-600" />
-//                         </div>
-//                         <div>
-//                           <h3 className="font-semibold text-gray-900">{b.cabinId?.name || "Unknown Cabin"}</h3>
-//                           <span className="inline-flex mt-1 items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800">
-//                             Confirmed
-//                           </span>
-//                         </div>
-//                       </div>
-//                     </div>
-
-//                     <div className="space-y-4 pt-3 border-t border-gray-50">
-//                       <div className="flex items-center gap-3 text-sm text-gray-600">
-//                         <User size={16} className="text-gray-400" />
-//                         <span className="font-medium">{b.name}</span>
-//                       </div>
-//                       <div className="flex items-center gap-3 text-sm text-gray-600">
-//                         <Phone size={16} className="text-gray-400" />
-//                         <span>{b.mobile}</span>
-//                       </div>
-
-//                       {/* Mobile Date Section */}
-//                       <div className="bg-gray-50 rounded-lg p-3 space-y-2">
-//                         <div className="flex justify-between items-start">
-//                           <div>
-//                             <span className="text-xs text-gray-400 uppercase">From</span>
-//                             <div className="text-sm font-medium text-gray-900">{formatDate(b.startDate || b.date)}</div>
-//                             <div className="text-xs text-gray-500">{b.startTime || b.time || "N/A"}</div>
-//                           </div>
-//                           <ArrowRight size={16} className="text-gray-300 mt-2" />
-//                           <div className="text-right">
-//                             <span className="text-xs text-gray-400 uppercase">To</span>
-//                             <div className="text-sm font-medium text-gray-900">{formatDate(b.endDate)}</div>
-//                             <div className="text-xs text-gray-500">{b.endTime || "N/A"}</div>
-//                           </div>
-//                         </div>
-//                       </div>
-
-//                     </div>
-//                   </div>
-//                 ))
-//               ) : (
-//                 <div className="text-center py-12 bg-white rounded-xl border border-dashed border-gray-200 text-gray-500">
-//                   No bookings found.
-//                 </div>
-//               )}
-//             </div>
-//           </>
-//         )}
-//       </main>
-//     </div>
-//   );
-// };
-
-// export default AllBookings;
-
-
-
-
-import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { ArrowRight, Calendar, Clock, MapPin, Phone, Search, SlidersHorizontal, User } from "lucide-react";
+import React, { useEffect, useState } from "react";
 import AdminNavbar from "./AdminNavbar";
-import { Search, Calendar, User, Phone, Clock, MapPin, ArrowRight } from "lucide-react";
 
 const AllBookings = () => {
   const [bookings, setBookings] = useState([]);
@@ -242,9 +10,8 @@ const AllBookings = () => {
 
   useEffect(() => {
     axios
-      .get("http://localhost:5050/api/bookings")
+      .get("http://localhost:5000/api/bookings")
       .then((res) => {
-        // ✅ access bookings array correctly
         setBookings(res.data.bookings || []);
         setLoading(false);
       })
@@ -254,7 +21,6 @@ const AllBookings = () => {
       });
   }, []);
 
-  // ✅ filteredBookings must be here
   const filteredBookings = bookings.filter((b) => {
     const userName = b.userId?.name || b.name || "";
     const userMobile = b.userId?.mobile || b.mobile || "";
@@ -266,129 +32,112 @@ const AllBookings = () => {
     );
   });
 
-  const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
+  const formatDate = (dateString, timeString) => {
+    if (!dateString) return { date: "N/A", time: "" };
     const date = new Date(dateString);
-    if (!isNaN(date.getTime())) {
-      return date.toLocaleDateString("en-IN", {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      });
-    }
-    return dateString;
+    const formattedDate = date.toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' });
+    return { date: formattedDate, time: timeString || "N/A" };
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50 font-sans">
       <AdminNavbar />
 
-      <main className="pt-28 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <main className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">All Bookings</h1>
-            <p className="mt-1 text-gray-500">Manage and view all cabin reservations</p>
+            <h2 className="pt-2 text-2xl font-bold text-slate-900 tracking-tight ">All Bookings</h2>
+            <p className="text-slate-500 font-medium text-sm">Manage and track workspace reservations.</p>
           </div>
 
-          {/* Search Bar */}
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search bookings..."
-              className="w-full md:w-64 pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
+          <div className="w-full md:w-auto flex gap-3">
+            <div className="relative flex-grow md:w-72">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <input
+                type="text"
+                placeholder="Search bookings..."
+                className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 shadow-sm transition-all"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <button className="px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-emerald-600 hover:border-emerald-200 transition shadow-sm">
+              <SlidersHorizontal size={20} />
+            </button>
           </div>
         </div>
 
         {/* Loading State */}
         {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          <div className="flex justify-center py-24">
+            <div className="animate-spin h-10 w-10 border-t-4 border-emerald-600 border-r-transparent rounded-full"></div>
           </div>
         ) : (
           <>
             {/* Desktop Table View */}
-            <div className="hidden md:block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-100">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Cabin Info</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">User Details</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Booking Duration</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+            <div className="hidden md:block bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-100">
+                    <th className="px-6 py-5 text-xs font-bold text-slate-500 uppercase tracking-widest pl-8">Cabin Information</th>
+                    <th className="px-6 py-5 text-xs font-bold text-slate-500 uppercase tracking-widest">User Details</th>
+                    <th className="px-6 py-5 text-xs font-bold text-slate-500 uppercase tracking-widest">Schedule</th>
+                    <th className="px-6 py-5 text-xs font-bold text-slate-500 uppercase tracking-widest text-right pr-8">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-slate-50">
                   {filteredBookings.length > 0 ? (
                     filteredBookings.map((b) => {
-                      const userName = b.userId?.name || b.name || "Unknown User";
+                      const userName = b.userId?.name || b.name || "Unknown";
                       const userMobile = b.userId?.mobile || b.mobile || "N/A";
+                      const start = formatDate(b.startDate || b.date, b.startTime || b.time);
+                      const end = formatDate(b.endDate, b.endTime);
 
                       return (
-                        <tr key={b._id} className="hover:bg-gray-50/50 transition-colors">
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-3">
-                              <div className="p-2 bg-indigo-50 rounded-lg">
-                                <MapPin size={20} className="text-indigo-600" />
+                        <tr key={b._id} className="hover:bg-slate-50/50 transition-colors group">
+                          <td className="px-6 py-5 pl-8">
+                            <div className="flex items-center gap-4">
+                              <div className="h-12 w-12 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 shrink-0">
+                                <MapPin size={20} />
                               </div>
                               <div>
-                                <p className="font-semibold text-gray-900">{b.cabinId?.name || "Unknown Cabin"}</p>
-                                <p className="text-xs text-gray-500">ID: {b.cabinId?._id?.slice(-6)}</p>
+                                <p className="font-bold text-slate-900">{b.cabinId?.name || "Unknown Workspace"}</p>
+                                <p className="text-xs font-medium text-slate-400">ID: <span className="uppercase">{b.cabinId?._id?.slice(-6)}</span></p>
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-6 py-5">
                             <div className="flex items-center gap-3">
-                              <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold text-xs">
+                              <div className="h-8 w-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs font-bold border border-emerald-100">
                                 {userName.charAt(0).toUpperCase()}
                               </div>
                               <div>
-                                <p className="text-sm font-medium text-gray-900">{userName}</p>
-                                <p className="text-xs text-gray-500 flex items-center gap-1">
-                                  <Phone size={10} /> {userMobile}
+                                <p className="text-sm font-bold text-slate-900">{userName}</p>
+                                <p className="text-xs font-medium text-slate-500 flex items-center gap-1">
+                                  <Phone size={10} className="text-slate-400" /> {userMobile}
                                 </p>
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4">
-                            <div className="flex flex-col md:flex-row md:items-center gap-6">
-                              {/* Start */}
-                              <div className="flex items-center gap-3">
-                                <div className="p-1.5 bg-indigo-50 rounded text-indigo-600">
-                                  <Clock size={16} />
-                                </div>
-                                <div className="flex flex-col">
-                                  <span className="text-xs font-semibold text-gray-400 uppercase">From</span>
-                                  <span className="text-sm font-medium text-gray-900">
-                                    {formatDate(b.startDate || b.date)}
-                                    <span className="text-gray-400 font-normal ml-1">at {b.startTime || b.time || "N/A"}</span>
-                                  </span>
-                                </div>
+                          <td className="px-6 py-5">
+                            <div className="flex items-center gap-4">
+                              <div>
+                                <p className="text-xs font-bold text-slate-400 uppercase">From</p>
+                                <p className="text-sm font-bold text-slate-900">{start.date}</p>
+                                <p className="text-xs text-slate-500">{start.time}</p>
                               </div>
-
-                              <ArrowRight size={16} className="text-gray-300 hidden md:block" />
-
-                              {/* End */}
-                              <div className="flex items-center gap-3">
-                                <div className="p-1.5 bg-indigo-50 rounded text-indigo-600">
-                                  <Clock size={16} />
-                                </div>
-                                <div className="flex flex-col">
-                                  <span className="text-xs font-semibold text-gray-400 uppercase">To</span>
-                                  <span className="text-sm font-medium text-gray-900">
-                                    {formatDate(b.endDate)}
-                                    <span className="text-gray-400 font-normal ml-1">at {b.endTime || "N/A"}</span>
-                                  </span>
-                                </div>
+                              <ArrowRight size={16} className="text-slate-300" />
+                              <div>
+                                <p className="text-xs font-bold text-slate-400 uppercase">To</p>
+                                <p className="text-sm font-bold text-slate-900">{end.date}</p>
+                                <p className="text-xs text-slate-500">{end.time}</p>
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4">
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                          <td className="px-6 py-5 text-right pr-8">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                               Confirmed
                             </span>
                           </td>
@@ -397,8 +146,8 @@ const AllBookings = () => {
                     })
                   ) : (
                     <tr>
-                      <td colSpan="4" className="px-6 py-12 text-center text-gray-500">
-                        No bookings found matching your search.
+                      <td colSpan="4" className="px-6 py-12 text-center text-slate-400 font-medium">
+                        No bookings found matching "{searchTerm}"
                       </td>
                     </tr>
                   )}
@@ -410,57 +159,55 @@ const AllBookings = () => {
             <div className="md:hidden space-y-4">
               {filteredBookings.length > 0 ? (
                 filteredBookings.map((b) => {
-                  const userName = b.userId?.name || b.name || "Unknown User";
-                  const userMobile = b.userId?.mobile || b.mobile || "N/A";
+                  const userName = b.userId?.name || b.name || "Unknown";
+                  const start = formatDate(b.startDate || b.date, b.startTime || b.time);
+                  const end = formatDate(b.endDate, b.endTime);
 
                   return (
-                    <div key={b._id} className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
-                      <div className="flex justify-between items-start mb-4">
+                    <div key={b._id} className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
+                      <div className="flex justify-between items-start mb-6">
                         <div className="flex items-center gap-3">
-                          <div className="p-2 bg-indigo-50 rounded-lg">
-                            <MapPin size={20} className="text-indigo-600" />
+                          <div className="p-3 bg-emerald-50 rounded-xl text-emerald-600">
+                            <MapPin size={20} />
                           </div>
                           <div>
-                            <h3 className="font-semibold text-gray-900">{b.cabinId?.name || "Unknown Cabin"}</h3>
-                            <span className="inline-flex mt-1 items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800">
+                            <h3 className="font-bold text-slate-900 text-lg">{b.cabinId?.name || "Workspace"}</h3>
+                            <span className="inline-flex mt-1 items-center px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800">
                               Confirmed
                             </span>
                           </div>
                         </div>
                       </div>
 
-                      <div className="space-y-4 pt-3 border-t border-gray-50">
-                        <div className="flex items-center gap-3 text-sm text-gray-600">
-                          <User size={16} className="text-gray-400" />
-                          <span className="font-medium">{userName}</span>
-                        </div>
-                        <div className="flex items-center gap-3 text-sm text-gray-600">
-                          <Phone size={16} className="text-gray-400" />
-                          <span>{userMobile}</span>
-                        </div>
-
-                        <div className="bg-gray-50 rounded-lg p-3 space-y-2">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <span className="text-xs text-gray-400 uppercase">From</span>
-                              <div className="text-sm font-medium text-gray-900">{formatDate(b.startDate || b.date)}</div>
-                              <div className="text-xs text-gray-500">{b.startTime || b.time || "N/A"}</div>
-                            </div>
-                            <ArrowRight size={16} className="text-gray-300 mt-2" />
-                            <div className="text-right">
-                              <span className="text-xs text-gray-400 uppercase">To</span>
-                              <div className="text-sm font-medium text-gray-900">{formatDate(b.endDate)}</div>
-                              <div className="text-xs text-gray-500">{b.endTime || "N/A"}</div>
-                            </div>
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                          <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center font-bold text-slate-600 shadow-sm">
+                            {userName.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Booked By</p>
+                            <p className="text-sm font-bold text-slate-900">{userName}</p>
                           </div>
                         </div>
 
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Start</p>
+                            <p className="text-sm font-bold text-slate-900">{start.date}</p>
+                            <p className="text-xs text-slate-500">{start.time}</p>
+                          </div>
+                          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">End</p>
+                            <p className="text-sm font-bold text-slate-900">{end.date}</p>
+                            <p className="text-xs text-slate-500">{end.time}</p>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   );
                 })
               ) : (
-                <div className="text-center py-12 bg-white rounded-xl border border-dashed border-gray-200 text-gray-500">
+                <div className="text-center py-12 bg-white rounded-[2rem] border border-dashed border-slate-200 text-slate-400 font-medium">
                   No bookings found.
                 </div>
               )}

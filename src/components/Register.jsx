@@ -2,7 +2,9 @@ import axios from "axios";
 import { CheckCircle, Lock, Mail, MapPin, Phone, Upload, User, Stethoscope } from "lucide-react";
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import UsersNavbar from "./UsersNavbar";
+import Logo from "../assets/Logo.png";
 
 function Register() {
   const [role, setRole] = useState("user"); // Default to normal user
@@ -48,14 +50,14 @@ function Register() {
     }
 
     try {
-      const res = await axios.post("http://localhost:5050/api/auth/register", data, {
+      const res = await axios.post("http://localhost:5000/api/auth/register", data, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      alert(res.data.message);
+      toast.success(res.data.message);
       navigate("/login");
     } catch (err) {
-      alert(err.response?.data?.message || "Registration failed");
+      toast.error(err.response?.data?.message || "Registration failed");
     } finally {
       setLoading(false);
     }
@@ -75,8 +77,8 @@ function Register() {
         <div className={`w-full bg-white p-8 md:p-12 rounded-3xl shadow-2xl border border-slate-100 transition-all duration-500 ${role === 'doctor' ? 'max-w-[900px]' : 'max-w-[500px]'}`}>
 
           <div className="text-center mb-10">
-            <div className="mx-auto h-14 w-14 bg-emerald-50 rounded-2xl flex items-center justify-center mb-5 shadow-sm rotate-3 transform hover:rotate-6 transition-transform">
-              {role === 'doctor' ? <Stethoscope size={26} className="text-emerald-600" /> : <User size={26} className="text-emerald-600" />}
+            <div className="mx-auto h-20 w-20 rounded-2xl flex items-center justify-center mb-5  transform hover:scale-105 transition-transform">
+              <img src={Logo} alt="Logo" className="w-full h-full object-contain" />
             </div>
             <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Create Account</h2>
             <p className="mt-3 text-slate-500 text-base">Join the Timely Health community</p>
@@ -89,7 +91,7 @@ function Register() {
               onClick={() => setRole("user")}
               className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${role === 'user' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
             >
-             User
+              User
             </button>
             <button
               type="button"

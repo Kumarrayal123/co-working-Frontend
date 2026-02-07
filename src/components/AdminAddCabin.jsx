@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import AdminNavbar from "./AdminNavbar";
-import { Upload, Home, MapPin, Users, FileText, CheckCircle, X, IndianRupee,Building2 } from "lucide-react";
+import { toast } from "react-toastify";
+import { Upload, Home, MapPin, Users, FileText, CheckCircle, X, IndianRupee, Building2 } from "lucide-react";
 
 
 function AdminAddCabin() {
@@ -14,8 +15,8 @@ function AdminAddCabin() {
     capacity: "",
     address: "",
     price: "",
-    cabin: "", 
-       amenities: {
+    cabin: "",
+    amenities: {
       wifi: false,
       parking: false,
       lockers: false,
@@ -23,7 +24,7 @@ function AdminAddCabin() {
       secureAccess: false,
       comfortSeating: false,
     },
-    
+
   });
 
   const [images, setImages] = useState([]);
@@ -35,7 +36,7 @@ function AdminAddCabin() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-    const toggleAmenity = (key) => {
+  const toggleAmenity = (key) => {
     setFormData((prev) => ({
       ...prev,
       amenities: {
@@ -60,32 +61,42 @@ function AdminAddCabin() {
     setLoading(true);
 
     const data = new FormData();
-    data.append("name", `${formData.name} - ${formData.cabin}`);
+    // Combine names if needed, or just use name
+    data.append("name", formData.cabin ? `${formData.name} - ${formData.cabin}` : formData.name);
     data.append("description", formData.description);
     data.append("capacity", formData.capacity);
     data.append("address", formData.address);
     data.append("price", formData.price);
 
-     data.append("amenities", JSON.stringify(formData.amenities));
-    images.forEach((image) => {
-      data.append("images", image);
-    });
+    // Send amenities correctly as JSON string
+    data.append("amenities", JSON.stringify(formData.amenities));
+
+    images.forEach((img) => data.append("images", img));
 
     try {
-      await axios.post("http://localhost:5050/api/cabins", data, {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error("You must be logged in to add a cabin.");
+        navigate("/login");
+        return;
+      }
+
+      // Target Coworking Backend (Port 5050)
+      console.log("Submitting to: http://localhost:5000/api/cabins");
+
+      await axios.post("http://localhost:5000/api/cabins", data, {
         headers: {
-          "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${token}`,
+          // Content-Type is incorrectly set manually in some versions, ensuring it is NOT set here so axios handles multipart/form-data boundary
         },
       });
 
-      alert("Cabin added successfully!");
-      setFormData({ name: "", description: "", capacity: "", address: "", price: "" });
-      setImages([]);
+      toast.success("Cabin added successfully!");
       navigate("/admindashboard");
     } catch (err) {
-      console.error(err);
-      alert("Error adding cabin. Please try again.");
+      console.error("Add Cabin Error:", err);
+      const errorMsg = err.response?.data?.message || err.message || "Error adding cabin";
+      toast.error(`Failed: ${errorMsg}`);
     } finally {
       setLoading(false);
     }
@@ -180,7 +191,7 @@ function AdminAddCabin() {
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Price per hour (₹)</label>
                   <div className="relative">
-                    <IndianRupee  size={18} className="absolute left-3 top-3.5 text-gray-400" />
+                    <IndianRupee size={18} className="absolute left-3 top-3.5 text-gray-400" />
                     <input
                       type="number"
                       name="price"
@@ -192,7 +203,7 @@ function AdminAddCabin() {
                   </div>
                 </div>
               </div>
-                <div>
+              <div>
                 <label className="text-sm font-medium">Amenities</label>
                 <div className="grid grid-cols-2 gap-4 mt-2 md:grid-cols-3">
                   {[
@@ -207,11 +218,10 @@ function AdminAddCabin() {
                       key={item.key}
                       type="button"
                       onClick={() => toggleAmenity(item.key)}
-                      className={`px-4 py-3 rounded-lg border font-medium transition ${
-                        formData.amenities[item.key]
-                          ? "bg-emerald-100 border-emerald-500 text-emerald-700"
-                          : "border-gray-300 text-gray-600"
-                      }`}
+                      className={`px-4 py-3 rounded-lg border font-medium transition ${formData.amenities[item.key]
+                        ? "bg-emerald-100 border-emerald-500 text-emerald-700"
+                        : "border-gray-300 text-gray-600"
+                        }`}
                     >
                       {item.label}
                     </button>

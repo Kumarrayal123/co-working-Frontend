@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from "react";
 import axios from "axios";
-import UsersNavbar from "./UsersNavbar";
-import { MapPin, Users, ArrowRight, Search } from "lucide-react";
+import { ArrowRight, MapPin, Search, Users } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminNavbar from "./AdminNavbar";
 
@@ -42,7 +41,7 @@ const Spaces = () => {
               Find your perfect <br />
               <span className="text-emerald-600">Space</span>
             </h1> */}
-            <h2 className="pt-4 text-2xl font-bold text-slate-900 tracking-tight mb-2">
+            <h2 className="text-2xl font-black uppercase text-slate-900 tracking-tight mb-2">
               Find your perfect spaces
             </h2>
 
@@ -80,7 +79,7 @@ const Spaces = () => {
             <div className="mx-auto h-16 w-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
               <Search size={28} className="text-slate-400" />
             </div>
-            <h3 className="text-lg font-bold text-slate-900 mb-1">No spaces found</h3>
+            <h3 className="text-lg font-bold uppercase text-slate-900 mb-1">No spaces found</h3>
             <p className="text-sm text-slate-500">We couldn't find any cabins matching "{searchTerm}".</p>
           </div>
         ) : (
@@ -111,7 +110,7 @@ const Spaces = () => {
 
                   <div className="absolute bottom-3 left-3 z-30 text-white">
                     <p className="text-[10px] font-bold uppercase tracking-widest opacity-90 mb-0.5">Coworking</p>
-                    <h3 className="text-lg font-bold leading-tight">{cabin.name}</h3>
+                    <h3 className="text-lg font-bold uppercase leading-tight">{cabin.name}</h3>
                   </div>
                 </div>
 
@@ -122,7 +121,7 @@ const Spaces = () => {
                       <MapPin size={16} />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-slate-900 line-clamp-1">{cabin.address?.split(',')[0] || "Location"}</p>
+                      <p className="text-sm font-bold  text-slate-900 line-clamp-1">{cabin.address?.split(',')[0] || "Location"}</p>
                       <p className="text-xs text-slate-500 line-clamp-1">{cabin.address}</p>
                     </div>
                   </div>

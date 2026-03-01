@@ -2,16 +2,14 @@ import axios from "axios";
 import {
   ArrowLeft,
   ArrowRight,
+  History,
   MapPin,
-  ShieldCheck,
   User,
-  Users,
-  History
+  Users
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import UsersNavbar from "./UsersNavbar";
 import AdminNavbar from "./AdminNavbar";
 
 const BookCabin = () => {
@@ -165,7 +163,7 @@ const BookCabin = () => {
                 </div>
               </div>
 
-              <h2 className="text-2xl font-bold text-slate-900 mb-1">
+              <h2 className="text-1xl font-bold uppercase text-slate-900 mb-1">
                 {cabin.name}
               </h2>
 
@@ -205,7 +203,7 @@ const BookCabin = () => {
             <form onSubmit={handleBooking} className="space-y-6">
               {/* USER */}
               <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100">
-                <h3 className="font-bold uppercase text-xs tracking-widest text-slate-900 mb-6">
+                <h3 className="text-1xl font-bold uppercase text-slate-900 mb-6 tracking-tight">
                   Registrant Details
                 </h3>
 
@@ -236,7 +234,7 @@ const BookCabin = () => {
 
               {/* SCHEDULE */}
               <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100">
-                <h3 className="font-bold uppercase text-xs tracking-widest text-slate-900 mb-6">
+                <h3 className="text-1xl font-bold uppercase text-slate-900 mb-6 tracking-tight">
                   Temporal Allocation
                 </h3>
 
@@ -307,7 +305,7 @@ const BookCabin = () => {
                 disabled={loading}
                 className={`w-full py-4 rounded-xl font-bold text-lg flex justify-center items-center gap-2 transition-all shadow-lg ${loading
                   ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                  : "bg-emerald-600 text-white hover:bg-emerald-500 shadow-emerald-600/20 hover:shadow-emerald-600/30 active:scale-95"
+                  : "bg-gradient-to-r from-[#1E3A8A] to-[#14B8A6] px-4   py-2 text-white hover:from-[#1E3A8A] hover:to-[#14B8A6] hover:shadow-xl"
                   }`}
               >
                 {loading ? "Processing…" : "Confirm Booking"}
@@ -320,7 +318,7 @@ const BookCabin = () => {
         {/* RELATED */}
         {relatedCabins.length > 0 && (
           <div className="mt-24 border-t border-slate-200 pt-16">
-            <h2 className="text-2xl font-bold text-slate-900 mb-8 tracking-tight">
+            <h2 className="text-2xl font-bold uppercase text-slate-900 mb-8 tracking-tight">
               Related Workspaces
             </h2>
 
@@ -344,7 +342,7 @@ const BookCabin = () => {
                   </div>
 
                   <div className="p-5 space-y-2">
-                    <h4 className="text-lg font-bold text-slate-900 truncate">
+                    <h4 className="text-lg font-bold uppercase text-slate-900 truncate">
                       {rc.name}
                     </h4>
 

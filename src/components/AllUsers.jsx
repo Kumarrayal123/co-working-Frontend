@@ -1,5 +1,5 @@
 import axios from "axios";
-import { CheckCircle, Clock, Download, Edit, Eye, File, FileText, Search, Trash2, User, XCircle } from "lucide-react";
+import { CheckCircle, Clock, Edit, Eye, File, FileText, Search, Trash2, User, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import AdminNavbar from "./AdminNavbar";
 
@@ -175,7 +175,7 @@ function AllUsers() {
         <div className="fixed  inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
           <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100">
             <div className="p-8 border-b border-slate-100 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-slate-900">Update Status</h2>
+              <h2 className="text-2xl font-black uppercase text-slate-900 tracking-tight">Update Status</h2>
               <button onClick={closeEditPopup} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition">
                 <XCircle size={24} />
               </button>
@@ -187,7 +187,7 @@ function AllUsers() {
                   {selectedUser.name?.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-900">{selectedUser.name}</h3>
+                  <h3 className="font-bold uppercase text-slate-900 text-sm tracking-tight mb-2">{selectedUser.name}</h3>
                   <p className="text-sm text-slate-500">{selectedUser.email}</p>
                 </div>
               </div>
@@ -222,7 +222,7 @@ function AllUsers() {
               <button
                 onClick={updateUserStatus}
                 disabled={updateLoading}
-                className="px-5 py-2.5 rounded-xl font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition shadow-lg shadow-emerald-500/20 text-sm"
+                className="px-5 py-2.5 rounded-xl font-bold bg-gradient-to-r from-[#1E3A8A] to-[#14B8A6] text-white hover:from-[#1E3A8A] hover:to-[#14B8A6] hover:shadow-xl"
               >
                 {updateLoading ? "Updating..." : "Save Changes"}
               </button>
@@ -236,7 +236,7 @@ function AllUsers() {
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
           <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-3xl overflow-hidden border border-slate-100 max-h-[90vh] flex flex-col">
             <div className="p-8 border-b border-slate-100 flex justify-between items-center shrink-0">
-              <h2 className="text-xl font-bold text-slate-900">User Details</h2>
+              <h2 className="text-2xl font-black uppercase text-slate-900 tracking-tight mb-2">User Details</h2>
               <button onClick={closeViewPopup} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition">
                 <XCircle size={24} />
               </button>
@@ -249,7 +249,7 @@ function AllUsers() {
                   <div className="space-y-4">
                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                       <label className="text-xs text-slate-400 font-bold block mb-1">Full Name</label>
-                      <p className="font-bold text-slate-900">{selectedUser.name}</p>
+                      <p className="font-bold uppercase text-slate-900 text-sm tracking-tight mb-2">{selectedUser.name}</p>
                     </div>
                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                       <label className="text-xs text-slate-400 font-bold block mb-1">Email Address</label>
@@ -302,7 +302,7 @@ function AllUsers() {
       <main className="pt-20 pb-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-8">
           <div>
-            <h2 className="pt-2 text-2xl font-bold text-slate-900 tracking-tight">User Management</h2>
+            <h2 className="text-2xl font-black uppercase text-slate-900 tracking-tight mb-2">User Management</h2>
             <p className="text-slate-500 font-medium text-sm">Monitor and manage registered members.</p>
           </div>
 
@@ -327,12 +327,12 @@ function AllUsers() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-100">
-                    <th className="px-6 py-5 text-xs font-bold text-slate-500 uppercase tracking-widest">User</th>
-                    <th className="px-6 py-5 text-xs font-bold text-slate-500 uppercase tracking-widest">Role</th>
-                    <th className="px-6 py-5 text-xs font-bold text-slate-500 uppercase tracking-widest">Status</th>
-                    <th className="px-6 py-5 text-xs font-bold text-slate-500 uppercase tracking-widest">Joined</th>
-                    <th className="px-6 py-5 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Actions</th>
+                  <tr className="bg-gradient-to-r from-[#1E3A8A] to-[#14B8A6] px-2 py-2 text-white">
+                    <th className="px-6 py-5 text-sm font-bold text-white uppercase tracking-widest">User</th>
+                    <th className="px-6 py-5 text-sm font-bold text-white uppercase tracking-widest">Role</th>
+                    <th className="px-6 py-5 text-sm font-bold text-white uppercase tracking-widest">Status</th>
+                    <th className="px-6 py-5 text-sm font-bold text-white uppercase tracking-widest">Joined</th>
+                    <th className="px-6 py-5 text-sm font-bold text-white uppercase tracking-widest text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
@@ -351,7 +351,7 @@ function AllUsers() {
                               {user.name ? user.name.charAt(0).toUpperCase() : <User size={18} />}
                             </div>
                             <div>
-                              <p className="font-bold text-slate-900 text-sm">{user.name}</p>
+                              <p className="font-bold uppercase text-slate-900 text-sm tracking-tight mb-2">{user.name}</p>
                               <p className="text-xs text-slate-500">{user.email}</p>
                             </div>
                           </div>
@@ -372,19 +372,20 @@ function AllUsers() {
                         <td className="px-6 py-4 text-sm font-medium text-slate-500">
                           {new Date(user.createdAt).toLocaleDateString()}
                         </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => openViewPopup(user)} className="p-2 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition" title="View">
-                              <Eye size={18} />
-                            </button>
-                            <button onClick={() => openEditPopup(user)} className="p-2 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition" title="Edit">
-                              <Edit size={18} />
-                            </button>
-                            <button onClick={() => deleteUser(user._id)} className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition" title="Delete">
-                              <Trash2 size={18} />
-                            </button>
-                          </div>
-                        </td>
+                      <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2 opacity-100 transition-opacity">
+                      <button onClick={() => openViewPopup(user)} className="p-2 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition" title="View">
+                        <Eye size={18} />
+                      </button>
+                      <button onClick={() => openEditPopup(user)} className="p-2 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition" title="Edit">
+                      <Edit size={18} />
+                      </button>
+                      <button onClick={() => deleteUser(user._id)} className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition" title="Delete">
+                      <Trash2 size={18} />
+                      </button>
+                      </div>
+                      </td>
+
                       </tr>
                     ))
                   )}

@@ -1,5 +1,6 @@
 import axios from "axios";
 import {
+  Armchair,
   ArrowLeft,
   Bath,
   Car,
@@ -9,12 +10,10 @@ import {
   Shield,
   ShieldCheck,
   Users,
-  Wifi,
-  Armchair
+  Wifi
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import UsersNavbar from "./UsersNavbar";
 import AdminNavbar from "./AdminNavbar";
 
 export default function CabinDetails() {
@@ -125,7 +124,7 @@ export default function CabinDetails() {
           {/* RIGHT DETAILS */}
           <div className="flex flex-col justify-center space-y-6">
             <div>
-              <h1 className="text-3xl font-bold text-slate-900 leading-tight mb-2">
+              <h1 className="text-2xl font-bold uppercase text-slate-900 leading-tight mb-2">
                 {cabin.name}
               </h1>
               <div className="flex items-center gap-2 text-slate-500 text-sm font-medium">
@@ -182,7 +181,7 @@ export default function CabinDetails() {
 
               <button
                 onClick={() => navigate(`/book/${cabin._id}`)}
-                className="w-full py-4 bg-emerald-600 text-white rounded-xl font-bold text-lg hover:bg-emerald-700 transition shadow-lg shadow-emerald-600/20 active:scale-95"
+                className="w-full py-4 bg-gradient-to-r from-[#1E3A8A] to-[#14B8A6] text-white rounded-xl font-bold text-lg hover:bg-[#007a52] transition shadow-lg shadow-[#007a52]/50 active:scale-95 flex items-center justify-center gap-2"
               >
                 Book Workspace
               </button>
@@ -193,7 +192,7 @@ export default function CabinDetails() {
         {/* RELATED */}
         {relatedCabins.length > 0 && (
           <div className="mt-20">
-            <h2 className="text-2xl font-bold text-slate-900 mb-8 tracking-tight">
+            <h2 className="text-2xl font-bold uppercase text-slate-900 mb-8 tracking-tight">
               Related Workspaces
             </h2>
 
@@ -213,7 +212,7 @@ export default function CabinDetails() {
                     />
                   </div>
                   <div className="p-5 space-y-1">
-                    <h4 className="font-bold text-slate-900 text-lg truncate">
+                    <h4 className="font-bold uppercase text-slate-900 text-lg truncate">
                       {rc.name}
                     </h4>
                     <p className="text-xs font-medium text-slate-500">

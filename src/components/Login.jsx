@@ -88,7 +88,7 @@ function Login() {
         {/* Header */}
         <div className="text-center mb-8">
           <img src={Logo} alt="Logo" className="w-20 mx-auto mb-4" />
-          <h2 className="text-3xl font-extrabold text-slate-900">
+          <h2 className="text-2xl font-black uppercase text-slate-900 tracking-tight">
             {role === 'admin' ? "Admin Portal" : "Welcome Back"}
           </h2>
           <p className="text-slate-500 text-sm">
@@ -160,7 +160,7 @@ function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex justify-center items-center gap-2 py-3 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 disabled:opacity-60 transition-all"
+            className="w-full flex justify-center items-center gap-2 rounded-xl bg-gradient-to-r from-[#1E3A8A] to-[#14B8A6] px-2 py-2 text-white hover:bg-emerald-600 hover:shadow-emerald-200"
           >
             {loading ? (
               "Authenticating..."

@@ -1,23 +1,22 @@
-import React, { useEffect, useState } from "react";
 import axios from "axios";
-import AdminNavbar from "./AdminNavbar";
-import { toast } from "react-toastify";
 import {
+  Building2,
+  CheckCircle,
+  FileText,
+  Home,
+  IndianRupee,
   MapPin,
-  Users,
-  ArrowRight,
+  Plus,
   Search,
   Trash2,
-  Plus,
-  X,
   Upload,
-  IndianRupee,
-  Building2,
-  FileText,
-  CheckCircle,
-  Home
+  Users,
+  X
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import AdminNavbar from "./AdminNavbar";
 
 export const AdminCabins = () => {
   const [cabins, setCabins] = useState([]);
@@ -174,7 +173,7 @@ export const AdminCabins = () => {
       <div className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
           <div>
-            <h2 className="text-3xl font-black text-slate-900 tracking-tight">Manage Cabins</h2>
+            <h2 className="text-2xl font-black uppercase text-slate-900 tracking-tight">Manage Cabins</h2>
             <p className="text-slate-500 font-medium mt-1">Total {filteredCabins.length} workspaces listed</p>
           </div>
 
@@ -196,7 +195,8 @@ export const AdminCabins = () => {
             {/* Premium Add Cabin Button */}
             <button
               onClick={() => setIsModalOpen(true)}
-              className="w-full sm:w-auto flex items-center justify-center gap-2.5 px-6 py-3.5 bg-slate-900 text-white rounded-2xl font-bold text-sm shadow-xl shadow-slate-200 hover:bg-emerald-600 hover:shadow-emerald-200 transition-all duration-300 transform hover:-translate-y-1 active:scale-95"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-3 bg-slate-900 text-white rounded-2xl font-bold text-sm shadow-xl shadow-slate-200 hover:bg-gradient-to-r hover:from-[#1E3A8A] hover:to-[#14B8A6] transition-all duration-300 transform hover:-translate-y-1 active:scale-95"
+
             >
               <div className="p-1 bg-white/20 rounded-lg">
                 <Plus size={16} strokeWidth={3} />
@@ -244,7 +244,7 @@ export const AdminCabins = () => {
                 </div>
 
                 <div className="p-5 flex flex-col flex-grow">
-                  <h3 className="text-lg font-bold text-slate-900 mb-1 tracking-tight">{cabin.name}</h3>
+                  <h3 className="text-lg font-bold uppercase text-slate-900 mb-1 tracking-tight">{cabin.name}</h3>
                   <div className="flex items-center gap-2 text-slate-500 text-xs font-medium mb-4">
                     <MapPin size={14} className="text-emerald-600" />
                     <span className="truncate">{cabin.address}</span>
@@ -272,19 +272,19 @@ export const AdminCabins = () => {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
           <div className="bg-white w-full max-w-2xl max-h-[90vh] rounded-[2rem] shadow-2xl overflow-hidden border border-slate-100 flex flex-col animate-in fade-in zoom-in duration-200">
             {/* Modal Header */}
-            <div className="bg-indigo-600 px-8 py-6 text-white flex justify-between items-center shrink-0">
+            <div className="bg-gradient-to-r from-[#1E3A8A] to-[#14B8A6] px-4 py-2 text-white">
               <div>
                 <h2 className="text-xl font-bold flex items-center gap-2">
                   <Home size={22} /> Add New Cabin
                 </h2>
                 <p className="text-indigo-100 text-sm mt-0.5">Create a new workspace listing</p>
               </div>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="p-2 hover:bg-white/10 rounded-full transition-colors"
-              >
-                <X size={24} />
-              </button>
+             <button
+  onClick={() => setIsModalOpen(false)}
+  className="p-2 hover:bg-white/10 rounded-full transition-colors absolute right-4 top-4"
+>
+  <X size={24} />
+</button>
             </div>
 
             {/* Modal Body */}
@@ -468,7 +468,7 @@ export const AdminCabins = () => {
                     disabled={submitting}
                     className={`flex-[2] py-3.5 rounded-xl font-bold text-sm shadow-xl transition-all flex items-center justify-center gap-2 ${submitting
                       ? "bg-indigo-400 text-white cursor-not-allowed"
-                      : "bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-indigo-200 transform hover:-translate-y-0.5"
+                      : "bg-gradient-to-r from-[#1E3A8A] to-[#14B8A6] px-2 py-2 text-white hover:bg-emerald-600 hover:shadow-emerald-200"
                       }`}
                   >
                     {submitting ? (

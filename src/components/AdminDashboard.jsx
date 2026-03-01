@@ -138,7 +138,7 @@ const AdminDashboard = () => {
 
       <main className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="mb-8">
-          <h2 className="pt-2 text-2xl font-bold text-slate-900 tracking-tight">Dashboard Overview</h2>
+          <h2 className="text-2xl font-black uppercase text-slate-900 tracking-tight">Dashboard Overview</h2>
           <p className="text-slate-500 font-medium text-sm">Welcome back, Admin</p>
         </div>
 

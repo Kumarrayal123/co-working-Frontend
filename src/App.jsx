@@ -40,7 +40,7 @@ function App() {
         <Route path="/spaces" element={<Spaces />}></Route>
         <Route path="/admindashboard" element={<AdminDashboard />}></Route>
         <Route path="/adminnavbar" element={<AdminNavbar />}></Route>
-        <Route path="allusers" element={<AllUsers />}></Route>
+        <Route path="/allusers" element={<AllUsers />}></Route>
         <Route path="/adminaddcabin" element={<AdminAddCabin />}></Route>
         <Route path="/mycabin" element={<MyCabin />}></Route>
         <Route path="/book/:id" element={<BookCabin />} />

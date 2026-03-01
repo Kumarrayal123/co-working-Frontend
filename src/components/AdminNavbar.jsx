@@ -1,12 +1,8 @@
 import {
-  CalendarCheck,
-  Home,
   LogOut,
   Menu,
-  PlusSquare,
   Shield,
-  Users,
-  X,
+  X
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -64,8 +60,8 @@ function AdminNavbar() {
                   key={link.path}
                   to={link.path}
                   className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 ${isActive(link.path)
-                    ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20"
-                    : "text-slate-500 hover:text-emerald-700 hover:bg-emerald-50"
+                    ? "hover:from-[#1E3A8A]/90 hover:to-[#14B8A6]/90"
+                    : "text-slate-800 hover:from-[#1E3A8A]/90 hover:to-[#14B8A6]/90 hover:bg-gradient-to-r"
                     }`}
                 >
                   {link.name}

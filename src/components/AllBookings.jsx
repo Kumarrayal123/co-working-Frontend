@@ -1,6 +1,6 @@
 import axios from "axios";
-import { ArrowRight, Calendar, Clock, MapPin, Phone, Search, SlidersHorizontal, User } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import { ArrowRight, MapPin, Phone, Search, SlidersHorizontal } from "lucide-react";
+import { useEffect, useState } from "react";
 import AdminNavbar from "./AdminNavbar";
 
 const AllBookings = () => {
@@ -47,7 +47,7 @@ const AllBookings = () => {
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
           <div>
-            <h2 className="pt-2 text-2xl font-bold text-slate-900 tracking-tight ">All Bookings</h2>
+            <h2 className="text-2xl font-black uppercase text-slate-900 tracking-tight mb-2 ">All Bookings</h2>
             <p className="text-slate-500 font-medium text-sm">Manage and track workspace reservations.</p>
           </div>
 
@@ -79,11 +79,11 @@ const AllBookings = () => {
             <div className="hidden md:block bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-100">
-                    <th className="px-6 py-5 text-xs font-bold text-slate-500 uppercase tracking-widest pl-8">Cabin Information</th>
-                    <th className="px-6 py-5 text-xs font-bold text-slate-500 uppercase tracking-widest">User Details</th>
-                    <th className="px-6 py-5 text-xs font-bold text-slate-500 uppercase tracking-widest">Schedule</th>
-                    <th className="px-6 py-5 text-xs font-bold text-slate-500 uppercase tracking-widest text-right pr-8">Status</th>
+                  <tr className="bg-gradient-to-r from-[#1E3A8A] to-[#14B8A6] px-2 py-2 text-white">
+                    <th className="px-6 py-5 text-sm font-bold text-white uppercase tracking-widest pl-8">Cabin Information</th>
+                    <th className="px-6 py-5 text-sm font-bold text-white uppercase tracking-widest">User Details</th>
+                    <th className="px-6 py-5 text-sm font-bold text-white uppercase tracking-widest">Schedule</th>
+                    <th className="px-6 py-5 text-sm font-bold text-white uppercase tracking-widest text-right pr-8">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
@@ -102,7 +102,7 @@ const AllBookings = () => {
                                 <MapPin size={20} />
                               </div>
                               <div>
-                                <p className="font-bold text-slate-900">{b.cabinId?.name || "Unknown Workspace"}</p>
+                                <p className="font-bold uppercase text-slate-900 text-sm tracking-tight mb-2">{b.cabinId?.name || "Unknown Workspace"}</p>
                                 <p className="text-xs font-medium text-slate-400">ID: <span className="uppercase">{b.cabinId?._id?.slice(-6)}</span></p>
                               </div>
                             </div>
@@ -113,7 +113,7 @@ const AllBookings = () => {
                                 {userName.charAt(0).toUpperCase()}
                               </div>
                               <div>
-                                <p className="text-sm font-bold text-slate-900">{userName}</p>
+                                <p className="font-bold uppercase text-slate-900 text-sm tracking-tight mb-2">{userName}</p>
                                 <p className="text-xs font-medium text-slate-500 flex items-center gap-1">
                                   <Phone size={10} className="text-slate-400" /> {userMobile}
                                 </p>
@@ -171,7 +171,7 @@ const AllBookings = () => {
                             <MapPin size={20} />
                           </div>
                           <div>
-                            <h3 className="font-bold text-slate-900 text-lg">{b.cabinId?.name || "Workspace"}</h3>
+                            <h3 className="font-bold uppercase text-slate-900 text-sm tracking-tight">{b.cabinId?.name || "Workspace"}</h3>
                             <span className="inline-flex mt-1 items-center px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800">
                               Confirmed
                             </span>

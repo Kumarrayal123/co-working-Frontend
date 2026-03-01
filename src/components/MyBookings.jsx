@@ -9,7 +9,6 @@ import {
   User
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import UsersNavbar from "./UsersNavbar";
 import AdminNavbar from "./AdminNavbar";
 
 const MyBookings = () => {
@@ -76,7 +75,7 @@ const MyBookings = () => {
             <Ticket size={24} />
           </div>
           <div>
-            <h2 className="pt-4 text-2xl font-bold text-slate-900 tracking-tight mb-2">
+            <h2 className="text-2xl font-black uppercase text-slate-900 tracking-tight">
               {localStorage.getItem('admin') ? 'Admin Bookings' : 'Bookings'}
             </h2>
             <p className="text-sm text-slate-500 mt-1">Manage your reservations</p>
@@ -116,7 +115,7 @@ const MyBookings = () => {
                 <div className="flex-1 py-2 pr-4 flex flex-col justify-center">
                   <div className="flex justify-between items-start mb-3">
                     <div>
-                      <h2 className="text-lg font-bold text-slate-900 leading-tight">
+                      <h2 className="text-lg font-bold uppercase text-slate-900 leading-tight">
                         {b.cabinId?.name}
                       </h2>
                       <div className="flex items-center gap-1 text-slate-500 text-xs font-medium mt-0.5">

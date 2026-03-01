@@ -1,10 +1,10 @@
 import axios from "axios";
-import { CheckCircle, Lock, Mail, MapPin, Phone, Upload, User, Stethoscope } from "lucide-react";
+import { CheckCircle, Lock, Mail, MapPin, Phone, Upload, User } from "lucide-react";
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import UsersNavbar from "./UsersNavbar";
 import Logo from "../assets/Logo.png";
+import UsersNavbar from "./UsersNavbar";
 
 function Register() {
   const [role, setRole] = useState("user"); // Default to normal user
@@ -74,13 +74,13 @@ function Register() {
       </div>
 
       <div className="flex-grow flex items-center justify-center py-20 px-4 sm:px-6 lg:px-8 z-10 relative">
-        <div className={`w-full bg-white p-8 md:p-12 rounded-3xl shadow-2xl border border-slate-100 transition-all duration-500 ${role === 'doctor' ? 'max-w-[900px]' : 'max-w-[500px]'}`}>
+        <div className={`max-w-[440px] w-full bg-white p-8 rounded-3xl shadow-xl border ${role === 'doctor' ? 'max-w-[900px]' : 'max-w-[500px]'}`}>
 
           <div className="text-center mb-10">
             <div className="mx-auto h-20 w-20 rounded-2xl flex items-center justify-center mb-5  transform hover:scale-105 transition-transform">
               <img src={Logo} alt="Logo" className="w-full h-full object-contain" />
             </div>
-            <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Create Account</h2>
+            <h2 className="text-2xl font-black uppercase text-slate-900 tracking-tight">Create Account</h2>
             <p className="mt-3 text-slate-500 text-base">Join the Timely Health community</p>
           </div>
 
@@ -89,14 +89,14 @@ function Register() {
             <button
               type="button"
               onClick={() => setRole("user")}
-              className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${role === 'user' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${role === 'user' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
             >
               User
             </button>
             <button
               type="button"
               onClick={() => setRole("doctor")}
-              className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${role === 'doctor' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${role === 'doctor' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
             >
               Doctor / Owner
             </button>
@@ -185,14 +185,14 @@ function Register() {
               <button
                 type="submit"
                 disabled={loading}
-                className={`w-full flex justify-center py-3.5 px-4 border border-transparent text-base font-semibold rounded-xl text-white ${loading ? 'bg-emerald-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 hover:scale-[1.02] active:scale-[0.98]'} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-all shadow-lg shadow-emerald-500/20`}
+                className={`w-full flex justify-center py-2 px-4 border border-transparent text-base font-semibold rounded-xl text-white ${loading ? 'bg-gradient-to-r from-[#1E3A8A] to-[#14B8A6] px-2 py-2 text-white hover:bg-emerald-600 hover:shadow-emerald-200' : 'bg-gradient-to-r from-[#1E3A8A] to-[#14B8A6] hover:bg-emerald-600 hover:shadow-emerald-200'} transition-all`}
               >
                 {loading ? "Registering..." : (role === "doctor" ? "Submit Professional Registry" : "Sign Up")}
               </button>
 
               <p className="mt-8 text-slate-500 text-sm">
                 Already have an account?{" "}
-                <Link to="/login" className="font-semibold text-emerald-600 hover:text-emerald-700 hover:underline transition-colors">
+                <Link to="/login" className="font-semibold text-indigo-600 hover:text-indigo-700 hover:underline transition-colors">
                   Sign In
                 </Link>
               </p>

@@ -1,10 +1,17 @@
-@import "tailwindcss";
+/* Google Font */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
 
-@theme {
-  /* User's Green Palette #007a52 (Overriding Emerald) */
+/* Tailwind v4 */
+@import "tailwindcss";
+@reference "tailwindcss";
+
+/* Theme Colors */
+:root {
+
+  /* Emerald Green Palette */
   --color-emerald-50: #eefcf6;
   --color-emerald-100: #d5f7e8;
-  --color-emerald-200: #007a52;
+  --color-emerald-200: #a7f3d0;
   --color-emerald-300: #6ee7b7;
   --color-emerald-400: #34d399;
   --color-emerald-500: #10b981;
@@ -12,9 +19,8 @@
   --color-emerald-700: #006241;
   --color-emerald-800: #004d33;
   --color-emerald-900: #064e3b;
-  --color-emerald-950: #022c22;
 
-  /* User's Blue Palette #2563eb (Overriding Indigo) */
+  /* Indigo Blue Palette */
   --color-indigo-50: #eff6ff;
   --color-indigo-100: #dbeafe;
   --color-indigo-200: #bfdbfe;
@@ -25,29 +31,76 @@
   --color-indigo-700: #1d4ed8;
   --color-indigo-800: #1e40af;
   --color-indigo-900: #1e3a8a;
-  --color-indigo-950: #172554;
+
 }
 
-:root {
-  font-family: 'Outfit', sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+/* Base Styles */
+@layer base {
 
-  color-scheme: light;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  html {
+    font-family: 'Poppins', sans-serif;
+  }
+
+  body {
+    @apply bg-gray-50 text-gray-800 text-sm antialiased;
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
+  }
+
+  /* Headings */
+  h1 { @apply text-2xl font-semibold; }
+  h2 { @apply text-xl font-semibold; }
+  h3 { @apply text-lg font-medium; }
+  h4, h5, h6 { @apply text-base font-medium; }
+
+  /* Paragraph */
+  p { @apply text-sm; }
+
+  /* Tables */
+  table { @apply text-xs; }
+
+  th {
+    @apply text-xs font-semibold uppercase text-white;
+  }
+
+  td {
+    @apply text-xs text-gray-800;
+  }
+
+  /* Forms */
+  input,
+  select,
+  textarea {
+    @apply text-xs;
+  }
+
+  label {
+    @apply text-xs font-medium text-gray-700;
+  }
+
+  /* Buttons */
+  button {
+    @apply text-xs font-medium;
+  }
 }
 
-body {
-  @apply bg-slate-50 text-slate-900;
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
+/* Gradient Utilities (Custom Colors) */
+@layer utilities {
+
+  .from-green-500 {
+    --tw-gradient-from: var(--color-emerald-600) var(--tw-gradient-from-position);
+    --tw-gradient-to: rgb(0 122 82 / 0) var(--tw-gradient-to-position);
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+  }
+
+  .to-blue-600 {
+    --tw-gradient-to: var(--color-indigo-600) var(--tw-gradient-to-position);
+  }
+
 }
 
-/* Custom Scrollbar for Modal and Lists */
+/* Custom Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
 }
@@ -57,9 +110,15 @@ body {
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  @apply bg-slate-200 rounded-full;
+  background: #e2e8f0;
+  border-radius: 9999px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  @apply bg-slate-300;
+  background: #cbd5f5;
+}
+
+/* Fix font-black weight */
+.font-black {
+  font-weight: 700 !important;
 }

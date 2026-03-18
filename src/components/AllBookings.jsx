@@ -76,14 +76,15 @@ const AllBookings = () => {
         ) : (
           <>
             {/* Desktop Table View */}
-            <div className="hidden md:block bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
-              <table className="w-full text-left border-collapse">
+            <div className="mb-6 overflow-hidden bg-white rounded-lg shadow-lg">
+                <div className="overflow-x-auto bg-white shadow-lg rounded-xl">
+                  <table className="min-w-full">
                 <thead>
-                  <tr className="bg-gradient-to-r from-[#1E3A8A] to-[#14B8A6] px-2 py-2 text-white">
-                    <th className="px-6 py-5 text-sm font-bold text-white uppercase tracking-widest pl-8">Cabin Information</th>
-                    <th className="px-6 py-5 text-sm font-bold text-white uppercase tracking-widest">User Details</th>
-                    <th className="px-6 py-5 text-sm font-bold text-white uppercase tracking-widest">Schedule</th>
-                    <th className="px-6 py-5 text-sm font-bold text-white uppercase tracking-widest text-right pr-8">Status</th>
+                  <tr className="bg-gradient-to-r from-[#22C45F] to-[#2563EB] px-2 py-2 text-sm text-left text-white">
+                    <th className="py-2 text-center text-white uppercase tracking-widest pl-8">Cabin Information</th>
+                    <th className="py-2 text-center text-white uppercase tracking-widest">User Details</th>
+                    <th className="py-2 text-center text-white uppercase tracking-widest">Schedule</th>
+                    <th className="py-2 text-center text-white uppercase tracking-widest pr-8">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
@@ -96,7 +97,7 @@ const AllBookings = () => {
 
                       return (
                         <tr key={b._id} className="hover:bg-slate-50/50 transition-colors group">
-                          <td className="px-6 py-5 pl-8">
+                          <td className="px-2 py-2 pl-8">
                             <div className="flex items-center gap-4">
                               <div className="h-12 w-12 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 shrink-0">
                                 <MapPin size={20} />
@@ -107,36 +108,36 @@ const AllBookings = () => {
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-5">
+                          <td className="px-2 py-2">
                             <div className="flex items-center gap-3">
-                              <div className="h-8 w-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs font-bold border border-emerald-100">
+                              <div className="h-8 w-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs font-medium border border-emerald-100">
                                 {userName.charAt(0).toUpperCase()}
                               </div>
                               <div>
-                                <p className="font-bold uppercase text-slate-900 text-sm tracking-tight mb-2">{userName}</p>
+                                <p className="font-medium uppercase text-slate-900 text-sm tracking-tight mb-2">{userName}</p>
                                 <p className="text-xs font-medium text-slate-500 flex items-center gap-1">
                                   <Phone size={10} className="text-slate-400" /> {userMobile}
                                 </p>
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-5">
+                          <td className="px-2 py-2">
                             <div className="flex items-center gap-4">
                               <div>
-                                <p className="text-xs font-bold text-slate-400 uppercase">From</p>
-                                <p className="text-sm font-bold text-slate-900">{start.date}</p>
+                                <p className="text-xs font-medium text-slate-400 uppercase">From</p>
+                                <p className="text-sm font-medium text-slate-900">{start.date}</p>
                                 <p className="text-xs text-slate-500">{start.time}</p>
                               </div>
                               <ArrowRight size={16} className="text-slate-300" />
                               <div>
-                                <p className="text-xs font-bold text-slate-400 uppercase">To</p>
-                                <p className="text-sm font-bold text-slate-900">{end.date}</p>
+                                <p className="text-xs font-medium text-slate-400 uppercase">To</p>
+                                <p className="text-sm font-medium text-slate-900">{end.date}</p>
                                 <p className="text-xs text-slate-500">{end.time}</p>
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-5 text-right pr-8">
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                          <td className="px-2 py-2 text-right pr-8">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                               Confirmed
                             </span>
@@ -153,6 +154,7 @@ const AllBookings = () => {
                   )}
                 </tbody>
               </table>
+            </div>
             </div>
 
             {/* Mobile Card View */}
@@ -171,8 +173,8 @@ const AllBookings = () => {
                             <MapPin size={20} />
                           </div>
                           <div>
-                            <h3 className="font-bold uppercase text-slate-900 text-sm tracking-tight">{b.cabinId?.name || "Workspace"}</h3>
-                            <span className="inline-flex mt-1 items-center px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800">
+                            <h3 className="font-medium uppercase text-slate-900 text-sm tracking-tight">{b.cabinId?.name || "Workspace"}</h3>
+                            <span className="inline-flex mt-1 items-center px-2.5 py-0.5 rounded-md text-[10px] font-medium uppercase tracking-wider bg-emerald-100 text-emerald-800">
                               Confirmed
                             </span>
                           </div>
@@ -181,24 +183,24 @@ const AllBookings = () => {
 
                       <div className="space-y-4">
                         <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
-                          <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center font-bold text-slate-600 shadow-sm">
+                          <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center font-medium text-slate-600 shadow-sm">
                             {userName.charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Booked By</p>
-                            <p className="text-sm font-bold text-slate-900">{userName}</p>
+                            <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Booked By</p>
+                            <p className="text-sm font-medium text-slate-900">{userName}</p>
                           </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-3">
                           <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Start</p>
-                            <p className="text-sm font-bold text-slate-900">{start.date}</p>
+                            <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider mb-1">Start</p>
+                            <p className="text-sm font-medium text-slate-900">{start.date}</p>
                             <p className="text-xs text-slate-500">{start.time}</p>
                           </div>
                           <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">End</p>
-                            <p className="text-sm font-bold text-slate-900">{end.date}</p>
+                            <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider mb-1">End</p>
+                            <p className="text-sm font-medium text-slate-900">{end.date}</p>
                             <p className="text-xs text-slate-500">{end.time}</p>
                           </div>
                         </div>

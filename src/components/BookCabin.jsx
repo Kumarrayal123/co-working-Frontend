@@ -305,7 +305,7 @@ const BookCabin = () => {
                 disabled={loading}
                 className={`w-full py-4 rounded-xl font-bold text-lg flex justify-center items-center gap-2 transition-all shadow-lg ${loading
                   ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                  : "bg-gradient-to-r from-[#1E3A8A] to-[#14B8A6] px-4   py-2 text-white hover:from-[#1E3A8A] hover:to-[#14B8A6] hover:shadow-xl"
+                  : "bg-gradient-to-r from-[#22C45F] to-[#2563EB] px-4   py-2 text-white hover:from-[#22C45F] hover:to-[#2563EB] hover:shadow-xl"
                   }`}
               >
                 {loading ? "Processing…" : "Confirm Booking"}

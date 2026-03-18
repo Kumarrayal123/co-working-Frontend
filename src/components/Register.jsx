@@ -185,7 +185,7 @@ function Register() {
               <button
                 type="submit"
                 disabled={loading}
-                className={`w-full flex justify-center py-2 px-4 border border-transparent text-base font-semibold rounded-xl text-white ${loading ? 'bg-gradient-to-r from-[#1E3A8A] to-[#14B8A6] px-2 py-2 text-white hover:bg-emerald-600 hover:shadow-emerald-200' : 'bg-gradient-to-r from-[#1E3A8A] to-[#14B8A6] hover:bg-emerald-600 hover:shadow-emerald-200'} transition-all`}
+                className={`w-full flex justify-center py-2 px-4 border border-transparent text-base font-semibold rounded-xl text-white ${loading ? 'bg-gradient-to-r from-[#22C45F] to-[#2563EB] px-2 py-2 text-white hover:bg-emerald-600 hover:shadow-emerald-200' : 'bg-gradient-to-r from-[#22C45F] to-[#2563EB] hover:bg-emerald-600 hover:shadow-emerald-200'} transition-all`}
               >
                 {loading ? "Registering..." : (role === "doctor" ? "Submit Professional Registry" : "Sign Up")}
               </button>

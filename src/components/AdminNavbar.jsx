@@ -60,8 +60,8 @@ function AdminNavbar() {
                   key={link.path}
                   to={link.path}
                   className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 ${isActive(link.path)
-                    ? "hover:from-[#1E3A8A]/90 hover:to-[#14B8A6]/90"
-                    : "text-slate-800 hover:from-[#1E3A8A]/90 hover:to-[#14B8A6]/90 hover:bg-gradient-to-r"
+                    ? "hover:from-[#22C45F]/90 hover:to-[#2563EB]/90"
+                    : "text-slate-800 hover:from-[#22C45F]/90 hover:to-[#2563EB]/90 hover:bg-gradient-to-r"
                     }`}
                 >
                   {link.name}

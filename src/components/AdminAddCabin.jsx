@@ -292,7 +292,7 @@ function AdminAddCabin() {
                   disabled={loading}
                   className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg shadow-indigo-200 transition-all flex items-center justify-center gap-2 ${loading
                     ? "bg-indigo-400 text-white cursor-not-allowed"
-                    : "bg-gradient-to-r from-[#1E3A8A] to-[#14B8A6] px-4 py-2 text-white hover:from-[#1E3A8A] hover:to-[#14B8A6] hover:shadow-xl"
+                    : "bg-gradient-to-r from-[#22C45F] to-[#2563EB] px-4 py-2 text-white hover:from-[#22C45F] hover:to-[#2563EB] hover:shadow-xl"
                     }`}
                 >
                   {loading ? (

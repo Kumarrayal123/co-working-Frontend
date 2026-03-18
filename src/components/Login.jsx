@@ -160,7 +160,7 @@ function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex justify-center items-center gap-2 rounded-xl bg-gradient-to-r from-[#1E3A8A] to-[#14B8A6] px-2 py-2 text-white hover:bg-emerald-600 hover:shadow-emerald-200"
+            className="w-full flex justify-center items-center gap-2 rounded-xl bg-gradient-to-r from-[#22c55e] to-[#3b82f6] px-2 py-2 text-white hover:bg-emerald-600 hover:shadow-emerald-200"
           >
             {loading ? (
               "Authenticating..."

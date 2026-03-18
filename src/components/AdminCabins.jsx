@@ -195,7 +195,7 @@ export const AdminCabins = () => {
             {/* Premium Add Cabin Button */}
             <button
               onClick={() => setIsModalOpen(true)}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-3 bg-slate-900 text-white rounded-2xl font-bold text-sm shadow-xl shadow-slate-200 hover:bg-gradient-to-r hover:from-[#1E3A8A] hover:to-[#14B8A6] transition-all duration-300 transform hover:-translate-y-1 active:scale-95"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-3 bg-green-700 text-white rounded-2xl font-bold text-sm shadow-xl shadow-slate-200 hover:bg-gradient-to-r hover:from-[#22c55e]  hover:to-[#3b82f6] transition-all duration-300 transform hover:-translate-y-1 active:scale-95"
 
             >
               <div className="p-1 bg-white/20 rounded-lg">
@@ -272,12 +272,12 @@ export const AdminCabins = () => {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
           <div className="bg-white w-full max-w-2xl max-h-[90vh] rounded-[2rem] shadow-2xl overflow-hidden border border-slate-100 flex flex-col animate-in fade-in zoom-in duration-200">
             {/* Modal Header */}
-            <div className="bg-gradient-to-r from-[#1E3A8A] to-[#14B8A6] px-4 py-2 text-white">
+            <div className="bg-gradient-to-r from-[#34f67b] to-[#4579c8] px-4 py-2 text-white">
               <div>
                 <h2 className="text-xl font-bold flex items-center gap-2">
                   <Home size={22} /> Add New Cabin
                 </h2>
-                <p className="text-indigo-100 text-sm mt-0.5">Create a new workspace listing</p>
+                <p className="text-emerald-100 text-sm mt-0.5">Create a new workspace listing</p>
               </div>
              <button
   onClick={() => setIsModalOpen(false)}
@@ -468,7 +468,7 @@ export const AdminCabins = () => {
                     disabled={submitting}
                     className={`flex-[2] py-3.5 rounded-xl font-bold text-sm shadow-xl transition-all flex items-center justify-center gap-2 ${submitting
                       ? "bg-indigo-400 text-white cursor-not-allowed"
-                      : "bg-gradient-to-r from-[#1E3A8A] to-[#14B8A6] px-2 py-2 text-white hover:bg-emerald-600 hover:shadow-emerald-200"
+                      : "bg-gradient-to-r from-[#22c55e] to-[#3b82f6] px-2 py-2 text-white hover:bg-emerald-600 hover:shadow-emerald-200"
                       }`}
                   >
                     {submitting ? (

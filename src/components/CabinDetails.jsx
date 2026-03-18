@@ -181,7 +181,7 @@ export default function CabinDetails() {
 
               <button
                 onClick={() => navigate(`/book/${cabin._id}`)}
-                className="w-full py-4 bg-gradient-to-r from-[#1E3A8A] to-[#14B8A6] text-white rounded-xl font-bold text-lg hover:bg-[#007a52] transition shadow-lg shadow-[#007a52]/50 active:scale-95 flex items-center justify-center gap-2"
+                className="w-full py-4 bg-gradient-to-r from-[#22c55e] to-[#3b82f6] text-white rounded-xl font-bold text-lg hover:bg-[#007a52] transition shadow-lg shadow-[#007a52]/50 active:scale-95 flex items-center justify-center gap-2"
               >
                 Book Workspace
               </button>

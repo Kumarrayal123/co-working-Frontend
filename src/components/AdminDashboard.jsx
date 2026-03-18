@@ -2,8 +2,6 @@ import axios from "axios";
 import {
   Building,
   Calendar,
-  TrendingDown,
-  TrendingUp,
   Users
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -20,26 +18,24 @@ import AdminNavbar from "./AdminNavbar";
 
 /* ---------------- STAT CARD ---------------- */
 
-const StatCard = ({ title, value, icon: Icon, colorClass, trend, isPositive }) => (
-  // Compact card design: p-4 padding, smaller text sizes
-  <div className="bg-white p-4 rounded-[1.25rem] shadow-sm border border-slate-100 hover:shadow-md transition-all duration-300 group">
-    <div className="flex items-start justify-between mb-3">
-      <div className={`p-2.5 rounded-xl ${colorClass} transition-transform group-hover:scale-110`}>
-        <Icon size={18} className="text-white" />
+const StatCard = ({ title, value, icon: Icon, colorClass, borderColor }) => {
+  return (
+    <div
+      className="bg-white rounded-xl shadow-sm px-3 py-2 flex items-center gap-2 border-t-4"
+      style={{ borderTopColor: borderColor }}
+    >
+      {/* Colorful Icon */}
+      <div className={`p-2 rounded-lg ${colorClass}`}>
+        <Icon className="w-4 h-4 text-white" />
       </div>
-      {trend && (
-        <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${isPositive ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"
-          }`}>
-          {isPositive ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
-          <span>{trend}</span>
-        </div>
-      )}
-    </div>
 
-    <h3 className="text-xl font-black text-slate-900 tracking-tight mb-0.5">{value}</h3>
-    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">{title}</p>
-  </div>
-);
+      {/* Title + Value (same line) */}
+      <span className="text-sm text-gray-700 whitespace-nowrap">
+        {title}: <span className="font-semibold text-gray-900">{value}</span>
+      </span>
+    </div>
+  );
+};
 
 /* ---------------- HELPER: MONTH-WISE BOOKINGS ---------------- */
 
@@ -143,36 +139,39 @@ const AdminDashboard = () => {
         </div>
 
         {/* ---------- STATS GRID ---------- */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
-          <StatCard
-            title="Users"
-            value={1}
-            icon={Users}
-            colorClass="bg-blue-500 shadow-blue-500/30"
-          />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+  <StatCard
+    title="Users"
+    value={1}
+    icon={Users}
+    colorClass="bg-blue-500"
+    borderColor="#3b82f6"
+  />
 
-          <StatCard
-            title="Active Cabins"
-            value={totalCabins}
-            icon={Building}
-            colorClass="bg-emerald-500 shadow-emerald-500/30"
-          />
+  <StatCard
+    title="Active Cabins"
+    value={totalCabins}
+    icon={Building}
+    colorClass="bg-emerald-500"
+    borderColor="#22c55e"
+  />
 
-          <StatCard
-            title="My Cabins"
-            value={myCabinsCount}
-            icon={Building}
-            colorClass="bg-slate-900 shadow-slate-900/30"
-          />
+  <StatCard
+    title="My Cabins"
+    value={myCabinsCount}
+    icon={Building}
+    colorClass="bg-slate-900"
+    borderColor="#1f2937"
+  />
 
-          <StatCard
-            title="My Bookings"
-            value={myBookingsCount}
-            icon={Calendar}
-            colorClass="bg-indigo-500 shadow-indigo-500/30"
-          />
-        </div>
-
+  <StatCard
+    title="My Bookings"
+    value={myBookingsCount}
+    icon={Calendar}
+    colorClass="bg-indigo-500"
+    borderColor="#6366f1"
+  />
+</div>
         {/* ---------- CONTENT ---------- */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* ---------- BOOKINGS BAR CHART ---------- */}

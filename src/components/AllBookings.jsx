@@ -2,15 +2,25 @@ import axios from "axios";
 import { ArrowRight, MapPin, Phone, Search, SlidersHorizontal } from "lucide-react";
 import { useEffect, useState } from "react";
 import AdminNavbar from "./AdminNavbar";
+const API_URL = "http://localhost:5000";
+const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
+
 
 const AllBookings = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
+  const getImageUrl = (img) => {
+    if (!img) return PLACEHOLDER_IMAGE;
+    if (img.startsWith("http")) return img;
+    const cleanPath = img.replace(/\\/g, "/").replace(/^\/+/, "");
+    return `${API_URL}/${cleanPath}`;
+  };
+
   useEffect(() => {
     axios
-      .get("http://localhost:5000/api/bookings")
+      .get(`${API_URL}/api/bookings`)
       .then((res) => {
         setBookings(res.data.bookings || []);
         setLoading(false);
@@ -99,8 +109,15 @@ const AllBookings = () => {
                         <tr key={b._id} className="hover:bg-slate-50/50 transition-colors group">
                           <td className="px-2 py-2 pl-8">
                             <div className="flex items-center gap-4">
-                              <div className="h-12 w-12 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 shrink-0">
-                                <MapPin size={20} />
+                              <div className="h-12 w-12 rounded-2xl bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center text-slate-400 shrink-0">
+                                <img
+                                  src={getImageUrl(b.cabinId?.images?.[0])}
+                                  alt=""
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    e.target.src = PLACEHOLDER_IMAGE;
+                                  }}
+                                />
                               </div>
                               <div>
                                 <p className="font-bold uppercase text-slate-900 text-sm tracking-tight mb-2">{b.cabinId?.name || "Unknown Workspace"}</p>

@@ -10,6 +10,9 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import AdminNavbar from "./AdminNavbar";
+const API_URL = "http://localhost:5000";
+const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
+
 
 const MyBookings = () => {
   const [bookings, setBookings] = useState([]);
@@ -31,6 +34,13 @@ const MyBookings = () => {
 
   const userId = currentUser?._id || currentUser?.id;
 
+  const getImageUrl = (img) => {
+    if (!img) return PLACEHOLDER_IMAGE;
+    if (img.startsWith("http")) return img;
+    const cleanPath = img.replace(/\\/g, "/").replace(/^\/+/, "");
+    return `${API_URL}/${cleanPath}`;
+  };
+
   useEffect(() => {
     const fetchBookings = async () => {
       try {
@@ -38,7 +48,7 @@ const MyBookings = () => {
         if (!token) return;
 
         const res = await axios.get(
-          `http://localhost:5000/api/bookings/user`,
+          `${API_URL}/api/bookings/user`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setBookings(res.data.bookings || []);
@@ -67,7 +77,7 @@ const MyBookings = () => {
       {/* <UsersNavbar /> */}
       <AdminNavbar />
 
-      <div className="pt-24 px-4 sm:px-6 lg:px-8 pb-16 max-w-4xl mx-auto">
+      <div className="pt-24 px-4 sm:px-6 lg:px-8 pb-16 w-full mx-auto">
 
         {/* Header */}
         <div className="flex items-center gap-3 mb-8">
@@ -100,13 +110,12 @@ const MyBookings = () => {
                 {/* Image */}
                 <div className="w-full sm:w-40 h-40 rounded-2xl overflow-hidden relative shrink-0">
                   <img
-                    src={
-                      b.cabinId?.images?.[0]
-                        ? `http://localhost:5000/${b.cabinId.images[0]}`
-                        : "https://via.placeholder.com/300x300?text=No+Image"
-                    }
+                    src={getImageUrl(b.cabinId?.images?.[0])}
                     alt="cabin"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    onError={(e) => {
+                      e.target.src = PLACEHOLDER_IMAGE;
+                    }}
                   />
                   <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors" />
                 </div>

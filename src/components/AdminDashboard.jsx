@@ -132,7 +132,7 @@ const AdminDashboard = () => {
     <div className="min-h-screen bg-slate-50 font-sans">
       <AdminNavbar />
 
-      <main className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <main className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 w-full mx-auto">
         <div className="mb-8">
           <h2 className="text-2xl font-black uppercase text-slate-900 tracking-tight">Dashboard Overview</h2>
           <p className="text-slate-500 font-medium text-sm">Welcome back, Admin</p>

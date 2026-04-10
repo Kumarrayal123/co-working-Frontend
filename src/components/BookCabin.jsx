@@ -11,6 +11,9 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import AdminNavbar from "./AdminNavbar";
+const API_URL = "http://localhost:5000";
+const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
+
 
 const BookCabin = () => {
   const { id } = useParams();
@@ -34,9 +37,10 @@ const BookCabin = () => {
   const [loading, setLoading] = useState(false);
 
   const getImageUrl = (img) => {
-    if (!img) return "";
+    if (!img) return PLACEHOLDER_IMAGE;
     if (img.startsWith("http")) return img;
-    return `http://localhost:5000/${img.replace(/\\/g, "/")}`;
+    const cleanPath = img.replace(/\\/g, "/").replace(/^\/+/, "");
+    return `${API_URL}/${cleanPath}`;
   };
 
   /* FETCH DATA */
@@ -45,8 +49,8 @@ const BookCabin = () => {
     const fetchData = async () => {
       try {
         const [cabinRes, spacesRes] = await Promise.all([
-          axios.get(`http://localhost:5000/api/cabins/${id}`),
-          axios.get("http://localhost:5000/api/cabins"),
+          axios.get(`${API_URL}/api/cabins/${id}`),
+          axios.get(`${API_URL}/api/cabins`),
         ]);
         setCabin(cabinRes.data);
         setRelatedCabins(
@@ -102,7 +106,7 @@ const BookCabin = () => {
 
     try {
       await axios.post(
-        `http://localhost:5000/api/bookings/createbooking/${userId}`,
+        `${API_URL}/api/bookings/createbooking/${userId}`,
         {
           cabinId: id,
           name,
@@ -139,7 +143,7 @@ const BookCabin = () => {
       {/* <UsersNavbar /> */}
       <AdminNavbar/>
 
-      <div className="max-w-6xl mx-auto px-6 pt-16">
+      <div className="w-full mx-auto px-6 pt-16">
         {/* HEADER */}
         <button
           onClick={() => navigate(-1)}
@@ -157,6 +161,9 @@ const BookCabin = () => {
                   src={getImageUrl(cabin.images?.[0])}
                   className="w-full h-full object-cover"
                   alt=""
+                  onError={(e) => {
+                    e.target.src = PLACEHOLDER_IMAGE;
+                  }}
                 />
                 <div className="absolute top-3 left-3 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest text-emerald-800">
                   Premium
@@ -167,8 +174,11 @@ const BookCabin = () => {
                 {cabin.name}
               </h2>
 
-              <div className="flex items-center gap-2 text-slate-500 text-sm mb-6">
-                <MapPin size={16} className="text-emerald-500" /> {cabin.address}
+              <div className="flex items-center gap-2 text-slate-500 text-sm font-semibold mb-6">
+                <div className="p-1.5 bg-emerald-50 rounded-lg">
+                  <MapPin size={16} className="text-emerald-500" />
+                </div>
+                {cabin.address}
               </div>
 
               <div className="grid grid-cols-2 gap-3 mb-6">
@@ -181,12 +191,12 @@ const BookCabin = () => {
                   </div>
                 </div>
 
-                <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-100">
-                  <div className="text-[10px] uppercase tracking-widest text-emerald-700 font-bold mb-1">
-                    Rate
+                <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100 flex flex-col justify-center">
+                  <div className="text-[10px] uppercase tracking-[0.1em] text-emerald-700 font-bold mb-1">
+                    Booking Rate
                   </div>
-                  <div className="font-bold text-slate-900 text-sm">
-                    ₹{PRICE_PER_HOUR} / hr
+                  <div className="font-black text-slate-900 text-base flex items-baseline gap-0.5">
+                    ₹{PRICE_PER_HOUR} <span className="text-[10px] text-slate-400">/ HOUR</span>
                   </div>
                 </div>
               </div>
@@ -203,11 +213,16 @@ const BookCabin = () => {
             <form onSubmit={handleBooking} className="space-y-6">
               {/* USER */}
               <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100">
-                <h3 className="text-1xl font-bold uppercase text-slate-900 mb-6 tracking-tight">
-                  Registrant Details
-                </h3>
+                <div className="flex items-center gap-3 mb-8">
+                  <div className="p-2.5 bg-slate-900 rounded-xl text-white shadow-lg">
+                    <User size={20} />
+                  </div>
+                  <h3 className="text-lg font-black uppercase text-slate-900 tracking-tight">
+                    Client Credential
+                  </h3>
+                </div>
 
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid md:grid-cols-2 gap-6">
                   <div className="relative">
                     <User className="absolute left-4 top-4 text-slate-400" size={18} />
                     <input
@@ -234,24 +249,29 @@ const BookCabin = () => {
 
               {/* SCHEDULE */}
               <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100">
-                <h3 className="text-1xl font-bold uppercase text-slate-900 mb-6 tracking-tight">
-                  Temporal Allocation
-                </h3>
+                <div className="flex items-center gap-3 mb-8">
+                  <div className="p-2.5 bg-slate-900 rounded-xl text-white shadow-lg">
+                    <History size={20} />
+                  </div>
+                  <h3 className="text-lg font-black uppercase text-slate-900 tracking-tight">
+                    Temporal Window
+                  </h3>
+                </div>
 
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="text-xs font-bold text-slate-500 mb-2 block uppercase tracking-wider">Start</label>
+                <div className="grid md:grid-cols-2 gap-8">
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-slate-400 mb-2 block uppercase tracking-[0.2em] px-1">Entry Timestamp</label>
                     <div className="flex gap-2">
                       <input
                         type="date"
-                        className="flex-1 rounded-xl bg-slate-50 p-3.5 outline-none font-medium text-sm text-slate-700 focus:ring-2 focus:ring-emerald-500/20"
+                        className="flex-1 rounded-xl bg-slate-50 border border-slate-100 p-4 outline-none font-bold text-xs text-slate-900 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 transition-all"
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
                         required
                       />
                       <input
                         type="time"
-                        className="w-28 rounded-xl bg-slate-50 p-3.5 outline-none font-medium text-sm text-slate-700 focus:ring-2 focus:ring-emerald-500/20"
+                        className="w-28 rounded-xl bg-slate-50 border border-slate-100 p-4 outline-none font-bold text-xs text-slate-900 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 transition-all"
                         value={startTime}
                         onChange={(e) => setStartTime(e.target.value)}
                         required
@@ -259,19 +279,19 @@ const BookCabin = () => {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="text-xs font-bold text-slate-500 mb-2 block uppercase tracking-wider">End</label>
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-slate-400 mb-2 block uppercase tracking-[0.2em] px-1">Exit Timestamp</label>
                     <div className="flex gap-2">
                       <input
                         type="date"
-                        className="flex-1 rounded-xl bg-slate-50 p-3.5 outline-none font-medium text-sm text-slate-700 focus:ring-2 focus:ring-emerald-500/20"
+                        className="flex-1 rounded-xl bg-slate-50 border border-slate-100 p-4 outline-none font-bold text-xs text-slate-900 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 transition-all"
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
                         required
                       />
                       <input
                         type="time"
-                        className="w-28 rounded-xl bg-slate-50 p-3.5 outline-none font-medium text-sm text-slate-700 focus:ring-2 focus:ring-emerald-500/20"
+                        className="w-28 rounded-xl bg-slate-50 border border-slate-100 p-4 outline-none font-bold text-xs text-slate-900 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 transition-all"
                         value={endTime}
                         onChange={(e) => setEndTime(e.target.value)}
                         required
@@ -281,15 +301,20 @@ const BookCabin = () => {
                 </div>
               </div>
 
-              {/* PRICE */}
-              {totalHours > 0 && (
-                <div className="bg-slate-900 text-white rounded-[2rem] p-8 shadow-xl shadow-slate-900/10">
-                  <div className="flex justify-between items-center text-sm text-slate-400 mb-2 font-medium">
-                    <span>{totalHours} hrs × ₹{PRICE_PER_HOUR}</span>
-                    <span className="uppercase tracking-widest text-[10px] font-bold bg-white/10 px-2 py-1 rounded">Billable</span>
+               {/* PRICE OVERVIEW */}
+               {totalHours > 0 && (
+                <div className="bg-slate-900 text-white rounded-[2.5rem] p-8 shadow-2xl shadow-slate-900/30 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 block mb-2">Aggregate Billing</span>
+                    <div className="text-4xl font-black tracking-tighter">
+                      ₹{totalPrice.toLocaleString("en-IN")}
+                    </div>
                   </div>
-                  <div className="text-4xl font-bold tracking-tight">
-                    ₹{totalPrice.toLocaleString("en-IN")}
+                  <div className="text-right">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 block mb-2">Duration</span>
+                    <div className="text-xl font-black text-emerald-400 uppercase tracking-tight">
+                      {totalHours} HOURS
+                    </div>
                   </div>
                 </div>
               )}
@@ -303,13 +328,13 @@ const BookCabin = () => {
 
               <button
                 disabled={loading}
-                className={`w-full py-4 rounded-xl font-bold text-lg flex justify-center items-center gap-2 transition-all shadow-lg ${loading
-                  ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                  : "bg-gradient-to-r from-[#22C45F] to-[#2563EB] px-4   py-2 text-white hover:from-[#22C45F] hover:to-[#2563EB] hover:shadow-xl"
+                className={`w-full py-5 rounded-[2rem] font-black text-sm uppercase tracking-[0.2em] flex justify-center items-center gap-3 transition-all shadow-xl active:scale-[0.98] ${loading
+                  ? "bg-slate-100 text-slate-300 cursor-not-allowed"
+                  : "bg-slate-900 text-white hover:bg-emerald-600 shadow-slate-900/20"
                   }`}
               >
-                {loading ? "Processing…" : "Confirm Booking"}
-                {!loading && <ArrowRight size={20} />}
+                {loading ? "Synchronizing…" : "Initiate Reservation"}
+                {!loading && <ArrowRight size={18} />}
               </button>
             </form>
           </div>
@@ -337,6 +362,9 @@ const BookCabin = () => {
                       src={getImageUrl(rc.images?.[0])}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       alt=""
+                      onError={(e) => {
+                        e.target.src = PLACEHOLDER_IMAGE;
+                      }}
                     />
                     <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors" />
                   </div>

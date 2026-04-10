@@ -15,6 +15,9 @@ import {
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import AdminNavbar from "./AdminNavbar";
+const API_URL = "http://localhost:5000";
+const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
+
 
 export default function CabinDetails() {
   const { id } = useParams();
@@ -26,9 +29,11 @@ export default function CabinDetails() {
   const [loading, setLoading] = useState(true);
 
   const getImageUrl = (img) => {
-    if (!img) return "";
+    if (!img) return PLACEHOLDER_IMAGE;
     if (img.startsWith("http")) return img;
-    return `http://localhost:5000/${img.replace(/\\/g, "/")}`;
+    // Normalize path separators and remove any leading / if it exists
+    const cleanPath = img.replace(/\\/g, "/").replace(/^\/+/, "");
+    return `${API_URL}/${cleanPath}`;
   };
 
   useEffect(() => {
@@ -37,8 +42,8 @@ export default function CabinDetails() {
       setLoading(true);
       try {
         const [cabinRes, allRes] = await Promise.all([
-          axios.get(`http://localhost:5000/api/cabins/${id}`),
-          axios.get("http://localhost:5000/api/cabins"),
+          axios.get(`${API_URL}/api/cabins/${id}`),
+          axios.get(`${API_URL}/api/cabins`),
         ]);
         setCabin(cabinRes.data);
         setRelatedCabins(
@@ -80,7 +85,7 @@ export default function CabinDetails() {
       {/* <UsersNavbar /> */}
       <AdminNavbar/>
 
-      <div className="max-w-6xl mx-auto px-6 pt-20">
+      <div className="w-full mx-auto px-6 pt-20">
         {/* BACK */}
         <button
           onClick={() => navigate(-1)}
@@ -94,12 +99,16 @@ export default function CabinDetails() {
 
           {/* LEFT IMAGES */}
           <div className="flex flex-col gap-4">
-            <div className="relative overflow-hidden rounded-2xl h-[340px] lg:h-[400px]">
+            <div className="relative overflow-hidden rounded-[2rem] h-[340px] lg:h-[420px] shadow-lg shadow-slate-200/50 group">
               <img
                 src={getImageUrl(cabin.images?.[activeImage])}
-                className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
                 alt={cabin.name}
+                onError={(e) => {
+                  e.target.src = PLACEHOLDER_IMAGE;
+                }}
               />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 via-transparent to-transparent opacity-60" />
             </div>
 
             {cabin.images?.length > 1 && (
@@ -115,6 +124,9 @@ export default function CabinDetails() {
                         : "opacity-60 hover:opacity-100"
                       }`}
                     alt=""
+                    onError={(e) => {
+                      e.target.src = PLACEHOLDER_IMAGE;
+                    }}
                   />
                 ))}
               </div>
@@ -124,22 +136,25 @@ export default function CabinDetails() {
           {/* RIGHT DETAILS */}
           <div className="flex flex-col justify-center space-y-6">
             <div>
-              <h1 className="text-2xl font-bold uppercase text-slate-900 leading-tight mb-2">
+              <span className="inline-block text-[10px] font-bold text-emerald-600 uppercase tracking-[0.2em] mb-3">Premium Workspace</span>
+              <h1 className="text-3xl font-black uppercase text-slate-900 leading-tight mb-3 tracking-tighter">
                 {cabin.name}
               </h1>
-              <div className="flex items-center gap-2 text-slate-500 text-sm font-medium">
-                <MapPin size={16} className="text-emerald-500" />
+              <div className="flex items-center gap-2 text-slate-500 text-sm font-semibold">
+                <div className="p-1.5 bg-emerald-50 rounded-lg">
+                  <MapPin size={16} className="text-emerald-500" />
+                </div>
                 {cabin.address}
               </div>
             </div>
 
-            <p className="text-slate-600 text-sm leading-relaxed">
-              {cabin.description || "Experience a premium workspace designed for maximum productivity and comfort."}
+            <p className="text-slate-500 text-sm leading-relaxed font-medium">
+              {cabin.description || "Experience a premium workspace designed for maximum productivity and comfort, featuring modern architecture and essential business amenities."}
             </p>
 
-            <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-bold text-slate-900">₹{cabin.price}</span>
-              <span className="text-sm text-slate-500 font-medium">/ hour</span>
+            <div className="flex items-center gap-2">
+              <span className="text-4xl font-black text-slate-900 tracking-tighter">₹{cabin.price}</span>
+              <span className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-2">/ Hour</span>
             </div>
 
             {/* WORKSPACE FEATURES */}
@@ -154,12 +169,12 @@ export default function CabinDetails() {
                   return (
                     <div
                       key={key}
-                      className="flex items-center gap-2.5 p-3 rounded-xl bg-slate-50 border border-slate-100"
+                      className="flex items-center gap-3 p-3 rounded-xl bg-slate-50/50 border border-slate-100/50 hover:bg-white hover:shadow-sm transition-all group"
                     >
-                      {Icon && (
-                        <Icon size={16} className="text-emerald-600" />
-                      )}
-                      <span className="text-xs font-semibold text-slate-700">
+                      <div className="p-2 bg-white rounded-lg shadow-sm group-hover:text-emerald-600">
+                        {Icon && <Icon size={14} />}
+                      </div>
+                      <span className="text-[11px] font-bold text-slate-600 uppercase tracking-tight">
                         {amenityMap[key]?.label}
                       </span>
                     </div>
@@ -169,21 +184,21 @@ export default function CabinDetails() {
             </div>
 
             {/* INFO & BOOK */}
-            <div className="pt-6 border-t border-slate-100 flex flex-col gap-6">
-              <div className="flex gap-6 text-xs font-semibold text-slate-600">
+            <div className="pt-6 border-t border-slate-100 flex flex-col gap-8">
+              <div className="flex gap-8 text-[11px] font-bold text-slate-400 uppercase tracking-widest">
                 <div className="flex items-center gap-2">
-                  <Users size={16} className="text-slate-400" /> {cabin.capacity} Seats
+                  <Users size={14} className="text-emerald-500" /> {cabin.capacity} Seats
                 </div>
                 <div className="flex items-center gap-2">
-                  <Clock size={16} className="text-slate-400" /> 24/7 Access
+                  <ShieldCheck size={14} className="text-emerald-500" /> Secured Space
                 </div>
               </div>
 
               <button
                 onClick={() => navigate(`/book/${cabin._id}`)}
-                className="w-full py-4 bg-gradient-to-r from-[#22c55e] to-[#3b82f6] text-white rounded-xl font-bold text-lg hover:bg-[#007a52] transition shadow-lg shadow-[#007a52]/50 active:scale-95 flex items-center justify-center gap-2"
+                className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-sm uppercase tracking-[0.2em] hover:bg-emerald-600 transition-all shadow-xl shadow-slate-900/20 active:scale-[0.98] flex items-center justify-center gap-3"
               >
-                Book Workspace
+                Instant Booking
               </button>
             </div>
           </div>
@@ -209,6 +224,9 @@ export default function CabinDetails() {
                       src={getImageUrl(rc.images?.[0])}
                       className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
                       alt=""
+                      onError={(e) => {
+                        e.target.src = PLACEHOLDER_IMAGE;
+                      }}
                     />
                   </div>
                   <div className="p-5 space-y-1">

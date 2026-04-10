@@ -17,6 +17,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import AdminNavbar from "./AdminNavbar";
+const API_URL = "http://localhost:5000";
+const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
+
 
 export const AdminCabins = () => {
   const [cabins, setCabins] = useState([]);
@@ -54,7 +57,7 @@ export const AdminCabins = () => {
         return;
       }
 
-      const res = await axios.get("http://localhost:5000/api/cabins/user", {
+      const res = await axios.get(`${API_URL}/api/cabins/user`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -81,7 +84,7 @@ export const AdminCabins = () => {
     if (!window.confirm("Are you sure you want to delete this cabin?")) return;
 
     try {
-      await axios.delete(`http://localhost:5000/api/cabins/${id}`, getAuthHeader());
+      await axios.delete(`${API_URL}/api/cabins/${id}`, getAuthHeader());
       setCabins(cabins.filter(c => c._id !== id));
       toast.success("Cabin deleted successfully");
     } catch (error) {
@@ -128,7 +131,7 @@ export const AdminCabins = () => {
 
     try {
       const token = localStorage.getItem("token");
-      await axios.post("http://localhost:5000/api/cabins", data, {
+      await axios.post(`${API_URL}/api/cabins`, data, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -170,7 +173,7 @@ export const AdminCabins = () => {
     <div className="min-h-screen bg-slate-50 font-sans">
       <AdminNavbar />
 
-      <div className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <div className="pt-24 px-4 sm:px-6 lg:px-8 w-full mx-auto">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
           <div>
             <h2 className="text-2xl font-black uppercase text-slate-900 tracking-tight">Manage Cabins</h2>
@@ -225,11 +228,11 @@ export const AdminCabins = () => {
                 <div className="relative h-52 bg-slate-200 overflow-hidden">
                   <div className="absolute inset-0 bg-slate-200 animate-pulse" />
                   <img
-                    src={`http://localhost:5000/${cabin.images?.[0]}`}
+                    src={cabin.images?.[0] ? `${API_URL}/${cabin.images[0].replace(/\\/g, "/")}` : PLACEHOLDER_IMAGE}
                     alt={cabin.name}
                     className="w-full h-full object-cover relative z-10 group-hover:scale-105 transition-transform duration-500"
                     onError={(e) => {
-                      e.target.src = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
+                      e.target.src = PLACEHOLDER_IMAGE;
                     }}
                   />
                   <div className="absolute top-3 right-3 z-30">

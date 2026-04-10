@@ -15,6 +15,9 @@ import {
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import UsersNavbar from "./UsersNavbar";
+const API_URL = "http://localhost:5000";
+const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
+
 
 const MyCabin = () => {
   const [cabins, setCabins] = useState([]);
@@ -45,6 +48,13 @@ const MyCabin = () => {
 
   const navigate = useNavigate();
 
+  const getImageUrl = (img) => {
+    if (!img) return PLACEHOLDER_IMAGE;
+    if (img.startsWith("http")) return img;
+    const cleanPath = img.replace(/\\/g, "/").replace(/^\/+/, "");
+    return `${API_URL}/${cleanPath}`;
+  };
+
   const fetchCabins = async () => {
     const token = localStorage.getItem("token");
     const user = JSON.parse(localStorage.getItem("user"));
@@ -57,7 +67,7 @@ const MyCabin = () => {
     }
 
     try {
-      const res = await axios.get("http://localhost:5000/api/cabins/user", {
+      const res = await axios.get(`${API_URL}/api/cabins/user`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -117,7 +127,7 @@ const MyCabin = () => {
 
     try {
       const token = localStorage.getItem("token");
-      await axios.post("http://localhost:5000/api/cabins", data, {
+      await axios.post(`${API_URL}/api/cabins`, data, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -438,10 +448,9 @@ const MyCabin = () => {
                 <div className="h-48 overflow-hidden relative">
                   <div className="absolute inset-0 bg-slate-100 animate-pulse" />
                   <img
-                    src={`http://localhost:5050/${cabin.images?.[0]}`}
+                    src={cabin.images?.[0] ? getImageUrl(cabin.images[0]) : PLACEHOLDER_IMAGE}
                     onError={(e) => {
-                      e.target.src =
-                        "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=800";
+                      e.target.src = PLACEHOLDER_IMAGE;
                     }}
                     className="h-full w-full object-cover relative z-10 group-hover:scale-105 transition-transform duration-700"
                   />

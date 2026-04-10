@@ -41,8 +41,8 @@ function UsersNavbar() {
         : "bg-transparent py-4"
         }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between">
+      <div className="w-full px-4 sm:px-6 lg:px-10">
+        <div className="flex items-center justify-between gap-4">
 
           {/* LOGO */}
           <Link to="/" className="flex items-center gap-2">
@@ -56,9 +56,9 @@ function UsersNavbar() {
                 <Link
                   key={link.path}
                   to={link.path}
-                  className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 ${isActive(link.path)
-                    ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20"
-                    : "text-slate-500 hover:text-emerald-700 hover:bg-emerald-50"
+                  className={`px-4 py-2 rounded-xl text-sm font-bold tracking-tight uppercase transition-all duration-300 ${isActive(link.path)
+                    ? "bg-slate-900 text-white shadow-lg shadow-slate-900/20"
+                    : "text-slate-600 hover:text-emerald-700 hover:bg-emerald-50"
                     }`}
                 >
                   {link.name}

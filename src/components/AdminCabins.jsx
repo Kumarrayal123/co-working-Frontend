@@ -195,6 +195,15 @@ export const AdminCabins = () => {
               />
             </div>
 
+            {/* View Bookings Button */}
+            <button
+              onClick={() => navigate("/doctorbookings")}
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-3 bg-white border border-slate-200 text-slate-700 rounded-2xl font-bold text-sm shadow-sm hover:bg-slate-50 transition-all active:scale-95"
+            >
+              <FileText size={18} className="text-emerald-600" />
+              View Bookings
+            </button>
+
             {/* Premium Add Cabin Button */}
             <button
               onClick={() => setIsModalOpen(true)}

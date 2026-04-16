@@ -260,7 +260,7 @@ const BookCabin = () => {
 
                 <div className="grid md:grid-cols-2 gap-8">
                   <div className="space-y-3">
-                    <label className="text-[10px] font-black text-slate-400 mb-2 block uppercase tracking-[0.2em] px-1">Entry Timestamp</label>
+                    <label className="text-[10px] font-black text-slate-400 mb-2 block uppercase tracking-[0.2em] px-1">start Date </label>
                     <div className="flex gap-2">
                       <input
                         type="date"
@@ -280,7 +280,7 @@ const BookCabin = () => {
                   </div>
 
                   <div className="space-y-3">
-                    <label className="text-[10px] font-black text-slate-400 mb-2 block uppercase tracking-[0.2em] px-1">Exit Timestamp</label>
+                    <label className="text-[10px] font-black text-slate-400 mb-2 block uppercase tracking-[0.2em] px-1">End Date</label>
                     <div className="flex gap-2">
                       <input
                         type="date"
@@ -333,7 +333,7 @@ const BookCabin = () => {
                   : "bg-slate-900 text-white hover:bg-emerald-600 shadow-slate-900/20"
                   }`}
               >
-                {loading ? "Synchronizing…" : "Initiate Reservation"}
+                {loading ? "Synchronizing…" : "Conform Booking"}
                 {!loading && <ArrowRight size={18} />}
               </button>
             </form>

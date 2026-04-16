@@ -1,5 +1,5 @@
 import axios from "axios";
-import { Lock, Mail, ShieldCheck, User } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, ShieldCheck, User } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -8,9 +8,10 @@ import Logo from "../assets/Logo.png";
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("user"); // 'user' or 'admin'
+  const [role, setRole] = useState("admin"); // force 'admin'
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -96,30 +97,6 @@ function Login() {
           </p>
         </div>
 
-        {/* Role Toggle */}
-        <div className="flex p-1 mb-6 bg-slate-100 rounded-xl">
-          <button
-            type="button"
-            onClick={() => setRole("user")}
-            className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all flex items-center justify-center gap-2 ${role === "user"
-              ? "bg-white text-indigo-600 shadow-sm"
-              : "text-slate-500 hover:text-slate-700"
-              }`}
-          >
-            <User size={16} /> User
-          </button>
-          <button
-            type="button"
-            onClick={() => setRole("admin")}
-            className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all flex items-center justify-center gap-2 ${role === "admin"
-              ? "bg-white text-indigo-600 shadow-sm"
-              : "text-slate-500 hover:text-slate-700"
-              }`}
-          >
-            <ShieldCheck size={16} /> Admin
-          </button>
-        </div>
-
         {/* Error */}
         {error && (
           <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg">
@@ -129,13 +106,12 @@ function Login() {
 
         {/* Form */}
         <form onSubmit={handleLogin} className="space-y-5">
-
           {/* Email */}
           <div className="relative">
             <Mail className="absolute left-3 top-3.5 text-slate-400" size={18} />
             <input
               type="email"
-              placeholder={role === 'admin' ? "Admin Email" : "User Email"}
+              placeholder="Admin Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -147,13 +123,20 @@ function Login() {
           <div className="relative">
             <Lock className="absolute left-3 top-3.5 text-slate-400" size={18} />
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full pl-10 pr-4 py-3 bg-slate-50 border rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
+              className="w-full pl-10 pr-12 py-3 bg-slate-50 border rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
           </div>
 
           {/* Button */}
@@ -166,25 +149,13 @@ function Login() {
               "Authenticating..."
             ) : (
               <>
-                {role === 'admin' ? <ShieldCheck size={18} /> : <User size={18} />}
-                Sign In as {role === 'admin' ? "Admin" : "User"}
+                <ShieldCheck size={18} />
+                Sign In as Admin
               </>
             )}
           </button>
         </form>
 
-        {/* Register Link (User Only) */}
-        {role === 'user' && (
-          <p className="mt-6 text-center text-sm text-slate-500">
-            Don't have an account?{" "}
-            <span
-              onClick={() => navigate("/register")}
-              className="text-indigo-600 font-semibold cursor-pointer hover:underline"
-            >
-              Register here
-            </span>
-          </p>
-        )}
       </div>
     </div>
   );

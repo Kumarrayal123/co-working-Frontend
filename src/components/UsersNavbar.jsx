@@ -30,8 +30,9 @@ function UsersNavbar() {
 
   const navLinks = [
     { name: "Home", path: "/spaces" },
-    { name: "Bookings", path: "/mybookings" },
+    { name: "My Bookings", path: "/mybookings" },
     { name: "My Cabins", path: "/mycabin" },
+    { name: "Bookings", path: "/doctorbookings" },
   ];
 
   return (

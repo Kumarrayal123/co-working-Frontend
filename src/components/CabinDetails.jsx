@@ -198,7 +198,7 @@ export default function CabinDetails() {
                 onClick={() => navigate(`/book/${cabin._id}`)}
                 className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-sm uppercase tracking-[0.2em] hover:bg-emerald-600 transition-all shadow-xl shadow-slate-900/20 active:scale-[0.98] flex items-center justify-center gap-3"
               >
-                Instant Booking
+               Book Cabin 
               </button>
             </div>
           </div>

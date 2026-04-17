@@ -182,16 +182,16 @@ const BookCabin = () => {
               </div>
 
               <div className="grid grid-cols-2 gap-3 mb-6">
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                  <div className="text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-1">
-                    Capacity
+                <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-300 flex flex-col justify-center">
+                  <div className="text-[10px] uppercase tracking-[0.1em] text-emerald-700 font-bold mb-1">
+                    Capacity Profile
                   </div>
-                  <div className="flex items-center gap-1.5 font-bold text-slate-700 text-sm">
-                    <Users size={14} /> {cabin.capacity} Seats
+                  <div className="font-black text-slate-900 text-base flex items-center gap-1.5">
+                    <Users size={18} className="text-emerald-600" /> {cabin.capacity} <span className="text-[10px] text-slate-400 uppercase">Seats</span>
                   </div>
                 </div>
 
-                <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100 flex flex-col justify-center">
+                <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-300 flex flex-col justify-center">
                   <div className="text-[10px] uppercase tracking-[0.1em] text-emerald-700 font-bold mb-1">
                     Booking Rate
                   </div>
@@ -223,26 +223,32 @@ const BookCabin = () => {
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-6">
-                  <div className="relative">
-                    <User className="absolute left-4 top-4 text-slate-400" size={18} />
-                    <input
-                      className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 border border-transparent focus:bg-white focus:border-emerald-500/20 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all font-medium text-sm text-slate-900 placeholder:text-slate-400"
-                      placeholder="Full Name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      required
-                    />
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Full Name</label>
+                    <div className="relative">
+                      <User className="absolute left-4 top-4 text-slate-400" size={18} />
+                      <input
+                        className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 border border-emerald-300 focus:bg-white focus:border-emerald-500/20 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all font-semibold text-sm text-slate-900 placeholder:text-slate-300"
+                        placeholder="e.g. John Doe"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        required
+                      />
+                    </div>
                   </div>
 
-                  <div className="relative">
-                    <History className="absolute left-4 top-4 text-slate-400" size={18} />
-                    <input
-                      className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 border border-transparent focus:bg-white focus:border-emerald-500/20 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all font-medium text-sm text-slate-900 placeholder:text-slate-400"
-                      placeholder="Mobile Number"
-                      value={mobile}
-                      onChange={(e) => setMobile(e.target.value)}
-                      required
-                    />
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Mobile Number</label>
+                    <div className="relative">
+                      <History className="absolute left-4 top-4 text-slate-400" size={18} />
+                      <input
+                        className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 border border-emerald-300 focus:bg-white focus:border-emerald-500/20 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all font-semibold text-sm text-slate-900 placeholder:text-slate-300"
+                        placeholder="e.g. +91 9876543210"
+                        value={mobile}
+                        onChange={(e) => setMobile(e.target.value)}
+                        required
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -260,18 +266,18 @@ const BookCabin = () => {
 
                 <div className="grid md:grid-cols-2 gap-8">
                   <div className="space-y-3">
-                    <label className="text-[10px] font-black text-slate-400 mb-2 block uppercase tracking-[0.2em] px-1">start Date </label>
+                    <label className="text-xs font-bold text-slate-500 mb-2 block uppercase tracking-widest px-1">Check-in Date & Time</label>
                     <div className="flex gap-2">
                       <input
                         type="date"
-                        className="flex-1 rounded-xl bg-slate-50 border border-slate-100 p-4 outline-none font-bold text-xs text-slate-900 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 transition-all"
+                        className="flex-1 rounded-xl bg-slate-50 border border-emerald-300 p-4 outline-none font-bold text-sm text-slate-900 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 transition-all cursor-pointer"
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
                         required
                       />
                       <input
                         type="time"
-                        className="w-28 rounded-xl bg-slate-50 border border-slate-100 p-4 outline-none font-bold text-xs text-slate-900 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 transition-all"
+                        className="w-32 rounded-xl bg-slate-50 border border-emerald-300 p-4 outline-none font-bold text-sm text-slate-900 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 transition-all cursor-pointer"
                         value={startTime}
                         onChange={(e) => setStartTime(e.target.value)}
                         required
@@ -280,18 +286,18 @@ const BookCabin = () => {
                   </div>
 
                   <div className="space-y-3">
-                    <label className="text-[10px] font-black text-slate-400 mb-2 block uppercase tracking-[0.2em] px-1">End Date</label>
+                    <label className="text-xs font-bold text-slate-500 mb-2 block uppercase tracking-widest px-1">Check-out Date & Time</label>
                     <div className="flex gap-2">
                       <input
                         type="date"
-                        className="flex-1 rounded-xl bg-slate-50 border border-slate-100 p-4 outline-none font-bold text-xs text-slate-900 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 transition-all"
+                        className="flex-1 rounded-xl bg-slate-50 border border-emerald-300 p-4 outline-none font-bold text-sm text-slate-900 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 transition-all cursor-pointer"
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
                         required
                       />
                       <input
                         type="time"
-                        className="w-28 rounded-xl bg-slate-50 border border-slate-100 p-4 outline-none font-bold text-xs text-slate-900 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 transition-all"
+                        className="w-32 rounded-xl bg-slate-50 border border-emerald-300 p-4 outline-none font-bold text-sm text-slate-900 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 transition-all cursor-pointer"
                         value={endTime}
                         onChange={(e) => setEndTime(e.target.value)}
                         required

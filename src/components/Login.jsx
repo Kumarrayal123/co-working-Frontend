@@ -20,55 +20,29 @@ function Login() {
     setError("");
 
     try {
-      // Determine endpoint based on role
-      const endpoint = role === 'admin'
-        ? "https://api.timelyhealth.in/api/admin/login"
-        : "http://localhost:5000/api/auth/login";
-
-      const res = await axios.post(endpoint, {
-        email,
-        password,
-      });
-
-      console.log("Login Response Data:", res.data); // DEBUG LOG
-
-      console.log("Login Response Data:", res.data);
-
-      let token = res.data.token || res.data.accessToken || res.data.data?.token;
-
-      // START: Mock Token Generation for Admin (if missing)
-      if (!token && role === 'admin' && res.data.admin) {
-        console.warn("⚠️ No token from external Admin API. Generating local mock token.");
-        try {
-          // Create a mock JWT payload (Backend uses jwt.decode which skips signature check)
-          const header = { alg: "HS256", typ: "JWT" };
-          const payload = { user: res.data.admin }; // Wrap admin data in 'user' key as expected by backend auth.js
-
-          const base64Url = (obj) => btoa(JSON.stringify(obj)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-          token = `${base64Url(header)}.${base64Url(payload)}.mock-signature`;
-        } catch (e) {
-          console.error("Token generation failed:", e);
-        }
+      // Authorized check
+      if (email !== "saidulureddy@gmail.com" || password !== "reddy123") {
+        throw new Error("Access Denied: Invalid admin credentials.");
       }
-      // END: Mock Token Generation
+
+      // Bypass external API and mock the admin login session
+      let token = "mocked-admin-token-for-saidulu";
+      const adminData = {
+        _id: "admin_saidulu",
+        name: "Saidulu Reddy",
+        email: "saidulureddy@gmail.com",
+        role: "admin"
+      };
 
       if (!token) {
-        // Fallback or Error
-        console.error("❌ Token could not be retrieved or generated:", res.data);
         throw new Error("Authentication failed: No token received.");
       }
 
       localStorage.setItem("token", token);
-
-      if (role === 'admin') {
-        localStorage.setItem("admin", JSON.stringify(res.data.admin));
-        toast.success("Admin login successful 🚀");
-        navigate("/admindashboard");
-      } else {
-        localStorage.setItem("user", JSON.stringify(res.data.user)); // Save user data
-        toast.success("Login successful! Welcome back.");
-        navigate("/spaces");
-      }
+      localStorage.setItem("admin", JSON.stringify(adminData));
+      
+      toast.success("Admin login successful 🚀");
+      navigate("/admindashboard");
 
     } catch (err) {
       console.error("Login Error:", err);

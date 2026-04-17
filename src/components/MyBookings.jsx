@@ -8,7 +8,8 @@ import {
   Search,
   Ticket,
   User,
-  Download
+  Download,
+  X
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import AdminNavbar from "./AdminNavbar";
@@ -79,7 +80,7 @@ const MyBookings = () => {
   const downloadData = () => {
     if (filteredBookings.length === 0) return;
     
-    const headers = ["Cabin Name", "Address", "Start Date", "Start Time", "End Date", "End Time", "Total Price", "Status"];
+    const headers = ["Cabin Name", "Address", "Start Date", "Start Time", "End Date", "End Time", "Total Hours", "Total Price", "Status"];
     const csvRows = [headers.join(",")];
     
     filteredBookings.forEach(b => {
@@ -90,6 +91,7 @@ const MyBookings = () => {
         b.startTime,
         b.endDate,
         b.endTime,
+        b.totalHours || 0,
         b.totalPrice,
         "Confirmed"
       ];
@@ -155,6 +157,20 @@ const MyBookings = () => {
               onChange={(e) => setFilterDate(e.target.value)}
               className="px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-600 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
             />
+            
+            {(searchTerm || filterDate) && (
+              <button
+                onClick={() => {
+                  setSearchTerm("");
+                  setFilterDate("");
+                }}
+                className="p-3 bg-slate-100 text-slate-500 rounded-xl hover:bg-slate-200 transition-colors"
+                title="Clear Filters"
+              >
+                <X size={18} />
+              </button>
+            )}
+
             <button
               onClick={downloadData}
               disabled={filteredBookings.length === 0}
@@ -243,9 +259,14 @@ const MyBookings = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-0.5 text-slate-900 font-bold text-base">
-                      <IndianRupee size={16} className="text-emerald-600" />
-                      {b.totalPrice?.toLocaleString("en-IN")}
+                    <div className="flex flex-col items-end gap-0.5 mt-auto">
+                      <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                        {b.totalHours || 0} Hrs
+                      </div>
+                      <div className="flex items-center gap-0.5 text-slate-900 font-bold text-base">
+                        <IndianRupee size={16} className="text-emerald-600" />
+                        {b.totalPrice?.toLocaleString("en-IN")}
+                      </div>
                     </div>
                   </div>
                 </div>

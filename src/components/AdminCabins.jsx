@@ -227,14 +227,15 @@ export const AdminCabins = () => {
             <p className="text-slate-500 font-medium">No cabins found.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-12">
             {filteredCabins.map((cabin) => (
               <div
                 key={cabin._id}
                 onClick={() => navigate(`/cabin/${cabin._id}`)}
-                className="group bg-white rounded-[1.5rem] border border-slate-100 overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer flex flex-col relative"
+                className="group bg-white rounded-[1.5rem] border border-slate-100 overflow-hidden hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col h-full relative"
               >
-                <div className="relative h-52 bg-slate-200 overflow-hidden">
+                {/* Image Section */}
+                <div className="relative h-44 overflow-hidden">
                   <div className="absolute inset-0 bg-slate-200 animate-pulse" />
                   <img
                     src={cabin.images?.[0] ? `${API_URL}/${cabin.images[0].replace(/\\/g, "/")}` : PLACEHOLDER_IMAGE}
@@ -244,6 +245,14 @@ export const AdminCabins = () => {
                       e.target.src = PLACEHOLDER_IMAGE;
                     }}
                   />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/50 via-transparent to-transparent z-20 opacity-40" />
+
+                  {/* Actions Layer */}
+                  <div className="absolute top-3 left-3 z-30 bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold text-emerald-700 shadow-sm flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                    Available
+                  </div>
+
                   <div className="absolute top-3 right-3 z-30">
                     <button
                       onClick={(e) => handleDelete(e, cabin._id)}
@@ -255,21 +264,44 @@ export const AdminCabins = () => {
                   </div>
                 </div>
 
+                {/* Content Section */}
                 <div className="p-5 flex flex-col flex-grow">
-                  <h3 className="text-lg font-bold uppercase text-slate-900 mb-1 tracking-tight">{cabin.name}</h3>
-                  <div className="flex items-center gap-2 text-slate-500 text-xs font-medium mb-4">
-                    <MapPin size={14} className="text-emerald-600" />
-                    <span className="truncate">{cabin.address}</span>
+                  <div className="mb-4">
+                    <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-1">Coworking Space</p>
+                    <h3 className="text-base font-bold uppercase text-slate-900 leading-tight group-hover:text-emerald-600 transition-colors line-clamp-1">
+                      {cabin.name}
+                    </h3>
                   </div>
 
-                  <div className="mt-auto flex items-center justify-between pt-4 border-t border-slate-50">
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-lg font-black text-slate-900">₹{cabin.price}</span>
-                      <span className="text-[10px] text-slate-400 font-bold uppercase">/mo</span>
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="p-2 bg-emerald-50 rounded-lg shrink-0 text-emerald-600">
+                      <MapPin size={16} />
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
-                      <Users size={12} />
-                      {cabin.capacity} Seats
+                    <div>
+                      <p className="text-sm font-bold text-slate-900 line-clamp-1">{cabin.address?.split(',')[0] || "Location"}</p>
+                      <p className="text-xs text-slate-500 line-clamp-1">{cabin.address}</p>
+                    </div>
+                  </div>
+
+                  <p className="text-slate-500 text-xs leading-relaxed mb-4 line-clamp-2">
+                    {cabin.description || "Experience a premium workspace designed for focus and collaboration, featuring modern amenities."}
+                  </p>
+
+                  <div className="mt-auto pt-4 border-t border-slate-50 flex items-center justify-between">
+                    <div>
+                      <div className="flex items-baseline gap-0.5">
+                        <span className="text-xl font-bold text-slate-900">₹{cabin.price || '0'}</span>
+                        <span className="text-[10px] text-slate-400 font-bold uppercase">/ Month</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-[10px] font-medium text-slate-500 mt-0.5">
+                        <Users size={10} />
+                        {cabin.capacity} Seats
+                      </div>
+                    </div>
+
+                    <div className="h-10 w-10 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center group-hover:bg-red-600 group-hover:text-white transition-colors"
+                      onClick={(e) => handleDelete(e, cabin._id)}>
+                      <Trash2 size={16} />
                     </div>
                   </div>
                 </div>

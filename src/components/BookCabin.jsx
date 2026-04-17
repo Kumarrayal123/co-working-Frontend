@@ -143,7 +143,7 @@ const BookCabin = () => {
       {/* <UsersNavbar /> */}
       <AdminNavbar/>
 
-      <div className="w-full mx-auto px-6 pt-16">
+      <div className="w-full mx-auto px-6 pt-20">
         {/* HEADER */}
         <button
           onClick={() => navigate(-1)}
@@ -333,7 +333,7 @@ const BookCabin = () => {
                   : "bg-slate-900 text-white hover:bg-emerald-600 shadow-slate-900/20"
                   }`}
               >
-                {loading ? "Synchronizing…" : "Conform Booking"}
+                {loading ? "Synchronizing…" : "Confirm Booking"}
                 {!loading && <ArrowRight size={18} />}
               </button>
             </form>

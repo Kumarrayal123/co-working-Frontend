@@ -28,7 +28,7 @@ function Login() {
       // Bypass external API and mock the admin login session
       let token = "mocked-admin-token-for-saidulu";
       const adminData = {
-        _id: "admin_saidulu",
+        _id: "68ebe9ee8f06d33ee022d665",
         name: "Saidulu Reddy",
         email: "saidulureddy@gmail.com",
         role: "admin"

@@ -199,12 +199,16 @@ import {
   MapPin,
   Clock,
   IndianRupee,
+  Search,
+  X
 } from "lucide-react";
 import AdminNavbar from "./AdminNavbar";
 
 const DoctorBookings = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterDate, setFilterDate] = useState("");
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -223,6 +227,17 @@ const DoctorBookings = () => {
     };
     fetchBookings();
   }, []);
+
+  const filteredBookings = bookings.filter((b) => {
+    const matchesSearch = 
+      b.cabinId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      b.cabinId?.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      b.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      b.userId?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesDate = filterDate ? b.startDate === filterDate : true;
+    return matchesSearch && matchesDate;
+  });
 
   return (
     <div className="min-h-screen bg-[#f9fafb]">
@@ -244,11 +259,42 @@ const DoctorBookings = () => {
             </p>
           </div>
 
-          <div className="bg-white rounded-2xl px-6 py-4 shadow-md flex items-center gap-6">
-            <div>
-              <p className="text-xs text-slate-400">Total Bookings</p>
-              <p className="text-2xl font-semibold text-slate-900">
-                {bookings.length}
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 h-[52px] bg-white border border-slate-200 rounded-2xl text-sm font-semibold focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none shadow-sm transition-all"
+              />
+            </div>
+            
+            <input
+              type="date"
+              value={filterDate}
+              onChange={(e) => setFilterDate(e.target.value)}
+              className="w-full sm:w-auto px-5 h-[52px] bg-white border border-slate-200 rounded-2xl text-sm font-semibold text-slate-600 outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 shadow-sm transition-all"
+            />
+            
+            {(searchTerm || filterDate) && (
+              <button
+                onClick={() => {
+                  setSearchTerm("");
+                  setFilterDate("");
+                }}
+                className="w-full sm:w-13 h-[52px] flex items-center justify-center bg-slate-100 text-slate-500 rounded-2xl hover:bg-slate-200 transition-all shadow-sm"
+                title="Clear Filters"
+              >
+                <X size={20} />
+              </button>
+            )}
+
+            <div className="w-full sm:w-auto min-w-[140px] h-[52px] bg-white border border-slate-200 rounded-2xl px-6 flex flex-col justify-center shadow-sm">
+              <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider leading-none mb-1">Found</p>
+              <p className="text-lg font-black text-slate-900 leading-none">
+                {filteredBookings.length} <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-1">Results</span>
               </p>
             </div>
           </div>
@@ -262,21 +308,29 @@ const DoctorBookings = () => {
         )}
 
         {/* EMPTY */}
-        {!loading && bookings.length === 0 && (
-          <div className="bg-white rounded-3xl p-16 text-center shadow-xl max-w-xl mx-auto">
-            <Calendar size={40} className="mx-auto text-emerald-600 mb-6" />
-            <h3 className="text-xl font-semibold text-slate-900 mb-2">
-              No bookings yet
+        {!loading && filteredBookings.length === 0 && (
+          <div className="bg-white rounded-3xl p-16 text-center shadow-xl max-w-xl mx-auto border border-slate-100">
+            <Search size={40} className="mx-auto text-slate-300 mb-6" />
+            <h3 className="text-xl font-bold text-slate-900 mb-2 uppercase tracking-tight">
+              Registry Empty
             </h3>
-            <p className="text-slate-500">
-              Once users book your cabins, reservations will appear here.
+            <p className="text-slate-500 font-medium">
+              We couldn't find any bookings matching your search criteria.
             </p>
+            {(searchTerm || filterDate) && (
+              <button
+                onClick={() => { setSearchTerm(""); setFilterDate(""); }}
+                className="mt-6 px-6 py-2 bg-slate-100 text-slate-600 rounded-xl font-bold text-xs hover:bg-slate-200 transition-colors uppercase tracking-widest"
+              >
+                Reset Dashboard
+              </button>
+            )}
           </div>
         )}
 
         {/* CARDS */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-          {bookings.map((booking) => (
+          {filteredBookings.map((booking) => (
             <div
               key={booking._id}
               className="group bg-white rounded-[2.5rem] shadow-[0_20px_40px_-20px_rgba(0,0,0,0.15)] hover:shadow-[0_30px_60px_-25px_rgba(0,0,0,0.2)] transition-all duration-500 overflow-hidden"

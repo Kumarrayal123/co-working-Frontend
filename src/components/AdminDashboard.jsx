@@ -2,6 +2,7 @@ import axios from "axios";
 import {
   Building,
   Calendar,
+  Ticket,
   Users
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -15,13 +16,15 @@ import {
   YAxis,
 } from "recharts";
 import AdminNavbar from "./AdminNavbar";
+import { useNavigate } from "react-router-dom";
 
 /* ---------------- STAT CARD ---------------- */
 
-const StatCard = ({ title, value, icon: Icon, colorClass, borderColor }) => {
+const StatCard = ({ title, value, icon: Icon, colorClass, borderColor, onClick }) => {
   return (
     <div
-      className="bg-white rounded-xl shadow-sm px-3 py-2 flex items-center gap-2 border-t-4"
+      onClick={onClick}
+      className={`bg-white rounded-xl shadow-sm px-3 py-2 flex items-center gap-2 border-t-4 ${onClick ? 'cursor-pointer hover:bg-slate-50 transition-colors' : ''}`}
       style={{ borderTopColor: borderColor }}
     >
       {/* Colorful Icon */}
@@ -62,8 +65,10 @@ const getMonthlyBookings = (bookings) => {
 /* ---------------- DASHBOARD ---------------- */
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   const [totalCabins, setTotalCabins] = useState(0);
   const [totalBookings, setTotalBookings] = useState(0);
+  const [ownerBookingsCount, setOwnerBookingsCount] = useState(0);
   const [myCabinsCount, setMyCabinsCount] = useState(0);
   const [myBookingsCount, setMyBookingsCount] = useState(0);
   const [recentBookings, setRecentBookings] = useState([]);
@@ -107,6 +112,17 @@ const AdminDashboard = () => {
       .catch((err) => console.error("Error fetching my bookings", err));
   }, []);
 
+  /* ---------- OWNER CABINS BOOKINGS ---------- */
+  useEffect(() => {
+    axios
+      .get("http://localhost:5000/api/bookings/owner-bookings", getAuthHeader())
+      .then((res) => {
+        const bookings = res.data.bookings || res.data;
+        setOwnerBookingsCount(Array.isArray(bookings) ? bookings.length : 0);
+      })
+      .catch((err) => console.error("Error fetching owner bookings", err));
+  }, []);
+
   /* ---------- BOOKINGS + CHART ---------- */
   useEffect(() => {
     axios
@@ -143,15 +159,15 @@ const AdminDashboard = () => {
 
         {/* ---------- STATS GRID ---------- */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-  <StatCard
-    title="Users"
-    value={1}
-    icon={Users}
+  {/* <StatCard onClick={() => navigate("/doctorbookings")}
+    title="My cabins bookings"
+    value={ownerBookingsCount}
+    icon={Ticket}
     colorClass="bg-blue-500"
     borderColor="#3b82f6"
-  />
+  /> */}
 
-  <StatCard
+  <StatCard onClick={() => navigate("/spaces")}
     title="Active Cabins"
     value={totalCabins}
     icon={Building}
@@ -159,7 +175,15 @@ const AdminDashboard = () => {
     borderColor="#22c55e"
   />
 
-  <StatCard
+    <StatCard onClick={() => navigate("/doctorbookings")}
+    title="My cabins bookings"
+    value={ownerBookingsCount}
+    icon={Ticket}
+    colorClass="bg-blue-500"
+    borderColor="#3b82f6"
+  />
+
+  <StatCard onClick={() => navigate("/admincabin")}
     title="My Cabins"
     value={myCabinsCount}
     icon={Building}
@@ -167,7 +191,7 @@ const AdminDashboard = () => {
     borderColor="#1f2937"
   />
 
-  <StatCard
+  <StatCard onClick={() => navigate("/mybookings")}
     title="My Bookings"
     value={myBookingsCount}
     icon={Calendar}

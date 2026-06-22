@@ -10,11 +10,13 @@ import {
   Shield,
   ShieldCheck,
   Users,
-  Wifi
+  Wifi,
+  Building2 as BuildingIcon
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import AdminNavbar from "./AdminNavbar";
+import "./Dashboard.css";
 const API_URL = "http://localhost:5000";
 const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
 
@@ -60,8 +62,12 @@ export default function CabinDetails() {
 
   if (loading || !cabin) {
     return (
-      <div className="h-screen flex items-center justify-center text-slate-400 font-medium">
-        Loading...
+      <div className="admin-dash">
+        <AdminNavbar/>
+        <div className="admin-dash__loading">
+          <div className="admin-dash__spinner" />
+          <p className="admin-dash__loading-text">Loading cabin details...</p>
+        </div>
       </div>
     );
   }
@@ -81,25 +87,24 @@ export default function CabinDetails() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans pb-20">
-      {/* <UsersNavbar /> */}
+    <div className="admin-dash">
       <AdminNavbar/>
 
-      <div className="w-full mx-auto px-6 pt-20">
-        {/* BACK */}
+      <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-16">
+        {/* Back */}
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-xs uppercase tracking-widest font-bold text-slate-400 hover:text-emerald-600 mb-8 transition-colors"
+          className="flex items-center gap-2 text-xs uppercase tracking-widest font-bold text-slate-400 hover:text-indigo-600 mb-6 transition-colors"
         >
           <ArrowLeft size={14} /> Back
         </button>
 
-        {/* MAIN SECTION */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100">
+        {/* Main Section */}
+        <div className="admin-dash__card grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 p-6 lg:p-8">
 
-          {/* LEFT IMAGES */}
+          {/* Left Images */}
           <div className="flex flex-col gap-4">
-            <div className="relative overflow-hidden rounded-[2rem] h-[340px] lg:h-[420px] shadow-lg shadow-slate-200/50 group">
+            <div className="relative overflow-hidden rounded-2xl h-[300px] sm:h-[340px] lg:h-[420px] shadow-lg shadow-slate-200/50 group">
               <img
                 src={getImageUrl(cabin.images?.[activeImage])}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
@@ -109,6 +114,9 @@ export default function CabinDetails() {
                 }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 via-transparent to-transparent opacity-60" />
+              <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest text-indigo-700 shadow-sm">
+                Premium Workspace
+              </div>
             </div>
 
             {cabin.images?.length > 1 && (
@@ -120,7 +128,7 @@ export default function CabinDetails() {
                     onClick={() => setActiveImage(index)}
                     className={`w-20 h-16 object-cover rounded-lg cursor-pointer flex-shrink-0 transition-all
                       ${activeImage === index
-                        ? "ring-2 ring-emerald-600 opacity-100"
+                        ? "ring-2 ring-indigo-600 opacity-100"
                         : "opacity-60 hover:opacity-100"
                       }`}
                     alt=""
@@ -133,16 +141,16 @@ export default function CabinDetails() {
             )}
           </div>
 
-          {/* RIGHT DETAILS */}
+          {/* Right Details */}
           <div className="flex flex-col justify-center space-y-6">
             <div>
-              <span className="inline-block text-[10px] font-bold text-emerald-600 uppercase tracking-[0.2em] mb-3">Premium Workspace</span>
-              <h1 className="text-3xl font-black uppercase text-slate-900 leading-tight mb-3 tracking-tighter">
+              <span className="inline-block text-[10px] font-bold text-indigo-600 uppercase tracking-[0.2em] mb-3">Workspace Details</span>
+              <h1 className="text-2xl sm:text-3xl font-black uppercase text-slate-900 leading-tight mb-3 tracking-tighter">
                 {cabin.name}
               </h1>
               <div className="flex items-center gap-2 text-slate-500 text-sm font-semibold">
-                <div className="p-1.5 bg-emerald-50 rounded-lg">
-                  <MapPin size={16} className="text-emerald-500" />
+                <div className="p-1.5 bg-indigo-50 rounded-lg">
+                  <MapPin size={16} className="text-indigo-500" />
                 </div>
                 {cabin.address}
               </div>
@@ -153,11 +161,11 @@ export default function CabinDetails() {
             </p>
 
             <div className="flex items-center gap-2">
-              <span className="text-4xl font-black text-slate-900 tracking-tighter">₹{cabin.price}</span>
+              <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tighter">₹{cabin.price}</span>
               <span className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-2">/ Hour</span>
             </div>
 
-            {/* WORKSPACE FEATURES */}
+            {/* Workspace Features */}
             <div className="pt-4 border-t border-slate-100">
               <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest mb-4">
                 Amenities
@@ -169,9 +177,9 @@ export default function CabinDetails() {
                   return (
                     <div
                       key={key}
-                      className="flex items-center gap-3 p-3 rounded-xl bg-slate-50/50 border border-slate-100/50 hover:bg-white hover:shadow-sm transition-all group"
+                      className="flex items-center gap-3 p-3 rounded-xl bg-indigo-50/30 border border-indigo-100/50 hover:bg-indigo-50 hover:shadow-sm transition-all group"
                     >
-                      <div className="p-2 bg-white rounded-lg shadow-sm group-hover:text-emerald-600">
+                      <div className="p-2 bg-white rounded-lg shadow-sm group-hover:text-indigo-600 transition-colors">
                         {Icon && <Icon size={14} />}
                       </div>
                       <span className="text-[11px] font-bold text-slate-600 uppercase tracking-tight">
@@ -183,20 +191,20 @@ export default function CabinDetails() {
               </div>
             </div>
 
-            {/* INFO & BOOK */}
-            <div className="pt-6 border-t border-slate-100 flex flex-col gap-8">
-              <div className="flex gap-8 text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+            {/* Info & Book */}
+            <div className="pt-6 border-t border-slate-100 flex flex-col gap-6">
+              <div className="flex gap-6 sm:gap-8 text-[11px] font-bold text-slate-400 uppercase tracking-widest">
                 <div className="flex items-center gap-2">
-                  <Users size={14} className="text-emerald-500" /> {cabin.capacity} Seats
+                  <Users size={14} className="text-indigo-500" /> {cabin.capacity} Seats
                 </div>
                 <div className="flex items-center gap-2">
-                  <ShieldCheck size={14} className="text-emerald-500" /> Secured Space
+                  <ShieldCheck size={14} className="text-indigo-500" /> Secured Space
                 </div>
               </div>
 
               <button
                 onClick={() => navigate(`/book/${cabin._id}`)}
-                className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-sm uppercase tracking-[0.2em] hover:bg-emerald-600 transition-all shadow-xl shadow-slate-900/20 active:scale-[0.98] flex items-center justify-center gap-3"
+                className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-bold text-sm uppercase tracking-[0.1em] hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg shadow-indigo-500/20 active:scale-[0.98] flex items-center justify-center gap-3"
               >
                Book Cabin 
               </button>
@@ -204,22 +212,21 @@ export default function CabinDetails() {
           </div>
         </div>
 
-        {/* RELATED */}
+        {/* Related */}
         {relatedCabins.length > 0 && (
-          <div className="mt-20">
-            <h2 className="text-2xl font-bold uppercase text-slate-900 mb-8 tracking-tight">
+          <div className="mt-16">
+            <h2 className="text-xl sm:text-2xl font-bold uppercase text-slate-900 mb-8 tracking-tight">
               Related Workspaces
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {relatedCabins.map((rc) => (
                 <div
                   key={rc._id}
                   onClick={() => navigate(`/cabin/${rc._id}`)}
-                  className="bg-white rounded-[1.5rem] border border-slate-100 overflow-hidden cursor-pointer
-                             hover:shadow-xl hover:shadow-slate-200/40 hover:-translate-y-1 transition-all duration-300 group"
+                  className="admin-dash__card cursor-pointer hover:shadow-lg transition-all duration-300 group"
                 >
-                  <div className="h-48 overflow-hidden">
+                  <div className="h-48 overflow-hidden rounded-t-2xl relative">
                     <img
                       src={getImageUrl(rc.images?.[0])}
                       className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -228,15 +235,18 @@ export default function CabinDetails() {
                         e.target.src = PLACEHOLDER_IMAGE;
                       }}
                     />
+                    <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest text-indigo-700 shadow-sm">
+                      Available
+                    </div>
                   </div>
-                  <div className="p-5 space-y-1">
-                    <h4 className="font-bold uppercase text-slate-900 text-lg truncate">
+                  <div className="p-5 space-y-2">
+                    <h4 className="font-bold uppercase text-slate-900 text-base truncate">
                       {rc.name}
                     </h4>
                     <p className="text-xs font-medium text-slate-500">
                       {rc.address?.split(",")[0]}
                     </p>
-                    <p className="font-bold text-slate-900 pt-2 text-lg">
+                    <p className="font-bold text-slate-900 pt-2 text-base">
                       ₹{rc.price} <span className="text-xs font-medium text-slate-400">/ hr</span>
                     </p>
                   </div>
@@ -246,12 +256,12 @@ export default function CabinDetails() {
           </div>
         )}
 
-        {/* TRUST */}
-        <div className="mt-16 text-center text-xs font-semibold text-slate-400 uppercase tracking-widest flex justify-center items-center gap-2">
+        {/* Trust */}
+        <div className="mt-12 text-center text-xs font-semibold text-slate-400 uppercase tracking-widest flex justify-center items-center gap-2">
           <ShieldCheck size={16} />
           Verified professional workspace
         </div>
-      </div>
+      </main>
     </div>
   );
 }

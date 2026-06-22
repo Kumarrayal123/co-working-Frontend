@@ -1,9 +1,10 @@
 import axios from "axios";
-import { Building2, CheckCircle, FileText, Home, IndianRupee, MapPin, Upload, Users, X } from "lucide-react";
+import { Building2, CheckCircle, FileText, Home, IndianRupee, MapPin, Upload, Users, X, Building2 as BuildingIcon, Plus } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import UsersNavbar from "./UsersNavbar";
+import AdminNavbar from "./AdminNavbar";
+import "./Dashboard.css";
 
 function AddCabin() {
   const [formData, setFormData] = useState({
@@ -98,43 +99,47 @@ function AddCabin() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <UsersNavbar />
+    <div className="admin-dash">
+      <AdminNavbar />
 
-      <div className="flex-grow pt-28 pb-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl mx-auto">
-          <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-[#1E3A8A] to-[#14B8A6] px-4 py-2 text-white">
-              <h2 className="text-2xl font-bold flex items-center gap-2">
-                <Home size={24} /> Add New Cabin
-              </h2>
-              <p className="mt-1 text-indigo-100">
-                Create a new coworking space listing.
-              </p>
-            </div>
+      <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto pb-16">
+        {/* Header */}
+        <div className="admin-dash__header">
+          <div>
+            <h1 className="admin-dash__greeting">
+              Add <span>Cabin</span>
+            </h1>
+            <p className="admin-dash__subtitle">
+              Create a new coworking space listing and share your workspace with the community.
+            </p>
+          </div>
+        </div>
 
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="p-8 space-y-6">
+        {/* Form */}
+        <div className="admin-dash__card mt-8">
+          <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-8">
 
               {/* Name & Address */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Building Name</label>
-                  <input
-                    type="text"
-                    name="name"
-                    placeholder="e.g. Executive Boardroom"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none"
-                  />
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Building Name</label>
+                  <div className="relative">
+                    <Building2 size={18} className="absolute left-3 top-3.5 text-slate-400" />
+                    <input
+                      type="text"
+                      name="name"
+                      placeholder="e.g. Executive Boardroom"
+                      value={formData.name}
+                      onChange={handleChange}
+                      required
+                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none font-medium text-sm"
+                    />
+                  </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Address / Location</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Address / Location</label>
                   <div className="relative">
-                    <MapPin size={18} className="absolute left-3 top-3.5 text-gray-400" />
+                    <MapPin size={18} className="absolute left-3 top-3.5 text-slate-400" />
                     <input
                       type="text"
                       name="address"
@@ -142,33 +147,33 @@ function AddCabin() {
                       value={formData.address}
                       onChange={handleChange}
                       required
-                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none"
+                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none font-medium text-sm"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Capacity & Price */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Cabin Type</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Cabin Type</label>
                   <div className="relative">
-                    <Building2 size={18} className="absolute left-3 top-3.5 text-gray-400" />
+                    <Home size={18} className="absolute left-3 top-3.5 text-slate-400" />
                     <input
                       type="text"
                       value={cabinType}
                       onChange={(e) => setCabinType(e.target.value)}
                       placeholder="e.g. Meeting Room"
                       required
-                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none"
+                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none font-medium text-sm"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Capacity (Persons)</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Capacity (Persons)</label>
                   <div className="relative">
-                    <Users size={18} className="absolute left-3 top-3.5 text-gray-400" />
+                    <Users size={18} className="absolute left-3 top-3.5 text-slate-400" />
                     <input
                       type="number"
                       name="capacity"
@@ -176,29 +181,30 @@ function AddCabin() {
                       value={formData.capacity}
                       onChange={handleChange}
                       required
-                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none"
+                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none font-medium text-sm"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Price per hour (₹)</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Price per hour (₹)</label>
                   <div className="relative">
-                    <IndianRupee size={18} className="absolute left-3 top-3.5 text-gray-400" />
+                    <IndianRupee size={18} className="absolute left-3 top-3.5 text-slate-400" />
                     <input
                       type="number"
                       name="price"
                       placeholder="e.g. 25000"
                       value={formData.price}
                       onChange={handleChange}
-                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none"
+                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none font-medium text-sm"
                     />
                   </div>
                 </div>
               </div>
+              {/* Amenities */}
               <div>
-                <label className="text-sm font-medium">Amenities</label>
-                <div className="grid grid-cols-2 gap-4 mt-2 md:grid-cols-3">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Amenities</label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-3">
                   {[
                     { key: "wifi", label: "Wi-Fi" },
                     { key: "parking", label: "Parking" },
@@ -211,9 +217,9 @@ function AddCabin() {
                       key={item.key}
                       type="button"
                       onClick={() => toggleAmenity(item.key)}
-                      className={`px-4 py-3 rounded-lg border font-medium transition ${formData.amenities[item.key]
-                        ? "bg-emerald-100 border-emerald-500 text-emerald-700"
-                        : "border-gray-300 text-gray-600"
+                      className={`px-4 py-3 rounded-xl border font-medium transition-all ${formData.amenities[item.key]
+                        ? "bg-indigo-600 border-indigo-600 text-white shadow-md"
+                        : "border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300"
                         }`}
                     >
                       {item.label}
@@ -224,24 +230,24 @@ function AddCabin() {
 
               {/* Description */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Description</label>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Description</label>
                 <div className="relative">
-                  <FileText size={18} className="absolute left-3 top-3.5 text-gray-400" />
+                  <FileText size={18} className="absolute left-3 top-3.5 text-slate-400" />
                   <textarea
                     name="description"
                     placeholder="Describe amenities, equipment..."
                     value={formData.description}
                     onChange={handleChange}
                     rows="4"
-                    className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none font-medium text-sm"
                   />
                 </div>
               </div>
 
               {/* File Upload */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Upload Photos</label>
-                <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:bg-gray-50 transition-colors cursor-pointer relative group">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Upload Photos</label>
+                <div className="border-2 border-dashed border-indigo-200 rounded-xl p-8 text-center hover:bg-indigo-50 transition-colors cursor-pointer relative group">
                   <input
                     type="file"
                     multiple
@@ -249,9 +255,12 @@ function AddCabin() {
                     onChange={handleImageChange}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                   />
-                  <div className="flex flex-col items-center gap-2 text-gray-500 group-hover:text-indigo-600 transition-colors">
-                    <Upload size={32} />
+                  <div className="flex flex-col items-center gap-2 text-slate-500 group-hover:text-indigo-600 transition-colors">
+                    <div className="p-3 bg-indigo-50 rounded-full group-hover:bg-indigo-100 transition-colors">
+                      <Upload size={24} className="text-indigo-600" />
+                    </div>
                     <span className="text-sm font-medium">Click to upload photos</span>
+                    <span className="text-xs text-slate-400">PNG, JPG up to 5MB</span>
                   </div>
                 </div>
 
@@ -259,7 +268,7 @@ function AddCabin() {
                 {images.length > 0 && (
                   <div className="grid grid-cols-4 sm:grid-cols-6 gap-3 mt-4">
                     {images.map((file, index) => (
-                      <div key={index} className="relative group aspect-square rounded-lg overflow-hidden border border-gray-200">
+                      <div key={index} className="relative group aspect-square rounded-xl overflow-hidden border border-slate-200 shadow-sm">
                         <img
                           src={URL.createObjectURL(file)}
                           alt="preview"
@@ -268,9 +277,9 @@ function AddCabin() {
                         <button
                           type="button"
                           onClick={() => removeImage(index)}
-                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-red-600"
                         >
-                          <X size={12} />
+                          <X size={14} />
                         </button>
                       </div>
                     ))}
@@ -279,29 +288,28 @@ function AddCabin() {
               </div>
 
               {/* Submit Button */}
-              <div className="pt-4">
+              <div className="pt-6">
                 <button
                   type="submit"
                   disabled={loading}
-                  className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg shadow-indigo-200 transition-all flex items-center justify-center gap-2 ${loading
+                  className={`w-full py-4 rounded-xl font-bold text-sm uppercase tracking-[0.1em] shadow-lg transition-all flex items-center justify-center gap-2 ${loading
                     ? "bg-indigo-400 text-white cursor-not-allowed"
-                    : "bg-gradient-to-r from-[#22C45F] to-[#2563EB] px-4 py-2 text-white hover:from-[#22C45F] hover:to-[#2563EB] hover:shadow-xl"
+                    : "bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-indigo-500/30"
                     }`}
                 >
                   {loading ? (
                     <span className="animate-pulse">Publishing Listing...</span>
                   ) : (
                     <>
-                      <CheckCircle size={20} /> Add Cabin
+                      <Plus size={18} /> Add Cabin
                     </>
                   )}
                 </button>
               </div>
 
             </form>
-          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

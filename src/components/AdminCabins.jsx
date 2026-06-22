@@ -11,12 +11,14 @@ import {
   Trash2,
   Upload,
   Users,
-  X
+  X,
+  Building2 as BuildingIcon
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import AdminNavbar from "./AdminNavbar";
+import "./Dashboard.css";
 const API_URL = "http://localhost:5000";
 const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
 
@@ -170,72 +172,69 @@ export const AdminCabins = () => {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans">
+    <div className="admin-dash">
       <AdminNavbar />
 
-      <div className="pt-24 px-4 sm:px-6 lg:px-8 w-full mx-auto">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
+      <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="admin-dash__header">
           <div>
-            <h2 className="text-2xl font-black uppercase text-slate-900 tracking-tight">Manage Cabins</h2>
-            <p className="text-slate-500 font-medium mt-1">Total {filteredCabins.length} workspaces listed</p>
+            <h1 className="admin-dash__greeting">
+              My <span>Cabins</span>
+            </h1>
+            <p className="admin-dash__subtitle">
+              Manage your workspace listings and properties.
+            </p>
           </div>
-
-          <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
-            {/* Search Bar - Center Right Position */}
-            <div className="relative group w-full sm:w-[320px]">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Search size={18} className="text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
-              </div>
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
               <input
                 type="text"
-                placeholder="Search by name or location..."
-                className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl shadow-sm focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/50 text-sm font-semibold transition-all placeholder:text-slate-400"
+                placeholder="Search cabins..."
+                className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all w-64"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-
-            {/* View Bookings Button */}
             <button
               onClick={() => navigate("/doctorbookings")}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-3 bg-white border border-slate-200 text-slate-700 rounded-2xl font-bold text-sm shadow-sm hover:bg-slate-50 transition-all active:scale-95"
+              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors"
             >
-              <FileText size={18} className="text-emerald-600" />
+              <FileText size={16} className="text-indigo-600" />
               View Bookings
             </button>
-
-            {/* Premium Add Cabin Button */}
             <button
               onClick={() => setIsModalOpen(true)}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-3 bg-green-700 text-white rounded-2xl font-bold text-sm shadow-xl shadow-slate-200 hover:bg-gradient-to-r hover:from-[#22c55e]  hover:to-[#3b82f6] transition-all duration-300 transform hover:-translate-y-1 active:scale-95"
-
+              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors"
             >
-              <div className="p-1 bg-white/20 rounded-lg">
-                <Plus size={16} strokeWidth={3} />
-              </div>
+              <Plus size={16} />
               Add New Cabin
             </button>
           </div>
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-20">
-            <div className="animate-spin rounded-full h-10 w-10 border-t-4 border-emerald-600 border-r-transparent"></div>
+          <div className="admin-dash__loading">
+            <div className="admin-dash__spinner" />
+            <p className="admin-dash__loading-text">Loading cabins...</p>
           </div>
         ) : filteredCabins.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-[2rem] border border-slate-100 shadow-sm">
-            <p className="text-slate-500 font-medium">No cabins found.</p>
+          <div className="admin-dash__error" style={{ background: '#f8fafc', borderColor: '#e2e8f0' }}>
+            <BuildingIcon size={48} className="text-slate-300 mb-4" />
+            <p className="admin-dash__error-title" style={{ color: '#475569' }}>No cabins found</p>
+            <p className="admin-dash__error-message">Add your first workspace to get started.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredCabins.map((cabin) => (
               <div
                 key={cabin._id}
                 onClick={() => navigate(`/cabin/${cabin._id}`)}
-                className="group bg-white rounded-[1.5rem] border border-slate-100 overflow-hidden hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col h-full relative"
+                className="admin-dash__card group cursor-pointer flex flex-col h-full relative"
               >
                 {/* Image Section */}
-                <div className="relative h-44 overflow-hidden">
+                <div className="relative h-48 overflow-hidden rounded-t-2xl">
                   <div className="absolute inset-0 bg-slate-200 animate-pulse" />
                   <img
                     src={cabin.images?.[0] ? `${API_URL}/${cabin.images[0].replace(/\\/g, "/")}` : PLACEHOLDER_IMAGE}
@@ -248,8 +247,8 @@ export const AdminCabins = () => {
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-900/50 via-transparent to-transparent z-20 opacity-40" />
 
                   {/* Actions Layer */}
-                  <div className="absolute top-3 left-3 z-30 bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold text-emerald-700 shadow-sm flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  <div className="absolute top-3 left-3 z-30 bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold text-indigo-700 shadow-sm flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
                     Available
                   </div>
 
@@ -267,18 +266,18 @@ export const AdminCabins = () => {
                 {/* Content Section */}
                 <div className="p-5 flex flex-col flex-grow">
                   <div className="mb-4">
-                    <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-1">Coworking Space</p>
-                    <h3 className="text-base font-bold uppercase text-slate-900 leading-tight group-hover:text-emerald-600 transition-colors line-clamp-1">
+                    <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest mb-1">Coworking Space</p>
+                    <h3 className="text-base font-bold text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors line-clamp-1">
                       {cabin.name}
                     </h3>
                   </div>
 
                   <div className="flex items-start gap-3 mb-3">
-                    <div className="p-2 bg-emerald-50 rounded-lg shrink-0 text-emerald-600">
+                    <div className="p-2 bg-indigo-50 rounded-lg shrink-0 text-indigo-600">
                       <MapPin size={16} />
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-slate-900 line-clamp-1">{cabin.address?.split(',')[0] || "Location"}</p>
+                      <p className="text-sm font-semibold text-slate-900 line-clamp-1">{cabin.address?.split(',')[0] || "Location"}</p>
                       <p className="text-xs text-slate-500 line-clamp-1">{cabin.address}</p>
                     </div>
                   </div>
@@ -287,7 +286,7 @@ export const AdminCabins = () => {
                     {cabin.description || "Experience a premium workspace designed for focus and collaboration, featuring modern amenities."}
                   </p>
 
-                  <div className="mt-auto pt-4 border-t border-slate-50 flex items-center justify-between">
+                  <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
                     <div>
                       <div className="flex items-baseline gap-0.5">
                         <span className="text-xl font-bold text-slate-900">₹{cabin.price || '0'}</span>
@@ -309,188 +308,289 @@ export const AdminCabins = () => {
             ))}
           </div>
         )}
-      </div>
+      </main>
 
       {/* Add Cabin Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-2xl max-h-[90vh] rounded-[2rem] shadow-2xl overflow-hidden border border-slate-100 flex flex-col animate-in fade-in zoom-in duration-200">
-            {/* Modal Header */}
-            <div className="bg-gradient-to-r from-[#34f67b] to-[#4579c8] px-4 py-2 text-white">
-              <div>
-                <h2 className="text-xl font-bold flex items-center gap-2">
-                  <Home size={22} /> Add New Cabin
-                </h2>
-                <p className="text-emerald-100 text-sm mt-0.5">Create a new workspace listing</p>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div
+            className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+            style={{
+              maxHeight: "92vh",
+              animation: "cabinModalIn 220ms cubic-bezier(0.34,1.3,0.64,1) forwards",
+            }}
+          >
+            <style>{`
+              @keyframes cabinModalIn {
+                from { opacity:0; transform:scale(0.94) translateY(16px); }
+                to   { opacity:1; transform:scale(1)   translateY(0); }
+              }
+              .cabin-field {
+                width:100%; padding:0.65rem 0.875rem;
+                border:1.5px solid #e2e8f0; border-radius:10px;
+                font-size:0.875rem; font-family:inherit; color:#1e293b;
+                outline:none; transition:border-color 180ms, box-shadow 180ms;
+                background:#fff; box-sizing:border-box;
+              }
+              .cabin-field:focus {
+                border-color:#6366f1;
+                box-shadow:0 0 0 3px rgba(99,102,241,0.12);
+              }
+              .cabin-field-icon { position:relative; }
+              .cabin-field-icon svg {
+                position:absolute; left:12px; top:50%;
+                transform:translateY(-50%); color:#94a3b8; pointer-events:none;
+              }
+              .cabin-field-icon .cabin-field { padding-left:2.5rem; }
+              .cabin-amenity {
+                display:flex; align-items:center; gap:8px;
+                padding:0.5rem 0.875rem; border-radius:10px;
+                border:1.5px solid #e2e8f0; background:#fff;
+                font-size:0.8rem; font-weight:600; color:#64748b;
+                cursor:pointer; transition:all 180ms; user-select:none;
+              }
+              .cabin-amenity.active {
+                border-color:#6366f1; background:rgba(99,102,241,0.07);
+                color:#4f46e5;
+              }
+              .cabin-amenity .dot {
+                width:8px; height:8px; border-radius:50%;
+                border:2px solid #cbd5e1; flex-shrink:0; transition:all 180ms;
+              }
+              .cabin-amenity.active .dot {
+                border-color:#6366f1; background:#6366f1;
+                box-shadow:0 0 0 3px rgba(99,102,241,0.2);
+              }
+              .cabin-label {
+                display:block; font-size:0.7rem; font-weight:700;
+                letter-spacing:0.06em; text-transform:uppercase;
+                color:#64748b; margin-bottom:6px;
+              }
+            `}</style>
+
+            {/* ── Modal Header ── */}
+            <div style={{
+              background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 60%, #06b6d4 100%)",
+              padding: "1.25rem 1.5rem",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexShrink: 0,
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.875rem" }}>
+                <div style={{
+                  width: 44, height: 44, borderRadius: 12,
+                  background: "rgba(255,255,255,0.18)", backdropFilter: "blur(8px)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  <Home size={22} color="#fff" />
+                </div>
+                <div>
+                  <h2 style={{ margin: 0, fontSize: "1.125rem", fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>
+                    Add New Cabin
+                  </h2>
+                  <p style={{ margin: 0, fontSize: "0.75rem", color: "rgba(255,255,255,0.75)", marginTop: 2 }}>
+                    Create a new workspace listing for Ingarin
+                  </p>
+                </div>
               </div>
-             <button
-  onClick={() => setIsModalOpen(false)}
-  className="p-2 hover:bg-white/10 rounded-full transition-colors absolute right-4 top-4"
->
-  <X size={24} />
-</button>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                style={{
+                  width: 36, height: 36, borderRadius: 10,
+                  background: "rgba(255,255,255,0.15)", border: "none",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  cursor: "pointer", color: "#fff", transition: "background 150ms",
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.25)"}
+                onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.15)"}
+              >
+                <X size={20} />
+              </button>
             </div>
 
-            {/* Modal Body */}
-            <div className="overflow-y-auto p-8 custom-scrollbar">
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Name & Address */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Building Name</label>
+            {/* ── Modal Body ── */}
+            <div style={{ overflowY: "auto", padding: "1.5rem", flex: 1 }} className="custom-scrollbar">
+              <form onSubmit={handleSubmit}>
+                {/* ── Row 1: Building Name + Address ── */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+                  <div>
+                    <label className="cabin-label">Building Name</label>
                     <input
-                      type="text"
-                      name="name"
+                      className="cabin-field"
+                      type="text" name="name"
                       placeholder="e.g. Tech Hub Alpha"
                       value={formData.name}
                       onChange={handleChange}
                       required
-                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none font-medium"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Address</label>
-                    <div className="relative">
-                      <MapPin size={18} className="absolute left-3.5 top-3.5 text-slate-400" />
+                  <div>
+                    <label className="cabin-label">Address / Location</label>
+                    <div className="cabin-field-icon">
+                      <MapPin size={16} />
                       <input
-                        type="text"
-                        name="address"
-                        placeholder="e.g. Floor 4, Suite 10"
+                        className="cabin-field"
+                        type="text" name="address"
+                        placeholder="e.g. Floor 4, Suite 10, Bangalore"
                         value={formData.address}
                         onChange={handleChange}
                         required
-                        className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none font-medium text-sm"
                       />
                     </div>
                   </div>
                 </div>
 
-                {/* Cabin & Capacity */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Cabin Spec</label>
-                    <div className="relative">
-                      <Building2 size={18} className="absolute left-3.5 top-3.5 text-slate-400" />
+                {/* ── Row 2: Cabin Spec + Capacity + Price ── */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+                  <div>
+                    <label className="cabin-label">Cabin Spec</label>
+                    <div className="cabin-field-icon">
+                      <Building2 size={16} />
                       <input
-                        type="text"
-                        name="cabin"
+                        className="cabin-field"
+                        type="text" name="cabin"
                         placeholder="e.g. Private Office B"
                         value={formData.cabin}
                         onChange={handleChange}
                         required
-                        className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none font-medium text-sm"
                       />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Capacity</label>
-                    <div className="relative">
-                      <Users size={18} className="absolute left-3.5 top-3.5 text-slate-400" />
+                  <div>
+                    <label className="cabin-label">Capacity (Seats)</label>
+                    <div className="cabin-field-icon">
+                      <Users size={16} />
                       <input
-                        type="number"
-                        name="capacity"
-                        placeholder="Seats"
+                        className="cabin-field"
+                        type="number" name="capacity" min="1"
+                        placeholder="e.g. 10"
                         value={formData.capacity}
                         onChange={handleChange}
                         required
-                        className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none font-medium text-sm"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="cabin-label">Price / Month (₹)</label>
+                    <div className="cabin-field-icon">
+                      <IndianRupee size={16} />
+                      <input
+                        className="cabin-field"
+                        type="number" name="price" min="0"
+                        placeholder="e.g. 25000"
+                        value={formData.price}
+                        onChange={handleChange}
+                        required
                       />
                     </div>
                   </div>
                 </div>
 
-                {/* Price */}
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Price per Hour (₹)</label>
-                  <div className="relative">
-                    <IndianRupee size={18} className="absolute left-3.5 top-3.5 text-slate-400" />
-                    <input
-                      type="number"
-                      name="price"
-                      placeholder="e.g. 500"
-                      value={formData.price}
-                      onChange={handleChange}
-                      required
-                      className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none font-medium text-sm"
-                    />
-                  </div>
-                </div>
-
-                {/* Amenities */}
-                <div className="space-y-3">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Included Amenities</label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {/* ── Amenities ── */}
+                <div style={{ marginBottom: "1rem" }}>
+                  <label className="cabin-label">Included Amenities</label>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.5rem" }}>
                     {[
-                      { key: "wifi", label: "Wi-Fi" },
-                      { key: "parking", label: "Parking" },
-                      { key: "lockers", label: "Lockers" },
-                      { key: "privateWashroom", label: "Private" },
-                      { key: "secureAccess", label: "Security" },
-                      { key: "comfortSeating", label: "Comfort" },
-                    ].map((item) => (
+                      { key: "wifi",            label: "Wi-Fi",            emoji: "📶" },
+                      { key: "parking",         label: "Parking",          emoji: "🅿️" },
+                      { key: "lockers",         label: "Lockers",          emoji: "🔐" },
+                      { key: "privateWashroom", label: "Private Washroom", emoji: "🚿" },
+                      { key: "secureAccess",    label: "Secure Access",    emoji: "🛡️" },
+                      { key: "comfortSeating",  label: "Comfort Seating",  emoji: "🪑" },
+                    ].map(item => (
                       <button
                         key={item.key}
                         type="button"
                         onClick={() => toggleAmenity(item.key)}
-                        className={`px-3 py-2.5 rounded-xl border text-xs font-bold transition-all ${formData.amenities[item.key]
-                          ? "bg-emerald-50 border-emerald-500 text-emerald-700 shadow-sm"
-                          : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"
-                          }`}
+                        className={`cabin-amenity${formData.amenities[item.key] ? " active" : ""}`}
                       >
+                        <span className="dot" />
+                        <span style={{ fontSize: "1rem" }}>{item.emoji}</span>
                         {item.label}
                       </button>
                     ))}
                   </div>
                 </div>
 
-                {/* Description */}
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Space Description</label>
-                  <div className="relative">
-                    <FileText size={18} className="absolute left-3.5 top-3.5 text-slate-400" />
+                {/* ── Description ── */}
+                <div style={{ marginBottom: "1rem" }}>
+                  <label className="cabin-label">Space Description</label>
+                  <div className="cabin-field-icon" style={{ alignItems: "flex-start" }}>
+                    <FileText size={16} style={{ top: "14px" }} />
                     <textarea
+                      className="cabin-field"
                       name="description"
-                      placeholder="Share details about this unique workspace..."
+                      placeholder="Describe this workspace — layout, vibe, special features…"
                       value={formData.description}
                       onChange={handleChange}
-                      rows="3"
-                      className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none font-medium text-sm custom-scrollbar"
+                      rows={3}
+                      style={{ resize: "vertical", paddingTop: "0.65rem" }}
                     />
                   </div>
                 </div>
 
-                {/* Photos */}
-                <div className="space-y-3">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Photo Gallery</label>
-                  <div className="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center hover:bg-slate-50/50 hover:border-indigo-300 transition-all cursor-pointer relative group">
+                {/* ── Photo Upload ── */}
+                <div style={{ marginBottom: "1.5rem" }}>
+                  <label className="cabin-label">Photo Gallery</label>
+                  <div style={{
+                    border: "2px dashed #c7d2fe", borderRadius: 14,
+                    padding: "1.5rem", textAlign: "center",
+                    background: "rgba(99,102,241,0.03)",
+                    cursor: "pointer", position: "relative",
+                    transition: "border-color 180ms, background 180ms",
+                  }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = "#6366f1"; e.currentTarget.style.background = "rgba(99,102,241,0.06)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = "#c7d2fe"; e.currentTarget.style.background = "rgba(99,102,241,0.03)"; }}
+                  >
                     <input
-                      type="file"
-                      multiple
-                      accept="image/*"
+                      type="file" multiple accept="image/*"
                       onChange={handleImageChange}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }}
                     />
-                    <div className="flex flex-col items-center gap-2 text-slate-400 group-hover:text-indigo-600 transition-colors">
-                      <Upload size={32} />
-                      <span className="text-xs font-bold uppercase tracking-tight">Upload Images</span>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, pointerEvents: "none" }}>
+                      <div style={{
+                        width: 48, height: 48, borderRadius: 12,
+                        background: "rgba(99,102,241,0.1)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}>
+                        <Upload size={22} color="#6366f1" />
+                      </div>
+                      <div>
+                        <p style={{ margin: 0, fontSize: "0.875rem", fontWeight: 600, color: "#4f46e5" }}>
+                          Click to upload photos
+                        </p>
+                        <p style={{ margin: "2px 0 0", fontSize: "0.72rem", color: "#94a3b8" }}>
+                          PNG, JPG, WEBP — multiple files allowed
+                        </p>
+                      </div>
                     </div>
                   </div>
 
                   {images.length > 0 && (
-                    <div className="grid grid-cols-4 sm:grid-cols-5 gap-3 mt-4">
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "0.5rem", marginTop: "0.75rem" }}>
                       {images.map((file, index) => (
-                        <div key={index} className="relative group aspect-square rounded-xl overflow-hidden border border-slate-200 shadow-sm">
-                          <img
-                            src={URL.createObjectURL(file)}
-                            alt="preview"
-                            className="w-full h-full object-cover"
-                          />
+                        <div key={index} style={{
+                          position: "relative", aspectRatio: "1",
+                          borderRadius: 10, overflow: "hidden",
+                          border: "1.5px solid #e2e8f0",
+                          boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                        }}>
+                          <img src={URL.createObjectURL(file)} alt="preview"
+                            style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                           <button
                             type="button"
                             onClick={() => removeImage(index)}
-                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                            style={{
+                              position: "absolute", top: 4, right: 4,
+                              width: 20, height: 20, borderRadius: "50%",
+                              background: "#ef4444", border: "none",
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              cursor: "pointer", color: "#fff",
+                              boxShadow: "0 1px 4px rgba(0,0,0,0.25)",
+                            }}
                           >
-                            <X size={10} />
+                            <X size={11} />
                           </button>
                         </div>
                       ))}
@@ -498,32 +598,57 @@ export const AdminCabins = () => {
                   )}
                 </div>
 
-                {/* Action Buttons */}
-                <div className="pt-6 flex gap-3">
+                {/* ── Action Buttons ── */}
+                <div style={{ display: "flex", gap: "0.75rem", borderTop: "1px solid #f1f5f9", paddingTop: "1.25rem" }}>
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="flex-1 py-3.5 rounded-xl font-bold text-sm text-slate-500 bg-slate-100 hover:bg-slate-200 transition-all"
+                    style={{
+                      flex: 1, padding: "0.75rem",
+                      borderRadius: 10, border: "1.5px solid #e2e8f0",
+                      background: "#fff", fontFamily: "inherit",
+                      fontSize: "0.875rem", fontWeight: 600, color: "#64748b",
+                      cursor: "pointer", transition: "all 160ms",
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "#f8fafc"; e.currentTarget.style.borderColor = "#cbd5e1"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.borderColor = "#e2e8f0"; }}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={submitting}
-                    className={`flex-[2] py-3.5 rounded-xl font-bold text-sm shadow-xl transition-all flex items-center justify-center gap-2 ${submitting
-                      ? "bg-indigo-400 text-white cursor-not-allowed"
-                      : "bg-gradient-to-r from-[#22c55e] to-[#3b82f6] px-2 py-2 text-white hover:bg-emerald-600 hover:shadow-emerald-200"
-                      }`}
+                    style={{
+                      flex: 2, padding: "0.75rem",
+                      borderRadius: 10, border: "none",
+                      background: submitting
+                        ? "#a5b4fc"
+                        : "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+                      color: "#fff", fontFamily: "inherit",
+                      fontSize: "0.875rem", fontWeight: 700,
+                      cursor: submitting ? "not-allowed" : "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                      boxShadow: submitting ? "none" : "0 4px 14px rgba(99,102,241,0.35)",
+                      transition: "all 160ms",
+                    }}
                   >
                     {submitting ? (
-                      <span className="animate-pulse">Saving...</span>
-                    ) : (
                       <>
-                        <CheckCircle size={18} /> Confirm Add Cabin
+                        <span style={{
+                          width: 16, height: 16, borderRadius: "50%",
+                          border: "2px solid rgba(255,255,255,0.4)",
+                          borderTopColor: "#fff",
+                          animation: "spin 0.7s linear infinite",
+                          display: "inline-block",
+                        }} />
+                        Saving…
                       </>
+                    ) : (
+                      <><CheckCircle size={17} /> Confirm &amp; Add Cabin</>
                     )}
                   </button>
                 </div>
+                <style>{`@keyframes spin { to { transform:rotate(360deg); } }`}</style>
               </form>
             </div>
           </div>
@@ -532,4 +657,3 @@ export const AdminCabins = () => {
     </div>
   )
 }
-

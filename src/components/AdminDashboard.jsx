@@ -3,7 +3,8 @@ import {
   Building,
   Calendar,
   Ticket,
-  Users
+  Users,
+  TrendingUp
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
@@ -17,28 +18,8 @@ import {
 } from "recharts";
 import AdminNavbar from "./AdminNavbar";
 import { useNavigate } from "react-router-dom";
+import "./Dashboard.css";
 
-/* ---------------- STAT CARD ---------------- */
-
-const StatCard = ({ title, value, icon: Icon, colorClass, borderColor, onClick }) => {
-  return (
-    <div
-      onClick={onClick}
-      className={`bg-white rounded-xl shadow-sm px-3 py-2 flex items-center gap-2 border-t-4 ${onClick ? 'cursor-pointer hover:bg-slate-50 transition-colors' : ''}`}
-      style={{ borderTopColor: borderColor }}
-    >
-      {/* Colorful Icon */}
-      <div className={`p-2 rounded-lg ${colorClass}`}>
-        <Icon className="w-4 h-4 text-white" />
-      </div>
-
-      {/* Title + Value (same line) */}
-      <span className="text-sm text-gray-700 whitespace-nowrap">
-        {title}: <span className="font-semibold text-gray-900">{value}</span>
-      </span>
-    </div>
-  );
-};
 
 /* ---------------- HELPER: MONTH-WISE BOOKINGS ---------------- */
 
@@ -73,6 +54,8 @@ const AdminDashboard = () => {
   const [myBookingsCount, setMyBookingsCount] = useState(0);
   const [recentBookings, setRecentBookings] = useState([]);
   const [bookingChartData, setBookingChartData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const getAuthHeader = () => {
     const token = localStorage.getItem("token");
@@ -125,11 +108,16 @@ const AdminDashboard = () => {
 
   /* ---------- BOOKINGS + CHART ---------- */
   useEffect(() => {
-    axios
-      .get("http://localhost:5000/api/bookings")
-      .then((res) => {
-        const bookings = res.data.bookings || res.data;
+    const fetchAllData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const [bookingsRes] = await Promise.all([
+          axios.get("http://localhost:5000/api/bookings")
+        ]);
 
+        const bookings = bookingsRes.data.bookings || bookingsRes.data;
         setTotalBookings(bookings.length);
 
         const recent = [...bookings]
@@ -140,147 +128,219 @@ const AdminDashboard = () => {
 
         const monthlyData = getMonthlyBookings(bookings);
         setBookingChartData(monthlyData);
-      })
-      .catch((err) => console.log(err));
+        
+        setLoading(false);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to fetch dashboard data. Please try again.");
+        setLoading(false);
+      }
+    };
+
+    fetchAllData();
   }, []);
 
   const adminString = localStorage.getItem("admin");
   const adminUser = adminString ? JSON.parse(adminString) : { name: "Admin" };
 
+  // Custom tooltip for chart
+  const ChartTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="admin-dash__tooltip">
+          <p className="admin-dash__tooltip-title">{payload[0].payload.month}</p>
+          <p className="admin-dash__tooltip-value">Bookings: {payload[0].value}</p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  if (loading) {
+    return (
+      <div className="admin-dash">
+        <AdminNavbar />
+        <div className="admin-dash__loading">
+          <div className="admin-dash__spinner" />
+          <p className="admin-dash__loading-text">Loading dashboard analytics...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="admin-dash">
+        <AdminNavbar />
+        <div className="admin-dash__error">
+          <p className="admin-dash__error-title">Oops!</p>
+          <p className="admin-dash__error-message">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-slate-50 font-sans">
+    <div className="admin-dash">
       <AdminNavbar />
 
-      <main className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 w-full mx-auto">
-        <div className="mb-8">
-          <h2 className="text-2xl font-black uppercase text-slate-900 tracking-tight">Dashboard Overview</h2>
-          <p className="text-slate-500 font-medium text-sm">Welcome back, <span className="font-bold text-slate-700">{adminUser.name}</span>!</p>
+      <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="admin-dash__header">
+          <div>
+            <h1 className="admin-dash__greeting">
+              Admin <span>Dashboard</span>
+            </h1>
+            <p className="admin-dash__subtitle">
+              Welcome back, <span className="font-bold">{adminUser.name}</span>! Track your workspace bookings and performance.
+            </p>
+          </div>
+          <div className="admin-dash__date-pill">
+            <Calendar />
+            <span>
+              {new Date().toLocaleDateString("en-US", {
+                weekday: "short",
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              })}
+            </span>
+          </div>
         </div>
 
-        {/* ---------- STATS GRID ---------- */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-  {/* <StatCard onClick={() => navigate("/doctorbookings")}
-    title="My cabins bookings"
-    value={ownerBookingsCount}
-    icon={Ticket}
-    colorClass="bg-blue-500"
-    borderColor="#3b82f6"
-  /> */}
+        {/* Stats Grid */}
+        <div className="admin-dash__stats">
+          <div className="admin-dash__stat" onClick={() => navigate("/spaces")}>
+            <div className="admin-dash__stat-top">
+              <span className="admin-dash__stat-label">Active Cabins</span>
+              <div className="admin-dash__stat-icon admin-dash__stat-icon--emerald">
+                <Building />
+              </div>
+            </div>
+            <div className="admin-dash__stat-value">{totalCabins}</div>
+            <div className="admin-dash__stat-meta">total workspaces</div>
+          </div>
 
-  <StatCard onClick={() => navigate("/spaces")}
-    title="Active Cabins"
-    value={totalCabins}
-    icon={Building}
-    colorClass="bg-emerald-500"
-    borderColor="#22c55e"
-  />
+          <div className="admin-dash__stat" onClick={() => navigate("/doctorbookings")}>
+            <div className="admin-dash__stat-top">
+              <span className="admin-dash__stat-label">Cabin Bookings</span>
+              <div className="admin-dash__stat-icon admin-dash__stat-icon--indigo">
+                <Ticket />
+              </div>
+            </div>
+            <div className="admin-dash__stat-value">{ownerBookingsCount}</div>
+            <div className="admin-dash__stat-meta">owner bookings</div>
+          </div>
 
-    <StatCard onClick={() => navigate("/doctorbookings")}
-    title="My cabins bookings"
-    value={ownerBookingsCount}
-    icon={Ticket}
-    colorClass="bg-blue-500"
-    borderColor="#3b82f6"
-  />
+          <div className="admin-dash__stat" onClick={() => navigate("/admincabin")}>
+            <div className="admin-dash__stat-top">
+              <span className="admin-dash__stat-label">My Cabins</span>
+              <div className="admin-dash__stat-icon admin-dash__stat-icon--rose">
+                <Building />
+              </div>
+            </div>
+            <div className="admin-dash__stat-value">{myCabinsCount}</div>
+            <div className="admin-dash__stat-meta">owned spaces</div>
+          </div>
 
-  <StatCard onClick={() => navigate("/admincabin")}
-    title="My Cabins"
-    value={myCabinsCount}
-    icon={Building}
-    colorClass="bg-slate-900"
-    borderColor="#1f2937"
-  />
+          <div className="admin-dash__stat" onClick={() => navigate("/mybookings")}>
+            <div className="admin-dash__stat-top">
+              <span className="admin-dash__stat-label">My Bookings</span>
+              <div className="admin-dash__stat-icon admin-dash__stat-icon--cyan">
+                <Calendar />
+              </div>
+            </div>
+            <div className="admin-dash__stat-value">{myBookingsCount}</div>
+            <div className="admin-dash__stat-meta">my reservations</div>
+          </div>
 
-  <StatCard onClick={() => navigate("/mybookings")}
-    title="My Bookings"
-    value={myBookingsCount}
-    icon={Calendar}
-    colorClass="bg-indigo-500"
-    borderColor="#6366f1"
-  />
-</div>
-        {/* ---------- CONTENT ---------- */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* ---------- BOOKINGS BAR CHART ---------- */}
-          <div className="lg:col-span-2 bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-bold text-slate-900 tracking-tight">
-                Booking Trends
-              </h3>
-              <select className="bg-slate-50 border border-slate-200 text-slate-600 text-xs font-bold rounded-lg px-3 py-2 outline-none focus:border-emerald-500">
+          <div className="admin-dash__stat">
+            <div className="admin-dash__stat-top">
+              <span className="admin-dash__stat-label">Total Bookings</span>
+              <div className="admin-dash__stat-icon admin-dash__stat-icon--amber">
+                <TrendingUp />
+              </div>
+            </div>
+            <div className="admin-dash__stat-value">{totalBookings}</div>
+            <div className="admin-dash__stat-meta">all reservations</div>
+          </div>
+        </div>
+        {/* Charts Grid */}
+        <div className="admin-dash__charts-grid">
+          {/* Booking Trends Chart */}
+          <div className="admin-dash__card admin-dash__chart-wrap">
+            <div className="admin-dash__card-header">
+              <div>
+                <h3 className="admin-dash__card-title">Booking Trends</h3>
+              </div>
+              <select className="admin-dash__month-input">
                 <option>This Year</option>
                 <option>Last Year</option>
               </select>
             </div>
-
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={bookingChartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
-                <XAxis
-                  dataKey="month"
-                  stroke="#94A3B8"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                  dy={10}
-                />
-                <YAxis
-                  stroke="#94A3B8"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                  dx={-10}
-                />
-                <Tooltip
-                  cursor={{ fill: '#F8FAFC' }}
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                />
-                <Bar
-                  dataKey="bookings"
-                  fill="#10B981"   // Emerald-500
-                  radius={[6, 6, 0, 0]}
-                  barSize={32}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* ---------- RECENT BOOKINGS ---------- */}
-          <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
-            <h3 className="text-lg font-bold text-slate-900 tracking-tight mb-6">
-              Recent Activity
-            </h3>
-
-            <div className="space-y-5">
-              {recentBookings.length === 0 ? (
-                <div className="text-center py-8 text-slate-400 text-sm">
-                  No recent activity
-                </div>
+            <div className="admin-dash__card-body flex-1">
+              {bookingChartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={bookingChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis
+                      dataKey="month"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: '#64748b', fontSize: 11 }}
+                    />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: '#64748b', fontSize: 11 }}
+                    />
+                    <Tooltip content={<ChartTooltip />} cursor={{ fill: '#f8fafc' }} />
+                    <Bar dataKey="bookings" radius={[4, 4, 0, 0]} barSize={20} fill="#10b981" />
+                  </BarChart>
+                </ResponsiveContainer>
               ) : (
-                recentBookings.map((b) => (
-                  <div key={b._id} className="flex items-start gap-3">
-                    <div className="w-9 h-9 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 font-bold text-xs shrink-0 border border-emerald-100">
-                      {b.name?.charAt(0).toUpperCase() || "U"}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-bold text-slate-900 truncate">
-                        {b.name || "User"}
-                      </p>
-                      <p className="text-xs font-medium text-slate-500 mb-0.5 truncate">
-                        Reserved <span className="text-slate-700">{b.cabinId?.name || "Workspace"}</span>
-                      </p>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                        {new Date(b.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                ))
+                <div className="admin-dash__empty-chart">No booking data available</div>
               )}
             </div>
+          </div>
 
-            <button className="w-full mt-6 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-50 transition-colors">
-              View All Bookings
-            </button>
+          {/* Recent Activity */}
+          <div className="admin-dash__card admin-dash__chart-wrap">
+            <div className="admin-dash__card-header">
+              <div>
+                <h3 className="admin-dash__card-title">Recent Activity</h3>
+                <p className="admin-dash__card-desc">Latest workspace reservations</p>
+              </div>
+            </div>
+            <div className="admin-dash__card-body flex-1">
+              {recentBookings.length === 0 ? (
+                <div className="admin-dash__empty-chart">
+                  <Calendar />
+                  <p>No recent activity</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {recentBookings.slice(0, 5).map((b) => (
+                    <div key={b._id} className="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors">
+                      <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 font-bold text-sm shrink-0 border border-emerald-100">
+                        {b.name?.charAt(0).toUpperCase() || "U"}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-slate-900 truncate">
+                          {b.name || "User"}
+                        </p>
+                        <p className="text-xs text-slate-500 mb-1 truncate">
+                          Reserved <span className="font-medium text-slate-700">{b.cabinId?.name || "Workspace"}</span>
+                        </p>
+                        <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wide">
+                          {new Date(b.createdAt).toLocaleDateString("en-US", { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </main>

@@ -200,9 +200,11 @@ import {
   Clock,
   IndianRupee,
   Search,
-  X
+  X,
+  Calendar as CalendarIcon
 } from "lucide-react";
 import AdminNavbar from "./AdminNavbar";
+import "./Dashboard.css";
 
 const DoctorBookings = () => {
   const [bookings, setBookings] = useState([]);
@@ -240,58 +242,50 @@ const DoctorBookings = () => {
   });
 
   return (
-    <div className="min-h-screen bg-[#f9fafb]">
-      {/* <UsersNavbar /> */}
+    <div className="admin-dash">
       <AdminNavbar/>
 
-      <div className="pt-20 pb-20 px-6 max-w-[1400px] mx-auto">
-        {/* HEADER */}
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-16 gap-6">
+      <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="admin-dash__header">
           <div>
-            {/* <span className="inline-block text-xs font-semibold text-emerald-600 mb-2">
-              Owner Dashboard
-            </span> */}
-            <h2 className="pt-4 text-2xl font-bold text-slate-900 tracking-tight">
-              Cabin Bookings
-            </h2>
-            <p className="text-slate-500 max-w-xl">
+            <h1 className="admin-dash__greeting">
+              Cabin <span>Bookings</span>
+            </h1>
+            <p className="admin-dash__subtitle">
               A live overview of reservations across your listed cabins
             </p>
           </div>
-
-          <div className="flex flex-col sm:flex-row items-center gap-3">
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
               <input
                 type="text"
-                placeholder="Search..."
+                placeholder="Search bookings..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 h-[52px] bg-white border border-slate-200 rounded-2xl text-sm font-semibold focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none shadow-sm transition-all"
+                className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all w-64"
               />
             </div>
-            
             <input
               type="date"
               value={filterDate}
               onChange={(e) => setFilterDate(e.target.value)}
-              className="w-full sm:w-auto px-5 h-[52px] bg-white border border-slate-200 rounded-2xl text-sm font-semibold text-slate-600 outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 shadow-sm transition-all"
+              className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
             />
-            
             {(searchTerm || filterDate) && (
               <button
                 onClick={() => {
                   setSearchTerm("");
                   setFilterDate("");
                 }}
-                className="w-full sm:w-13 h-[52px] flex items-center justify-center bg-slate-100 text-slate-500 rounded-2xl hover:bg-slate-200 transition-all shadow-sm"
+                className="p-2.5 bg-slate-100 text-slate-500 rounded-xl hover:bg-slate-200 transition-colors"
                 title="Clear Filters"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             )}
-
-            <div className="w-full sm:w-auto min-w-[140px] h-[52px] bg-white border border-slate-200 rounded-2xl px-6 flex flex-col justify-center shadow-sm">
+            <div className="px-4 py-2 bg-white border border-slate-200 rounded-xl shadow-sm">
               <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider leading-none mb-1">Found</p>
               <p className="text-lg font-black text-slate-900 leading-none">
                 {filteredBookings.length} <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-1">Results</span>
@@ -300,75 +294,72 @@ const DoctorBookings = () => {
           </div>
         </div>
 
-        {/* LOADING */}
+        {/* Loading */}
         {loading && (
-          <div className="flex justify-center py-40">
-            <div className="animate-spin w-12 h-12 border-t-4 border-emerald-600 border-r-transparent rounded-full" />
+          <div className="admin-dash__loading">
+            <div className="admin-dash__spinner" />
+            <p className="admin-dash__loading-text">Loading bookings...</p>
           </div>
         )}
 
-        {/* EMPTY */}
+        {/* Empty */}
         {!loading && filteredBookings.length === 0 && (
-          <div className="bg-white rounded-3xl p-16 text-center shadow-xl max-w-xl mx-auto border border-slate-100">
-            <Search size={40} className="mx-auto text-slate-300 mb-6" />
-            <h3 className="text-xl font-bold text-slate-900 mb-2 uppercase tracking-tight">
-              Registry Empty
-            </h3>
-            <p className="text-slate-500 font-medium">
-              We couldn't find any bookings matching your search criteria.
-            </p>
+          <div className="admin-dash__error" style={{ background: '#f8fafc', borderColor: '#e2e8f0' }}>
+            <CalendarIcon size={48} className="text-slate-300 mb-4" />
+            <p className="admin-dash__error-title" style={{ color: '#475569' }}>No bookings found</p>
+            <p className="admin-dash__error-message">We couldn't find any bookings matching your search criteria.</p>
             {(searchTerm || filterDate) && (
               <button
                 onClick={() => { setSearchTerm(""); setFilterDate(""); }}
-                className="mt-6 px-6 py-2 bg-slate-100 text-slate-600 rounded-xl font-bold text-xs hover:bg-slate-200 transition-colors uppercase tracking-widest"
+                className="mt-4 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
               >
-                Reset Dashboard
+                Reset Filters
               </button>
             )}
           </div>
         )}
 
-        {/* CARDS */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+        {/* Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredBookings.map((booking) => (
             <div
               key={booking._id}
-              className="group bg-white rounded-[2.5rem] shadow-[0_20px_40px_-20px_rgba(0,0,0,0.15)] hover:shadow-[0_30px_60px_-25px_rgba(0,0,0,0.2)] transition-all duration-500 overflow-hidden"
+              className="admin-dash__card group hover:shadow-lg transition-all duration-300"
             >
-              {/* TOP */}
-              <div className="p-8 bg-gradient-to-br from-emerald-50 to-white">
-                <h3 className="text-xl font-semibold text-slate-900 mb-1">
+              {/* Top */}
+              <div className="p-5 bg-gradient-to-br from-indigo-50 to-white rounded-t-2xl">
+                <h3 className="text-base font-semibold text-slate-900 mb-1">
                   {booking.cabinId?.name}
                 </h3>
                 <div className="flex items-center gap-1.5 text-sm text-slate-500">
-                  <MapPin size={14} />
+                  <MapPin size={14} className="text-indigo-500" />
                   {booking.cabinId?.address?.split(",")[0]}
                 </div>
               </div>
 
-              {/* BODY */}
-              <div className="p-8 space-y-6">
-                {/* USER */}
-                <div className="flex items-center gap-4">
-                  <div className="w-11 h-11 rounded-xl bg-slate-100 flex items-center justify-center">
+              {/* Body */}
+              <div className="p-5 space-y-4">
+                {/* User */}
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">
                     <User size={18} className="text-slate-600" />
                   </div>
                   <div>
-                    <p className="font-medium text-slate-900">
+                    <p className="font-medium text-slate-900 text-sm">
                       {booking.name || booking.userId?.name || "Unknown Guest"}
                     </p>
                     <div className="flex flex-col gap-1 text-xs text-slate-500 mt-1">
                       <div className="flex items-center gap-2">
-                        <Phone size={12} className="text-emerald-600" />
+                        <Phone size={12} className="text-indigo-500" />
                         {booking.mobile || booking.userId?.mobile || "No Mobile Provided"}
                       </div>
                       <div className="flex items-center gap-2">
-                        <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                        <svg className="w-3 h-3 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                         {booking.userId?.email || "No Email"}
                       </div>
                       {booking.userId?.address && (
                         <div className="flex items-center gap-2">
-                          <MapPin size={12} className="text-emerald-600" />
+                          <MapPin size={12} className="text-indigo-500" />
                           {booking.userId?.address}
                         </div>
                       )}
@@ -376,9 +367,9 @@ const DoctorBookings = () => {
                   </div>
                 </div>
 
-                {/* TIME */}
-                <div className="flex items-start gap-4 text-sm text-slate-600">
-                  <Clock size={16} className="mt-1 text-emerald-600" />
+                {/* Time */}
+                <div className="flex items-start gap-3 text-sm text-slate-600">
+                  <Clock size={16} className="mt-1 text-indigo-500" />
                   <div className="space-y-1">
                     <p>
                       {booking.startDate} · {booking.startTime}
@@ -390,9 +381,9 @@ const DoctorBookings = () => {
                 </div>
               </div>
 
-              {/* FOOTER */}
-              <div className="px-8 py-6 bg-slate-50 flex items-center justify-between">
-                <div className="flex items-center gap-1 text-emerald-600 font-semibold text-lg">
+              {/* Footer */}
+              <div className="px-5 py-4 bg-slate-50 flex items-center justify-between rounded-b-2xl">
+                <div className="flex items-center gap-1 text-indigo-600 font-semibold text-lg">
                   <IndianRupee size={18} />
                   {booking.totalPrice}
                 </div>
@@ -403,7 +394,7 @@ const DoctorBookings = () => {
             </div>
           ))}
         </div>
-      </div>
+      </main>
     </div>
   );
 };

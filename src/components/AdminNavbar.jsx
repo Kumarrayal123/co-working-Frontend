@@ -1,18 +1,24 @@
 import {
   LogOut,
   Menu,
-  Shield,
-  X
+  LayoutDashboard,
+  Building2,
+  Calendar,
+  Home,
+  X,
+  ChevronDown,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import Logo from "../assets/Logo.png";
+import "./AdminNavbar.css";
 
 function AdminNavbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const profileRef = useRef(null);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
@@ -20,9 +26,37 @@ function AdminNavbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Close profile dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setProfileOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Close on Escape key
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === "Escape") {
+        setProfileOpen(false);
+        setOpen(false);
+      }
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, []);
+
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    document.body.style.overflow = open ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [open]);
+
   const isActive = (path) => location.pathname === path;
 
-  // Clear admin session
   const handleLogout = () => {
     localStorage.removeItem("admin");
     localStorage.removeItem("token");
@@ -30,125 +64,171 @@ function AdminNavbar() {
   };
 
   const navLinks = [
-    { name: "Dashboard", path: "/admindashboard" },
-    // { name: "Users", path: "/allusers" },
-    { name: "Spaces", path: "/spaces" },
-    // { name: "Add Cabin", path: "/adminaddcabin" },
-    { name: "Bookings", path: "/mybookings" },
-    { name: 'My Cabins', path: '/admincabin' }
+    { name: "Dashboard", path: "/admindashboard", icon: LayoutDashboard, description: "Overview & analytics" },
+    { name: "Spaces",    path: "/spaces",          icon: Building2,       description: "Manage workspaces"   },
+    { name: "Bookings",  path: "/mybookings",       icon: Calendar,        description: "View reservations"   },
+    { name: "My Cabins", path: "/admincabin",       icon: Home,            description: "Your spaces"         },
   ];
 
+  const adminString = localStorage.getItem("admin");
+  const adminUser   = adminString ? JSON.parse(adminString) : { name: "Admin" };
+  const initials    = adminUser.name?.substring(0, 2).toUpperCase() || "AD";
+
   return (
-    <nav
-      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${scrolled
-        ? "bg-white/90 backdrop-blur-md shadow-sm border-b border-slate-200 py-3"
-        : "bg-transparent py-4"
-        }`}
-    >
-      <div className="w-full px-4 sm:px-6 lg:px-10">
-        <div className="flex items-center justify-between gap-4">
-          {/* Logo */}
-          <Link to="/admindashboard" className="flex items-center gap-2">
-            <img src={Logo} alt="TimelyHealth" className="h-12 w-auto object-contain" />
+    <>
+      <nav className={`an-nav${scrolled ? " an-nav--scrolled" : ""}`}>
+        <div className="an-nav__inner">
+
+          {/* ── Logo ── */}
+          <Link to="/admindashboard" className="an-nav__logo">
+            <div className="an-nav__logo-icon">
+              <span className="an-nav__logo-ig">IG</span>
+            </div>
+            <div className="an-nav__logo-text">
+              <span className="an-nav__logo-title">Ingarin Workspace</span>
+              <span className="an-nav__logo-badge">Admin Portal</span>
+            </div>
           </Link>
 
-          {/* Desktop Menu */}
-          <div className="hidden md:flex items-center gap-8">
-            <div className="flex gap-1.5">
-              {navLinks.map((link) => (
+          {/* ── Desktop Nav Links ── */}
+          <ul className="an-nav__links">
+            {navLinks.map((link) => (
+              <li key={link.path}>
                 <Link
-                  key={link.path}
                   to={link.path}
-                  className={`px-4 py-2 rounded-xl text-sm font-bold tracking-tight uppercase transition-all duration-300 ${isActive(link.path)
-                    ? "bg-slate-900 text-white shadow-lg shadow-slate-900/20"
-                    : "text-slate-600 hover:text-emerald-700 hover:bg-emerald-50"
-                    }`}
+                  className={`an-nav__link${isActive(link.path) ? " an-nav__link--active" : ""}`}
+                  title={link.description}
                 >
-                  {link.name}
+                  <link.icon size={15} />
+                  <span>{link.name}</span>
+                  {isActive(link.path) && <span className="an-nav__link-dot" />}
                 </Link>
-              ))}
-            </div>
+              </li>
+            ))}
+          </ul>
 
-            <div className="w-px h-6 bg-slate-200"></div>
+          {/* ── Right: Profile + Logout ── */}
+          <div className="an-nav__right">
 
-            {/* PROFILE / LOGOUT */}
-            <div className="relative group">
-              <div className="w-10 h-10 rounded-full border-2 border-slate-100 bg-white flex items-center justify-center cursor-pointer transition-colors group-hover:border-emerald-200">
-                <Shield size={20} className="text-slate-600 group-hover:text-emerald-600" />
-              </div>
+            {/* Divider */}
+            <span className="an-nav__divider" />
 
-              <div className="
-                absolute right-0 mt-4 w-48
-                bg-white border border-slate-100 rounded-2xl shadow-xl
-                opacity-0 invisible group-hover:opacity-100 group-hover:visible
-                transition-all duration-200 transform origin-top-right z-50
-              ">
-                <div className="p-1">
-                  <button
-                    onClick={handleLogout}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
-                  >
-                    <LogOut size={16} />
-                    Log Out
+            {/* Profile Dropdown */}
+            <div className="an-nav__dropdown-wrap" ref={profileRef}>
+              <button
+                className="an-nav__profile-btn"
+                onClick={() => setProfileOpen(!profileOpen)}
+                aria-expanded={profileOpen}
+                aria-haspopup="true"
+              >
+                <div className="an-nav__avatar">{initials}</div>
+                <div className="an-nav__profile-info">
+                  <span className="an-nav__profile-name">{adminUser.name || "Admin"}</span>
+                  <span className="an-nav__profile-role">Administrator</span>
+                </div>
+                <ChevronDown
+                  size={14}
+                  className={`an-nav__chevron${profileOpen ? " an-nav__chevron--open" : ""}`}
+                />
+              </button>
+
+              {profileOpen && (
+                <div className="an-nav__dropdown an-nav__dropdown--profile">
+                  {/* Profile header */}
+                  <div className="an-nav__dropdown-head--profile">
+                    <div className="an-nav__avatar an-nav__avatar--lg">{initials}</div>
+                    <div>
+                      <p className="an-nav__dd-name">{adminUser.name || "Admin"}</p>
+                      <p className="an-nav__dd-role">Administrator</p>
+                    </div>
+                  </div>
+                  <div className="an-nav__dd-sep" />
+                  {/* Logout only */}
+                  <button className="an-nav__dd-logout" onClick={handleLogout}>
+                    <LogOut size={15} /> Sign Out
                   </button>
                 </div>
+              )}
+            </div>
+
+            {/* Mobile Hamburger */}
+            <button
+              className="an-nav__hamburger"
+              onClick={() => setOpen(!open)}
+              aria-label="Toggle menu"
+            >
+              {open ? <X size={22} /> : <Menu size={22} />}
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* ── Mobile Drawer ── */}
+      <div className={`an-mobile${open ? " an-mobile--open" : ""}`}>
+        {/* Backdrop */}
+        <div className="an-mobile__backdrop" onClick={() => setOpen(false)} />
+
+        {/* Drawer */}
+        <div className="an-mobile__drawer">
+
+          {/* Drawer Header */}
+          <div className="an-mobile__head">
+            <div className="an-mobile__logo">
+              <div className="an-nav__logo-icon">
+                <span className="an-nav__logo-ig">IG</span>
               </div>
+              <div className="an-nav__logo-text">
+                <span className="an-nav__logo-title">Ingarin Workspace</span>
+                <span className="an-nav__logo-badge">Admin Portal</span>
+              </div>
+            </div>
+            <button className="an-mobile__close" onClick={() => setOpen(false)}>
+              <X size={20} />
+            </button>
+          </div>
+
+          {/* Admin Card */}
+          <div className="an-mobile__admin-card">
+            <div className="an-nav__avatar an-nav__avatar--lg">{initials}</div>
+            <div>
+              <p className="an-mobile__admin-name">{adminUser.name || "Admin"}</p>
+              <p className="an-mobile__admin-role">Administrator</p>
             </div>
           </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            className="md:hidden p-2 text-slate-600 hover:text-emerald-600 transition"
-            onClick={() => setOpen(!open)}
-          >
-            {open ? <X size={24} /> : <Menu size={24} />}
-          </button>
+          {/* Nav Links */}
+          <p className="an-mobile__section-label">Navigation</p>
+          <ul className="an-mobile__links">
+            {navLinks.map((link) => (
+              <li key={link.path}>
+                <Link
+                  to={link.path}
+                  onClick={() => setOpen(false)}
+                  className={`an-mobile__link${isActive(link.path) ? " an-mobile__link--active" : ""}`}
+                >
+                  <span className="an-mobile__link-icon">
+                    <link.icon size={18} />
+                  </span>
+                  <div className="an-mobile__link-body">
+                    <span className="an-mobile__link-name">{link.name}</span>
+                    <span className="an-mobile__link-desc">{link.description}</span>
+                  </div>
+                  {isActive(link.path) && <span className="an-mobile__link-active-dot" />}
+                </Link>
+              </li>
+            ))}
+          </ul>
+
+          {/* Logout */}
+          <div className="an-mobile__footer">
+            <button className="an-mobile__logout" onClick={handleLogout}>
+              <LogOut size={17} />
+              Sign Out
+            </button>
+          </div>
         </div>
       </div>
-
-      {/* Mobile Menu Overlay */}
-      <div
-        className={`fixed inset-0 z-40 bg-white/95 backdrop-blur-xl transition-transform duration-300 md:hidden pt-28 ${open ? "translate-x-0" : "translate-x-full"
-          }`}
-        style={{ top: "0" }}
-      >
-        <button
-          onClick={() => setOpen(false)}
-          className="absolute top-6 right-6 p-2 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200"
-        >
-          <X size={20} />
-        </button>
-
-        <div className="flex justify-center mb-8">
-          <img src={Logo} alt="TimelyHealth" className="h-16 w-auto object-contain" />
-        </div>
-
-        <div className="flex flex-col px-8 space-y-4">
-          {navLinks.map((link) => (
-            <Link
-              key={link.path}
-              to={link.path}
-              onClick={() => setOpen(false)}
-              className={`p-4 rounded-2xl text-lg font-semibold transition ${isActive(link.path)
-                ? "bg-emerald-600 text-white shadow-xl shadow-emerald-600/20"
-                : "text-slate-600 hover:bg-slate-50"
-                }`}
-            >
-              {link.name}
-            </Link>
-          ))}
-
-          <div className="h-px my-4 bg-slate-100"></div>
-
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-4 p-4 text-lg font-semibold text-red-500 hover:bg-red-50 rounded-2xl transition-colors"
-          >
-            <LogOut size={20} /> Log Out
-          </button>
-        </div>
-      </div>
-    </nav>
+    </>
   );
 }
 

@@ -22,7 +22,7 @@ import MyProfile from "./components/MyProfile";
 import { AdminCabins } from "./components/AdminCabins";
 import { AdminBookings } from "./components/AdminBookings";
 import DoctorBookings from "./components/DoctorBookings";
-
+import Dashboard from "./components/Dashboard";
 
 function App() {
   return (
@@ -51,6 +51,7 @@ function App() {
         <Route path="/admincabin" element={<AdminCabins />}></Route>
         <Route path="/adminbookings" element={<AdminBookings />}></Route>
         <Route path="/doctorbookings" element={<DoctorBookings />}></Route>
+        <Route path="/dashboard" element={<Dashboard />}></Route>
 
       </Routes>
     </Router>

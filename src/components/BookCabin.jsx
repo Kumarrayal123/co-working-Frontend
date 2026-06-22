@@ -5,12 +5,14 @@ import {
   History,
   MapPin,
   User,
-  Users
+  Users,
+  Building2 as BuildingIcon
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import AdminNavbar from "./AdminNavbar";
+import "./Dashboard.css";
 const API_URL = "http://localhost:5000";
 const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
 
@@ -132,67 +134,71 @@ const BookCabin = () => {
 
   if (!cabin) {
     return (
-      <div className="h-screen flex items-center justify-center bg-slate-50 text-slate-400 font-bold text-sm">
-        Preparing workspace...
+      <div className="admin-dash">
+        <AdminNavbar/>
+        <div className="admin-dash__loading">
+          <div className="admin-dash__spinner" />
+          <p className="admin-dash__loading-text">Preparing workspace...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-20 font-sans">
-      {/* <UsersNavbar /> */}
+    <div className="admin-dash">
       <AdminNavbar/>
 
-      <div className="w-full mx-auto px-6 pt-20">
-        {/* HEADER */}
+      <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-16">
+        {/* Header */}
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-xs uppercase tracking-widest font-bold text-slate-400 hover:text-emerald-600 mb-8 transition-colors"
+          className="flex items-center gap-2 text-xs uppercase tracking-widest font-bold text-slate-400 hover:text-indigo-600 mb-6 transition-colors"
         >
           <ArrowLeft size={14} /> Back
         </button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-          {/* LEFT SUMMARY */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10">
+          {/* Left Summary */}
           <div className="lg:col-span-5">
-            <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100 sticky top-28">
-              <div className="h-60 rounded-2xl overflow-hidden mb-6 relative">
+            <div className="admin-dash__card p-6 sticky top-28">
+              <div className="h-48 sm:h-60 rounded-2xl overflow-hidden mb-6 relative group">
                 <img
                   src={getImageUrl(cabin.images?.[0])}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   alt=""
                   onError={(e) => {
                     e.target.src = PLACEHOLDER_IMAGE;
                   }}
                 />
-                <div className="absolute top-3 left-3 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest text-emerald-800">
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/30 via-transparent to-transparent" />
+                <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest text-indigo-700 shadow-sm">
                   Premium
                 </div>
               </div>
 
-              <h2 className="text-1xl font-bold uppercase text-slate-900 mb-1">
+              <h2 className="text-xl font-bold uppercase text-slate-900 mb-1">
                 {cabin.name}
               </h2>
 
               <div className="flex items-center gap-2 text-slate-500 text-sm font-semibold mb-6">
-                <div className="p-1.5 bg-emerald-50 rounded-lg">
-                  <MapPin size={16} className="text-emerald-500" />
+                <div className="p-1.5 bg-indigo-50 rounded-lg">
+                  <MapPin size={16} className="text-indigo-500" />
                 </div>
                 {cabin.address}
               </div>
 
               <div className="grid grid-cols-2 gap-3 mb-6">
-                <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-300 flex flex-col justify-center">
-                  <div className="text-[10px] uppercase tracking-[0.1em] text-emerald-700 font-bold mb-1">
+                <div className="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-300 flex flex-col justify-center">
+                  <div className="text-[10px] uppercase tracking-[0.1em] text-indigo-700 font-bold mb-1">
                     Capacity Profile
                   </div>
                   <div className="font-black text-slate-900 text-base flex items-center gap-1.5">
-                    <Users size={18} className="text-emerald-600" /> {cabin.capacity} <span className="text-[10px] text-slate-400 uppercase">Seats</span>
+                    <Users size={18} className="text-indigo-600" /> {cabin.capacity} <span className="text-[10px] text-slate-400 uppercase">Seats</span>
                   </div>
                 </div>
 
-                <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-300 flex flex-col justify-center">
-                  <div className="text-[10px] uppercase tracking-[0.1em] text-emerald-700 font-bold mb-1">
+                <div className="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-300 flex flex-col justify-center">
+                  <div className="text-[10px] uppercase tracking-[0.1em] text-indigo-700 font-bold mb-1">
                     Booking Rate
                   </div>
                   <div className="font-black text-slate-900 text-base flex items-baseline gap-0.5">
@@ -208,16 +214,16 @@ const BookCabin = () => {
             </div>
           </div>
 
-          {/* RIGHT FORM */}
+          {/* Right Form */}
           <div className="lg:col-span-7 space-y-6">
             <form onSubmit={handleBooking} className="space-y-6">
-              {/* USER */}
-              <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100">
-                <div className="flex items-center gap-3 mb-8">
-                  <div className="p-2.5 bg-slate-900 rounded-xl text-white shadow-lg">
+              {/* User */}
+              <div className="admin-dash__card p-6 sm:p-8">
+                <div className="flex items-center gap-3 mb-6 sm:mb-8">
+                  <div className="p-2.5 bg-indigo-600 rounded-xl text-white shadow-lg">
                     <User size={20} />
                   </div>
-                  <h3 className="text-lg font-black uppercase text-slate-900 tracking-tight">
+                  <h3 className="text-base sm:text-lg font-black uppercase text-slate-900 tracking-tight">
                     Client Credential
                   </h3>
                 </div>
@@ -228,7 +234,7 @@ const BookCabin = () => {
                     <div className="relative">
                       <User className="absolute left-4 top-4 text-slate-400" size={18} />
                       <input
-                        className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 border border-emerald-300 focus:bg-white focus:border-emerald-500/20 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all font-semibold text-sm text-slate-900 placeholder:text-slate-300"
+                        className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-semibold text-sm text-slate-900 placeholder:text-slate-300"
                         placeholder="e.g. John Doe"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
@@ -242,7 +248,7 @@ const BookCabin = () => {
                     <div className="relative">
                       <History className="absolute left-4 top-4 text-slate-400" size={18} />
                       <input
-                        className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 border border-emerald-300 focus:bg-white focus:border-emerald-500/20 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all font-semibold text-sm text-slate-900 placeholder:text-slate-300"
+                        className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-semibold text-sm text-slate-900 placeholder:text-slate-300"
                         placeholder="e.g. +91 9876543210"
                         value={mobile}
                         onChange={(e) => setMobile(e.target.value)}
@@ -253,31 +259,31 @@ const BookCabin = () => {
                 </div>
               </div>
 
-              {/* SCHEDULE */}
-              <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100">
-                <div className="flex items-center gap-3 mb-8">
-                  <div className="p-2.5 bg-slate-900 rounded-xl text-white shadow-lg">
+              {/* Schedule */}
+              <div className="admin-dash__card p-6 sm:p-8">
+                <div className="flex items-center gap-3 mb-6 sm:mb-8">
+                  <div className="p-2.5 bg-indigo-600 rounded-xl text-white shadow-lg">
                     <History size={20} />
                   </div>
-                  <h3 className="text-lg font-black uppercase text-slate-900 tracking-tight">
+                  <h3 className="text-base sm:text-lg font-black uppercase text-slate-900 tracking-tight">
                     Temporal Window
                   </h3>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-8">
+                <div className="grid md:grid-cols-2 gap-6 sm:gap-8">
                   <div className="space-y-3">
                     <label className="text-xs font-bold text-slate-500 mb-2 block uppercase tracking-widest px-1">Check-in Date & Time</label>
                     <div className="flex gap-2">
                       <input
                         type="date"
-                        className="flex-1 rounded-xl bg-slate-50 border border-emerald-300 p-4 outline-none font-bold text-sm text-slate-900 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 transition-all cursor-pointer"
+                        className="flex-1 rounded-xl bg-slate-50 border border-slate-200 p-4 outline-none font-bold text-sm text-slate-900 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
                         required
                       />
                       <input
                         type="time"
-                        className="w-32 rounded-xl bg-slate-50 border border-emerald-300 p-4 outline-none font-bold text-sm text-slate-900 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 transition-all cursor-pointer"
+                        className="w-32 rounded-xl bg-slate-50 border border-slate-200 p-4 outline-none font-bold text-sm text-slate-900 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
                         value={startTime}
                         onChange={(e) => setStartTime(e.target.value)}
                         required
@@ -290,14 +296,14 @@ const BookCabin = () => {
                     <div className="flex gap-2">
                       <input
                         type="date"
-                        className="flex-1 rounded-xl bg-slate-50 border border-emerald-300 p-4 outline-none font-bold text-sm text-slate-900 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 transition-all cursor-pointer"
+                        className="flex-1 rounded-xl bg-slate-50 border border-slate-200 p-4 outline-none font-bold text-sm text-slate-900 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
                         required
                       />
                       <input
                         type="time"
-                        className="w-32 rounded-xl bg-slate-50 border border-emerald-300 p-4 outline-none font-bold text-sm text-slate-900 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 transition-all cursor-pointer"
+                        className="w-32 rounded-xl bg-slate-50 border border-slate-200 p-4 outline-none font-bold text-sm text-slate-900 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
                         value={endTime}
                         onChange={(e) => setEndTime(e.target.value)}
                         required
@@ -307,18 +313,18 @@ const BookCabin = () => {
                 </div>
               </div>
 
-               {/* PRICE OVERVIEW */}
+               {/* Price Overview */}
                {totalHours > 0 && (
-                <div className="bg-slate-900 text-white rounded-[2.5rem] p-8 shadow-2xl shadow-slate-900/30 flex items-center justify-between">
+                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl p-6 sm:p-8 shadow-2xl shadow-indigo-500/30 flex items-center justify-between">
                   <div>
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 block mb-2">Aggregate Billing</span>
-                    <div className="text-4xl font-black tracking-tighter">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-200 block mb-2">Aggregate Billing</span>
+                    <div className="text-3xl sm:text-4xl font-black tracking-tighter">
                       ₹{totalPrice.toLocaleString("en-IN")}
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 block mb-2">Duration</span>
-                    <div className="text-xl font-black text-emerald-400 uppercase tracking-tight">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-200 block mb-2">Duration</span>
+                    <div className="text-lg sm:text-xl font-black text-indigo-200 uppercase tracking-tight">
                       {totalHours} HOURS
                     </div>
                   </div>
@@ -334,9 +340,9 @@ const BookCabin = () => {
 
               <button
                 disabled={loading}
-                className={`w-full py-5 rounded-[2rem] font-black text-sm uppercase tracking-[0.2em] flex justify-center items-center gap-3 transition-all shadow-xl active:scale-[0.98] ${loading
+                className={`w-full py-4 rounded-xl font-bold text-sm uppercase tracking-[0.1em] flex justify-center items-center gap-3 transition-all shadow-lg active:scale-[0.98] ${loading
                   ? "bg-slate-100 text-slate-300 cursor-not-allowed"
-                  : "bg-slate-900 text-white hover:bg-emerald-600 shadow-slate-900/20"
+                  : "bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-indigo-500/20"
                   }`}
               >
                 {loading ? "Synchronizing…" : "Confirm Booking"}
@@ -346,24 +352,21 @@ const BookCabin = () => {
           </div>
         </div>
 
-        {/* RELATED */}
+        {/* Related */}
         {relatedCabins.length > 0 && (
-          <div className="mt-24 border-t border-slate-200 pt-16">
-            <h2 className="text-2xl font-bold uppercase text-slate-900 mb-8 tracking-tight">
+          <div className="mt-16 border-t border-slate-200 pt-12">
+            <h2 className="text-xl sm:text-2xl font-bold uppercase text-slate-900 mb-6 sm:mb-8 tracking-tight">
               Related Workspaces
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {relatedCabins.map((rc) => (
                 <div
                   key={rc._id}
                   onClick={() => navigate(`/cabin/${rc._id}`)}
-                  className="bg-white rounded-[1.5rem] overflow-hidden cursor-pointer
-                             border border-slate-100
-                             hover:shadow-xl hover:shadow-slate-200/50 hover:-translate-y-1
-                             transition-all duration-300 group"
+                  className="admin-dash__card cursor-pointer hover:shadow-lg transition-all duration-300 group"
                 >
-                  <div className="h-48 overflow-hidden relative">
+                  <div className="h-48 overflow-hidden rounded-t-2xl relative">
                     <img
                       src={getImageUrl(rc.images?.[0])}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -372,11 +375,14 @@ const BookCabin = () => {
                         e.target.src = PLACEHOLDER_IMAGE;
                       }}
                     />
-                    <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/20 via-transparent to-transparent" />
+                    <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest text-indigo-700 shadow-sm">
+                      Available
+                    </div>
                   </div>
 
                   <div className="p-5 space-y-2">
-                    <h4 className="text-lg font-bold uppercase text-slate-900 truncate">
+                    <h4 className="text-base font-bold uppercase text-slate-900 truncate">
                       {rc.name}
                     </h4>
 
@@ -385,11 +391,11 @@ const BookCabin = () => {
                       {rc.address?.split(",")[0]}
                     </div>
 
-                    <div className="flex items-center justify-between pt-4 border-t border-slate-50">
-                      <span className="text-lg font-bold text-slate-900">
+                    <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                      <span className="text-base font-bold text-slate-900">
                         ₹{rc.price}
                       </span>
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-600 group-hover:underline">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-600 group-hover:underline">
                         View
                       </span>
                     </div>
@@ -399,7 +405,7 @@ const BookCabin = () => {
             </div>
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 };

@@ -312,11 +312,11 @@ export const AdminCabins = () => {
 
       {/* Add Cabin Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[1100] flex items-end justify-center p-4 pb-8 bg-slate-900/50 backdrop-blur-sm">
           <div
-            className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+            className="bg-white w-full max-w-3xl rounded-t-2xl shadow-2xl overflow-hidden flex flex-col"
             style={{
-              maxHeight: "92vh",
+              maxHeight: "80vh",
               animation: "cabinModalIn 220ms cubic-bezier(0.34,1.3,0.64,1) forwards",
             }}
           >

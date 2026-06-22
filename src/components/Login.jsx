@@ -1,9 +1,9 @@
 import axios from "axios";
-import { Eye, EyeOff, Lock, Mail, ShieldCheck, User } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, ShieldCheck, User, Building2 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import Logo from "../assets/Logo.png";
+import Logo from "../assets/Selection (1).png";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -57,79 +57,104 @@ function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
-      <div className="max-w-[440px] w-full bg-white p-8 rounded-3xl shadow-xl border">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center px-4 relative overflow-hidden">
+      {/* Background Decorative Elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl"></div>
+      </div>
 
-        {/* Header */}
-        <div className="text-center mb-8">
-          <img src={Logo} alt="Logo" className="w-20 mx-auto mb-4" />
-          <h2 className="text-2xl font-black uppercase text-slate-900 tracking-tight">
-            {role === 'admin' ? "Admin Portal" : "Welcome Back"}
-          </h2>
-          <p className="text-slate-500 text-sm">
-            {role === 'admin' ? "Secure administrator access" : "Sign in to your account"}
-          </p>
-        </div>
+      <div className="relative z-10 max-w-[440px] w-full">
+        <div className="bg-white/95 backdrop-blur-xl p-8 rounded-3xl shadow-2xl border border-white/20">
 
-        {/* Error */}
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg">
-            {error}
-          </div>
-        )}
-
-        {/* Form */}
-        <form onSubmit={handleLogin} className="space-y-5">
-          {/* Email */}
-          <div className="relative">
-            <Mail className="absolute left-3 top-3.5 text-slate-400" size={18} />
-            <input
-              type="email"
-              placeholder="Admin Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full pl-10 pr-4 py-3 bg-slate-50 border rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
-            />
+          {/* Header */}
+          <div className="text-center mb-8">
+            {/* <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-emerald-500 to-blue-600 rounded-2xl mb-4 shadow-lg shadow-emerald-500/30">
+              <Building2 className="text-white" size={36} />
+            </div> */}
+               <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px auto'}} className="an-nav__logo-icon">
+              <span className="an-nav__logo-ig">IG</span>
+            </div>
+            <h2 className="text-3xl font-bold text-slate-900 tracking-tight mb-2">
+              Ingrain Workspace 
+            </h2>
+            <p className="text-slate-500 text-sm">
+              Secure administrator access to manage your co-working space
+            </p>
           </div>
 
-          {/* Password */}
-          <div className="relative">
-            <Lock className="absolute left-3 top-3.5 text-slate-400" size={18} />
-            <input
-              type={showPassword ? "text" : "password"}
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full pl-10 pr-12 py-3 bg-slate-50 border rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
-            />
+          {/* Error */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg flex items-center gap-2">
+              <ShieldCheck size={16} />
+              {error}
+            </div>
+          )}
+
+          {/* Form */}
+          <form onSubmit={handleLogin} className="space-y-5">
+            {/* Email */}
+            <div className="relative group">
+              <Mail className="absolute left-3 top-3.5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" size={18} />
+              <input
+                type="email"
+                placeholder="Admin Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all outline-none group-hover:border-slate-300"
+              />
+            </div>
+
+            {/* Password */}
+            <div className="relative group">
+              <Lock className="absolute left-3 top-3.5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" size={18} />
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full pl-10 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all outline-none group-hover:border-slate-300"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+
+            {/* Button */}
             <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600 transition-colors"
+              type="submit"
+              disabled={loading}
+              className="w-full flex justify-center items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-blue-600 px-4 py-3.5 text-white font-semibold hover:from-emerald-600 hover:to-blue-700 transition-all duration-300 shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                  Authenticating...
+                </>
+              ) : (
+                <>
+                  <ShieldCheck size={18} />
+                  Sign In as Admin
+                </>
+              )}
             </button>
+          </form>
+
+          {/* Footer */}
+          <div className="mt-6 text-center">
+            <p className="text-xs text-slate-400">
+              Protected by enterprise-grade security
+            </p>
           </div>
 
-          {/* Button */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full flex justify-center items-center gap-2 rounded-xl bg-gradient-to-r from-[#22c55e] to-[#3b82f6] px-2 py-2 text-white hover:bg-emerald-600 hover:shadow-emerald-200"
-          >
-            {loading ? (
-              "Authenticating..."
-            ) : (
-              <>
-                <ShieldCheck size={18} />
-                Sign In as Admin
-              </>
-            )}
-          </button>
-        </form>
-
+        </div>
       </div>
     </div>
   );

@@ -85,7 +85,7 @@ function AdminNavbar() {
               <span className="an-nav__logo-ig">IG</span>
             </div>
             <div className="an-nav__logo-text">
-              <span className="an-nav__logo-title">Ingarin Workspace</span>
+              <span className="an-nav__logo-title">Ingrain workspace</span>
               <span className="an-nav__logo-badge">Admin Portal</span>
             </div>
           </Link>
@@ -178,7 +178,7 @@ function AdminNavbar() {
                 <span className="an-nav__logo-ig">IG</span>
               </div>
               <div className="an-nav__logo-text">
-                <span className="an-nav__logo-title">Ingarin Workspace</span>
+                <span className="an-nav__logo-title">Ingrain workspace</span>
                 <span className="an-nav__logo-badge">Admin Portal</span>
               </div>
             </div>

@@ -6,9 +6,7 @@ import {
   IndianRupee,
   MapPin,
   Search,
-  Ticket,
   User,
-  Download,
   X,
   Calendar as CalendarIcon
 } from "lucide-react";
@@ -79,38 +77,6 @@ const MyBookings = () => {
     return matchesSearch && matchesDate;
   });
 
-  const downloadData = () => {
-    if (filteredBookings.length === 0) return;
-    
-    const headers = ["Cabin Name", "Address", "Start Date", "Start Time", "End Date", "End Time", "Total Hours", "Total Price", "Status"];
-    const csvRows = [headers.join(",")];
-    
-    filteredBookings.forEach(b => {
-      const row = [
-        `"${b.cabinId?.name || ''}"`,
-        `"${b.cabinId?.address || ''}"`,
-        b.startDate,
-        b.startTime,
-        b.endDate,
-        b.endTime,
-        b.totalHours || 0,
-        b.totalPrice,
-        "Confirmed"
-      ];
-      csvRows.push(row.join(","));
-    });
-    
-    const blob = new Blob([csvRows.join("\n")], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.setAttribute('hidden', '');
-    a.setAttribute('href', url);
-    a.setAttribute('download', 'my-bookings.csv');
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  };
-
   if (loading)
     return (
       <div className="admin-dash">
@@ -166,14 +132,12 @@ const MyBookings = () => {
                 <X size={18} />
               </button>
             )}
-            <button
-              onClick={downloadData}
-              disabled={filteredBookings.length === 0}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Download size={16} />
-              Download CSV
-            </button>
+            <div className="px-4 py-2 bg-white border border-slate-200 rounded-xl shadow-sm">
+              <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider leading-none mb-1">Found</p>
+              <p className="text-lg font-black text-slate-900 leading-none">
+                {filteredBookings.length} <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-1">Results</span>
+              </p>
+            </div>
           </div>
         </div>
 
@@ -181,90 +145,115 @@ const MyBookings = () => {
           <div className="admin-dash__error" style={{ background: '#f8fafc', borderColor: '#e2e8f0' }}>
             <CalendarIcon size={48} className="text-slate-300 mb-4" />
             <p className="admin-dash__error-title" style={{ color: '#475569' }}>No bookings found</p>
-            <p className="admin-dash__error-message">Try adjusting your search or filters.</p>
+            <p className="admin-dash__error-message">We couldn't find any bookings matching your search criteria.</p>
+            {(searchTerm || filterDate) && (
+              <button
+                onClick={() => { setSearchTerm(""); setFilterDate(""); }}
+                className="mt-4 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+              >
+                Reset Filters
+              </button>
+            )}
           </div>
         ) : (
-          <div className="space-y-4">
-            {filteredBookings.map((b) => (
-              <div
-                key={b._id}
-                className="admin-dash__card group flex flex-col sm:flex-row gap-4 hover:shadow-lg transition-all duration-300"
-              >
-                {/* Image */}
-                <div className="w-full sm:w-36 h-32 rounded-2xl overflow-hidden relative shrink-0">
-                  <img
-                    src={getImageUrl(b.cabinId?.images?.[0])}
-                    alt="cabin"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    onError={(e) => {
-                      e.target.src = PLACEHOLDER_IMAGE;
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors" />
-                </div>
-
-                {/* Content */}
-                <div className="flex-1 py-4 pr-3 flex flex-col justify-center">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <h2 className="text-base font-bold text-slate-900 leading-tight">
-                        {b.cabinId?.name}
-                      </h2>
-                      <div className="flex items-center gap-1 text-slate-500 text-xs font-medium mt-0.5">
-                        <MapPin size={12} className="text-indigo-500" />
-                        {b.cabinId?.address}
-                      </div>
-                    </div>
-                    <div className="px-2.5 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-indigo-100">
-                      Confirmed
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 mb-3">
-                    <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Start</p>
-                      <div className="flex items-center gap-1.5 text-slate-900 font-semibold text-xs">
-                        <Calendar size={12} className="text-indigo-500" />
-                        {b.startDate} <span className="text-slate-300 text-[10px]">|</span> {b.startTime}
-                      </div>
-                    </div>
-                    <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">End</p>
-                      <div className="flex items-center gap-1.5 text-slate-900 font-semibold text-xs">
-                        <Clock size={12} className="text-indigo-500" />
-                        {b.endDate} <span className="text-slate-300 text-[10px]">|</span> {b.endTime}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 shrink-0">
-                        <User size={14} />
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-xs font-bold text-slate-700 uppercase tracking-tight">
-                          {b.name || currentUser?.name || "Member"}
-                        </span>
-                        <div className="flex items-center gap-1 mt-0.5 text-[10px] font-medium text-slate-500">
-                           <svg viewBox="0 0 24 24" width="10" height="10" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-500"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.0 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-                          {b.mobile || "No Mobile Provided"}
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      Cabin Details
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      Customer
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      Contact
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      Booking Period
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      Duration
+                    </th>
+                    <th className="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      Price
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredBookings.map((booking, index) => (
+                    <tr 
+                      key={booking._id} 
+                      className="hover:bg-slate-50 transition-colors"
+                    >
+                      <td className="px-6 py-4">
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
+                            <Calendar size={18} className="text-indigo-600" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-slate-900 text-sm">
+                              {booking.cabinId?.name || "Unknown Cabin"}
+                            </p>
+                            <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-1">
+                              <MapPin size={12} className="text-indigo-500" />
+                              {booking.cabinId?.address?.split(",")[0] || "No Address"}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end gap-0.5 mt-auto">
-                      <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                        {b.totalHours || 0} Hrs
-                      </div>
-                      <div className="flex items-center gap-0.5 text-slate-900 font-bold text-base">
-                        <IndianRupee size={16} className="text-indigo-600" />
-                        {b.totalPrice?.toLocaleString("en-IN")}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
+                            <User size={18} className="text-slate-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-slate-900 text-sm">
+                              {booking.name || currentUser?.name || "Unknown Guest"}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-2 text-sm text-slate-600">
+                            <svg className="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                            </svg>
+                            {booking.mobile || "No Mobile"}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-start gap-2">
+                          <Clock size={16} className="text-indigo-500 mt-0.5 flex-shrink-0" />
+                          <div className="space-y-1">
+                            <p className="text-sm text-slate-900 font-medium">
+                              {booking.startDate} · {booking.startTime}
+                            </p>
+                            <p className="text-sm text-slate-500">
+                              {booking.endDate} · {booking.endTime}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold">
+                          {booking.totalHours} hrs
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-1 text-indigo-600 font-bold text-lg">
+                          <IndianRupee size={18} />
+                          {booking.totalPrice?.toLocaleString("en-IN") || "0"}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </main>

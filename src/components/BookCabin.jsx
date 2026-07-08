@@ -11,6 +11,7 @@ import {
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
+import UsersNavbar from "./UsersNavbar";
 import AdminNavbar from "./AdminNavbar";
 import "./Dashboard.css";
 const API_URL = "http://localhost:5000";
@@ -20,8 +21,7 @@ const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526
 const BookCabin = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-
-  const PRICE_PER_HOUR = 5000;
+  const isAdmin = localStorage.getItem("admin") !== null;
 
   const [cabin, setCabin] = useState(null);
   const [relatedCabins, setRelatedCabins] = useState([]);
@@ -32,6 +32,9 @@ const BookCabin = () => {
   const [startTime, setStartTime] = useState("");
   const [endDate, setEndDate] = useState("");
   const [endTime, setEndTime] = useState("");
+
+  const [bookingBasis, setBookingBasis] = useState("hourly");
+  const [selectedPlan, setSelectedPlan] = useState(null);
 
   const [totalHours, setTotalHours] = useState(0);
   const [totalPrice, setTotalPrice] = useState(0);
@@ -67,22 +70,40 @@ const BookCabin = () => {
 
   /* PRICE CALC */
   useEffect(() => {
-    if (startDate && startTime && endDate && endTime) {
-      const start = new Date(`${startDate}T${startTime}`);
-      const end = new Date(`${endDate}T${endTime}`);
+    if (bookingBasis === "hourly") {
+      if (startDate && startTime && endDate && endTime) {
+        const start = new Date(`${startDate}T${startTime}`);
+        const end = new Date(`${endDate}T${endTime}`);
 
-      if (end <= start) {
+        if (end <= start) {
+          setTotalHours(0);
+          setTotalPrice(0);
+          return;
+        }
+
+        const hours = Math.ceil((end - start) / (1000 * 60 * 60));
+        setTotalHours(hours);
+        setTotalPrice(hours * (cabin?.price || 0));
+        setAvailabilityError("");
+      }
+    } else {
+      if (selectedPlan) {
+        setTotalHours(Number(selectedPlan.hours) || 0);
+        setTotalPrice(Number(selectedPlan.cost) || 0);
+        
+        if (startDate && startTime) {
+          const start = new Date(`${startDate}T${startTime}`);
+          const validityDays = Number(selectedPlan.validity) || 30;
+          const end = new Date(start.getTime() + validityDays * 24 * 60 * 60 * 1000);
+          setEndDate(end.toISOString().split("T")[0]);
+          setEndTime(startTime);
+        }
+      } else {
         setTotalHours(0);
         setTotalPrice(0);
-        return;
       }
-
-      const hours = Math.ceil((end - start) / (1000 * 60 * 60));
-      setTotalHours(hours);
-      setTotalPrice(hours * PRICE_PER_HOUR);
-      setAvailabilityError("");
     }
-  }, [startDate, startTime, endDate, endTime]);
+  }, [startDate, startTime, endDate, endTime, bookingBasis, selectedPlan, cabin]);
 
   /* BOOK */
   const handleBooking = async (e) => {
@@ -113,12 +134,15 @@ const BookCabin = () => {
           cabinId: id,
           name,
           mobile,
+          email: currentUser?.email || "",
           startDate,
           startTime,
           endDate,
           endTime,
           totalHours,
           totalPrice,
+          bookingBasis,
+          selectedPlan,
         }
       );
       toast.success("Booking confirmed successfully!");
@@ -135,7 +159,7 @@ const BookCabin = () => {
   if (!cabin) {
     return (
       <div className="admin-dash">
-        <AdminNavbar/>
+        {isAdmin ? <AdminNavbar /> : <UsersNavbar />}
         <div className="admin-dash__loading">
           <div className="admin-dash__spinner" />
           <p className="admin-dash__loading-text">Preparing workspace...</p>
@@ -146,7 +170,7 @@ const BookCabin = () => {
 
   return (
     <div className="admin-dash">
-      <AdminNavbar/>
+      {isAdmin ? <AdminNavbar /> : <UsersNavbar />}
 
       <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-16">
         {/* Header */}
@@ -202,7 +226,7 @@ const BookCabin = () => {
                     Booking Rate
                   </div>
                   <div className="font-black text-slate-900 text-base flex items-baseline gap-0.5">
-                    ₹{PRICE_PER_HOUR} <span className="text-[10px] text-slate-400">/ HOUR</span>
+                    ₹{cabin.price} <span className="text-[10px] text-slate-400">/ HOUR</span>
                   </div>
                 </div>
               </div>
@@ -259,6 +283,76 @@ const BookCabin = () => {
                 </div>
               </div>
 
+              {/* Hourly / Plan Toggles */}
+              {cabin.pricingPlans && cabin.pricingPlans.length > 0 && (
+                <div className="admin-dash__card p-4 sm:p-5 flex gap-4 bg-white shadow-sm border border-slate-100 rounded-2xl">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBookingBasis("hourly");
+                      setSelectedPlan(null);
+                    }}
+                    className={`flex-1 py-3 px-4 rounded-xl font-bold text-xs uppercase tracking-wider transition-all border ${
+                      bookingBasis === "hourly"
+                        ? "bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-500/20"
+                        : "border-slate-200 text-slate-600 hover:bg-slate-50 bg-white"
+                    }`}
+                  >
+                    Hourly Booking
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBookingBasis("plan");
+                      setSelectedPlan(cabin.pricingPlans[0]);
+                    }}
+                    className={`flex-1 py-3 px-4 rounded-xl font-bold text-xs uppercase tracking-wider transition-all border ${
+                      bookingBasis === "plan"
+                        ? "bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-500/20"
+                        : "border-slate-200 text-slate-600 hover:bg-slate-50 bg-white"
+                    }`}
+                  >
+                    Plan Subscription
+                  </button>
+                </div>
+              )}
+
+              {/* Plan Selector */}
+              {bookingBasis === "plan" && cabin.pricingPlans && cabin.pricingPlans.length > 0 && (
+                <div className="admin-dash__card p-6 sm:p-8 bg-white shadow-sm border border-slate-100 rounded-2xl">
+                  <h3 className="text-xs font-bold uppercase text-slate-500 tracking-wider mb-4 ml-1">
+                    Select pricing plan
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {cabin.pricingPlans.map((plan) => (
+                      <div
+                        key={plan._id}
+                        onClick={() => setSelectedPlan(plan)}
+                        className={`cursor-pointer rounded-2xl p-5 border-2 transition-all relative ${
+                          selectedPlan?._id === plan._id
+                            ? "border-indigo-600 bg-indigo-50/40 shadow-sm"
+                            : "border-slate-200 hover:border-slate-300 bg-white"
+                        }`}
+                      >
+                        {selectedPlan?._id === plan._id && (
+                          <div className="absolute top-3.5 right-3.5 bg-indigo-600 text-white p-1 rounded-full">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                          </div>
+                        )}
+                        <h4 className="font-extrabold text-slate-900 text-sm mb-2">{plan.label || "Plan"}</h4>
+                        <div className="space-y-1.5 text-xs text-slate-600 font-semibold">
+                          <p className="text-indigo-600">{plan.hours} Hours included</p>
+                          <p className="text-emerald-700">₹{plan.cost.toLocaleString("en-IN")}</p>
+                          <p className="text-slate-400">Validity: {plan.validity} Days</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Schedule */}
               <div className="admin-dash__card p-6 sm:p-8">
                 <div className="flex items-center gap-3 mb-6 sm:mb-8">
@@ -266,7 +360,7 @@ const BookCabin = () => {
                     <History size={20} />
                   </div>
                   <h3 className="text-base sm:text-lg font-black uppercase text-slate-900 tracking-tight">
-                    Temporal Window
+                    {bookingBasis === "hourly" ? "Temporal Window" : "Plan Start Window"}
                   </h3>
                 </div>
 
@@ -291,25 +385,37 @@ const BookCabin = () => {
                     </div>
                   </div>
 
-                  <div className="space-y-3">
-                    <label className="text-xs font-bold text-slate-500 mb-2 block uppercase tracking-widest px-1">Check-out Date & Time</label>
-                    <div className="flex gap-2">
-                      <input
-                        type="date"
-                        className="flex-1 rounded-xl bg-slate-50 border border-slate-200 p-4 outline-none font-bold text-sm text-slate-900 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                        required
-                      />
-                      <input
-                        type="time"
-                        className="w-32 rounded-xl bg-slate-50 border border-slate-200 p-4 outline-none font-bold text-sm text-slate-900 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
-                        value={endTime}
-                        onChange={(e) => setEndTime(e.target.value)}
-                        required
-                      />
+                  {bookingBasis === "hourly" ? (
+                    <div className="space-y-3">
+                      <label className="text-xs font-bold text-slate-500 mb-2 block uppercase tracking-widest px-1">Check-out Date & Time</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="date"
+                          className="flex-1 rounded-xl bg-slate-50 border border-slate-200 p-4 outline-none font-bold text-sm text-slate-900 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
+                          value={endDate}
+                          onChange={(e) => setEndDate(e.target.value)}
+                          required
+                        />
+                        <input
+                          type="time"
+                          className="w-32 rounded-xl bg-slate-50 border border-slate-200 p-4 outline-none font-bold text-sm text-slate-900 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
+                          value={endTime}
+                          onChange={(e) => setEndTime(e.target.value)}
+                          required
+                        />
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    selectedPlan && endDate && (
+                      <div className="space-y-2 bg-indigo-50/40 border border-indigo-100 rounded-2xl p-4 flex flex-col justify-center">
+                        <p className="text-[10px] uppercase font-bold text-indigo-700 tracking-wider">Plan Validity Info</p>
+                        <p className="text-sm font-bold text-slate-800">
+                          Active until: <span className="text-indigo-600">{endDate}</span>
+                        </p>
+                        <p className="text-xs text-slate-400">Valid for {selectedPlan.validity} days from start date</p>
+                      </div>
+                    )
+                  )}
                 </div>
               </div>
 

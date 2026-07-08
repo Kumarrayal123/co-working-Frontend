@@ -1,4 +1,5 @@
 
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import {
   Mail,
@@ -6,7 +7,6 @@ import {
   Pencil,
   Phone
 } from "lucide-react";
-import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import UsersNavbar from "./UsersNavbar";
 
@@ -34,20 +34,41 @@ const MyProfile = () => {
       .finally(() => setLoading(false));
   }, [navigate]);
 
-  if (loading) return <p className="text-center mt-40">Loading...</p>;
-  if (!user) return <p className="text-center mt-40">Profile not found</p>;
+  if (loading) {
+    return (
+      <div className="admin-dash">
+        <UsersNavbar />
+        <div className="admin-dash__loading">
+          <div className="admin-dash__spinner" />
+          <p className="admin-dash__loading-text">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="admin-dash">
+        <UsersNavbar />
+        <div className="admin-dash__error">
+          <p className="admin-dash__error-title">Profile not found</p>
+          <p className="admin-dash__error-message">We were unable to load your workspace profile.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="admin-dash">
       <UsersNavbar />
 
-      <div className="max-w-4xl mx-auto pt-28 px-4">
+      <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto pb-16">
         {/* ===== Profile Card ===== */}
-        <div className="bg-white rounded-2xl shadow overflow-hidden">
+        <div className="admin-dash__card overflow-hidden">
 
           {/* Top Section */}
-          <div className="flex flex-col items-center py-10 bg-gradient-to-r from-emerald-600 to-green-500 text-white">
-            <div className="w-28 h-28 rounded-full bg-white text-emerald-600 flex items-center justify-center text-5xl font-bold">
+          <div className="flex flex-col items-center py-10 bg-gradient-to-r from-indigo-600 to-purple-600 text-white relative">
+            <div className="w-28 h-28 rounded-full bg-white text-indigo-600 flex items-center justify-center text-5xl font-bold shadow-lg">
               {user.name?.charAt(0).toUpperCase()}
             </div>
 
@@ -55,45 +76,45 @@ const MyProfile = () => {
             <p className="text-sm opacity-90">{user.email}</p>
 
             <button
-              className="mt-4 flex items-center gap-2 bg-white text-emerald-600 px-4 py-2 rounded-full font-semibold hover:bg-gray-100"
+              className="mt-4 flex items-center gap-2 bg-white text-indigo-600 px-5 py-2.5 rounded-full font-bold hover:bg-slate-50 transition-colors shadow-md text-sm active:scale-95"
             >
               <Pencil size={16} /> Edit Profile
             </button>
           </div>
 
           {/* Details Section */}
-          <div className="p-6 divide-y">
+          <div className="p-6 sm:p-8 divide-y divide-slate-100 bg-white">
             <ProfileRow
               icon={<Mail />}
-              label="Email"
+              label="Email Address"
               value={user.email}
             />
 
             <ProfileRow
               icon={<Phone />}
-              label="Mobile"
+              label="Mobile Number"
               value={user.mobile || "Not added"}
             />
 
             <ProfileRow
               icon={<MapPin />}
-              label="Address"
+              label="Default Address"
               value={user.address || "Not added"}
             />
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 };
 
 const ProfileRow = ({ icon, label, value }) => (
-  <div className="flex items-center justify-between py-4">
-    <div className="flex items-center gap-4 text-gray-600">
-      {icon}
-      <span className="font-medium">{label}</span>
+  <div className="flex items-center justify-between py-4 sm:py-5">
+    <div className="flex items-center gap-4 text-slate-600">
+      {React.cloneElement(icon, { size: 18, className: "text-indigo-500 shrink-0" })}
+      <span className="font-semibold text-sm">{label}</span>
     </div>
-    <span className="font-semibold text-gray-800">{value}</span>
+    <span className="font-bold text-slate-800 text-sm">{value}</span>
   </div>
 );
 

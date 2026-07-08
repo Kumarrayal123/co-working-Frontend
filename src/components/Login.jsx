@@ -8,7 +8,6 @@ import Logo from "../assets/Selection (1).png";
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("admin"); // force 'admin'
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -20,34 +19,39 @@ function Login() {
     setError("");
 
     try {
-      // Authorized check
-      if (email !== "saidulureddy@gmail.com" || password !== "reddy123") {
-        throw new Error("Access Denied: Invalid admin credentials.");
+      // First try admin login with hardcoded credentials
+      if (email === "saidulureddy@gmail.com" && password === "reddy123") {
+        const token = "mocked-admin-token-for-saidulu";
+        const adminData = {
+          _id: "68ebe9ee8f06d33ee022d665",
+          name: "Saidulu Reddy",
+          email: "saidulureddy@gmail.com",
+          role: "admin"
+        };
+
+        localStorage.setItem("token", token);
+        localStorage.setItem("admin", JSON.stringify(adminData));
+        toast.success("Admin login successful 🚀");
+        navigate("/admindashboard");
+        return;
       }
 
-      // Bypass external API and mock the admin login session
-      let token = "mocked-admin-token-for-saidulu";
-      const adminData = {
-        _id: "68ebe9ee8f06d33ee022d665",
-        name: "Saidulu Reddy",
-        email: "saidulureddy@gmail.com",
-        role: "admin"
-      };
+      // If not admin, try user login with backend API
+      const res = await axios.post("http://localhost:5000/api/auth/login", {
+        email,
+        password
+      });
 
-      if (!token) {
-        throw new Error("Authentication failed: No token received.");
-      }
-
+      const { token, user } = res.data;
       localStorage.setItem("token", token);
-      localStorage.setItem("admin", JSON.stringify(adminData));
-      
-      toast.success("Admin login successful 🚀");
-      navigate("/admindashboard");
-
+      localStorage.setItem("user", JSON.stringify(user));
+      toast.success("Login successful! 🎉");
+      navigate("/userdashboard");
     } catch (err) {
       console.error("Login Error:", err);
       const errorMsg =
         err.response?.data?.message ||
+        err.message ||
         "Login failed! Please check credentials.";
       setError(errorMsg);
       toast.error(errorMsg);
@@ -77,10 +81,10 @@ function Login() {
               <span className="an-nav__logo-ig">IG</span>
             </div>
             <h2 className="text-3xl font-bold text-slate-900 tracking-tight mb-2">
-              Ingrain Workspace 
+              Ingrain Workspace
             </h2>
             <p className="text-slate-500 text-sm">
-              Secure administrator access to manage your co-working space
+              Sign in to access your workspace dashboard
             </p>
           </div>
 
@@ -141,14 +145,20 @@ function Login() {
               ) : (
                 <>
                   <ShieldCheck size={18} />
-                  Sign In as Admin
+                  Sign In
                 </>
               )}
             </button>
           </form>
 
           {/* Footer */}
-          <div className="mt-6 text-center">
+          <div className="mt-6 text-center space-y-3">
+            <p className="text-sm text-slate-500">
+              Don't have an account?{" "}
+              <a href="/register" className="font-semibold text-indigo-600 hover:text-indigo-700 hover:underline transition-colors">
+                Create Account
+              </a>
+            </p>
             <p className="text-xs text-slate-400">
               Protected by enterprise-grade security
             </p>

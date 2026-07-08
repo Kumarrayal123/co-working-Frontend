@@ -5,8 +5,10 @@ import {
   Building2,
   Calendar,
   Home,
+  Users,
   X,
   ChevronDown,
+  Ticket,
 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -64,10 +66,12 @@ function AdminNavbar() {
   };
 
   const navLinks = [
-    { name: "Dashboard", path: "/admindashboard", icon: LayoutDashboard, description: "Overview & analytics" },
-    { name: "Spaces",    path: "/spaces",          icon: Building2,       description: "Manage workspaces"   },
-    { name: "Bookings",  path: "/mybookings",       icon: Calendar,        description: "View reservations"   },
-    { name: "My Cabins", path: "/admincabin",       icon: Home,            description: "Your spaces"         },
+    { name: "Dashboard",   path: "/admindashboard", icon: LayoutDashboard, description: "Overview & analytics" },
+    { name: " Spaces",  path: "/adminspaces",    icon: Building2,       description: "Manage workspaces"   },
+    { name: "Bookings", path: "/allbookings",    icon: Ticket,          description: "All reservations"    },
+    { name: "My Bookings", path: "/mybookings",     icon: Calendar,        description: "Your reservations"   },
+    { name: "My Cabins",   path: "/admincabin",     icon: Home,            description: "Your spaces"         },
+    { name: "Users",       path: "/allusers",       icon: Users,           description: "Registered members"  },
   ];
 
   const adminString = localStorage.getItem("admin");

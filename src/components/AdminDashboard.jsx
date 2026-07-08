@@ -76,21 +76,41 @@ const AdminDashboard = () => {
   /* ---------- MY CABINS ---------- */
   useEffect(() => {
     axios
-      .get("http://localhost:5000/api/cabins/user", getAuthHeader())
+      .get("http://localhost:5000/api/cabins")
       .then((res) => {
         const cabins = res.data.cabins || res.data;
-        setMyCabinsCount(Array.isArray(cabins) ? cabins.length : 0);
+        const allCabins = Array.isArray(cabins) ? cabins : [];
+        // Filter to show only admin's cabins (admin ID: 68ebe9ee8f06d33ee022d665)
+        const adminCabins = allCabins.filter(cabin =>
+          cabin.owner === "68ebe9ee8f06d33ee022d665"
+        );
+        setMyCabinsCount(adminCabins.length);
       })
       .catch((err) => console.error("Error fetching my cabins", err));
   }, []);
 
   /* ---------- MY BOOKINGS ---------- */
   useEffect(() => {
+    const currentUser = (() => {
+      try {
+        const a = localStorage.getItem("admin");
+        if (a) return JSON.parse(a);
+        return null;
+      } catch (err) {
+        return null;
+      }
+    })();
+
     axios
-      .get("http://localhost:5000/api/bookings/user", getAuthHeader())
+      .get("http://localhost:5000/api/bookings")
       .then((res) => {
-        const bookings = res.data.bookings || res.data;
-        setMyBookingsCount(Array.isArray(bookings) ? bookings.length : 0);
+        const allBookings = res.data.bookings || [];
+        // Filter to show only admin's own bookings (matching MyBookings logic)
+        const adminBookings = allBookings.filter(booking =>
+          booking.email === currentUser?.email ||
+          booking.name === currentUser?.name
+        );
+        setMyBookingsCount(adminBookings.length);
       })
       .catch((err) => console.error("Error fetching my bookings", err));
   }, []);
@@ -98,10 +118,14 @@ const AdminDashboard = () => {
   /* ---------- OWNER CABINS BOOKINGS ---------- */
   useEffect(() => {
     axios
-      .get("http://localhost:5000/api/bookings/owner-bookings", getAuthHeader())
+      .get("http://localhost:5000/api/bookings")
       .then((res) => {
-        const bookings = res.data.bookings || res.data;
-        setOwnerBookingsCount(Array.isArray(bookings) ? bookings.length : 0);
+        const allBookings = res.data.bookings || [];
+        // Filter bookings where cabin owner is admin (matching AdminBookings logic)
+        const adminCabinBookings = allBookings.filter(booking =>
+          booking.cabinId?.owner === "68ebe9ee8f06d33ee022d665"
+        );
+        setOwnerBookingsCount(adminCabinBookings.length);
       })
       .catch((err) => console.error("Error fetching owner bookings", err));
   }, []);
@@ -221,7 +245,7 @@ const AdminDashboard = () => {
             <div className="admin-dash__stat-meta">total workspaces</div>
           </div>
 
-          <div className="admin-dash__stat" onClick={() => navigate("/doctorbookings")}>
+          <div className="admin-dash__stat" onClick={() => navigate("/adminbookings")}>
             <div className="admin-dash__stat-top">
               <span className="admin-dash__stat-label">Cabin Bookings</span>
               <div className="admin-dash__stat-icon admin-dash__stat-icon--indigo">

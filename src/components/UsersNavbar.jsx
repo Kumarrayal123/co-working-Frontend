@@ -1,19 +1,26 @@
-
 import {
   LogOut,
   Menu,
+  LayoutDashboard,
+  Building2,
+  Calendar,
+  Home,
+  Plus,
+  X,
+  ChevronDown,
   User,
-  X
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import Logo from "../assets/Logo.png";
+import "./AdminNavbar.css";
 
 function UsersNavbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const profileRef = useRef(null);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
@@ -21,132 +28,248 @@ function UsersNavbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Close profile dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setProfileOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Close on Escape key
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === "Escape") {
+        setProfileOpen(false);
+        setOpen(false);
+      }
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, []);
+
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    document.body.style.overflow = open ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [open]);
+
   const isActive = (path) => location.pathname === path;
 
   const handleLogout = () => {
     localStorage.removeItem("user");
-    navigate("/");
+    localStorage.removeItem("token");
+    localStorage.removeItem("admin");
+    navigate("/login");
   };
 
   const navLinks = [
-    { name: "Home", path: "/spaces" },
-    { name: "My Bookings", path: "/mybookings" },
-    { name: "My Cabins", path: "/mycabin" },
-    { name: "Bookings", path: "/doctorbookings" },
+    { name: "Dashboard", path: "/userdashboard", icon: LayoutDashboard, description: "Overview & stats" },
+    { name: "All Spaces", path: "/spaces",        icon: Building2,       description: "Browse workspaces" },
+    { name: "My Bookings", path: "/mybookings",    icon: Calendar,        description: "Your reservations" },
+    { name: "My Cabins", path: "/mycabin",          icon: Home,            description: "Your spaces"       },
+    // { name: "Add Cabin", path: "/addcabin",        icon: Plus,            description: "List a new workspace" },
   ];
 
-  return (
-    <nav
-      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${scrolled
-        ? "bg-white/90 backdrop-blur-md shadow-sm border-b border-slate-200 py-3"
-        : "bg-transparent py-4"
-        }`}
-    >
-      <div className="w-full px-4 sm:px-6 lg:px-10">
-        <div className="flex items-center justify-between gap-4">
+  const userString = localStorage.getItem("user");
+  const currentUser = userString ? JSON.parse(userString) : { name: "User" };
+  const initials = currentUser.name?.substring(0, 2).toUpperCase() || "US";
 
-          {/* LOGO */}
-          <Link to="/" className="flex items-center gap-2">
-            <img src={Logo} alt="TimelyHealth" className="h-12 w-auto object-contain" />
+  return (
+    <>
+      <nav className={`an-nav${scrolled ? " an-nav--scrolled" : ""}`}>
+        <div className="an-nav__inner">
+
+          {/* ── Logo ── */}
+          <Link to="/userdashboard" className="an-nav__logo">
+            <div className="an-nav__logo-icon">
+              <span className="an-nav__logo-ig">IG</span>
+            </div>
+            <div className="an-nav__logo-text">
+              <span className="an-nav__logo-title">Ingrain workspace</span>
+              <span className="an-nav__logo-badge">User Portal</span>
+            </div>
           </Link>
 
-          {/* DESKTOP MENU */}
-          <div className="hidden md:flex items-center gap-8">
-            <div className="flex gap-1.5">
-              {navLinks.map((link) => (
+          {/* ── Desktop Nav Links ── */}
+          <ul className="an-nav__links">
+            {navLinks.map((link) => (
+              <li key={link.path}>
                 <Link
-                  key={link.path}
                   to={link.path}
-                  className={`px-4 py-2 rounded-xl text-sm font-bold tracking-tight uppercase transition-all duration-300 ${isActive(link.path)
-                    ? "bg-slate-900 text-white shadow-lg shadow-slate-900/20"
-                    : "text-slate-600 hover:text-emerald-700 hover:bg-emerald-50"
-                    }`}
+                  className={`an-nav__link${isActive(link.path) ? " an-nav__link--active" : ""}`}
+                  title={link.description}
                 >
-                  {link.name}
+                  <link.icon size={15} />
+                  <span>{link.name}</span>
+                  {isActive(link.path) && <span className="an-nav__link-dot" />}
                 </Link>
-              ))}
-            </div>
+              </li>
+            ))}
+          </ul>
 
-            <div className="w-px h-6 bg-slate-200"></div>
+          {/* ── Right: Profile + Logout ── */}
+          <div className="an-nav__right">
 
-            {/* PROFILE */}
-            <div className="relative group">
-              <div className="w-10 h-10 rounded-full border-2 border-slate-100 bg-white flex items-center justify-center cursor-pointer transition-colors group-hover:border-emerald-200">
-                <User size={20} className="text-slate-600 group-hover:text-emerald-600" />
-              </div>
+            {/* Divider */}
+            <span className="an-nav__divider" />
 
-              <div className="
-                absolute right-0 mt-4 w-48
-                bg-white border border-slate-100 rounded-2xl shadow-xl
-                opacity-0 invisible group-hover:opacity-100 group-hover:visible
-                transition-all duration-200 transform origin-top-right z-50
-              ">
-                <div className="p-1">
-                  <button
-                    onClick={handleLogout}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
-                  >
-                    <LogOut size={16} />
-                    Log Out
+            {/* Profile Dropdown */}
+            <div className="an-nav__dropdown-wrap" ref={profileRef}>
+              <button
+                className="an-nav__profile-btn"
+                onClick={() => setProfileOpen(!profileOpen)}
+                aria-expanded={profileOpen}
+                aria-haspopup="true"
+              >
+                <div className="an-nav__avatar">{initials}</div>
+                <div className="an-nav__profile-info">
+                  <span className="an-nav__profile-name">{currentUser.name || "User"}</span>
+                  <span className="an-nav__profile-role">Workspace Member</span>
+                </div>
+                <ChevronDown
+                  size={14}
+                  className={`an-nav__chevron${profileOpen ? " an-nav__chevron--open" : ""}`}
+                />
+              </button>
+
+              {profileOpen && (
+                <div className="an-nav__dropdown an-nav__dropdown--profile">
+                  {/* Profile header */}
+                  <div className="an-nav__dropdown-head--profile">
+                    <div className="an-nav__avatar an-nav__avatar--lg">{initials}</div>
+                    <div>
+                      <p className="an-nav__dd-name">{currentUser.name || "User"}</p>
+                      <p className="an-nav__dd-role">Workspace Member</p>
+                    </div>
+                  </div>
+                  <div className="an-nav__dd-sep" />
+                  
+                  {/* Profile Link */}
+                  <button className="an-nav__dd-item" onClick={() => { setProfileOpen(false); navigate("/myprofile"); }}>
+                    <User size={15} /> My Profile
+                  </button>
+                  <div className="an-nav__dd-sep" />
+                  
+                  {/* Logout */}
+                  <button className="an-nav__dd-logout" onClick={handleLogout}>
+                    <LogOut size={15} /> Sign Out
                   </button>
                 </div>
+              )}
+            </div>
+
+            {/* Mobile Hamburger */}
+            <button
+              className="an-nav__hamburger"
+              onClick={() => setOpen(!open)}
+              aria-label="Toggle menu"
+            >
+              {open ? <X size={22} /> : <Menu size={22} />}
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* ── Mobile Drawer ── */}
+      <div className={`an-mobile${open ? " an-mobile--open" : ""}`}>
+        {/* Backdrop */}
+        <div className="an-mobile__backdrop" onClick={() => setOpen(false)} />
+
+        {/* Drawer */}
+        <div className="an-mobile__drawer">
+
+          {/* Drawer Header */}
+          <div className="an-mobile__head">
+            <div className="an-mobile__logo">
+              <div className="an-nav__logo-icon">
+                <span className="an-nav__logo-ig">IG</span>
               </div>
+              <div className="an-nav__logo-text">
+                <span className="an-nav__logo-title">Ingrain workspace</span>
+                <span className="an-nav__logo-badge">User Portal</span>
+              </div>
+            </div>
+            <button className="an-mobile__close" onClick={() => setOpen(false)}>
+              <X size={20} />
+            </button>
+          </div>
+
+          {/* User Card */}
+          <div className="an-mobile__admin-card">
+            <div className="an-nav__avatar an-nav__avatar--lg">{initials}</div>
+            <div>
+              <p className="an-mobile__admin-name">{currentUser.name || "User"} </p>
+              <p className="an-mobile__admin-role">Workspace Member</p>
             </div>
           </div>
 
-          {/* MOBILE BUTTON */}
-          <button
-            onClick={() => setOpen(!open)}
-            className="md:hidden p-2 text-slate-600 hover:text-emerald-600 transition"
-          >
-            {open ? <X size={24} /> : <Menu size={24} />}
-          </button>
-        </div>
-      </div>
+          {/* Nav Links */}
+          <p className="an-mobile__section-label">Navigation</p>
+          <ul className="an-mobile__links">
+            {navLinks.map((link) => (
+              <li key={link.path}>
+                <Link
+                  to={link.path}
+                  onClick={() => setOpen(false)}
+                  className={`an-mobile__link${isActive(link.path) ? " an-mobile__link--active" : ""}`}
+                >
+                  <span className="an-mobile__link-icon">
+                    <link.icon size={18} />
+                  </span>
+                  <div className="an-mobile__link-body">
+                    <span className="an-mobile__link-name">{link.name}</span>
+                    <span className="an-mobile__link-desc">{link.description}</span>
+                  </div>
+                  {isActive(link.path) && <span className="an-mobile__link-active-dot" />}
+                </Link>
+              </li>
+            ))}
+          </ul>
 
-      {/* MOBILE MENU */}
-      <div
-        className={`fixed inset-0 z-40 bg-white/95 backdrop-blur-xl transition-transform duration-300 md:hidden pt-28 ${open ? "translate-x-0" : "translate-x-full"
-          }`}
-      >
-        <button
-          onClick={() => setOpen(false)}
-          className="absolute top-6 right-6 p-2 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200"
-        >
-          <X size={20} />
-        </button>
-
-        <div className="flex justify-center mb-8">
-          <img src={Logo} alt="TimelyHealth" className="h-16 w-auto object-contain" />
-        </div>
-
-        <div className="flex flex-col px-8 space-y-4">
-          {navLinks.map((link) => (
-            <Link
-              key={link.path}
-              to={link.path}
-              onClick={() => setOpen(false)}
-              className={`p-4 rounded-2xl text-lg font-semibold transition ${isActive(link.path)
-                ? "bg-emerald-600 text-white shadow-xl shadow-emerald-600/20"
-                : "text-slate-600 hover:bg-slate-50"
-                }`}
+          {/* Footer controls */}
+          <div className="an-mobile__footer" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <button
+              onClick={() => { setOpen(false); navigate("/myprofile"); }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.625rem",
+                width: "100%",
+                padding: "0.5625rem 0.75rem",
+                background: "none",
+                border: "none",
+                fontFamily: "inherit",
+                fontSize: "0.8125rem",
+                fontWeight: 500,
+                color: "var(--an-text-dim)",
+                cursor: "pointer",
+                borderRadius: "8px",
+                textAlign: "left",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "var(--an-text)";
+                e.currentTarget.style.background = "var(--an-surface-hover)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "var(--an-text-dim)";
+                e.currentTarget.style.background = "none";
+              }}
             >
-              {link.name}
-            </Link>
-          ))}
-
-          <div className="h-px bg-slate-100 my-4"></div>
-
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-4 p-4 text-lg font-semibold text-red-500 hover:bg-red-50 rounded-2xl transition-colors"
-          >
-            <LogOut size={20} />
-            Log Out
-          </button>
+              <User size={17} />
+              <span>My Profile</span>
+            </button>
+            <button className="an-mobile__logout" onClick={handleLogout}>
+              <LogOut size={17} />
+              Sign Out
+            </button>
+          </div>
         </div>
       </div>
-    </nav>
+    </>
   );
 }
 

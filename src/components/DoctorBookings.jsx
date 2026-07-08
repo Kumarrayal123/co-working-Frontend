@@ -203,7 +203,6 @@ import {
   X,
   Calendar as CalendarIcon
 } from "lucide-react";
-import AdminNavbar from "./AdminNavbar";
 import "./Dashboard.css";
 
 const DoctorBookings = () => {

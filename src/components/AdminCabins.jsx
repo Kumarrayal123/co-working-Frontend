@@ -23,12 +23,13 @@ const API_URL = "http://localhost:5000";
 const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
 
 
-export const AdminCabins = () => {
+const AdminCabins = () => {
   const [cabins, setCabins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [pricingPlans, setPricingPlans] = useState([]);
   const navigate = useNavigate();
 
   // Add Cabin Form State
@@ -53,18 +54,17 @@ export const AdminCabins = () => {
   const fetchCabins = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-
-      const res = await axios.get(`${API_URL}/api/cabins/user`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await axios.get(`${API_URL}/api/cabins`);
 
       const data = res.data.cabins || res.data;
-      setCabins(Array.isArray(data) ? data : []);
+      const allCabins = Array.isArray(data) ? data : [];
+
+      // Filter to show only admin's cabins (admin ID: 68ebe9ee8f06d33ee022d665)
+      const adminCabins = allCabins.filter(cabin =>
+        cabin.owner === "68ebe9ee8f06d33ee022d665"
+      );
+
+      setCabins(adminCabins);
     } catch (err) {
       console.error("Error fetching cabins:", err);
     } finally {
@@ -86,7 +86,7 @@ export const AdminCabins = () => {
     if (!window.confirm("Are you sure you want to delete this cabin?")) return;
 
     try {
-      await axios.delete(`${API_URL}/api/cabins/${id}`, getAuthHeader());
+      await axios.delete(`${API_URL}/api/cabins/${id}`);
       setCabins(cabins.filter(c => c._id !== id));
       toast.success("Cabin deleted successfully");
     } catch (error) {
@@ -128,14 +128,12 @@ export const AdminCabins = () => {
     data.append("capacity", formData.capacity);
     data.append("address", formData.address);
     data.append("price", formData.price);
+    data.append("pricingPlans", JSON.stringify(pricingPlans));
     data.append("amenities", JSON.stringify(formData.amenities));
     images.forEach((img) => data.append("images", img));
 
     try {
-      const token = localStorage.getItem("token");
-      await axios.post(`${API_URL}/api/cabins`, data, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.post(`${API_URL}/api/cabins`, data);
 
       toast.success("Cabin added successfully!");
       setIsModalOpen(false);
@@ -157,6 +155,7 @@ export const AdminCabins = () => {
         },
       });
       setImages([]);
+      setPricingPlans([]);
       fetchCabins();
     } catch (err) {
       console.error("Add Cabin Error:", err);
@@ -186,30 +185,31 @@ export const AdminCabins = () => {
               Manage your workspace listings and properties.
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="relative">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            <div className="relative flex-1 sm:flex-none">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
               <input
                 type="text"
                 placeholder="Search cabins..."
-                className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all w-64"
+                className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all w-full sm:w-56"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
             <button
-              onClick={() => navigate("/doctorbookings")}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors"
+              onClick={() => navigate("/adminbookings")}
+              className="flex items-center justify-center gap-2 px-3 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors flex-1 sm:flex-none"
             >
               <FileText size={16} className="text-indigo-600" />
-              View Bookings
+              <span className="hidden xs:inline">View Bookings</span>
+              <span className="xs:hidden"> Cabin Bookings</span>
             </button>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors"
+              className="flex items-center justify-center gap-2 px-3 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors flex-1 sm:flex-none"
             >
               <Plus size={16} />
-              Add New Cabin
+              Add Cabin
             </button>
           </div>
         </div>
@@ -290,7 +290,7 @@ export const AdminCabins = () => {
                     <div>
                       <div className="flex items-baseline gap-0.5">
                         <span className="text-xl font-bold text-slate-900">₹{cabin.price || '0'}</span>
-                        <span className="text-[10px] text-slate-400 font-bold uppercase">/ Month</span>
+                        <span className="text-[10px] text-slate-400 font-bold uppercase">/ Hour</span>
                       </div>
                       <div className="flex items-center gap-1 text-[10px] font-medium text-slate-500 mt-0.5">
                         <Users size={10} />
@@ -366,6 +366,23 @@ export const AdminCabins = () => {
                 letter-spacing:0.06em; text-transform:uppercase;
                 color:#64748b; margin-bottom:6px;
               }
+              .cabin-form-row-2 {
+                display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;
+              }
+              .cabin-form-row-3 {
+                display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; margin-bottom:1rem;
+              }
+              .cabin-amenities-grid {
+                display:grid; grid-template-columns:repeat(3,1fr); gap:0.5rem;
+              }
+              @media (max-width: 600px) {
+                .cabin-form-row-2, .cabin-form-row-3 {
+                  grid-template-columns:1fr;
+                }
+                .cabin-amenities-grid {
+                  grid-template-columns:repeat(2,1fr);
+                }
+              }
             `}</style>
 
             {/* ── Modal Header ── */}
@@ -413,7 +430,7 @@ export const AdminCabins = () => {
             <div style={{ overflowY: "auto", padding: "1.5rem", flex: 1 }} className="custom-scrollbar">
               <form onSubmit={handleSubmit}>
                 {/* ── Row 1: Building Name + Address ── */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+                <div className="cabin-form-row-2">
                   <div>
                     <label className="cabin-label">Building Name</label>
                     <input
@@ -442,7 +459,7 @@ export const AdminCabins = () => {
                 </div>
 
                 {/* ── Row 2: Cabin Spec + Capacity + Price ── */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+                <div className="cabin-form-row-3">
                   <div>
                     <label className="cabin-label">Cabin Spec</label>
                     <div className="cabin-field-icon">
@@ -472,7 +489,7 @@ export const AdminCabins = () => {
                     </div>
                   </div>
                   <div>
-                    <label className="cabin-label">Price / Month (₹)</label>
+                    <label className="cabin-label">Price / Hour (₹)</label>
                     <div className="cabin-field-icon">
                       <IndianRupee size={16} />
                       <input
@@ -487,10 +504,61 @@ export const AdminCabins = () => {
                   </div>
                 </div>
 
+                {/* ── Pricing Plans Section ── */}
+                <div style={{ marginBottom: "1rem", borderTop: "1.5px solid #f1f5f9", paddingTop: "1rem" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+                    <label className="cabin-label" style={{ margin: 0 }}>Pricing Plans (Packages)</label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const label = prompt("Plan Label (e.g. Monthly Plan, Weekly Plan):");
+                        const hours = prompt("Included Hours (e.g. 50):");
+                        const cost = prompt("Cost (e.g. 8000):");
+                        const validity = prompt("Validity in Days (e.g. 30):");
+                        if (hours && cost && validity) {
+                          setPricingPlans([...pricingPlans, {
+                            label: (label || "").trim(),
+                            hours: Number(hours),
+                            cost: Number(cost),
+                            validity: Number(validity)
+                          }]);
+                        }
+                      }}
+                      style={{
+                        padding: "0.25rem 0.65rem", borderRadius: 8, border: "1.5px solid #6366f1",
+                        fontSize: "0.75rem", cursor: "pointer", background: "rgba(99,102,241,0.07)",
+                        color: "#4f46e5", fontWeight: "bold"
+                      }}
+                    >
+                      + Add Plan
+                    </button>
+                  </div>
+                  {pricingPlans.length > 0 ? (
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+                      {pricingPlans.map((plan, idx) => (
+                        <div key={idx} style={{ padding: "0.65rem", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: "0.75rem", background: "#f8fafc", position: "relative" }}>
+                          <div><strong>{plan.label || "Plan"}</strong></div>
+                          <div>Hours: {plan.hours} hrs | Price: ₹{plan.cost}</div>
+                          <div>Validity: {plan.validity} Days</div>
+                          <button
+                            type="button"
+                            onClick={() => setPricingPlans(pricingPlans.filter((_, i) => i !== idx))}
+                            style={{ position: "absolute", top: 4, right: 4, border: "none", background: "none", color: "#ef4444", cursor: "pointer", fontSize: "1rem", fontWeight: "bold" }}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p style={{ margin: 0, fontSize: "0.75rem", color: "#94a3b8" }}>No plans defined. Cabin will only support hourly booking.</p>
+                  )}
+                </div>
+
                 {/* ── Amenities ── */}
                 <div style={{ marginBottom: "1rem" }}>
                   <label className="cabin-label">Included Amenities</label>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.5rem" }}>
+                  <div className="cabin-amenities-grid">
                     {[
                       { key: "wifi",            label: "Wi-Fi",            emoji: "📶" },
                       { key: "parking",         label: "Parking",          emoji: "🅿️" },
@@ -657,3 +725,5 @@ export const AdminCabins = () => {
     </div>
   )
 }
+
+export default AdminCabins;

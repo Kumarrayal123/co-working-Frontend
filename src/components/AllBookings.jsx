@@ -1,7 +1,17 @@
 import axios from "axios";
-import { ArrowRight, MapPin, Phone, Search, SlidersHorizontal } from "lucide-react";
+import {
+  Calendar,
+  Clock,
+  IndianRupee,
+  MapPin,
+  Search,
+  User,
+  X,
+  Calendar as CalendarIcon
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import AdminNavbar from "./AdminNavbar";
+import "./Dashboard.css";
 const API_URL = "http://localhost:5000";
 const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
 
@@ -10,6 +20,7 @@ const AllBookings = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterDate, setFilterDate] = useState("");
 
   const getImageUrl = (img) => {
     if (!img) return PLACEHOLDER_IMAGE;
@@ -35,203 +46,327 @@ const AllBookings = () => {
     const userName = b.userId?.name || b.name || "";
     const userMobile = b.userId?.mobile || b.mobile || "";
     const cabinName = b.cabinId?.name || "";
-    return (
+    const matchesSearch =
       userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       cabinName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      userMobile.includes(searchTerm)
-    );
+      userMobile.includes(searchTerm);
+    const matchesDate = filterDate ? b.startDate === filterDate : true;
+    return matchesSearch && matchesDate;
   });
 
-  const formatDate = (dateString, timeString) => {
-    if (!dateString) return { date: "N/A", time: "" };
-    const date = new Date(dateString);
-    const formattedDate = date.toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' });
-    return { date: formattedDate, time: timeString || "N/A" };
-  };
+  if (loading)
+    return (
+      <div className="admin-dash">
+        <AdminNavbar />
+        <div className="admin-dash__loading">
+          <div className="admin-dash__spinner" />
+          <p className="admin-dash__loading-text">Loading bookings...</p>
+        </div>
+      </div>
+    );
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans">
+    <div className="admin-dash">
       <AdminNavbar />
 
-      <main className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+      <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="admin-dash__header">
           <div>
-            <h2 className="text-2xl font-black uppercase text-slate-900 tracking-tight mb-2 ">All Bookings</h2>
-            <p className="text-slate-500 font-medium text-sm">Manage and track workspace reservations.</p>
+            <h1 className="admin-dash__greeting">
+              All <span>Bookings</span>
+            </h1>
+            <p className="admin-dash__subtitle">
+              Manage and track all workspace reservations.
+            </p>
           </div>
-
-          <div className="w-full md:w-auto flex gap-3">
-            <div className="relative flex-grow md:w-72">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+            <div className="relative flex-grow sm:flex-grow-0">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
               <input
                 type="text"
                 placeholder="Search bookings..."
-                className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 shadow-sm transition-all"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all w-full sm:w-64"
               />
             </div>
-            <button className="px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-emerald-600 hover:border-emerald-200 transition shadow-sm">
-              <SlidersHorizontal size={20} />
-            </button>
+            <input
+              type="date"
+              value={filterDate}
+              onChange={(e) => setFilterDate(e.target.value)}
+              className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all w-full sm:w-auto"
+            />
+            {(searchTerm || filterDate) && (
+              <button
+                onClick={() => {
+                  setSearchTerm("");
+                  setFilterDate("");
+                }}
+                className="flex items-center justify-center gap-2 p-2.5 bg-slate-100 text-slate-500 rounded-xl hover:bg-slate-200 transition-colors w-full sm:w-auto"
+                title="Clear Filters"
+              >
+                <X size={18} />
+                <span className="sm:hidden text-sm font-medium">Clear Filters</span>
+              </button>
+            )}
+            <div className="px-4 py-2 bg-white border border-slate-200 rounded-xl shadow-sm flex sm:flex-col justify-between items-center sm:items-start gap-2 sm:gap-1">
+              <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider leading-none mb-0 sm:mb-1">Found</p>
+              <p className="text-lg font-black text-slate-900 leading-none">
+                {filteredBookings.length} <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-1">Results</span>
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Loading State */}
-        {loading ? (
-          <div className="flex justify-center py-24">
-            <div className="animate-spin h-10 w-10 border-t-4 border-emerald-600 border-r-transparent rounded-full"></div>
+        {filteredBookings.length === 0 ? (
+          <div className="admin-dash__error" style={{ background: '#f8fafc', borderColor: '#e2e8f0' }}>
+            <CalendarIcon size={48} className="text-slate-300 mb-4" />
+            <p className="admin-dash__error-title" style={{ color: '#475569' }}>No bookings found</p>
+            <p className="admin-dash__error-message">We couldn't find any bookings matching your search criteria.</p>
+            {(searchTerm || filterDate) && (
+              <button
+                onClick={() => { setSearchTerm(""); setFilterDate(""); }}
+                className="mt-4 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+              >
+                Reset Filters
+              </button>
+            )}
           </div>
         ) : (
-          <>
+          <div className="space-y-6">
             {/* Desktop Table View */}
-            <div className="mb-6 overflow-hidden bg-white rounded-lg shadow-lg">
-                <div className="overflow-x-auto bg-white shadow-lg rounded-xl">
-                  <table className="min-w-full">
-                <thead>
-                  <tr className="bg-gradient-to-r from-[#22C45F] to-[#2563EB] px-2 py-2 text-sm text-left text-white">
-                    <th className="py-2 text-center text-white uppercase tracking-widest pl-8">Cabin Information</th>
-                    <th className="py-2 text-center text-white uppercase tracking-widest">User Details</th>
-                    <th className="py-2 text-center text-white uppercase tracking-widest">Schedule</th>
-                    <th className="py-2 text-center text-white uppercase tracking-widest pr-8">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {filteredBookings.length > 0 ? (
-                    filteredBookings.map((b) => {
-                      const userName = b.userId?.name || b.name || "Unknown";
-                      const userMobile = b.userId?.mobile || b.mobile || "N/A";
-                      const start = formatDate(b.startDate || b.date, b.startTime || b.time);
-                      const end = formatDate(b.endDate, b.endTime);
-
-                      return (
-                        <tr key={b._id} className="hover:bg-slate-50/50 transition-colors group">
-                          <td className="px-2 py-2 pl-8">
-                            <div className="flex items-center gap-4">
-                              <div className="h-12 w-12 rounded-2xl bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center text-slate-400 shrink-0">
-                                <img
-                                  src={getImageUrl(b.cabinId?.images?.[0])}
-                                  alt=""
-                                  className="w-full h-full object-cover"
-                                  onError={(e) => {
-                                    e.target.src = PLACEHOLDER_IMAGE;
-                                  }}
-                                />
-                              </div>
-                              <div>
-                                <p className="font-bold uppercase text-slate-900 text-sm tracking-tight mb-2">{b.cabinId?.name || "Unknown Workspace"}</p>
-                                <p className="text-xs font-medium text-slate-400">ID: <span className="uppercase">{b.cabinId?._id?.slice(-6)}</span></p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-2 py-2">
-                            <div className="flex items-center gap-3">
-                              <div className="h-8 w-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs font-medium border border-emerald-100">
-                                {userName.charAt(0).toUpperCase()}
-                              </div>
-                              <div>
-                                <p className="font-medium uppercase text-slate-900 text-sm tracking-tight mb-2">{userName}</p>
-                                <p className="text-xs font-medium text-slate-500 flex items-center gap-1">
-                                  <Phone size={10} className="text-slate-400" /> {userMobile}
-                                </p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-2 py-2">
-                            <div className="flex items-center gap-4">
-                              <div>
-                                <p className="text-xs font-medium text-slate-400 uppercase">From</p>
-                                <p className="text-sm font-medium text-slate-900">{start.date}</p>
-                                <p className="text-xs text-slate-500">{start.time}</p>
-                              </div>
-                              <ArrowRight size={16} className="text-slate-300" />
-                              <div>
-                                <p className="text-xs font-medium text-slate-400 uppercase">To</p>
-                                <p className="text-sm font-medium text-slate-900">{end.date}</p>
-                                <p className="text-xs text-slate-500">{end.time}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-2 py-2 text-right pr-8">
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                              Confirmed
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  ) : (
-                    <tr>
-                      <td colSpan="4" className="px-6 py-12 text-center text-slate-400 font-medium">
-                        No bookings found matching "{searchTerm}"
-                      </td>
+            <div className="hidden md:block bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200">
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
+                        Type
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
+                        Cabin Details
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
+                        Customer
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
+                        Contact
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
+                        Booking Period
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
+                        Duration
+                      </th>
+                      <th className="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">
+                        Price
+                      </th>
                     </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredBookings.map((booking) => {
+                      const isVisit = booking.bookingType === "visit";
+                      const userName = booking.userId?.name || booking.name || "Unknown";
+                      return (
+                      <tr 
+                        key={booking._id} 
+                        className="hover:bg-slate-50 transition-colors"
+                      >
+                        {/* Type Badge */}
+                        <td className="px-6 py-4">
+                          {isVisit ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold border border-blue-100">
+                              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block"></span>
+                              Site Visit
+                            </span>
+                          ) : booking.bookingBasis === "plan" ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 text-xs font-bold border border-purple-100">
+                              <span className="w-1.5 h-1.5 rounded-full bg-purple-500 inline-block"></span>
+                              Plan: {booking.selectedPlan?.label || "Subscription"}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-100">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
+                              Hourly Booking
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-start gap-3">
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${isVisit ? "bg-blue-50" : "bg-indigo-50"}`}>
+                              <Calendar size={18} className={isVisit ? "text-blue-500" : "text-indigo-600"} />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-slate-900 text-sm">
+                                {booking.cabinId?.name || "Unknown Cabin"}
+                              </p>
+                              <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-1">
+                                <MapPin size={12} className="text-indigo-500" />
+                                {booking.cabinId?.address?.split(",")[0] || "No Address"}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
+                              <User size={18} className="text-slate-600" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-slate-900 text-sm">
+                                {userName}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="space-y-1.5">
+                            <div className="flex items-center gap-2 text-sm text-slate-600">
+                              <svg className="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                              </svg>
+                              {booking.userId?.mobile || booking.mobile || "No Mobile"}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-start gap-2">
+                            <Clock size={16} className="text-indigo-500 mt-0.5 flex-shrink-0" />
+                            <div className="space-y-1">
+                              <p className="text-sm text-slate-900 font-medium">
+                                {booking.startDate} · {booking.startTime}
+                              </p>
+                              {!isVisit && (
+                                <p className="text-sm text-slate-500">
+                                  {booking.endDate} · {booking.endTime}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          {isVisit ? (
+                            <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold">Visit</span>
+                          ) : (
+                            <span className="inline-flex items-center px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold">{booking.totalHours} hrs</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          {isVisit ? (
+                            <span className="font-bold text-emerald-600 text-sm">Free</span>
+                          ) : (
+                            <div className="flex items-center justify-end gap-1 text-indigo-600 font-bold text-lg">
+                              <IndianRupee size={18} />
+                              {booking.totalPrice?.toLocaleString("en-IN") || "0"}
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             {/* Mobile Card View */}
             <div className="md:hidden space-y-4">
-              {filteredBookings.length > 0 ? (
-                filteredBookings.map((b) => {
-                  const userName = b.userId?.name || b.name || "Unknown";
-                  const start = formatDate(b.startDate || b.date, b.startTime || b.time);
-                  const end = formatDate(b.endDate, b.endTime);
-
-                  return (
-                    <div key={b._id} className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
-                      <div className="flex justify-between items-start mb-6">
-                        <div className="flex items-center gap-3">
-                          <div className="p-3 bg-emerald-50 rounded-xl text-emerald-600">
-                            <MapPin size={20} />
-                          </div>
-                          <div>
-                            <h3 className="font-medium uppercase text-slate-900 text-sm tracking-tight">{b.cabinId?.name || "Workspace"}</h3>
-                            <span className="inline-flex mt-1 items-center px-2.5 py-0.5 rounded-md text-[10px] font-medium uppercase tracking-wider bg-emerald-100 text-emerald-800">
-                              Confirmed
-                            </span>
-                          </div>
-                        </div>
+              {filteredBookings.map((booking) => {
+                const isVisit = booking.bookingType === "visit";
+                const userName = booking.userId?.name || booking.name || "Unknown";
+                return (
+                  <div key={booking._id} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                    {/* Top Badge and Price */}
+                    <div className="flex justify-between items-center">
+                      <div>
+                        {isVisit ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold border border-blue-100">
+                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block"></span>
+                            Site Visit
+                          </span>
+                        ) : booking.bookingBasis === "plan" ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 text-xs font-bold border border-purple-100">
+                            <span className="w-1.5 h-1.5 rounded-full bg-purple-500 inline-block"></span>
+                            Plan: {booking.selectedPlan?.label || "Subscription"}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-100">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
+                            Hourly Booking
+                          </span>
+                        )}
                       </div>
-
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
-                          <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center font-medium text-slate-600 shadow-sm">
-                            {userName.charAt(0).toUpperCase()}
+                      <div className="text-right">
+                        {isVisit ? (
+                          <span className="font-bold text-emerald-600 text-sm">Free</span>
+                        ) : (
+                          <div className="flex items-center gap-0.5 text-indigo-600 font-bold text-base">
+                            <IndianRupee size={14} />
+                            {booking.totalPrice?.toLocaleString("en-IN") || "0"}
                           </div>
-                          <div>
-                            <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Booked By</p>
-                            <p className="text-sm font-medium text-slate-900">{userName}</p>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                            <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider mb-1">Start</p>
-                            <p className="text-sm font-medium text-slate-900">{start.date}</p>
-                            <p className="text-xs text-slate-500">{start.time}</p>
-                          </div>
-                          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                            <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider mb-1">End</p>
-                            <p className="text-sm font-medium text-slate-900">{end.date}</p>
-                            <p className="text-xs text-slate-500">{end.time}</p>
-                          </div>
-                        </div>
+                        )}
                       </div>
                     </div>
-                  );
-                })
-              ) : (
-                <div className="text-center py-12 bg-white rounded-[2rem] border border-dashed border-slate-200 text-slate-400 font-medium">
-                  No bookings found.
-                </div>
-              )}
+
+                    {/* Cabin Details */}
+                    <div className="flex items-start gap-3 border-t border-slate-100 pt-3">
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${isVisit ? "bg-blue-50" : "bg-indigo-50"}`}>
+                        <Calendar size={18} className={isVisit ? "text-blue-500" : "text-indigo-600"} />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-slate-900 text-sm">
+                          {booking.cabinId?.name || "Unknown Cabin"}
+                        </h4>
+                        <p className="flex items-center gap-1 text-xs text-slate-500 mt-1">
+                          <MapPin size={12} className="text-indigo-500" />
+                          {booking.cabinId?.address || "No Address"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Booking Period */}
+                    <div className="bg-slate-50 rounded-xl p-3 flex flex-col gap-2">
+                      <div className="flex items-center gap-2 text-xs font-medium text-slate-400 uppercase tracking-wider">
+                        <Clock size={12} className="text-indigo-500" />
+                        <span>Booking Period</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-slate-950">
+                        <div>
+                          <p className="text-[10px] text-slate-400 font-bold uppercase">From</p>
+                          <p className="text-xs font-semibold">{booking.startDate}</p>
+                          <p className="text-[11px] text-slate-500">{booking.startTime}</p>
+                        </div>
+                        {!isVisit && (
+                          <div>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase">To</p>
+                            <p className="text-xs font-semibold">{booking.endDate}</p>
+                            <p className="text-[11px] text-slate-500">{booking.endTime}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Customer Info */}
+                    <div className="flex justify-between items-center pt-3 border-t border-slate-100 text-xs">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0">
+                          <User size={12} className="text-slate-600" />
+                        </div>
+                        <span className="font-medium text-slate-700">{userName}</span>
+                      </div>
+                      <div className="text-slate-500 flex items-center gap-1">
+                        <svg className="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                        </svg>
+                        {booking.userId?.mobile || booking.mobile || "No Mobile"}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          </>
+          </div>
         )}
       </main>
     </div>

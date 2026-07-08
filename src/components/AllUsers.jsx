@@ -1,804 +1,697 @@
-// import axios from "axios";
-// import { CheckCircle, Clock, Edit, Eye, File, FileText, Search, Trash2, User, XCircle } from "lucide-react";
-// import { useEffect, useState } from "react";
-// import AdminNavbar from "./AdminNavbar";
-
-// function AllUsers() {
-//   const [users, setUsers] = useState([]);
-//   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState(null);
-//   const [searchTerm, setSearchTerm] = useState("");
-//   const [editPopupOpen, setEditPopupOpen] = useState(false);
-//   const [viewPopupOpen, setViewPopupOpen] = useState(false);
-//   const [selectedUser, setSelectedUser] = useState(null);
-
-//   // Status state
-//   const [statusData, setStatusData] = useState({
-//     adharCardStatus: "pending",
-//     panCardStatus: "pending",
-//     mbbsCertificateStatus: "pending",
-//     pmcRegistrationStatus: "pending",
-//     nmrIdStatus: "pending",
-//     status: "active"
-//   });
-//   const [updateLoading, setUpdateLoading] = useState(false);
-
-//   useEffect(() => {
-//     fetchUsers();
-//   }, []);
-
-//   const fetchUsers = () => {
-//     setLoading(true);
-//     axios
-//       .get("http://localhost:5000/api/auth/all")
-//       .then((res) => {
-//         setUsers(res.data);
-//         setLoading(false);
-//       })
-//       .catch((err) => {
-//         console.error(err);
-//         setError("Failed to fetch users");
-//         setLoading(false);
-//       });
-//   };
-
-//   const filteredUsers = users.filter(user =>
-//     user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//     user.email?.toLowerCase().includes(searchTerm.toLowerCase())
-//   );
-
-//   const documentKeys = ["adharCard", "panCard", "mbbsCertificate", "pmcRegistration", "nmrId"];
-
-//   /* ---------------- HANDLERS ---------------- */
-
-//   const openEditPopup = (user) => {
-//     setSelectedUser(user);
-//     setStatusData({
-//       adharCardStatus: user.adharCardStatus || "pending",
-//       panCardStatus: user.panCardStatus || "pending",
-//       mbbsCertificateStatus: user.mbbsCertificateStatus || "pending",
-//       pmcRegistrationStatus: user.pmcRegistrationStatus || "pending",
-//       nmrIdStatus: user.nmrIdStatus || "pending",
-//       status: user.status || "active"
-//     });
-//     setEditPopupOpen(true);
-//   };
-
-//   const openViewPopup = (user) => {
-//     setSelectedUser(user);
-//     setViewPopupOpen(true);
-//   };
-
-//   const closeEditPopup = () => {
-//     setEditPopupOpen(false);
-//     setSelectedUser(null);
-//   };
-
-//   const closeViewPopup = () => {
-//     setViewPopupOpen(false);
-//     setSelectedUser(null);
-//   };
-
-//   const handleStatusChange = (field, value) => {
-//     setStatusData((prev) => {
-//       const newState = { ...prev, [field]: value };
-
-//       // Check if all documents are approved
-//       const allApproved = documentKeys.every((key) => {
-//         const statusKey = `${key}Status`;
-//         // If the current field being updated is this key, use the new value
-//         if (statusKey === field) return value === "approved";
-//         // Otherwise use the existing state value
-//         return prev[statusKey] === "approved";
-//       });
-
-//       // Auto-update status based on documents
-//       newState.status = allApproved ? "active" : "inactive";
-
-//       return newState;
-//     });
-//   };
-
-//   const updateUserStatus = () => {
-//     if (!selectedUser) return;
-//     setUpdateLoading(true);
-//     axios
-//       .put(`http://localhost:5000/api/auth/update-status/${selectedUser._id}`, statusData)
-//       .then((res) => {
-//         setUsers(prevUsers =>
-//           prevUsers.map(user =>
-//             user._id === selectedUser._id
-//               ? { ...user, ...statusData }
-//               : user
-//           )
-//         );
-//         setUpdateLoading(false);
-//         closeEditPopup();
-//       })
-//       .catch((err) => {
-//         console.error(err);
-//         setUpdateLoading(false);
-//         alert("Failed to update status");
-//       });
-//   };
-
-//   const deleteUser = (userId) => {
-//     if (window.confirm("Are you sure you want to delete this user?")) {
-//       axios
-//         .delete(`http://localhost:5000/api/auth/delete/${userId}`)
-//         .then(() => {
-//           setUsers(prev => prev.filter(u => u._id !== userId));
-//         })
-//         .catch(err => {
-//           console.error(err);
-//           alert("Failed to delete user");
-//         })
-//     }
-//   }
-
-//   /* ---------------- HELPERS ---------------- */
-
-//   const getStatusIcon = (status) => {
-//     switch (status) {
-//       case "approved": return <CheckCircle size={14} className="text-emerald-500" />;
-//       case "rejected": return <XCircle size={14} className="text-red-500" />;
-//       case "pending": return <Clock size={14} className="text-amber-500" />;
-//       default: return null;
-//     }
-//   };
-
-//   const getStatusColor = (status) => {
-//     switch (status) {
-//       case "approved": return "bg-emerald-50 text-emerald-700 border-emerald-200";
-//       case "rejected": return "bg-red-50 text-red-700 border-red-200";
-//       case "pending": return "bg-amber-50 text-amber-700 border-amber-200";
-//       default: return "bg-slate-50 text-slate-700 border-slate-200";
-//     }
-//   };
-
-//   const formatFileName = (path) => path ? path.split(/[\\/]/).pop() : "";
-
-//   const getFileIcon = (path) => {
-//     if (!path) return <File size={16} />;
-//     const ext = path.split('.').pop().toLowerCase();
-//     if (['jpg', 'jpeg', 'png'].includes(ext)) return <FileText size={16} className="text-purple-600" />;
-//     if (['pdf'].includes(ext)) return <FileText size={16} className="text-red-600" />;
-//     return <FileText size={16} />;
-//   };
-
-//   return (
-//     <div className="min-h-screen pt-4 bg-slate-50 font-sans">
-//       <AdminNavbar />
-
-//       {/* EDIT POPUP */}
-//       {editPopupOpen && selectedUser && (
-//         <div className="fixed  inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-//           <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100">
-//             <div className="p-8 border-b border-slate-100 flex justify-between items-center">
-//               <h2 className="text-2xl font-black uppercase text-slate-900 tracking-tight">Update Status</h2>
-//               <button onClick={closeEditPopup} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition">
-//                 <XCircle size={24} />
-//               </button>
-//             </div>
-
-//             <div className="p-8 space-y-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
-//               <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-//                 <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-emerald-600 font-bold text-lg shadow-sm border border-slate-100">
-//                   {selectedUser.name?.charAt(0).toUpperCase()}
-//                 </div>
-//                 <div>
-//                   <h3 className="font-bold uppercase text-slate-900 text-sm tracking-tight mb-2">{selectedUser.name}</h3>
-//                   <p className="text-sm text-slate-500">{selectedUser.email}</p>
-//                 </div>
-//               </div>
-
-//               {documentKeys.map((key) => (
-//                 <div key={key}>
-//                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
-//                     {key.replace(/([A-Z])/g, ' $1').trim()}
-//                   </label>
-//                   <div className="flex bg-slate-100 p-1 rounded-xl">
-//                     {["approved", "rejected", "pending"].map((status) => (
-//                       <button
-//                         key={status}
-//                         onClick={() => handleStatusChange(`${key}Status`, status)}
-//                         className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${statusData[`${key}Status`] === status
-//                           ? status === "approved" ? "bg-white text-emerald-600 shadow-sm"
-//                             : status === "rejected" ? "bg-white text-red-600 shadow-sm"
-//                               : "bg-white text-amber-600 shadow-sm"
-//                           : "text-slate-400 hover:text-slate-600"
-//                           }`}
-//                       >
-//                         {status.charAt(0).toUpperCase() + status.slice(1)}
-//                       </button>
-//                     ))}
-//                   </div>
-//                 </div>
-//               ))}
-//             </div>
-
-//             <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
-//               <button onClick={closeEditPopup} className="px-5 py-2.5 rounded-xl font-bold text-slate-500 hover:bg-slate-200 transition text-sm">Cancel</button>
-//               <button
-//                 onClick={updateUserStatus}
-//                 disabled={updateLoading}
-//                 className="px-5 py-2.5 rounded-xl font-bold bg-gradient-to-r from-[#1E3A8A] to-[#14B8A6] text-white hover:from-[#1E3A8A] hover:to-[#14B8A6] hover:shadow-xl"
-//               >
-//                 {updateLoading ? "Updating..." : "Save Changes"}
-//               </button>
-//             </div>
-//           </div>
-//         </div>
-//       )}
-
-//       {/* VIEW POPUP */}
-//       {viewPopupOpen && selectedUser && (
-//         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-//           <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-3xl overflow-hidden border border-slate-100 max-h-[90vh] flex flex-col">
-//             <div className="p-8 border-b border-slate-100 flex justify-between items-center shrink-0">
-//               <h2 className="text-2xl font-black uppercase text-slate-900 tracking-tight mb-2">User Details</h2>
-//               <button onClick={closeViewPopup} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition">
-//                 <XCircle size={24} />
-//               </button>
-//             </div>
-
-//             <div className="p-8 overflow-y-auto custom-scrollbar">
-//               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-//                 <div>
-//                   <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Personal Info</h3>
-//                   <div className="space-y-4">
-//                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-//                       <label className="text-xs text-slate-400 font-bold block mb-1">Full Name</label>
-//                       <p className="font-bold uppercase text-slate-900 text-sm tracking-tight mb-2">{selectedUser.name}</p>
-//                     </div>
-//                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-//                       <label className="text-xs text-slate-400 font-bold block mb-1">Email Address</label>
-//                       <p className="font-bold text-slate-900">{selectedUser.email}</p>
-//                     </div>
-//                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-//                       <label className="text-xs text-slate-400 font-bold block mb-1">Phone</label>
-//                       <p className="font-bold text-slate-900">{selectedUser.mobile || "N/A"}</p>
-//                     </div>
-//                   </div>
-//                 </div>
-
-//                 <div>
-//                   <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Documents</h3>
-//                   <div className="space-y-3">
-//                     {documentKeys.map(key => {
-//                       const path = selectedUser[key];
-//                       const status = selectedUser[`${key}Status`] || 'pending';
-//                       if (!path) return null;
-
-//                       return (
-//                         <div key={key} className="flex items-center justify-between p-3 bg-white border border-slate-100 rounded-xl shadow-sm">
-//                           <div className="flex items-center gap-3 overflow-hidden">
-//                             <div className="p-2 bg-slate-50 rounded-lg shrink-0">
-//                               {getFileIcon(path)}
-//                             </div>
-//                             <div className="min-w-0">
-//                               <p className="text-xs font-bold text-slate-900 truncate">{key.replace(/([A-Z])/g, ' $1')}</p>
-//                               <a href={`http://localhost:5050/${path}`} target="_blank" rel="noreferrer" className="text-[10px] text-emerald-600 font-bold hover:underline truncate block">View File</a>
-//                             </div>
-//                           </div>
-//                           <div className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase ${getStatusColor(status)}`}>
-//                             {status}
-//                           </div>
-//                         </div>
-//                       )
-//                     })}
-//                     {!documentKeys.some(key => selectedUser[key]) && (
-//                       <div className="text-slate-400 text-sm font-medium italic">No documents uploaded.</div>
-//                     )}
-//                   </div>
-//                 </div>
-//               </div>
-//             </div>
-//           </div>
-//         </div>
-//       )}
-
-
-//       <main className="pt-20 pb-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-//         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-8">
-//           <div>
-//             <h2 className="text-2xl font-black uppercase text-slate-900 tracking-tight mb-2">User Management</h2>
-//             <p className="text-slate-500 font-medium text-sm">Monitor and manage registered members.</p>
-//           </div>
-
-//           <div className="relative w-full sm:w-72">
-//             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-//             <input
-//               type="text"
-//               placeholder="Search users..."
-//               className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 shadow-sm transition-all"
-//               value={searchTerm}
-//               onChange={(e) => setSearchTerm(e.target.value)}
-//             />
-//           </div>
-//         </div>
-
-//         {loading ? (
-//           <div className="flex justify-center py-24">
-//             <div className="animate-spin h-10 w-10 border-t-4 border-emerald-600 border-r-transparent rounded-full"></div>
-//           </div>
-//         ) : (
-//           <div className="mb-6 overflow-hidden bg-white rounded-lg shadow-lg">
-//                 <div className="overflow-x-auto bg-white shadow-lg rounded-xl">
-//                   <table className="min-w-full">
-//                 <thead>
-//                   <tr className="bg-gradient-to-r from-[#1E3A8A] to-[#14B8A6] px-2 py-2 text-sm text-left text-white">
-//                     <th className="py-2 text-center text-white uppercase tracking-widest pl-8">User</th>
-//                     <th className="py-2 text-center text-white uppercase tracking-widest">Role</th>
-//                     <th className="py-2 text-center text-white uppercase tracking-widest">Status</th>
-//                     <th className="px-2 py-2 text-center  text-white uppercase tracking-widest">Joined</th>
-//                     <th className="px-2 py-2 text-center  text-white uppercase tracking-widest text-right">Actions</th>
-//                   </tr>
-//                 </thead>
-//                 <tbody className="divide-y divide-slate-50">
-//                   {filteredUsers.length === 0 ? (
-//                     <tr>
-//                       <td colSpan="5" className="px-6 py-12 text-center text-slate-400 font-medium">
-//                         No users found matching "{searchTerm}"
-//                       </td>
-//                     </tr>
-//                   ) : (
-//                     filteredUsers.map((user) => (
-//                       <tr key={user._id} className="hover:bg-slate-50/50 transition-colors group">
-//                         <td className="px-2 py-2">
-//                           <div className="flex items-center gap-3">
-//                             <div className="w-10 h-10 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 font-bold shadow-sm">
-//                               {user.name ? user.name.charAt(0).toUpperCase() : <User size={18} />}
-//                             </div>
-//                             <div>
-//                               <p className="font-bold uppercase text-slate-900 text-sm tracking-tight mb-2">{user.name}</p>
-//                               <p className="text-xs text-slate-500">{user.email}</p>
-//                             </div>
-//                           </div>
-//                         </td>
-//                         <td className="px-2 py-2">
-//                           <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-wider">
-//                             Member
-//                           </span>
-//                         </td>
-//                         <td className="px-2 py-2">
-//                           <div className="flex items-center gap-2">
-//                             <span className={`w-2 h-2 rounded-full ${user.status === 'active' ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
-//                             <span className={`text-xs font-bold uppercase ${user.status === 'active' ? 'text-emerald-700' : 'text-red-700'}`}>
-//                               {user.status || 'Active'}
-//                             </span>
-//                           </div>
-//                         </td>
-//                         <td className="px-2 py-2 text-sm font-medium text-slate-500">
-//                           {new Date(user.createdAt).toLocaleDateString()}
-//                         </td>
-//                       <td className="px-2 py-2 text-right">
-//                       <div className="flex items-center justify-end gap-2 opacity-100 transition-opacity">
-//                       <button onClick={() => openViewPopup(user)} className="p-2 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition" title="View">
-//                         <Eye size={18} />
-//                       </button>
-//                       <button onClick={() => openEditPopup(user)} className="p-2 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition" title="Edit">
-//                       <Edit size={18} />
-//                       </button>
-//                       <button onClick={() => deleteUser(user._id)} className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition" title="Delete">
-//                       <Trash2 size={18} />
-//                       </button>
-//                       </div>
-//                       </td>
-
-//                       </tr>
-//                     ))
-//                   )}
-//                 </tbody>
-//               </table>
-//             </div>
-//           </div>
-//         )}
-//       </main>
-//     </div>
-//   );
-// }
-
-// export default AllUsers;
-
-
 import axios from "axios";
-import { CheckCircle, Clock, Edit, Eye, File, FileText, Search, Trash2, User, XCircle } from "lucide-react";
+import {
+  Users,
+  Search,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  Eye,
+  X,
+  UserCheck,
+  UserX,
+  Building2,
+  RefreshCw,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import AdminNavbar from "./AdminNavbar";
+import "./Dashboard.css";
+import { toast } from "react-toastify";
 
-function AllUsers() {
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [editPopupOpen, setEditPopupOpen] = useState(false);
-  const [viewPopupOpen, setViewPopupOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
+const API_URL = "http://localhost:5000";
 
-  // Status state
-  const [statusData, setStatusData] = useState({
-    adharCardStatus: "pending",
-    panCardStatus: "pending",
-    mbbsCertificateStatus: "pending",
-    pmcRegistrationStatus: "pending",
-    nmrIdStatus: "pending",
-    status: "active"
+const ROLE_COLORS = {
+  user:   { bg: "#eff6ff", color: "#1d4ed8", label: "User" },
+  doctor: { bg: "#fdf4ff", color: "#7c3aed", label: "Doctor" },
+};
+
+const STATUS_COLORS = {
+  active:   { bg: "#f0fdf4", color: "#15803d", dot: "#16a34a" },
+  pending:  { bg: "#fffbeb", color: "#b45309", dot: "#f59e0b" },
+  approved: { bg: "#f0fdf4", color: "#15803d", dot: "#16a34a" },
+  rejected: { bg: "#fef2f2", color: "#b91c1c", dot: "#ef4444" },
+};
+
+const getStatus = (s) => STATUS_COLORS[s] ?? STATUS_COLORS.pending;
+const getRole   = (r) => ROLE_COLORS[r]   ?? ROLE_COLORS.user;
+
+const fmt = (dateStr) => {
+  if (!dateStr) return "—";
+  return new Date(dateStr).toLocaleDateString("en-IN", {
+    day: "numeric", month: "short", year: "numeric",
   });
-  const [updateLoading, setUpdateLoading] = useState(false);
+};
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+export default function AllUsers() {
+  const [users,       setUsers]       = useState([]);
+  const [loading,     setLoading]     = useState(true);
+  const [error,       setError]       = useState(null);
+  const [search,      setSearch]      = useState("");
+  const [roleFilter,  setRoleFilter]  = useState("all");
+  const [viewUser,    setViewUser]    = useState(null);
 
-  const fetchUsers = () => {
+  const handleApprove = async (id) => {
+    try {
+      const res = await axios.put(`${API_URL}/api/admin/approve/${id}`);
+      toast.success(res.data.message || "User approved successfully");
+      setUsers((prev) =>
+        prev.map((u) => (u._id === id ? { ...u, status: "approved" } : u))
+      );
+      if (viewUser && viewUser._id === id) {
+        setViewUser((prev) => prev ? { ...prev, status: "approved" } : null);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || "Failed to approve user");
+    }
+  };
+
+  const handleReject = async (id) => {
+    try {
+      const res = await axios.put(`${API_URL}/api/admin/reject/${id}`);
+      toast.success(res.data.message || "User rejected successfully");
+      setUsers((prev) =>
+        prev.map((u) => (u._id === id ? { ...u, status: "rejected" } : u))
+      );
+      if (viewUser && viewUser._id === id) {
+        setViewUser((prev) => prev ? { ...prev, status: "rejected" } : null);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || "Failed to reject user");
+    }
+  };
+
+  const fetchUsers = async () => {
     setLoading(true);
-    axios
-      .get("http://localhost:5000/api/auth/all")
-      .then((res) => {
-        setUsers(res.data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error(err);
-        setError("Failed to fetch users");
-        setLoading(false);
-      });
-  };
-
-  const filteredUsers = users.filter(user =>
-    user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const documentKeys = ["adharCard", "panCard", "mbbsCertificate", "pmcRegistration", "nmrId"];
-
-  /* ---------------- HANDLERS ---------------- */
-
-  const openEditPopup = (user) => {
-    setSelectedUser(user);
-    setStatusData({
-      adharCardStatus: user.adharCardStatus || "pending",
-      panCardStatus: user.panCardStatus || "pending",
-      mbbsCertificateStatus: user.mbbsCertificateStatus || "pending",
-      pmcRegistrationStatus: user.pmcRegistrationStatus || "pending",
-      nmrIdStatus: user.nmrIdStatus || "pending",
-      status: user.status || "active"
-    });
-    setEditPopupOpen(true);
-  };
-
-  const openViewPopup = (user) => {
-    setSelectedUser(user);
-    setViewPopupOpen(true);
-  };
-
-  const closeEditPopup = () => {
-    setEditPopupOpen(false);
-    setSelectedUser(null);
-  };
-
-  const closeViewPopup = () => {
-    setViewPopupOpen(false);
-    setSelectedUser(null);
-  };
-
-  const handleStatusChange = (field, value) => {
-    setStatusData((prev) => {
-      // Create a new state object with the updated field
-      const newState = { ...prev, [field]: value };
-
-      // Check if all documents are approved using the new state
-      const allApproved = documentKeys.every((key) => {
-        const statusKey = `${key}Status`;
-        return newState[statusKey] === "approved";
-      });
-
-      // Set status based on document approval
-      newState.status = allApproved ? "active" : "inactive";
-
-      return newState;
-    });
-  };
-
-  const updateUserStatus = () => {
-    if (!selectedUser) return;
-    setUpdateLoading(true);
-    axios
-      .put(`http://localhost:5000/api/auth/update-status/${selectedUser._id}`, statusData)
-      .then((res) => {
-        setUsers(prevUsers =>
-          prevUsers.map(user =>
-            user._id === selectedUser._id
-              ? { ...user, ...statusData }
-              : user
-          )
-        );
-        setUpdateLoading(false);
-        closeEditPopup();
-      })
-      .catch((err) => {
-        console.error(err);
-        setUpdateLoading(false);
-        alert("Failed to update status");
-      });
-  };
-
-  const deleteUser = (userId) => {
-    if (window.confirm("Are you sure you want to delete this user?")) {
-      axios
-        .delete(`http://localhost:5000/api/auth/delete/${userId}`)
-        .then(() => {
-          setUsers(prev => prev.filter(u => u._id !== userId));
-        })
-        .catch(err => {
-          console.error(err);
-          alert("Failed to delete user");
-        })
-    }
-  }
-
-  /* ---------------- HELPERS ---------------- */
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case "approved": return <CheckCircle size={14} className="text-emerald-500" />;
-      case "rejected": return <XCircle size={14} className="text-red-500" />;
-      case "pending": return <Clock size={14} className="text-amber-500" />;
-      default: return null;
+    setError(null);
+    try {
+      const res = await axios.get(`${API_URL}/api/admin/users`);
+      setUsers(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load users. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "approved": return "bg-emerald-50 text-emerald-700 border-emerald-200";
-      case "rejected": return "bg-red-50 text-red-700 border-red-200";
-      case "pending": return "bg-amber-50 text-amber-700 border-amber-200";
-      default: return "bg-slate-50 text-slate-700 border-slate-200";
-    }
-  };
+  useEffect(() => { fetchUsers(); }, []);
 
-  const formatFileName = (path) => path ? path.split(/[\\/]/).pop() : "";
+  const filtered = users.filter((u) => {
+    const q = search.toLowerCase();
+    const matchSearch =
+      u.name?.toLowerCase().includes(q) ||
+      u.email?.toLowerCase().includes(q) ||
+      u.mobile?.includes(q);
+    const matchRole = roleFilter === "all" || u.role === roleFilter;
+    return matchSearch && matchRole;
+  });
 
-  const getFileIcon = (path) => {
-    if (!path) return <File size={16} />;
-    const ext = path.split('.').pop().toLowerCase();
-    if (['jpg', 'jpeg', 'png'].includes(ext)) return <FileText size={16} className="text-purple-600" />;
-    if (['pdf'].includes(ext)) return <FileText size={16} className="text-red-600" />;
-    return <FileText size={16} />;
-  };
+  const totalUsers   = users.length;
+  const totalDoctors = users.filter((u) => u.role === "doctor").length;
+  const totalActive  = users.filter((u) => u.status === "active" || u.status === "approved").length;
+  const totalPending = users.filter((u) => u.status === "pending").length;
 
   return (
-    <div className="min-h-screen pt-4 bg-slate-50 font-sans">
+    <div className="admin-dash">
       <AdminNavbar />
 
-      {/* EDIT POPUP */}
-      {editPopupOpen && selectedUser && (
-        <div className="fixed  inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100">
-            <div className="p-8 border-b border-slate-100 flex justify-between items-center">
-              <h2 className="text-2xl font-black uppercase text-slate-900 tracking-tight">Update Status</h2>
-              <button onClick={closeEditPopup} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition">
-                <XCircle size={24} />
-              </button>
-            </div>
+      <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-16">
 
-            <div className="p-8 space-y-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
-              <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-emerald-600 font-bold text-lg shadow-sm border border-slate-100">
-                  {selectedUser.name?.charAt(0).toUpperCase()}
-                </div>
-                <div>
-                  <h3 className="font-bold uppercase text-slate-900 text-sm tracking-tight mb-2">{selectedUser.name}</h3>
-                  <p className="text-sm text-slate-500">{selectedUser.email}</p>
+        {/* ── Header ── */}
+        <div className="admin-dash__header">
+          <div>
+            <h1 className="admin-dash__greeting">
+              Registered <span>Users</span>
+            </h1>
+            <p className="admin-dash__subtitle">
+              View and manage all registered members on the platform.
+            </p>
+          </div>
+          <button
+            onClick={fetchUsers}
+            style={{
+              display: "flex", alignItems: "center", gap: 6,
+              padding: "0.55rem 1rem",
+              background: "#fff", border: "1px solid #e4e7ec",
+              borderRadius: 10, fontSize: "0.8rem", fontWeight: 600,
+              color: "#475569", cursor: "pointer",
+              boxShadow: "0 1px 2px rgba(16,24,40,0.05)",
+              transition: "all 150ms",
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = "#f8fafc"}
+            onMouseLeave={e => e.currentTarget.style.background = "#fff"}
+          >
+            <RefreshCw size={15} />
+            Refresh
+          </button>
+        </div>
+
+        {/* ── Stats ── */}
+        <style>{`
+          .au-stats { display:grid; grid-template-columns:repeat(2,1fr); gap:0.75rem; margin-bottom:1.5rem; }
+          @media(min-width:768px){ .au-stats { grid-template-columns:repeat(4,1fr); } }
+          .au-table-wrap { background:#fff; border:1px solid #e4e7ec; border-radius:16px; overflow:hidden; box-shadow:0 1px 2px rgba(16,24,40,.05); }
+          .au-thead { display:grid; grid-template-columns:2fr 2fr 1.5fr 1fr 1fr 160px; padding:.75rem 1.25rem; background:#f8fafc; border-bottom:1px solid #e4e7ec; gap:.75rem; }
+          .au-trow  { display:grid; grid-template-columns:2fr 2fr 1.5fr 1fr 1fr 160px; padding:.875rem 1.25rem; gap:.75rem; align-items:center; border-bottom:1px solid #f1f5f9; transition:background 120ms; }
+          .au-trow:last-child { border-bottom:none; }
+          .au-trow:hover { background:#fafafa; }
+          .au-mobile-card { display:none; flex-direction:column; gap:0; border-radius:16px; overflow:hidden; border:1px solid #e4e7ec; background:#fff; box-shadow:0 1px 2px rgba(16,24,40,.05); }
+          .au-card-row { padding:1rem; border-bottom:1px solid #f1f5f9; }
+          .au-card-row:last-child { border-bottom:none; }
+          @media(max-width:767px) {
+            .au-thead, .au-table-wrap { display:none; }
+            .au-mobile-card { display:flex; }
+          }
+        `}</style>
+        <div className="au-stats">
+          {[
+            { label: "Total Users",    value: totalUsers,   icon: Users,     cls: "admin-dash__stat-icon--indigo"  },
+            { label: "Doctors",        value: totalDoctors, icon: UserCheck, cls: "admin-dash__stat-icon--violet"  },
+            { label: "Active Members", value: totalActive,  icon: UserCheck, cls: "admin-dash__stat-icon--emerald" },
+            { label: "Pending",        value: totalPending, icon: UserX,     cls: "admin-dash__stat-icon--amber"   },
+          ].map(({ label, value, icon: Icon, cls }) => (
+            <div key={label} className="admin-dash__stat" style={{ cursor: "default" }}>
+              <div className="admin-dash__stat-top">
+                <span className="admin-dash__stat-label">{label}</span>
+                <div className={`admin-dash__stat-icon ${cls}`}>
+                  <Icon size={16} />
                 </div>
               </div>
+              <div className="admin-dash__stat-value">{value}</div>
+              <div className="admin-dash__stat-meta">registered members</div>
+            </div>
+          ))}
+        </div>
 
-              {documentKeys.map((key) => (
-                <div key={key}>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
-                    {key.replace(/([A-Z])/g, ' $1').trim()}
-                  </label>
-                  <div className="flex bg-slate-100 p-1 rounded-xl">
-                    {["approved", "rejected", "pending"].map((status) => (
+        {/* ── Filters ── */}
+        <div style={{
+          display: "flex", gap: "0.75rem", flexWrap: "wrap",
+          marginBottom: "1.25rem", alignItems: "center",
+        }}>
+          {/* Search */}
+          <div style={{ position: "relative", flex: "1 1 260px", minWidth: 220 }}>
+            <Search
+              size={16}
+              style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }}
+            />
+            <input
+              type="text"
+              placeholder="Search by name, email or phone..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{
+                width: "100%", paddingLeft: 36, paddingRight: 12,
+                paddingTop: "0.55rem", paddingBottom: "0.55rem",
+                border: "1px solid #e4e7ec", borderRadius: 10,
+                fontSize: "0.85rem", fontFamily: "inherit",
+                color: "#1e293b", outline: "none",
+                background: "#fff", boxSizing: "border-box",
+                transition: "border-color 180ms",
+              }}
+              onFocus={e => e.target.style.borderColor = "#6366f1"}
+              onBlur={e  => e.target.style.borderColor = "#e4e7ec"}
+            />
+          </div>
+
+          {/* Role filter pills */}
+          {["all", "user", "doctor"].map(r => (
+            <button
+              key={r}
+              onClick={() => setRoleFilter(r)}
+              style={{
+                padding: "0.45rem 1rem",
+                border: `1.5px solid ${roleFilter === r ? "#6366f1" : "#e4e7ec"}`,
+                borderRadius: 999,
+                background: roleFilter === r ? "#eef2ff" : "#fff",
+                color: roleFilter === r ? "#4f46e5" : "#64748b",
+                fontSize: "0.8rem", fontWeight: 600,
+                cursor: "pointer", transition: "all 150ms",
+                textTransform: "capitalize",
+              }}
+            >
+              {r === "all" ? "All Roles" : r}
+            </button>
+          ))}
+
+          <span style={{ marginLeft: "auto", fontSize: "0.78rem", color: "#94a3b8", fontWeight: 500 }}>
+            {filtered.length} of {totalUsers} users
+          </span>
+        </div>
+
+        {/* ── Content ── */}
+        {loading ? (
+          <div className="admin-dash__loading">
+            <div className="admin-dash__spinner" />
+            <p className="admin-dash__loading-text">Loading users...</p>
+          </div>
+        ) : error ? (
+          <div className="admin-dash__error">
+            <UserX size={40} style={{ opacity: 0.4 }} />
+            <p className="admin-dash__error-title">{error}</p>
+            <button
+              onClick={fetchUsers}
+              style={{
+                marginTop: 8, padding: "0.5rem 1.25rem",
+                background: "#6366f1", color: "#fff",
+                border: "none", borderRadius: 8,
+                fontWeight: 600, cursor: "pointer", fontSize: "0.85rem",
+              }}
+            >
+              Try Again
+            </button>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div style={{
+            display: "flex", flexDirection: "column",
+            alignItems: "center", justifyContent: "center",
+            minHeight: 320, gap: "0.75rem",
+            background: "#f8fafc", border: "1px solid #e4e7ec",
+            borderRadius: 16,
+          }}>
+            <Users size={48} style={{ color: "#cbd5e1" }} />
+            <p style={{ fontWeight: 700, color: "#64748b", fontSize: "1rem", margin: 0 }}>No users found</p>
+            <p style={{ color: "#94a3b8", fontSize: "0.82rem", margin: 0 }}>Try adjusting your search or filter</p>
+          </div>
+        ) : (
+          <>
+            {/* Desktop Table */}
+            <div className="au-table-wrap">
+              {/* Table Header */}
+              <div className="au-thead">
+                {["User", "Contact", "Address", "Role", "Status", "Action"].map(h => (
+                  <span key={h} style={{
+                    fontSize: "0.68rem", fontWeight: 700,
+                    color: "#64748b", textTransform: "uppercase",
+                    letterSpacing: "0.06em",
+                  }}>
+                    {h}
+                  </span>
+                ))}
+              </div>
+
+              {/* Rows */}
+              {filtered.map((user, idx) => {
+                const st  = getStatus(user.status);
+                const rl  = getRole(user.role);
+                return (
+                  <div
+                    key={user._id}
+                    className="au-trow"
+                    style={{ borderBottom: idx < filtered.length - 1 ? "1px solid #f1f5f9" : "none" }}
+                  >
+                    {/* User Name + Avatar */}
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", minWidth: 0 }}>
+                      <div style={{
+                        width: 38, height: 38, borderRadius: "50%", flexShrink: 0,
+                        background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        color: "#fff", fontWeight: 700, fontSize: "0.8rem",
+                      }}>
+                        {user.name?.substring(0, 2).toUpperCase() || "US"}
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <p style={{ margin: 0, fontWeight: 700, fontSize: "0.85rem", color: "#101828", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {user.name || "—"}
+                        </p>
+                        <p style={{ margin: 0, fontSize: "0.7rem", color: "#94a3b8", marginTop: 1 }}>
+                          Joined {fmt(user.createdAt)}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Contact */}
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 3 }}>
+                        <Mail size={12} color="#6366f1" />
+                        <span style={{ fontSize: "0.78rem", fontWeight: 600, color: "#334155", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {user.email || "—"}
+                        </span>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                        <Phone size={12} color="#6366f1" />
+                        <span style={{ fontSize: "0.75rem", color: "#64748b" }}>
+                          {user.mobile || "—"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Address */}
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: 5, minWidth: 0 }}>
+                      <MapPin size={12} color="#94a3b8" style={{ marginTop: 2, flexShrink: 0 }} />
+                      <span style={{ fontSize: "0.75rem", color: "#64748b", overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
+                        {user.address || "—"}
+                      </span>
+                    </div>
+
+                    {/* Role badge */}
+                    <div>
+                      <span style={{
+                        display: "inline-block",
+                        padding: "3px 10px",
+                        borderRadius: 999,
+                        fontSize: "0.68rem", fontWeight: 700,
+                        background: rl.bg, color: rl.color,
+                        textTransform: "capitalize",
+                      }}>
+                        {rl.label}
+                      </span>
+                    </div>
+
+                    {/* Status badge */}
+                    <div>
+                      <span style={{
+                        display: "inline-flex", alignItems: "center", gap: 5,
+                        padding: "3px 10px",
+                        borderRadius: 999,
+                        fontSize: "0.68rem", fontWeight: 700,
+                        background: st.bg, color: st.color,
+                        textTransform: "capitalize",
+                      }}>
+                        <span style={{ width: 6, height: 6, borderRadius: "50%", background: st.dot, flexShrink: 0 }} />
+                        {user.status || "pending"}
+                      </span>
+                    </div>
+
+                    {/* Action buttons */}
+                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                      {user.status === "pending" ? (
+                        <>
+                          <button
+                            onClick={() => handleReject(user._id)}
+                            title="Reject User"
+                            style={{
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              width: 28, height: 28, borderRadius: 6,
+                              background: "#fef2f2", color: "#b91c1c",
+                              border: "1px solid #fee2e2", cursor: "pointer",
+                              transition: "all 140ms",
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.background = "#ef4444"; e.currentTarget.style.color = "#fff"; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = "#fef2f2"; e.currentTarget.style.color = "#b91c1c"; }}
+                          >
+                            <UserX size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleApprove(user._id)}
+                            title="Approve User"
+                            style={{
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              width: 28, height: 28, borderRadius: 6,
+                              background: "#f0fdf4", color: "#15803d",
+                              border: "1px solid #dcfce7", cursor: "pointer",
+                              transition: "all 140ms",
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.background = "#22c55e"; e.currentTarget.style.color = "#fff"; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = "#f0fdf4"; e.currentTarget.style.color = "#15803d"; }}
+                          >
+                            <UserCheck size={14} />
+                          </button>
+                        </>
+                      ) : null}
                       <button
-                        key={status}
-                        onClick={() => handleStatusChange(`${key}Status`, status)}
-                        className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${statusData[`${key}Status`] === status
-                          ? status === "approved" ? "bg-white text-emerald-600 shadow-sm"
-                            : status === "rejected" ? "bg-white text-red-600 shadow-sm"
-                              : "bg-white text-amber-600 shadow-sm"
-                          : "text-slate-400 hover:text-slate-600"
-                          }`}
+                        onClick={() => setViewUser(user)}
+                        style={{
+                          display: "flex", alignItems: "center", gap: 5,
+                          padding: "0.35rem 0.65rem",
+                          background: "#eef2ff", color: "#4f46e5",
+                          border: "1px solid #c7d2fe",
+                          borderRadius: 8, fontSize: "0.75rem", fontWeight: 600,
+                          cursor: "pointer", transition: "all 140ms",
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.background = "#6366f1"; e.currentTarget.style.color = "#fff"; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = "#eef2ff"; e.currentTarget.style.color = "#4f46e5"; }}
                       >
-                        {status.charAt(0).toUpperCase() + status.slice(1)}
+                        <Eye size={13} /> View
                       </button>
-                    ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="au-mobile-card">
+              {filtered.map((user) => {
+                const st = getStatus(user.status);
+                const rl = getRole(user.role);
+                return (
+                  <div key={user._id} className="au-card-row">
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", marginBottom: "0.75rem" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.625rem", minWidth: 0 }}>
+                        <div style={{
+                          width: 40, height: 40, borderRadius: "50%", flexShrink: 0,
+                          background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          color: "#fff", fontWeight: 700, fontSize: "0.85rem",
+                        }}>
+                          {user.name?.substring(0, 2).toUpperCase() || "US"}
+                        </div>
+                        <div style={{ minWidth: 0 }}>
+                          <p style={{ margin: 0, fontWeight: 700, fontSize: "0.875rem", color: "#101828", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {user.name || "—"}
+                          </p>
+                          <p style={{ margin: 0, fontSize: "0.7rem", color: "#94a3b8", marginTop: 1 }}>Joined {fmt(user.createdAt)}</p>
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
+                        <span style={{ display: "inline-block", padding: "2px 8px", borderRadius: 999, fontSize: "0.65rem", fontWeight: 700, background: rl.bg, color: rl.color, textTransform: "capitalize" }}>{rl.label}</span>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 999, fontSize: "0.65rem", fontWeight: 700, background: st.bg, color: st.color, textTransform: "capitalize" }}>
+                          <span style={{ width: 5, height: 5, borderRadius: "50%", background: st.dot }} />{user.status || "pending"}
+                        </span>
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: "0.78rem", color: "#475569", marginBottom: "0.75rem" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 5 }}><Mail size={12} color="#6366f1" /><span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{user.email || "—"}</span></div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 5 }}><Phone size={12} color="#6366f1" /><span>{user.mobile || "—"}</span></div>
+                      {user.address && <div style={{ display: "flex", alignItems: "flex-start", gap: 5 }}><MapPin size={12} color="#94a3b8" style={{ marginTop: 2, flexShrink: 0 }} /><span>{user.address}</span></div>}
+                    </div>
+                    <div style={{ display: "flex", gap: "0.5rem" }}>
+                      {user.status === "pending" && (
+                        <>
+                          <button onClick={() => handleReject(user._id)} style={{ flex: 1, padding: "0.45rem", background: "#fef2f2", color: "#b91c1c", border: "1px solid #fee2e2", borderRadius: 8, fontWeight: 700, fontSize: "0.78rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+                            <UserX size={13} /> Reject
+                          </button>
+                          <button onClick={() => handleApprove(user._id)} style={{ flex: 1, padding: "0.45rem", background: "#f0fdf4", color: "#15803d", border: "1px solid #dcfce7", borderRadius: 8, fontWeight: 700, fontSize: "0.78rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+                            <UserCheck size={13} /> Approve
+                          </button>
+                        </>
+                      )}
+                      <button onClick={() => setViewUser(user)} style={{ flex: 1, padding: "0.45rem", background: "#eef2ff", color: "#4f46e5", border: "1px solid #c7d2fe", borderRadius: 8, fontWeight: 700, fontSize: "0.78rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+                        <Eye size={13} /> View
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+      </main>
+
+      {/* ── User Detail Modal ── */}
+      {viewUser && (
+        <div
+          style={{
+            position: "fixed", inset: 0, zIndex: 1200,
+            background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: "1rem",
+          }}
+          onClick={() => setViewUser(null)}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: "#fff", borderRadius: 20,
+              width: "100%", maxWidth: 520,
+              boxShadow: "0 24px 60px rgba(0,0,0,0.18)",
+              overflow: "hidden",
+              animation: "modalIn 200ms cubic-bezier(0.34,1.3,0.64,1) forwards",
+            }}
+          >
+            <style>{`@keyframes modalIn { from { opacity:0; transform:scale(0.94) translateY(12px); } to { opacity:1; transform:scale(1) translateY(0); } }`}</style>
+
+            {/* Modal Header */}
+            <div style={{
+              background: "linear-gradient(135deg,#6366f1 0%,#8b5cf6 60%,#06b6d4 100%)",
+              padding: "1.5rem",
+              position: "relative",
+            }}>
+              <button
+                onClick={() => setViewUser(null)}
+                style={{
+                  position: "absolute", top: 14, right: 14,
+                  width: 32, height: 32, borderRadius: 8,
+                  background: "rgba(255,255,255,0.15)", border: "none",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  cursor: "pointer", color: "#fff",
+                }}
+              >
+                <X size={18} />
+              </button>
+
+              <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+                <div style={{
+                  width: 60, height: 60, borderRadius: "50%",
+                  background: "rgba(255,255,255,0.2)",
+                  border: "3px solid rgba(255,255,255,0.4)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: "1.25rem", fontWeight: 800, color: "#fff",
+                }}>
+                  {viewUser.name?.substring(0, 2).toUpperCase() || "US"}
+                </div>
+                <div>
+                  <h2 style={{ margin: 0, fontSize: "1.15rem", fontWeight: 800, color: "#fff" }}>
+                    {viewUser.name || "—"}
+                  </h2>
+                  <div style={{ display: "flex", gap: "0.5rem", marginTop: 6, flexWrap: "wrap" }}>
+                    <span style={{
+                      padding: "2px 10px", borderRadius: 999, fontSize: "0.68rem",
+                      fontWeight: 700, background: "rgba(255,255,255,0.2)", color: "#fff",
+                      textTransform: "capitalize",
+                    }}>
+                      {viewUser.role || "user"}
+                    </span>
+                    <span style={{
+                      padding: "2px 10px", borderRadius: 999, fontSize: "0.68rem",
+                      fontWeight: 700,
+                      background: getStatus(viewUser.status).bg,
+                      color: getStatus(viewUser.status).color,
+                      textTransform: "capitalize",
+                    }}>
+                      {viewUser.status || "pending"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ padding: "1.5rem", maxHeight: "60vh", overflowY: "auto" }} className="custom-scrollbar">
+              {[
+                { icon: Mail,      label: "Email",        value: viewUser.email },
+                { icon: Phone,     label: "Mobile",       value: viewUser.mobile },
+                { icon: MapPin,    label: "Address",      value: viewUser.address },
+                { icon: Building2, label: "Organization", value: viewUser.organizationName },
+                { icon: Calendar,  label: "Registered",   value: fmt(viewUser.createdAt) },
+              ].map(({ icon: Icon, label, value }) => (
+                <div key={label} style={{
+                  display: "flex", alignItems: "flex-start", gap: "0.875rem",
+                  padding: "0.75rem 0",
+                  borderBottom: "1px solid #f1f5f9",
+                }}>
+                  <div style={{
+                    width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+                    background: "#eef2ff",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>
+                    <Icon size={16} color="#6366f1" />
+                  </div>
+                  <div>
+                    <p style={{ margin: 0, fontSize: "0.68rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                      {label}
+                    </p>
+                    <p style={{ margin: 0, fontSize: "0.875rem", fontWeight: 600, color: "#101828", marginTop: 2 }}>
+                      {value || "—"}
+                    </p>
                   </div>
                 </div>
               ))}
-            </div>
 
-            <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
-              <button onClick={closeEditPopup} className="px-5 py-2.5 rounded-xl font-bold text-slate-500 hover:bg-slate-200 transition text-sm">Cancel</button>
-              <button
-                onClick={updateUserStatus}
-                disabled={updateLoading}
-                className="px-5 py-2.5 rounded-xl font-bold bg-gradient-to-r from-[#22c55e] to-[#3b82f6] text-white hover:from-[#22c55e] hover:to-[#3b82f6] hover:shadow-xl"
-              >
-                {updateLoading ? "Updating..." : "Save Changes"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* VIEW POPUP */}
-      {viewPopupOpen && selectedUser && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-3xl overflow-hidden border border-slate-100 max-h-[90vh] flex flex-col">
-            <div className="p-8 border-b border-slate-100 flex justify-between items-center shrink-0">
-              <h2 className="text-2xl font-black uppercase text-slate-900 tracking-tight mb-2">User Details</h2>
-              <button onClick={closeViewPopup} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition">
-                <XCircle size={24} />
-              </button>
-            </div>
-
-            <div className="p-8 overflow-y-auto custom-scrollbar">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Personal Info</h3>
-                  <div className="space-y-4">
-                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                      <label className="text-xs text-slate-400 font-bold block mb-1">Full Name</label>
-                      <p className="font-bold uppercase text-slate-900 text-sm tracking-tight mb-2">{selectedUser.name}</p>
-                    </div>
-                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                      <label className="text-xs text-slate-400 font-bold block mb-1">Email Address</label>
-                      <p className="font-bold text-slate-900">{selectedUser.email}</p>
-                    </div>
-                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                      <label className="text-xs text-slate-400 font-bold block mb-1">Phone</label>
-                      <p className="font-bold text-slate-900">{selectedUser.mobile || "N/A"}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Documents</h3>
-                  <div className="space-y-3">
-                    {documentKeys.map(key => {
-                      const path = selectedUser[key];
-                      const status = selectedUser[`${key}Status`] || 'pending';
-                      if (!path) return null;
-
+              {/* Uploaded Documents */}
+              {(viewUser.role === "doctor" || viewUser.adharCard || viewUser.panCard || viewUser.mbbsCertificate) && (
+                <div style={{ marginTop: "1.5rem" }}>
+                  <h4 style={{ margin: "0 0 0.75rem 0", fontSize: "0.75rem", fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                    Uploaded Documents
+                  </h4>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                    {[
+                      { label: "Aadhar Card", file: viewUser.adharCard },
+                      { label: "PAN Card", file: viewUser.panCard },
+                      { label: "MBBS Certificate", file: viewUser.mbbsCertificate },
+                      { label: "PMC Registration Certificate", file: viewUser.pmcRegistration },
+                      { label: "NMR ID Card", file: viewUser.nmrId },
+                    ].map(({ label, file }) => {
+                      if (!file) return null;
+                      const fileUrl = file.startsWith("http") ? file : `${API_URL}/${file}`;
                       return (
-                        <div key={key} className="flex items-center justify-between p-3 bg-white border border-slate-100 rounded-xl shadow-sm">
-                          <div className="flex items-center gap-3 overflow-hidden">
-                            <div className="p-2 bg-slate-50 rounded-lg shrink-0">
-                              {getFileIcon(path)}
-                            </div>
-                            <div className="min-w-0">
-                              <p className="text-xs font-bold text-slate-900 truncate">{key.replace(/([A-Z])/g, ' $1')}</p>
-                              <a href={`http://localhost:5050/${path}`} target="_blank" rel="noreferrer" className="text-[10px] text-emerald-600 font-bold hover:underline truncate block">View File</a>
-                            </div>
-                          </div>
-                          <div className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase ${getStatusColor(status)}`}>
-                            {status}
-                          </div>
+                        <div key={label} style={{
+                          display: "flex", alignItems: "center", justifyContent: "space-between",
+                          padding: "0.625rem 0.75rem", background: "#f8fafc",
+                          border: "1px solid #e2e8f0", borderRadius: 8,
+                        }}>
+                          <span style={{ fontSize: "0.78rem", fontWeight: 600, color: "#334155" }}>{label}</span>
+                          <a href={fileUrl} target="_blank" rel="noopener noreferrer" style={{
+                            fontSize: "0.75rem", fontWeight: 600, color: "#6366f1",
+                            textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 3,
+                          }}
+                          onMouseEnter={e => e.target.style.textDecoration = "underline"}
+                          onMouseLeave={e => e.target.style.textDecoration = "none"}
+                          >
+                            <Eye size={12} /> View Document
+                          </a>
                         </div>
-                      )
+                      );
                     })}
-                    {!documentKeys.some(key => selectedUser[key]) && (
-                      <div className="text-slate-400 text-sm font-medium italic">No documents uploaded.</div>
-                    )}
                   </div>
                 </div>
-              </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{ padding: "1rem 1.5rem", borderTop: "1px solid #f1f5f9", display: "flex", gap: "0.75rem" }}>
+              {viewUser.status === "pending" ? (
+                <>
+                  <button
+                    onClick={() => handleReject(viewUser._id)}
+                    style={{
+                      flex: 1, padding: "0.75rem",
+                      background: "#fef2f2", color: "#b91c1c",
+                      border: "1px solid #fee2e2", borderRadius: 10,
+                      fontWeight: 700, fontSize: "0.82rem", cursor: "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
+                      transition: "all 150ms"
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = "#fee2e2"}
+                    onMouseLeave={e => e.currentTarget.style.background = "#fef2f2"}
+                  >
+                    <UserX size={15} /> Reject
+                  </button>
+                  <button
+                    onClick={() => handleApprove(viewUser._id)}
+                    style={{
+                      flex: 1, padding: "0.75rem",
+                      background: "#f0fdf4", color: "#15803d",
+                      border: "1px solid #dcfce7", borderRadius: 10,
+                      fontWeight: 700, fontSize: "0.82rem", cursor: "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
+                      transition: "all 150ms"
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = "#dcfce7"}
+                    onMouseLeave={e => e.currentTarget.style.background = "#f0fdf4"}
+                  >
+                    <UserCheck size={15} /> Approve
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => setViewUser(null)}
+                  style={{
+                    width: "100%", padding: "0.75rem",
+                    background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
+                    color: "#fff", border: "none", borderRadius: 10,
+                    fontWeight: 700, fontSize: "0.875rem", cursor: "pointer",
+                  }}
+                >
+                  Close
+                </button>
+              )}
             </div>
           </div>
         </div>
       )}
-
-
-      <main className="pt-20 pb-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-8">
-          <div>
-            <h2 className="text-2xl font-black uppercase text-slate-900 tracking-tight mb-2">User Management</h2>
-            <p className="text-slate-500 font-medium text-sm">Monitor and manage registered members.</p>
-          </div>
-
-          <div className="relative w-full sm:w-72">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            <input
-              type="text"
-              placeholder="Search users..."
-              className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 shadow-sm transition-all"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-        </div>
-
-        {loading ? (
-          <div className="flex justify-center py-24">
-            <div className="animate-spin h-10 w-10 border-t-4 border-emerald-600 border-r-transparent rounded-full"></div>
-          </div>
-        ) : (
-          <div className="mb-6 overflow-hidden bg-white rounded-lg shadow-lg">
-                <div className="overflow-x-auto bg-white shadow-lg rounded-xl">
-                  <table className="min-w-full">
-                <thead>
-                  <tr className="bg-gradient-to-r from-[#34f67b] to-[#4579c8] px-2 py-2 text-sm text-left text-white">
-                    <th className="py-2 text-center text-white uppercase tracking-widest pl-8">User</th>
-                    <th className="py-2 text-center text-white uppercase tracking-widest">Role</th>
-                    <th className="py-2 text-center text-white uppercase tracking-widest">Status</th>
-                    <th className="px-2 py-2 text-center  text-white uppercase tracking-widest">Joined</th>
-                    <th className="px-2 py-2 text-center  text-white uppercase tracking-widest text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {filteredUsers.length === 0 ? (
-                    <tr>
-                      <td colSpan="5" className="px-6 py-12 text-center text-slate-400 font-medium">
-                        No users found matching "{searchTerm}"
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredUsers.map((user) => (
-                      <tr key={user._id} className="hover:bg-slate-50/50 transition-colors group">
-                        <td className="px-2 py-2">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 font-bold shadow-sm">
-                              {user.name ? user.name.charAt(0).toUpperCase() : <User size={18} />}
-                            </div>
-                            <div>
-                              <p className="font-bold uppercase text-slate-900 text-sm tracking-tight mb-2">{user.name}</p>
-                              <p className="text-xs text-slate-500">{user.email}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-2 py-2">
-                          <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-wider">
-                            Member
-                          </span>
-                        </td>
-                        <td className="px-2 py-2">
-                          <div className="flex items-center gap-2">
-                            <span className={`w-2 h-2 rounded-full ${user.status === 'active' ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
-                            <span className={`text-xs font-bold uppercase ${user.status === 'active' ? 'text-emerald-700' : 'text-red-700'}`}>
-                              {user.status || 'Active'}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-2 py-2 text-sm font-medium text-slate-500">
-                          {new Date(user.createdAt).toLocaleDateString()}
-                        </td>
-                      <td className="px-2 py-2 text-right">
-                      <div className="flex items-center justify-end gap-2 opacity-100 transition-opacity">
-                      <button onClick={() => openViewPopup(user)} className="p-2 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition" title="View">
-                        <Eye size={18} />
-                      </button>
-                      <button onClick={() => openEditPopup(user)} className="p-2 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition" title="Edit">
-                      <Edit size={18} />
-                      </button>
-                      <button onClick={() => deleteUser(user._id)} className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition" title="Delete">
-                      <Trash2 size={18} />
-                      </button>
-                      </div>
-                      </td>
-
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-      </main>
     </div>
   );
 }
-
-export default AllUsers;

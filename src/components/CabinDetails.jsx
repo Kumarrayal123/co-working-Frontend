@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import UsersNavbar from "./UsersNavbar";
 import AdminNavbar from "./AdminNavbar";
 import "./Dashboard.css";
 const API_URL = "http://localhost:5000";
@@ -24,11 +25,13 @@ const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526
 export default function CabinDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const isAdmin = localStorage.getItem("admin") !== null;
 
   const [cabin, setCabin] = useState(null);
   const [relatedCabins, setRelatedCabins] = useState([]);
   const [activeImage, setActiveImage] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [bookedSlots, setBookedSlots] = useState([]);
 
   const getImageUrl = (img) => {
     if (!img) return PLACEHOLDER_IMAGE;
@@ -43,14 +46,16 @@ export default function CabinDetails() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [cabinRes, allRes] = await Promise.all([
+        const [cabinRes, allRes, slotsRes] = await Promise.all([
           axios.get(`${API_URL}/api/cabins/${id}`),
           axios.get(`${API_URL}/api/cabins`),
+          axios.get(`${API_URL}/api/bookings/cabin/${id}`),
         ]);
         setCabin(cabinRes.data);
         setRelatedCabins(
           allRes.data.filter((c) => c._id !== id).slice(0, 3)
         );
+        setBookedSlots(slotsRes.data.bookedSlots || []);
       } catch (err) {
         console.error(err);
       } finally {
@@ -60,10 +65,33 @@ export default function CabinDetails() {
     fetchData();
   }, [id]);
 
+  // Group booked slots by date
+  const slotsByDate = bookedSlots.reduce((acc, slot) => {
+    const key = slot.startDate;
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(slot);
+    return acc;
+  }, {});
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "";
+    const d = new Date(dateStr + "T00:00:00");
+    return d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+  };
+
+  const formatTime = (t) => {
+    if (!t) return "";
+    const [h, m] = t.split(":");
+    const hour = parseInt(h);
+    const ampm = hour >= 12 ? "PM" : "AM";
+    const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+    return `${displayHour}:${m} ${ampm}`;
+  };
+
   if (loading || !cabin) {
     return (
       <div className="admin-dash">
-        <AdminNavbar/>
+        {isAdmin ? <AdminNavbar /> : <UsersNavbar />}
         <div className="admin-dash__loading">
           <div className="admin-dash__spinner" />
           <p className="admin-dash__loading-text">Loading cabin details...</p>
@@ -88,7 +116,7 @@ export default function CabinDetails() {
 
   return (
     <div className="admin-dash">
-      <AdminNavbar/>
+      {isAdmin ? <AdminNavbar /> : <UsersNavbar />}
 
       <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-16">
         {/* Back */}
@@ -191,6 +219,30 @@ export default function CabinDetails() {
               </div>
             </div>
 
+            {/* Pricing Plans */}
+            {cabin.pricingPlans && cabin.pricingPlans.length > 0 && (
+              <div className="pt-4 border-t border-slate-100">
+                <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest mb-3">
+                  Pricing Plans (Packages)
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {cabin.pricingPlans.map((plan, idx) => (
+                    <div key={idx} className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col justify-center">
+                      <div className="text-[10px] uppercase tracking-[0.1em] text-indigo-700 font-bold mb-1">
+                        {plan.label || "Package"}
+                      </div>
+                      <div className="font-extrabold text-slate-900 text-sm">
+                        ₹{plan.cost.toLocaleString("en-IN")} <span className="text-[10px] text-slate-400 font-normal">/ {plan.validity} Days</span>
+                      </div>
+                      <div className="text-xs text-slate-500 mt-1 font-semibold">
+                        Included: {plan.hours} Hours
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Info & Book */}
             <div className="pt-6 border-t border-slate-100 flex flex-col gap-6">
               <div className="flex gap-6 sm:gap-8 text-[11px] font-bold text-slate-400 uppercase tracking-widest">
@@ -202,14 +254,142 @@ export default function CabinDetails() {
                 </div>
               </div>
 
-              <button
-                onClick={() => navigate(`/book/${cabin._id}`)}
-                className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-bold text-sm uppercase tracking-[0.1em] hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg shadow-indigo-500/20 active:scale-[0.98] flex items-center justify-center gap-3"
-              >
-               Book Cabin 
-              </button>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => navigate(`/book/${cabin._id}`)}
+                  className="flex-1 py-4 bg-[#007A52] text-white rounded-xl font-bold text-sm uppercase tracking-[0.1em] hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-500/20 active:scale-[0.98] flex items-center justify-center gap-3"
+                >
+                 Book Cabin 
+                </button>
+                <button
+                  onClick={() => navigate(`/site-visit/${cabin._id}`)}
+                  className="flex-1 py-4 bg-white border-2 border-emerald-600 text-emerald-700 rounded-xl font-bold text-sm uppercase tracking-[0.1em] hover:bg-emerald-50 transition-all shadow-md active:scale-[0.98] flex items-center justify-center gap-3"
+                >
+                 Site Visit
+                </button>
+              </div>
             </div>
           </div>
+        </div>
+
+        {/* ── Booked Slots Section ── */}
+        <div style={{
+          background: "#fff",
+          border: "1px solid #e4e7ec",
+          borderRadius: 16,
+          boxShadow: "0 1px 2px rgba(16,24,40,0.05)",
+          padding: "1.5rem",
+          marginTop: "1.5rem",
+        }}>
+          {/* Section Header */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+              <div style={{
+                width: 40, height: 40, borderRadius: 12,
+                background: "linear-gradient(135deg,#fef2f2,#fee2e2)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                flexShrink: 0, border: "1.5px solid #fecaca",
+              }}>
+                <Clock size={20} color="#dc2626" />
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 700, color: "#101828", letterSpacing: "-0.01em" }}>
+                  Already Booked Slots
+                </h3>
+                <p style={{ margin: 0, fontSize: "0.72rem", color: "#98a2b3", marginTop: 2 }}>
+                  These time slots are unavailable — please choose a different time
+                </p>
+              </div>
+            </div>
+            {bookedSlots.length > 0 && (
+              <div style={{
+                background: "#fee2e2", color: "#dc2626",
+                fontSize: "0.72rem", fontWeight: 700,
+                padding: "4px 12px", borderRadius: 999,
+                border: "1px solid #fecaca",
+                whiteSpace: "nowrap",
+              }}>
+                {bookedSlots.length} Booking{bookedSlots.length > 1 ? "s" : ""}
+              </div>
+            )}
+          </div>
+
+          {bookedSlots.length === 0 ? (
+            <div style={{
+              display: "flex", alignItems: "center", gap: "0.875rem",
+              padding: "1.125rem 1.25rem",
+              background: "#f0fdf4", border: "1.5px solid #86efac",
+              borderRadius: 12,
+            }}>
+              <ShieldCheck size={22} color="#16a34a" />
+              <div>
+                <p style={{ margin: 0, fontSize: "0.875rem", fontWeight: 700, color: "#15803d" }}>All Clear — Fully Available!</p>
+                <p style={{ margin: 0, fontSize: "0.75rem", color: "#4ade80", marginTop: 2 }}>No bookings yet for this cabin. Go ahead and book your slot.</p>
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
+              {bookedSlots.map((slot, idx) => (
+                <div key={idx} style={{
+                  display: "flex", alignItems: "center", gap: "1rem",
+                  padding: "0.875rem 1.125rem",
+                  background: "#fef2f2",
+                  border: "1.5px solid #fecaca",
+                  borderRadius: 12,
+                  flexWrap: "wrap",
+                }}>
+                  {/* Red bullet */}
+                  <div style={{
+                    width: 10, height: 10, borderRadius: "50%",
+                    background: "#dc2626", flexShrink: 0,
+                    boxShadow: "0 0 0 3px rgba(220,38,38,0.2)",
+                  }} />
+
+                  {/* Date */}
+                  <div style={{ minWidth: 120 }}>
+                    <div style={{ fontSize: "0.65rem", fontWeight: 700, color: "#ef4444", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>
+                      Date
+                    </div>
+                    <div style={{ fontSize: "0.82rem", fontWeight: 700, color: "#7f1d1d" }}>
+                      {formatDate(slot.startDate)}
+                      {slot.endDate && slot.endDate !== slot.startDate && (
+                        <span style={{ color: "#fca5a5", fontWeight: 500 }}> → {formatDate(slot.endDate)}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Time */}
+                  <div style={{
+                    display: "inline-flex", alignItems: "center", gap: "0.4rem",
+                    padding: "0.3rem 0.875rem",
+                    background: "#fff", border: "1.5px solid #fca5a5",
+                    borderRadius: 999,
+                    fontSize: "0.82rem", fontWeight: 800, color: "#b91c1c",
+                  }}>
+                    <Clock size={13} color="#ef4444" />
+                    {formatTime(slot.startTime)}
+                    <span style={{ color: "#fca5a5", fontWeight: 400, margin: "0 2px" }}>→</span>
+                    {formatTime(slot.endTime)}
+                  </div>
+
+                  {/* Booked By */}
+                  {(slot.name || slot.email) && (
+                    <div style={{ marginLeft: "auto", textAlign: "right" }}>
+                      <div style={{ fontSize: "0.65rem", fontWeight: 700, color: "#ef4444", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>
+                        Booked By
+                      </div>
+                      {slot.name && (
+                        <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "#7f1d1d" }}>{slot.name}</div>
+                      )}
+                      {slot.email && (
+                        <div style={{ fontSize: "0.72rem", color: "#dc2626", fontWeight: 500 }}>{slot.email}</div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Related */}

@@ -1,20 +1,19 @@
 import axios from "axios";
-import { ArrowRight, MapPin, Search, Users, Building2, Calendar } from "lucide-react";
+import { ArrowRight, MapPin, Search, Users, Building2, Edit, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import UsersNavbar from "./UsersNavbar";
 import AdminNavbar from "./AdminNavbar";
+import { toast } from "react-toastify";
 import "./Dashboard.css";
+
 const API_URL = "http://localhost:5000";
 const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
 
-
-const Spaces = () => {
+const AdminSpaces = () => {
   const [cabins, setCabins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
-  const isAdmin = localStorage.getItem("admin") !== null;
 
   useEffect(() => {
     axios
@@ -29,6 +28,24 @@ const Spaces = () => {
       });
   }, []);
 
+  const handleDelete = async (cabinId) => {
+    if (!window.confirm("Are you sure you want to delete this cabin?")) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(`${API_URL}/api/cabins/${cabinId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success("Cabin deleted successfully");
+      setCabins(cabins.filter(c => c._id !== cabinId));
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete cabin");
+    }
+  };
+
   const filteredCabins = cabins.filter(cabin =>
     cabin.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cabin.address?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -36,17 +53,17 @@ const Spaces = () => {
 
   return (
     <div className="admin-dash">
-      {isAdmin ? <AdminNavbar /> : <UsersNavbar />}
+      <AdminNavbar />
 
       <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         {/* Header */}
         <div className="admin-dash__header">
           <div>
             <h1 className="admin-dash__greeting">
-              Workspace <span>Spaces</span>
+              All <span>Spaces</span>
             </h1>
             <p className="admin-dash__subtitle">
-              Discover professionally equipped cabins and desks designed for focus, collaboration, and growth.
+              Manage all coworking spaces and cabins in the platform.
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -80,8 +97,7 @@ const Spaces = () => {
             {filteredCabins.map((cabin) => (
               <div
                 key={cabin._id}
-                onClick={() => navigate(`/cabin/${cabin._id}`)}
-                className="admin-dash__card group cursor-pointer flex flex-col h-full hover:shadow-lg transition-all duration-300"
+                className="admin-dash__card group flex flex-col h-full hover:shadow-lg transition-all duration-300"
               >
                 {/* Image Section */}
                 <div className="relative h-48 overflow-hidden rounded-t-2xl">
@@ -98,7 +114,7 @@ const Spaces = () => {
 
                   <div className="absolute top-3 right-3 z-30 bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold text-indigo-700 shadow-sm flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
-                    Available
+                    Active
                   </div>
                 </div>
 
@@ -106,7 +122,7 @@ const Spaces = () => {
                 <div className="p-5 flex flex-col flex-grow">
                   <div className="mb-4">
                     <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest mb-1">Coworking Space</p>
-                    <h3 className="text-base font-bold text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors line-clamp-1">{cabin.name}</h3>
+                    <h3 className="text-base font-bold text-slate-900 leading-tight line-clamp-1">{cabin.name}</h3>
                   </div>
                   <div className="flex items-start gap-3 mb-3">
                     <div className="p-2 bg-indigo-50 rounded-lg shrink-0 text-indigo-600">
@@ -134,9 +150,22 @@ const Spaces = () => {
                       </div>
                     </div>
 
-                    <button className="h-10 w-10 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-                      <ArrowRight size={16} />
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => navigate(`/cabin/${cabin._id}`)}
+                        className="h-10 w-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center hover:bg-indigo-600 hover:text-white transition-colors"
+                        title="View Details"
+                      >
+                        <ArrowRight size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(cabin._id)}
+                        className="h-10 w-10 rounded-full bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-600 hover:text-white transition-colors"
+                        title="Delete Cabin"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -148,4 +177,4 @@ const Spaces = () => {
   );
 };
 
-export default Spaces;
+export default AdminSpaces;

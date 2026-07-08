@@ -161,6 +161,11 @@
   color: #0891b2;
 }
 
+.admin-dash__stat-icon--violet {
+  background: #ede9fe;
+  color: #7c3aed;
+}
+
 .admin-dash__stat-label {
   font-size: 0.75rem;
   font-weight: 500;

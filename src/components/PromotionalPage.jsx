@@ -1,4 +1,4 @@
-// PromotionalPage.jsx - Big Logo & Transparent Navbar
+// PromotionalPage.jsx - Capsule Navbar (takeUforward style)
 import React, { useEffect, useState, createContext, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -97,7 +97,7 @@ const PromotionalPage = () => {
 
   // Theme colors
   const bg = isDark ? "bg-[#0a0a0f]" : "bg-white";
-  const bgNav = isDark ? "bg-[#0a0a0f]/90" : "bg-white/90";
+  const bgNav = isDark ? "bg-[#0a0a0f]/80" : "bg-white/80";
   const border = isDark ? "border-white/10" : "border-gray-200";
   const text = isDark ? "text-white" : "text-gray-900";
   const textSecondary = isDark ? "text-gray-400" : "text-gray-600";
@@ -162,77 +162,81 @@ const PromotionalPage = () => {
   return (
     <div className={`min-h-screen ${bg} ${text} font-light antialiased tracking-wide transition-colors duration-300`}>
 
-      {/* ─── NAVBAR - Transparent ─── */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 px-6 transition-all duration-300 h-20 flex items-center ${
-        scrolled ? `${bgNav} backdrop-blur-xl border-b ${border}` : "bg-transparent"
+      {/* ─── NAVBAR - Capsule Style ─── */}
+      <nav className={`fixed top-4 left-0 right-0 z-50 px-4 transition-all duration-300 flex items-center justify-center ${
+        scrolled ? "backdrop-blur-xl" : ""
       }`}>
-        <div className="max-w-6xl w-full mx-auto flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3 no-underline">
-            <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white/30 shadow-xl shadow-blue-500/30 flex-shrink-0 bg-white/10 backdrop-blur-sm">
+        <div className={`max-w-6xl w-full mx-auto flex items-center justify-between px-5 py-2.5 rounded-full ${
+          scrolled ? `${bgNav} border ${border} shadow-xl` : "bg-transparent"
+        } transition-all duration-300`}>
+          
+          <Link to="/" className="flex items-center gap-2 no-underline flex-shrink-0">
+            <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-white/30 shadow-lg shadow-blue-500/20 flex-shrink-0 bg-white/10">
               <img 
                 src={logo} 
                 alt="IRYAX Space Logo" 
-                className="w-full h-full object-contain p-1.5"
+                className="w-full h-full object-contain p-1"
               />
             </div>
-            <span className={`text-2xl font-semibold ${text} tracking-tight`}>IRYAX Space</span>
+            <span className={`text-base font-semibold ${text} tracking-tight hidden sm:block`}>IRYAX Space</span>
           </Link>
 
-          <div className="hidden md:flex items-center gap-8">
-            <a href="#features" className={`text-sm ${textSecondary} hover:${isDark ? 'text-white' : 'text-blue-600'} transition font-light tracking-wider uppercase`}>Features</a>
-            <a href="#spaces" className={`text-sm ${textSecondary} hover:${isDark ? 'text-white' : 'text-blue-600'} transition font-light tracking-wider uppercase`}>Spaces</a>
-            <a href="#faq" className={`text-sm ${textSecondary} hover:${isDark ? 'text-white' : 'text-blue-600'} transition font-light tracking-wider uppercase`}>FAQ</a>
-            <a href="#contact" className={`text-sm ${textSecondary} hover:${isDark ? 'text-white' : 'text-blue-600'} transition font-light tracking-wider uppercase`}>Contact</a>
+          <div className="hidden md:flex items-center gap-1">
+            <a href="#features" className={`px-4 py-1.5 text-sm ${textSecondary} hover:${isDark ? 'text-white' : 'text-blue-600'} transition font-light rounded-full hover:bg-white/10`}>Features</a>
+            <a href="#spaces" className={`px-4 py-1.5 text-sm ${textSecondary} hover:${isDark ? 'text-white' : 'text-blue-600'} transition font-light rounded-full hover:bg-white/10`}>Spaces</a>
+            <a href="#faq" className={`px-4 py-1.5 text-sm ${textSecondary} hover:${isDark ? 'text-white' : 'text-blue-600'} transition font-light rounded-full hover:bg-white/10`}>FAQ</a>
+            <a href="#contact" className={`px-4 py-1.5 text-sm ${textSecondary} hover:${isDark ? 'text-white' : 'text-blue-600'} transition font-light rounded-full hover:bg-white/10`}>Contact</a>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <button
               onClick={toggleTheme}
-              className={`p-2 rounded-lg ${isDark ? 'bg-white/10 hover:bg-white/20' : 'bg-gray-100 hover:bg-gray-200'} transition backdrop-blur-sm`}
+              className={`p-1.5 rounded-full ${isDark ? 'bg-white/10 hover:bg-white/20' : 'bg-gray-100 hover:bg-gray-200'} transition`}
               aria-label="Toggle theme"
             >
-              {isDark ? <Sun size={18} className="text-yellow-400" /> : <Moon size={18} className="text-gray-700" />}
+              {isDark ? <Sun size={16} className="text-yellow-400" /> : <Moon size={16} className="text-gray-700" />}
             </button>
 
-            <button onClick={() => navigate("/login")} className={`hidden sm:block text-sm ${textSecondary} hover:${isDark ? 'text-white' : 'text-blue-600'} transition font-light tracking-wider`}>
+            <button onClick={() => navigate("/login")} className={`hidden sm:block text-sm ${textSecondary} hover:${isDark ? 'text-white' : 'text-blue-600'} transition font-light px-3 py-1.5 rounded-full hover:bg-white/10`}>
               Sign In
             </button>
-            <button onClick={handleGetStarted} className="px-5 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-400 to-cyan-400 rounded-lg hover:shadow-lg hover:shadow-blue-500/25 transition shadow-sm tracking-wider">
+            <button onClick={handleGetStarted} className="px-4 py-1.5 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full hover:shadow-lg hover:shadow-blue-500/25 transition shadow-sm">
               Get Started
             </button>
-            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden p-2 rounded-lg hover:bg-white/5 transition">
-              {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden p-1.5 rounded-full hover:bg-white/10 transition">
+              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
         </div>
       </nav>
 
       {/* ─── MOBILE MENU ─── */}
-      <div className={`fixed inset-0 z-40 ${bg} pt-20 px-6 transition-all duration-300 ${
+      <div className={`fixed inset-0 z-40 ${bg} pt-24 px-6 transition-all duration-300 ${
         mobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
       }`}>
-        <div className="flex flex-col gap-3 max-w-sm mx-auto">
+        <div className="flex flex-col gap-2 max-w-sm mx-auto">
           <div className="flex items-center gap-3 px-4 py-2">
-            <div className="w-12 h-12 rounded-full overflow-hidden border border-white/20 flex-shrink-0 bg-white/10">
+            <div className="w-10 h-10 rounded-full overflow-hidden border border-white/20 flex-shrink-0 bg-white/10">
               <img src={logo} alt="Logo" className="w-full h-full object-contain p-1.5" />
             </div>
-            <span className={`text-lg font-medium ${text}`}>IRYAX Space</span>
+            <span className={`text-base font-medium ${text}`}>IRYAX Space</span>
           </div>
-          <a href="#features" onClick={() => setMobileMenuOpen(false)} className={`px-4 py-3 text-base ${textSecondary} hover:${isDark ? 'text-white hover:bg-white/5' : 'text-blue-600 hover:bg-gray-100'} rounded-lg transition font-light`}>Features</a>
-          <a href="#spaces" onClick={() => setMobileMenuOpen(false)} className={`px-4 py-3 text-base ${textSecondary} hover:${isDark ? 'text-white hover:bg-white/5' : 'text-blue-600 hover:bg-gray-100'} rounded-lg transition font-light`}>Spaces</a>
-          <a href="#faq" onClick={() => setMobileMenuOpen(false)} className={`px-4 py-3 text-base ${textSecondary} hover:${isDark ? 'text-white hover:bg-white/5' : 'text-blue-600 hover:bg-gray-100'} rounded-lg transition font-light`}>FAQ</a>
-          <a href="#contact" onClick={() => setMobileMenuOpen(false)} className={`px-4 py-3 text-base ${textSecondary} hover:${isDark ? 'text-white hover:bg-white/5' : 'text-blue-600 hover:bg-gray-100'} rounded-lg transition font-light`}>Contact</a>
-          <button onClick={() => { navigate("/login"); setMobileMenuOpen(false); }} className={`px-4 py-3 text-base text-center ${textSecondary} hover:${isDark ? 'text-white hover:bg-white/5' : 'text-blue-600 hover:bg-gray-100'} rounded-lg transition font-light`}>
+          <a href="#features" onClick={() => setMobileMenuOpen(false)} className={`px-4 py-2.5 text-sm ${textSecondary} hover:${isDark ? 'text-white hover:bg-white/5' : 'text-blue-600 hover:bg-gray-100'} rounded-lg transition font-light`}>Features</a>
+          <a href="#spaces" onClick={() => setMobileMenuOpen(false)} className={`px-4 py-2.5 text-sm ${textSecondary} hover:${isDark ? 'text-white hover:bg-white/5' : 'text-blue-600 hover:bg-gray-100'} rounded-lg transition font-light`}>Spaces</a>
+          <a href="#faq" onClick={() => setMobileMenuOpen(false)} className={`px-4 py-2.5 text-sm ${textSecondary} hover:${isDark ? 'text-white hover:bg-white/5' : 'text-blue-600 hover:bg-gray-100'} rounded-lg transition font-light`}>FAQ</a>
+          <a href="#contact" onClick={() => setMobileMenuOpen(false)} className={`px-4 py-2.5 text-sm ${textSecondary} hover:${isDark ? 'text-white hover:bg-white/5' : 'text-blue-600 hover:bg-gray-100'} rounded-lg transition font-light`}>Contact</a>
+          <div className="h-px bg-white/10 my-1" />
+          <button onClick={() => { navigate("/login"); setMobileMenuOpen(false); }} className={`px-4 py-2.5 text-sm text-center ${textSecondary} hover:${isDark ? 'text-white hover:bg-white/5' : 'text-blue-600 hover:bg-gray-100'} rounded-lg transition font-light`}>
             Sign In
           </button>
-          <button onClick={() => { handleGetStarted(); setMobileMenuOpen(false); }} className="px-4 py-3 text-base text-center text-white bg-gradient-to-r from-blue-400 to-cyan-400 rounded-lg hover:shadow-lg hover:shadow-blue-500/20 transition font-medium">
+          <button onClick={() => { handleGetStarted(); setMobileMenuOpen(false); }} className="px-4 py-2.5 text-sm text-center text-white bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg hover:shadow-lg hover:shadow-blue-500/20 transition font-medium">
             Get Started
           </button>
         </div>
       </div>
 
       {/* ─── HERO ─── */}
-      <section className="relative min-h-screen flex items-center justify-center px-6 pt-28 pb-16 overflow-hidden">
+      <section className="relative min-h-screen flex items-center justify-center px-6 pt-24 pb-16 overflow-hidden">
         {isDark && (
           <>
             <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/15 rounded-full blur-3xl animate-pulse" />
@@ -259,7 +263,7 @@ const PromotionalPage = () => {
           </p>
 
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button onClick={handleGetStarted} className="px-8 py-3.5 text-base font-medium text-white bg-gradient-to-r from-blue-400 to-cyan-400 rounded-xl hover:shadow-2xl hover:shadow-blue-500/25 transition shadow-md flex items-center gap-2 tracking-wide">
+            <button onClick={handleGetStarted} className="px-8 py-3.5 text-base font-medium text-white bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl hover:shadow-2xl hover:shadow-blue-500/25 transition shadow-md flex items-center gap-2 tracking-wide">
               Get Started <ArrowRight size={18} />
             </button>
             <button onClick={handleExplore} className={`px-8 py-3.5 text-base font-light ${isDark ? 'text-white border-white/10 hover:bg-white/5' : 'text-gray-700 border-gray-300 hover:bg-gray-50'} border rounded-xl transition flex items-center gap-2 backdrop-blur-sm`}>
@@ -497,7 +501,7 @@ const PromotionalPage = () => {
                 />
                 <button
                   type="submit"
-                  className="w-full px-4 py-3 text-sm font-medium text-white bg-gradient-to-r from-blue-400 to-cyan-400 rounded-lg hover:shadow-2xl hover:shadow-blue-500/25 transition flex items-center justify-center gap-2"
+                  className="w-full px-4 py-3 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg hover:shadow-2xl hover:shadow-blue-500/25 transition flex items-center justify-center gap-2"
                 >
                   {formSubmitted ? (
                     <>✓ Sent!</>
@@ -519,10 +523,10 @@ const PromotionalPage = () => {
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
             <div>
               <Link to="/" className="flex items-center gap-3 no-underline mb-4">
-                <div className="w-12 h-12 rounded-full overflow-hidden border border-white/20 shadow-lg shadow-blue-500/20 flex-shrink-0 bg-white/10">
+                <div className="w-10 h-10 rounded-full overflow-hidden border border-white/20 shadow-lg shadow-blue-500/20 flex-shrink-0 bg-white/10">
                   <img src={logo} alt="IRYAX Space Logo" className="w-full h-full object-contain p-1.5" />
                 </div>
-                <span className={`text-lg font-semibold ${text} tracking-tight`}>IRYAX Space</span>
+                <span className={`text-base font-semibold ${text} tracking-tight`}>IRYAX Space</span>
               </Link>
               <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'} font-light`}>Find and book premium spaces across India.</p>
             </div>

@@ -81,7 +81,7 @@ function Login() {
               <span className="an-nav__logo-ig">IG</span>
             </div>
             <h2 className="text-3xl font-bold text-slate-900 tracking-tight mb-2">
-              Ingrain Workspace
+              IRYAX Workspace
             </h2>
             <p className="text-slate-500 text-sm">
               Sign in to access your workspace dashboard

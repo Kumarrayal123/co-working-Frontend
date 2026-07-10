@@ -18,9 +18,9 @@ import { useNavigate, useParams } from "react-router-dom";
 import UsersNavbar from "./UsersNavbar";
 import AdminNavbar from "./AdminNavbar";
 import "./Dashboard.css";
+
 const API_URL = "http://localhost:5000";
 const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
-
 
 export default function CabinDetails() {
   const { id } = useParams();
@@ -36,7 +36,6 @@ export default function CabinDetails() {
   const getImageUrl = (img) => {
     if (!img) return PLACEHOLDER_IMAGE;
     if (img.startsWith("http")) return img;
-    // Normalize path separators and remove any leading / if it exists
     const cleanPath = img.replace(/\\/g, "/").replace(/^\/+/, "");
     return `${API_URL}/${cleanPath}`;
   };
@@ -46,18 +45,34 @@ export default function CabinDetails() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [cabinRes, allRes, slotsRes] = await Promise.all([
-          axios.get(`${API_URL}/api/cabins/${id}`),
-          axios.get(`${API_URL}/api/cabins`),
-          axios.get(`${API_URL}/api/bookings/cabin/${id}`),
-        ]);
+        // Fetch cabin details
+        const cabinRes = await axios.get(`${API_URL}/api/cabins/${id}`);
         setCabin(cabinRes.data);
-        setRelatedCabins(
-          allRes.data.filter((c) => c._id !== id).slice(0, 3)
-        );
-        setBookedSlots(slotsRes.data.bookedSlots || []);
+
+        // Fetch all cabins for related
+        try {
+          const allRes = await axios.get(`${API_URL}/api/cabins`);
+          setRelatedCabins(
+            allRes.data.filter((c) => c._id !== id).slice(0, 3)
+          );
+        } catch (err) {
+          console.error("Error fetching related cabins:", err);
+          setRelatedCabins([]);
+        }
+
+        // Fetch booked slots - AGAR FAIL HO TO BHI CHALEGA
+        try {
+          const slotsRes = await axios.get(`${API_URL}/api/bookings/cabin/${id}`);
+          setBookedSlots(slotsRes.data.bookedSlots || []);
+        } catch (err) {
+          console.error("Error fetching booked slots:", err);
+          setBookedSlots([]);
+        }
+
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching cabin:", err);
+        // Agar cabin fetch fail ho toh bhi loading hatao
+        setCabin(null);
       } finally {
         setLoading(false);
       }
@@ -88,7 +103,7 @@ export default function CabinDetails() {
     return `${displayHour}:${m} ${ampm}`;
   };
 
-  if (loading || !cabin) {
+  if (loading) {
     return (
       <div className="admin-dash">
         {isAdmin ? <AdminNavbar /> : <UsersNavbar />}
@@ -96,6 +111,28 @@ export default function CabinDetails() {
           <div className="admin-dash__spinner" />
           <p className="admin-dash__loading-text">Loading cabin details...</p>
         </div>
+      </div>
+    );
+  }
+
+  // Agar cabin nahi mila toh error dikhao
+  if (!cabin) {
+    return (
+      <div className="admin-dash">
+        {isAdmin ? <AdminNavbar /> : <UsersNavbar />}
+        <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-16">
+          <div className="admin-dash__error" style={{ background: '#f8fafc', borderColor: '#e2e8f0' }}>
+            <BuildingIcon size={48} className="text-slate-300 mb-4" />
+            <p className="admin-dash__error-title" style={{ color: '#475569' }}>Cabin not found</p>
+            <p className="admin-dash__error-message">The cabin you're looking for doesn't exist or has been removed.</p>
+            <button
+              onClick={() => navigate(-1)}
+              className="mt-4 px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors"
+            >
+              Go Back
+            </button>
+          </div>
+        </main>
       </div>
     );
   }
@@ -259,13 +296,13 @@ export default function CabinDetails() {
                   onClick={() => navigate(`/book/${cabin._id}`)}
                   className="flex-1 py-4 bg-[#007A52] text-white rounded-xl font-bold text-sm uppercase tracking-[0.1em] hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-500/20 active:scale-[0.98] flex items-center justify-center gap-3"
                 >
-                 Book Cabin 
+                  Book Cabin 
                 </button>
                 <button
                   onClick={() => navigate(`/site-visit/${cabin._id}`)}
                   className="flex-1 py-4 bg-white border-2 border-emerald-600 text-emerald-700 rounded-xl font-bold text-sm uppercase tracking-[0.1em] hover:bg-emerald-50 transition-all shadow-md active:scale-[0.98] flex items-center justify-center gap-3"
                 >
-                 Site Visit
+                  Site Visit
                 </button>
               </div>
             </div>

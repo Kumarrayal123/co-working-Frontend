@@ -1,10 +1,16 @@
+// AdminDashboard.jsx
 import axios from "axios";
 import {
   Building,
   Calendar,
   Ticket,
   Users,
-  TrendingUp
+  CreditCard,
+  IndianRupee,
+  CheckCircle,
+  TrendingUp,
+  Clock,
+  Wallet
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
@@ -20,154 +26,54 @@ import AdminNavbar from "./AdminNavbar";
 import { useNavigate } from "react-router-dom";
 import "./Dashboard.css";
 
-
-/* ---------------- HELPER: MONTH-WISE BOOKINGS ---------------- */
-
-const getMonthlyBookings = (bookings) => {
-  const months = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-  ];
-
-  const map = {};
-
-  bookings.forEach((b) => {
-    const date = new Date(b.createdAt);
-    const month = months[date.getMonth()];
-    map[month] = (map[month] || 0) + 1;
-  });
-
-  return months.map((m) => ({
-    month: m,
-    bookings: map[m] || 0,
-  }));
-};
-
-/* ---------------- DASHBOARD ---------------- */
+const API_URL = "http://localhost:5000";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [totalCabins, setTotalCabins] = useState(0);
-  const [totalBookings, setTotalBookings] = useState(0);
-  const [ownerBookingsCount, setOwnerBookingsCount] = useState(0);
-  const [myCabinsCount, setMyCabinsCount] = useState(0);
-  const [myBookingsCount, setMyBookingsCount] = useState(0);
-  const [recentBookings, setRecentBookings] = useState([]);
-  const [bookingChartData, setBookingChartData] = useState([]);
+  const [dashboardData, setDashboardData] = useState({
+    totalCabins: 0,
+    totalBookings: 0,
+    totalUsers: 0,
+    totalPayments: 0,
+    totalCabinRevenue: 0,
+    bookingRevenue: 0,
+    confirmedPaidCount: 0,
+    recentBookings: [],
+    bookingChartData: []
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  const getAuthHeader = () => {
-    const token = localStorage.getItem("token");
-    return { headers: { Authorization: `Bearer ${token}` } };
-  };
-
-  /* ---------- CABINS ---------- */
-  useEffect(() => {
-    axios
-      .get("http://localhost:5000/api/cabins")
-      .then((res) => {
-        const cabins = res.data.cabins || res.data;
-        setTotalCabins(cabins.length);
-      })
-      .catch((err) => console.log(err));
-  }, []);
-
-  /* ---------- MY CABINS ---------- */
-  useEffect(() => {
-    axios
-      .get("http://localhost:5000/api/cabins")
-      .then((res) => {
-        const cabins = res.data.cabins || res.data;
-        const allCabins = Array.isArray(cabins) ? cabins : [];
-        // Filter to show only admin's cabins (admin ID: 68ebe9ee8f06d33ee022d665)
-        const adminCabins = allCabins.filter(cabin =>
-          cabin.owner === "68ebe9ee8f06d33ee022d665"
-        );
-        setMyCabinsCount(adminCabins.length);
-      })
-      .catch((err) => console.error("Error fetching my cabins", err));
-  }, []);
-
-  /* ---------- MY BOOKINGS ---------- */
-  useEffect(() => {
-    const currentUser = (() => {
-      try {
-        const a = localStorage.getItem("admin");
-        if (a) return JSON.parse(a);
-        return null;
-      } catch (err) {
-        return null;
-      }
-    })();
-
-    axios
-      .get("http://localhost:5000/api/bookings")
-      .then((res) => {
-        const allBookings = res.data.bookings || [];
-        // Filter to show only admin's own bookings (matching MyBookings logic)
-        const adminBookings = allBookings.filter(booking =>
-          booking.email === currentUser?.email ||
-          booking.name === currentUser?.name
-        );
-        setMyBookingsCount(adminBookings.length);
-      })
-      .catch((err) => console.error("Error fetching my bookings", err));
-  }, []);
-
-  /* ---------- OWNER CABINS BOOKINGS ---------- */
-  useEffect(() => {
-    axios
-      .get("http://localhost:5000/api/bookings")
-      .then((res) => {
-        const allBookings = res.data.bookings || [];
-        // Filter bookings where cabin owner is admin (matching AdminBookings logic)
-        const adminCabinBookings = allBookings.filter(booking =>
-          booking.cabinId?.owner === "68ebe9ee8f06d33ee022d665"
-        );
-        setOwnerBookingsCount(adminCabinBookings.length);
-      })
-      .catch((err) => console.error("Error fetching owner bookings", err));
-  }, []);
-
-  /* ---------- BOOKINGS + CHART ---------- */
-  useEffect(() => {
-    const fetchAllData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        const [bookingsRes] = await Promise.all([
-          axios.get("http://localhost:5000/api/bookings")
-        ]);
-
-        const bookings = bookingsRes.data.bookings || bookingsRes.data;
-        setTotalBookings(bookings.length);
-
-        const recent = [...bookings]
-          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-          .slice(0, 5);
-
-        setRecentBookings(recent);
-
-        const monthlyData = getMonthlyBookings(bookings);
-        setBookingChartData(monthlyData);
-        
-        setLoading(false);
-      } catch (err) {
-        console.error(err);
-        setError("Failed to fetch dashboard data. Please try again.");
-        setLoading(false);
-      }
-    };
-
-    fetchAllData();
-  }, []);
 
   const adminString = localStorage.getItem("admin");
   const adminUser = adminString ? JSON.parse(adminString) : { name: "Admin" };
 
-  // Custom tooltip for chart
+  const formatCurrency = (amount) => {
+    return `₹${amount.toLocaleString('en-IN')}`;
+  };
+
+  const fetchDashboard = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await axios.get(`${API_URL}/api/admin/dashboard`);
+
+      if (res.data.success) {
+        setDashboardData(res.data.data);
+      } else {
+        setError(res.data.error || "Failed to fetch dashboard data");
+      }
+    } catch (err) {
+      console.error("Dashboard error:", err);
+      setError("Failed to fetch dashboard data. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboard();
+  }, []);
+
   const ChartTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
       return (
@@ -180,13 +86,42 @@ const AdminDashboard = () => {
     return null;
   };
 
+  const getStatusBadge = (status, paymentStatus) => {
+    if (status === 'confirmed' && paymentStatus === 'paid') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-100 text-emerald-700">
+          <CheckCircle size={10} /> Completed
+        </span>
+      );
+    }
+    if (status === 'confirmed') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 text-blue-700">
+          <Clock size={10} /> Confirmed
+        </span>
+      );
+    }
+    if (status === 'cancelled') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-100 text-red-700">
+          ✕ Cancelled
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-yellow-100 text-yellow-700">
+        <Clock size={10} /> Pending
+      </span>
+    );
+  };
+
   if (loading) {
     return (
       <div className="admin-dash">
         <AdminNavbar />
         <div className="admin-dash__loading">
           <div className="admin-dash__spinner" />
-          <p className="admin-dash__loading-text">Loading dashboard analytics...</p>
+          <p className="admin-dash__loading-text">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -204,11 +139,81 @@ const AdminDashboard = () => {
     );
   }
 
+  const {
+    totalCabins,
+    totalBookings,
+    totalUsers,
+    totalPayments,
+    totalCabinRevenue,
+    bookingRevenue,
+    confirmedPaidCount,
+    recentBookings,
+    bookingChartData
+  } = dashboardData;
+
+  // Stats cards data - 7 cards now
+  const statsCards = [
+    {
+      label: "Total Cabins",
+      value: totalCabins,
+      meta: "all workspaces",
+      icon: Building,
+      color: "emerald",
+      onClick: () => navigate("/adminspaces")
+    },
+    {
+      label: "Total Bookings",
+      value: totalBookings,
+      meta: "all reservations",
+      icon: Ticket,
+      color: "indigo",
+      onClick: () => navigate("/allbookings")
+    },
+    {
+      label: "Total Users",
+      value: totalUsers,
+      meta: "registered members",
+      icon: Users,
+      color: "rose",
+      onClick: () => navigate("/allusers")
+    },
+    {
+      label: "Total Payments",
+      value: totalPayments,
+      meta: "transactions",
+      icon: CreditCard,
+      color: "cyan",
+      onClick: () => navigate("/cabinpayments")
+    },
+    {
+      label: "Completed Bookings",
+      value: confirmedPaidCount,
+      meta: "confirmed & paid",
+      icon: CheckCircle,
+      color: "purple",
+      onClick: () => navigate("/allbookings")
+    },
+    {
+      label: "Cabin Revenue",
+      value: formatCurrency(totalCabinRevenue),
+      meta: "from cabin creation",
+      icon: Wallet,
+      color: "orange"
+    },
+    {
+      label: "Booking Revenue",
+      value: formatCurrency(bookingRevenue),
+      meta: "from confirmed bookings",
+      icon: IndianRupee,
+      color: "amber"
+    }
+  ];
+
   return (
     <div className="admin-dash">
       <AdminNavbar />
 
-      <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-16">
         {/* Header */}
         <div className="admin-dash__header">
           <div>
@@ -216,11 +221,11 @@ const AdminDashboard = () => {
               Admin <span>Dashboard</span>
             </h1>
             <p className="admin-dash__subtitle">
-              Welcome back, <span className="font-bold">{adminUser.name}</span>! Track your workspace bookings and performance.
+              Welcome back, <span className="font-bold">{adminUser.name}</span>! Track your workspace performance.
             </p>
           </div>
           <div className="admin-dash__date-pill">
-            <Calendar />
+            <Calendar size={16} />
             <span>
               {new Date().toLocaleDateString("en-US", {
                 weekday: "short",
@@ -232,63 +237,27 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Stats Grid */}
+        {/* Stats Grid - 7 cards */}
         <div className="admin-dash__stats">
-          <div className="admin-dash__stat" onClick={() => navigate("/spaces")}>
-            <div className="admin-dash__stat-top">
-              <span className="admin-dash__stat-label">Active Cabins</span>
-              <div className="admin-dash__stat-icon admin-dash__stat-icon--emerald">
-                <Building />
+          {statsCards.map((stat, index) => (
+            <div
+              key={index}
+              className="admin-dash__stat"
+              onClick={stat.onClick}
+              style={{ cursor: stat.onClick ? 'pointer' : 'default' }}
+            >
+              <div className="admin-dash__stat-top">
+                <span className="admin-dash__stat-label">{stat.label}</span>
+                <div className={`admin-dash__stat-icon admin-dash__stat-icon--${stat.color}`}>
+                  <stat.icon size={18} />
+                </div>
               </div>
+              <div className="admin-dash__stat-value">{stat.value}</div>
+              <div className="admin-dash__stat-meta">{stat.meta}</div>
             </div>
-            <div className="admin-dash__stat-value">{totalCabins}</div>
-            <div className="admin-dash__stat-meta">total workspaces</div>
-          </div>
-
-          <div className="admin-dash__stat" onClick={() => navigate("/adminbookings")}>
-            <div className="admin-dash__stat-top">
-              <span className="admin-dash__stat-label">Cabin Bookings</span>
-              <div className="admin-dash__stat-icon admin-dash__stat-icon--indigo">
-                <Ticket />
-              </div>
-            </div>
-            <div className="admin-dash__stat-value">{ownerBookingsCount}</div>
-            <div className="admin-dash__stat-meta">owner bookings</div>
-          </div>
-
-          <div className="admin-dash__stat" onClick={() => navigate("/admincabin")}>
-            <div className="admin-dash__stat-top">
-              <span className="admin-dash__stat-label">My Cabins</span>
-              <div className="admin-dash__stat-icon admin-dash__stat-icon--rose">
-                <Building />
-              </div>
-            </div>
-            <div className="admin-dash__stat-value">{myCabinsCount}</div>
-            <div className="admin-dash__stat-meta">owned spaces</div>
-          </div>
-
-          <div className="admin-dash__stat" onClick={() => navigate("/mybookings")}>
-            <div className="admin-dash__stat-top">
-              <span className="admin-dash__stat-label">My Bookings</span>
-              <div className="admin-dash__stat-icon admin-dash__stat-icon--cyan">
-                <Calendar />
-              </div>
-            </div>
-            <div className="admin-dash__stat-value">{myBookingsCount}</div>
-            <div className="admin-dash__stat-meta">my reservations</div>
-          </div>
-
-          <div className="admin-dash__stat">
-            <div className="admin-dash__stat-top">
-              <span className="admin-dash__stat-label">Total Bookings</span>
-              <div className="admin-dash__stat-icon admin-dash__stat-icon--amber">
-                <TrendingUp />
-              </div>
-            </div>
-            <div className="admin-dash__stat-value">{totalBookings}</div>
-            <div className="admin-dash__stat-meta">all reservations</div>
-          </div>
+          ))}
         </div>
+
         {/* Charts Grid */}
         <div className="admin-dash__charts-grid">
           {/* Booking Trends Chart */}
@@ -296,14 +265,11 @@ const AdminDashboard = () => {
             <div className="admin-dash__card-header">
               <div>
                 <h3 className="admin-dash__card-title">Booking Trends</h3>
+                <p className="admin-dash__card-desc">Monthly booking statistics</p>
               </div>
-              <select className="admin-dash__month-input">
-                <option>This Year</option>
-                <option>Last Year</option>
-              </select>
             </div>
             <div className="admin-dash__card-body flex-1">
-              {bookingChartData.length > 0 ? (
+              {bookingChartData.some(d => d.bookings > 0) ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={bookingChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -319,11 +285,14 @@ const AdminDashboard = () => {
                       tick={{ fill: '#64748b', fontSize: 11 }}
                     />
                     <Tooltip content={<ChartTooltip />} cursor={{ fill: '#f8fafc' }} />
-                    <Bar dataKey="bookings" radius={[4, 4, 0, 0]} barSize={20} fill="#10b981" />
+                    <Bar dataKey="bookings" radius={[4, 4, 0, 0]} barSize={24} fill="#10b981" />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="admin-dash__empty-chart">No booking data available</div>
+                <div className="admin-dash__empty-chart">
+                  <Calendar size={32} className="text-slate-300" />
+                  <p className="text-slate-400">No booking data available</p>
+                </div>
               )}
             </div>
           </div>
@@ -339,26 +308,43 @@ const AdminDashboard = () => {
             <div className="admin-dash__card-body flex-1">
               {recentBookings.length === 0 ? (
                 <div className="admin-dash__empty-chart">
-                  <Calendar />
-                  <p>No recent activity</p>
+                  <Calendar size={32} className="text-slate-300" />
+                  <p className="text-slate-400">No recent activity</p>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {recentBookings.slice(0, 5).map((b) => (
-                    <div key={b._id} className="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors">
-                      <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 font-bold text-sm shrink-0 border border-emerald-100">
+                <div className="space-y-3">
+                  {recentBookings.map((b) => (
+                    <div
+                      key={b._id}
+                      className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all duration-200 border border-transparent hover:border-slate-100"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-sm">
                         {b.name?.charAt(0).toUpperCase() || "U"}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-slate-900 truncate">
-                          {b.name || "User"}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-sm font-semibold text-slate-900 truncate">
+                            {b.name || "User"}
+                          </p>
+                          {getStatusBadge(b.status, b.paymentStatus)}
+                        </div>
+                        <p className="text-xs text-slate-500 mt-0.5 truncate">
+                          <span className="font-medium text-slate-700">{b.cabinName}</span>
                         </p>
-                        <p className="text-xs text-slate-500 mb-1 truncate">
-                          Reserved <span className="font-medium text-slate-700">{b.cabinId?.name || "Workspace"}</span>
-                        </p>
-                        <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wide">
-                          {new Date(b.createdAt).toLocaleDateString("en-US", { month: 'short', day: 'numeric', year: 'numeric' })}
-                        </p>
+                        <div className="flex items-center gap-3 mt-1">
+                          {b.amount > 0 && (
+                            <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
+                              {formatCurrency(b.amount)}
+                            </span>
+                          )}
+                          <span className="text-[10px] text-slate-400 font-medium">
+                            {new Date(b.createdAt).toLocaleDateString("en-US", {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric'
+                            })}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   ))}

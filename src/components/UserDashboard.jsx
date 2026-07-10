@@ -1,4 +1,4 @@
-import { Calendar, Building2, Home, Plus, LogOut } from "lucide-react";
+import { Calendar, Building2, Home, Plus, LogOut, Wallet, IndianRupee, TrendingUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import UsersNavbar from "./UsersNavbar";
@@ -8,74 +8,59 @@ const API_URL = "http://localhost:5000";
 
 const UserDashboard = () => {
   const [user, setUser] = useState(null);
-  const [stats, setStats] = useState({
+  const [dashboardData, setDashboardData] = useState({
     totalBookings: 0,
-    myCabins: 0,
     totalSpent: 0,
+    myCabinsCount: 0,
+    cabinBookingsCount: 0,
+    cabinRevenue: 0,
     totalCabins: 0,
-    cabinBookings: 0
+    wallet: {
+      balance: 0,
+      totalEarned: 0,
+      transactions: 0,
+      withdrawals: 0
+    },
+    recentBookings: [],
+    recentCabinBookings: [],
+    bookingChartData: []
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Get user from localStorage
     const userData = localStorage.getItem("user");
     if (userData) {
       setUser(JSON.parse(userData));
     }
-    
-    // Fetch user stats
-    fetchUserStats();
+    fetchUserDashboard();
   }, []);
 
-  const fetchUserStats = async () => {
+  const fetchUserDashboard = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      setLoading(true);
       const token = localStorage.getItem("token");
-      if (!token) {
-        setLoading(false);
-        return;
+      const userData = localStorage.getItem("user");
+      
+      const res = await fetch(`${API_URL}/api/bookings/user-dashboard`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'user': userData || ''
+        }
+      });
+      
+      const data = await res.json();
+
+      if (data.success) {
+        setDashboardData(data.data);
+      } else {
+        setError(data.error || "Failed to fetch dashboard data");
       }
-
-      // Fetch bookings
-      const bookingsRes = await fetch(`${API_URL}/api/bookings/user`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const bookingsData = await bookingsRes.json();
-      const bookings = bookingsData.bookings || [];
-
-      // Fetch my cabins
-      const cabinsRes = await fetch(`${API_URL}/api/cabins/user`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const cabinsData = await cabinsRes.json();
-      const cabins = cabinsData.cabins || cabinsData || [];
-
-      // Fetch owner bookings
-      const ownerBookingsRes = await fetch(`${API_URL}/api/bookings/owner-bookings`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const ownerBookingsData = await ownerBookingsRes.json();
-      const ownerBookings = ownerBookingsData.bookings || [];
-
-      // Fetch ALL cabins (public endpoint)
-      const allCabinsRes = await fetch(`${API_URL}/api/cabins`);
-      const allCabinsData = await allCabinsRes.json();
-      const allCabins = Array.isArray(allCabinsData) ? allCabinsData : [];
-
-      // Calculate stats
-      const totalSpent = bookings.reduce((sum, b) => sum + (b.totalPrice || 0), 0);
-
-      setStats({
-        totalBookings: bookings.length,
-        myCabins: cabins.length,
-        totalSpent,
-        totalCabins: allCabins.length,
-        cabinBookings: ownerBookings.length
-      });
-    } catch (error) {
-      console.error("Error fetching stats:", error);
+    } catch (err) {
+      console.error("Dashboard error:", err);
+      setError("Failed to fetch dashboard data. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -86,6 +71,39 @@ const UserDashboard = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("admin");
     navigate("/login");
+  };
+
+  const formatCurrency = (amount) => {
+    return `₹${amount.toLocaleString('en-IN')}`;
+  };
+
+  const getStatusBadge = (status, paymentStatus) => {
+    if (status === 'confirmed' && paymentStatus === 'paid') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-100 text-emerald-700">
+          ✓ Completed
+        </span>
+      );
+    }
+    if (status === 'confirmed') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 text-blue-700">
+          Confirmed
+        </span>
+      );
+    }
+    if (status === 'cancelled') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-100 text-red-700">
+          ✕ Cancelled
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-yellow-100 text-yellow-700">
+        Pending
+      </span>
+    );
   };
 
   const navItems = [
@@ -108,10 +126,10 @@ const UserDashboard = () => {
       description: "Manage your listed properties"
     },
     {
-      icon: Plus,
-      label: "Add Cabin",
-      path: "/addcabin",
-      description: "List a new workspace"
+      icon: Wallet,
+      label: "My Wallet",
+      path: "//my-wallet",
+      description: "View wallet & transactions"
     }
   ];
 
@@ -127,11 +145,87 @@ const UserDashboard = () => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="admin-dash">
+        <UsersNavbar />
+        <div className="admin-dash__error">
+          <p className="admin-dash__error-title">Oops!</p>
+          <p className="admin-dash__error-message">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const {
+    totalBookings,
+    totalSpent,
+    myCabinsCount,
+    cabinBookingsCount,
+    cabinRevenue,
+    totalCabins,
+    wallet,
+    recentBookings,
+    recentCabinBookings,
+    bookingChartData
+  } = dashboardData;
+
+  // Stats cards
+  const statsCards = [
+    {
+      label: "My Bookings",
+      value: totalBookings,
+      meta: "workspace reservations",
+      icon: Calendar,
+      color: "indigo",
+      onClick: () => navigate("/mybookings")
+    },
+    {
+      label: "My Cabins",
+      value: myCabinsCount,
+      meta: "properties listed",
+      icon: Home,
+      color: "emerald",
+      onClick: () => navigate("/mycabin")
+    },
+    {
+      label: "Cabin Bookings",
+      value: cabinBookingsCount,
+      meta: "bookings on your cabins",
+      icon: Calendar,
+      color: "rose",
+      onClick: () => navigate("/cabin-bookings")
+    },
+    {
+      label: "Total Cabins",
+      value: totalCabins,
+      meta: "available spaces",
+      icon: Building2,
+      color: "violet",
+      onClick: () => navigate("/spaces")
+    },
+    {
+      label: "Total Spent",
+      value: formatCurrency(totalSpent),
+      meta: "on workspace bookings",
+      icon: IndianRupee,
+      color: "amber"
+    },
+    {
+      label: "Wallet Balance",
+      value: formatCurrency(wallet.balance || 0),
+      meta: `${wallet.transactions || 0} transactions`,
+      icon: Wallet,
+      color: "cyan",
+      onClick: () => navigate("/userwallet")
+    }
+  ];
+
   return (
     <div className="admin-dash">
       <UsersNavbar />
 
-      <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-16">
         {/* Header */}
         <div className="admin-dash__header">
           <div>
@@ -143,7 +237,7 @@ const UserDashboard = () => {
             </p>
           </div>
           <div className="admin-dash__date-pill">
-            <Calendar />
+            <Calendar size={16} />
             <span>
               {new Date().toLocaleDateString("en-US", {
                 weekday: "short",
@@ -157,63 +251,26 @@ const UserDashboard = () => {
 
         {/* Stats Grid */}
         <div className="admin-dash__stats">
-          <div className="admin-dash__stat" onClick={() => navigate("/mybookings")}>
-            <div className="admin-dash__stat-top">
-              <span className="admin-dash__stat-label">Total Bookings</span>
-              <div className="admin-dash__stat-icon admin-dash__stat-icon--indigo">
-                <Calendar />
+          {statsCards.map((stat, index) => (
+            <div
+              key={index}
+              className="admin-dash__stat"
+              onClick={stat.onClick}
+              style={{ cursor: stat.onClick ? 'pointer' : 'default' }}
+            >
+              <div className="admin-dash__stat-top">
+                <span className="admin-dash__stat-label">{stat.label}</span>
+                <div className={`admin-dash__stat-icon admin-dash__stat-icon--${stat.color}`}>
+                  <stat.icon size={18} />
+                </div>
               </div>
+              <div className="admin-dash__stat-value">{stat.value}</div>
+              <div className="admin-dash__stat-meta">{stat.meta}</div>
             </div>
-            <div className="admin-dash__stat-value">{stats.totalBookings}</div>
-            <div className="admin-dash__stat-meta">workspace reservations</div>
-          </div>
-
-          <div className="admin-dash__stat" onClick={() => navigate("/mycabin")}>
-            <div className="admin-dash__stat-top">
-              <span className="admin-dash__stat-label">My Cabins</span>
-              <div className="admin-dash__stat-icon admin-dash__stat-icon--emerald">
-                <Home />
-              </div>
-            </div>
-            <div className="admin-dash__stat-value">{stats.myCabins}</div>
-            <div className="admin-dash__stat-meta">properties listed</div>
-          </div>
-
-          <div className="admin-dash__stat" onClick={() => navigate("/cabin-bookings")}>
-            <div className="admin-dash__stat-top">
-              <span className="admin-dash__stat-label">Cabin Bookings</span>
-              <div className="admin-dash__stat-icon admin-dash__stat-icon--rose">
-                <Calendar />
-              </div>
-            </div>
-            <div className="admin-dash__stat-value">{stats.cabinBookings || 0}</div>
-            <div className="admin-dash__stat-meta">bookings on your cabins</div>
-          </div>
-
-          <div className="admin-dash__stat" onClick={() => navigate("/spaces")}>
-            <div className="admin-dash__stat-top">
-              <span className="admin-dash__stat-label">Total Cabins</span>
-              <div className="admin-dash__stat-icon admin-dash__stat-icon--violet">
-                <Building2 />
-              </div>
-            </div>
-            <div className="admin-dash__stat-value">{stats.totalCabins}</div>
-            <div className="admin-dash__stat-meta">available spaces</div>
-          </div>
-
-          <div className="admin-dash__stat">
-            <div className="admin-dash__stat-top">
-              <span className="admin-dash__stat-label">Total Spent</span>
-              <div className="admin-dash__stat-icon admin-dash__stat-icon--amber">
-                <span className="font-bold text-base">₹</span>
-              </div>
-            </div>
-            <div className="admin-dash__stat-value">₹{stats.totalSpent.toLocaleString('en-IN')}</div>
-            <div className="admin-dash__stat-meta">on workspace bookings</div>
-          </div>
+          ))}
         </div>
 
-        {/* Charts/Card Grid */}
+        {/* Charts/Quick Actions Grid */}
         <div className="admin-dash__charts-grid">
           {/* Quick Actions Card */}
           <div className="admin-dash__card">
@@ -244,43 +301,48 @@ const UserDashboard = () => {
             </div>
           </div>
 
-          {/* Member Profile Info */}
+          {/* Recent Bookings Card */}
           <div className="admin-dash__card">
             <div className="admin-dash__card-header">
               <div>
-                <h3 className="admin-dash__card-title">Member Profile</h3>
-                <p className="admin-dash__card-desc">Your personal space credentials</p>
+                <h3 className="admin-dash__card-title">Recent Bookings</h3>
+                <p className="admin-dash__card-desc">Your latest reservations</p>
               </div>
             </div>
-            <div className="admin-dash__card-body flex flex-col justify-between h-[calc(100%-70px)] min-h-[220px]">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl shadow-md">
-                  {user?.name?.substring(0, 2).toUpperCase() || "US"}
+            <div className="admin-dash__card-body">
+              {recentBookings.length === 0 ? (
+                <div className="text-center py-8 text-slate-400">
+                  <Calendar size={32} className="mx-auto text-slate-300 mb-2" />
+                  <p>No recent bookings</p>
                 </div>
-                <div>
-                  <h4 className="font-bold text-slate-900 text-lg">{user?.name || 'User'}</h4>
-                  <p className="text-slate-500 text-sm">{user?.email || 'user@example.com'}</p>
-                  <p className="text-slate-400 text-xs mt-1 font-medium">
-                    {user?.mobile ? `+91 ${user.mobile}` : 'No phone number added'}
-                  </p>
+              ) : (
+                <div className="space-y-3 max-h-60 overflow-y-auto">
+                  {recentBookings.map((b) => (
+                    <div key={b._id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-slate-50 transition-colors">
+                      <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-xs shrink-0">
+                        {b.name?.charAt(0).toUpperCase() || "U"}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-sm font-semibold text-slate-900 truncate">
+                            {b.cabinName}
+                          </p>
+                          {getStatusBadge(b.status, b.paymentStatus)}
+                        </div>
+                        <p className="text-xs text-slate-500">
+                          {b.name} • {formatCurrency(b.amount)}
+                        </p>
+                        <p className="text-[10px] text-slate-400">
+                          {new Date(b.createdAt).toLocaleDateString("en-US", {
+                            month: 'short',
+                            day: 'numeric'
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
-
-              <div className="flex gap-3 mt-6">
-                <button
-                  onClick={() => navigate("/myprofile")}
-                  className="flex-1 py-2.5 bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-xl hover:bg-slate-50 transition-colors text-center"
-                >
-                  Edit Profile
-                </button>
-                <button
-                  onClick={handleLogout}
-                  className="flex-1 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 text-sm font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
-                >
-                  <LogOut size={16} />
-                  Logout
-                </button>
-              </div>
+              )}
             </div>
           </div>
         </div>

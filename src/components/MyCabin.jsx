@@ -1,3 +1,4 @@
+// MyCabin.jsx
 import axios from "axios";
 import {
   Building2,
@@ -12,13 +13,30 @@ import {
   Upload,
   Users,
   X,
-  Building2 as BuildingIcon
+  Building2 as BuildingIcon,
+  CreditCard,
+  Calendar,
+  Clock,
+  AlertCircle,
+  Check,
+  Loader2
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import UsersNavbar from "./UsersNavbar";
 import "./Dashboard.css";
+
+// Load Razorpay script
+const loadRazorpayScript = () => {
+  return new Promise((resolve) => {
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
 
 const API_URL = "http://localhost:5000";
 const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
@@ -30,6 +48,10 @@ const MyCabin = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [pricingPlans, setPricingPlans] = useState([]);
+  const [cabinCount, setCabinCount] = useState(0);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
+  const [paymentProcessing, setPaymentProcessing] = useState(false);
   const navigate = useNavigate();
 
   // Add Cabin Form State
@@ -50,6 +72,16 @@ const MyCabin = () => {
     },
   });
   const [images, setImages] = useState([]);
+
+  // Load Razorpay script on component mount
+  useEffect(() => {
+    loadRazorpayScript().then((loaded) => {
+      setRazorpayLoaded(loaded);
+      if (!loaded) {
+        toast.error("Failed to load Razorpay. Please refresh the page.");
+      }
+    });
+  }, []);
 
   const getImageUrl = (img) => {
     if (!img) return PLACEHOLDER_IMAGE;
@@ -75,9 +107,13 @@ const MyCabin = () => {
 
       const res = await axios.get(`${API_URL}/api/cabins/user`, getAuthHeader());
       const data = res.data.cabins || res.data;
-      setCabins(Array.isArray(data) ? data : []);
+      const cabinList = Array.isArray(data) ? data : [];
+      setCabins(cabinList);
+      setCabinCount(cabinList.length);
+      
     } catch (err) {
       console.error("Error fetching cabins:", err);
+      toast.error("Failed to fetch cabins");
     } finally {
       setLoading(false);
     }
@@ -94,6 +130,7 @@ const MyCabin = () => {
     try {
       await axios.delete(`${API_URL}/api/cabins/${id}`, getAuthHeader());
       setCabins(cabins.filter(c => c._id !== id));
+      setCabinCount(prev => prev - 1);
       toast.success("Cabin deleted successfully");
     } catch (error) {
       console.error("Error deleting cabin", error);
@@ -101,7 +138,6 @@ const MyCabin = () => {
     }
   };
 
-  // Form Handlers
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -124,12 +160,133 @@ const MyCabin = () => {
     setImages(images.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSubmitting(true);
+  // ======================
+  // RAZORPAY PAYMENT HANDLER
+  // ======================
+  const initiateRazorpayPayment = async (cabinId, orderData) => {
+    setPaymentProcessing(true);
+    try {
+      // Check if Razorpay is loaded
+      if (typeof window.Razorpay === 'undefined') {
+        toast.error('Razorpay not loaded. Please refresh the page.');
+        setPaymentProcessing(false);
+        return;
+      }
 
+      // Ensure we have the key
+      const razorpayKey = orderData.razorpayKey || 'rzp_test_BxtRNvflG06PTV';
+      
+      console.log('Initiating Razorpay payment with:', {
+        key: razorpayKey,
+        amount: orderData.order.amount * 100,
+        orderId: orderData.order.razorpayOrderId
+      });
+
+      const options = {
+        key: razorpayKey,
+        amount: orderData.order.amount * 100,
+        currency: "INR",
+        name: "Cabin Registration",
+        description: `Cabin #${cabinCount + 1} Registration Fee`,
+        order_id: orderData.order.razorpayOrderId,
+        handler: async function(response) {
+          console.log('Payment response:', response);
+          // Verify payment on backend
+          try {
+            const verifyRes = await axios.post(
+              `${API_URL}/api/cabins/verify-cabin-payment`,
+              {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                cabinId: cabinId
+              },
+              getAuthHeader()
+            );
+
+            console.log('Verify response:', verifyRes.data);
+
+            if (verifyRes.data.success) {
+              // Get transaction ID from response
+              const transactionId = verifyRes.data.transactionId || 
+                                   verifyRes.data.order?.transactionId || 
+                                   'N/A';
+              
+              toast.success(
+                <div>
+                  <div style={{ fontWeight: 'bold' }}>Payment Successful! 🎉</div>
+                  <div style={{ fontSize: '0.8rem', marginTop: '4px' }}>
+                    Transaction ID: {transactionId}
+                  </div>
+                </div>,
+                { autoClose: 5000 }
+              );
+              
+              setShowConfirmModal(false);
+              setIsModalOpen(false);
+              setPaymentProcessing(false);
+              
+              // Reset form
+              setFormData({
+                name: "",
+                description: "",
+                capacity: "",
+                address: "",
+                price: "",
+                cabin: "",
+                amenities: {
+                  wifi: false,
+                  parking: false,
+                  lockers: false,
+                  privateWashroom: false,
+                  secureAccess: false,
+                  comfortSeating: false,
+                },
+              });
+              setImages([]);
+              setPricingPlans([]);
+              await fetchCabins();
+            } else {
+              toast.error('Payment verification failed');
+              setPaymentProcessing(false);
+            }
+          } catch (error) {
+            console.error("Payment verification error:", error);
+            toast.error(error.response?.data?.error || "Payment verification failed");
+            setPaymentProcessing(false);
+          }
+        },
+        prefill: {
+          name: localStorage.getItem("userName") || "",
+          email: localStorage.getItem("userEmail") || "",
+          contact: localStorage.getItem("userPhone") || "",
+        },
+        theme: {
+          color: "#6366f1",
+        },
+        modal: {
+          ondismiss: function() {
+            toast.warning("Payment cancelled");
+            setPaymentProcessing(false);
+          }
+        }
+      };
+
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+    } catch (error) {
+      console.error("Razorpay error:", error);
+      toast.error("Failed to initiate payment: " + error.message);
+      setPaymentProcessing(false);
+    }
+  };
+
+  // Create Cabin and Order with Razorpay
+  const createCabinAndOrder = async () => {
+    setSubmitting(true);
     const data = new FormData();
-    data.append("name", formData.cabin ? `${formData.name} - ${formData.cabin}` : formData.name);
+    const cabinName = formData.cabin ? `${formData.name} - ${formData.cabin}` : formData.name;
+    data.append("name", cabinName);
     data.append("description", formData.description);
     data.append("capacity", formData.capacity);
     data.append("address", formData.address);
@@ -140,38 +297,55 @@ const MyCabin = () => {
 
     try {
       const token = localStorage.getItem("token");
-      await axios.post(`${API_URL}/api/cabins`, data, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      toast.success("Cabin added successfully!");
-      setIsModalOpen(false);
-      // Reset Form
-      setFormData({
-        name: "",
-        description: "",
-        capacity: "",
-        address: "",
-        price: "",
-        cabin: "",
-        amenities: {
-          wifi: false,
-          parking: false,
-          lockers: false,
-          privateWashroom: false,
-          secureAccess: false,
-          comfortSeating: false,
+      
+      // Step 1: Create Cabin
+      const cabinRes = await axios.post(`${API_URL}/api/cabins`, data, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
         },
       });
-      setImages([]);
-      setPricingPlans([]);
-      fetchCabins();
+
+      const newCabin = cabinRes.data.cabin;
+      toast.success("Cabin created successfully!");
+
+      // Step 2: Create Cabin Order with Razorpay
+      const orderRes = await axios.post(
+        `${API_URL}/api/cabins/createcabinorder`,
+        { cabinId: newCabin._id },
+        getAuthHeader()
+      );
+
+      if (orderRes.data.success) {
+        // Close confirmation modal and open Razorpay
+        setShowConfirmModal(false);
+        setSubmitting(false);
+        
+        // Initiate Razorpay payment
+        await initiateRazorpayPayment(newCabin._id, orderRes.data);
+      }
+      
     } catch (err) {
-      console.error("Add Cabin Error:", err);
-      toast.error("Failed to add cabin");
+      console.error("Error:", err);
+      toast.error(err.response?.data?.error || "Failed to create cabin and order");
+      setSubmitting(false);
     } finally {
       setSubmitting(false);
     }
+  };
+
+  // Handle Form Submit - Show Confirmation Modal
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    // Validate form
+    if (!formData.name || !formData.address || !formData.capacity || !formData.price || !formData.cabin) {
+      toast.error("Please fill all required fields");
+      return;
+    }
+    
+    // Show confirmation modal
+    setShowConfirmModal(true);
   };
 
   const filteredCabins = cabins.filter(cabin =>
@@ -179,11 +353,24 @@ const MyCabin = () => {
     cabin.address?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const getCabinOrderStatus = (cabin) => {
+    if (cabin.isActive && cabin.hasActiveOrder) {
+      return { 
+        status: 'Active', 
+        color: 'green', 
+        daysLeft: 30 
+      };
+    }
+    return { status: 'Inactive', color: 'gray', daysLeft: 0 };
+  };
+
+  const isFirstCabin = cabinCount === 0;
+
   return (
     <div className="admin-dash">
       <UsersNavbar />
 
-      <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-16">
         {/* Header */}
         <div className="admin-dash__header">
           <div>
@@ -191,7 +378,9 @@ const MyCabin = () => {
               My <span>Cabins</span>
             </h1>
             <p className="admin-dash__subtitle">
-              Manage your workspace listings and properties.
+              Total Cabins: <strong>{cabinCount}</strong> | 
+              Next Cabin #{cabinCount + 1} | 
+              Fee: ₹{isFirstCabin ? '2,000' : '1,000'}
             </p>
           </div>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
@@ -206,6 +395,13 @@ const MyCabin = () => {
               />
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto">
+              <button
+                onClick={() => navigate("/my-cabin-payments")}
+                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-50 text-indigo-700 rounded-xl text-sm font-medium hover:bg-indigo-100 transition-colors border border-indigo-200"
+              >
+                <CreditCard size={16} />
+                My Payments
+              </button>
               <button
                 onClick={() => navigate("/cabin-bookings")}
                 className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors"
@@ -224,6 +420,36 @@ const MyCabin = () => {
           </div>
         </div>
 
+        {/* Cabin Count Info Card */}
+        <div className="mb-6 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-4 border border-indigo-100">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="bg-indigo-100 p-3 rounded-xl">
+                <Building2 size={24} className="text-indigo-600" />
+              </div>
+              <div>
+                <p className="text-sm text-indigo-700 font-medium">Your Cabin Stats</p>
+                <div className="flex items-center gap-4 mt-1">
+                  <span className="text-2xl font-bold text-slate-900">{cabinCount}</span>
+                  <span className="text-sm text-slate-600">Total Cabins</span>
+                  <span className="w-px h-6 bg-slate-300"></span>
+                  <span className="text-sm font-semibold text-indigo-600">
+                    Next: #{cabinCount + 1}
+                  </span>
+                  <span className="w-px h-6 bg-slate-300"></span>
+                  <span className="text-sm font-semibold text-emerald-600">
+                    Fee: ₹{isFirstCabin ? '2,000' : '1,000'}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-xs bg-white px-3 py-2 rounded-lg shadow-sm">
+              <Clock size={14} className="text-indigo-500" />
+              <span className="text-slate-600">30 days validity after payment</span>
+            </div>
+          </div>
+        </div>
+
         {loading ? (
           <div className="admin-dash__loading">
             <div className="admin-dash__spinner" />
@@ -233,91 +459,97 @@ const MyCabin = () => {
           <div className="admin-dash__error" style={{ background: '#f8fafc', borderColor: '#e2e8f0' }}>
             <BuildingIcon size={48} className="text-slate-300 mb-4" />
             <p className="admin-dash__error-title" style={{ color: '#475569' }}>No cabins found</p>
-            <p className="admin-dash__error-message">Add your first workspace to get started.</p>
+            <p className="admin-dash__error-message">Add your first workspace to get started. (First cabin: ₹2,000)</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredCabins.map((cabin) => (
-              <div
-                key={cabin._id}
-                onClick={() => navigate(`/cabin/${cabin._id}`)}
-                className="admin-dash__card group cursor-pointer flex flex-col h-full relative"
-              >
-                {/* Image Section */}
-                <div className="relative h-48 overflow-hidden rounded-t-2xl">
-                  <div className="absolute inset-0 bg-slate-200 animate-pulse" />
-                  <img
-                    src={cabin.images?.[0] ? getImageUrl(cabin.images[0]) : PLACEHOLDER_IMAGE}
-                    alt={cabin.name}
-                    className="w-full h-full object-cover relative z-10 group-hover:scale-105 transition-transform duration-500"
-                    onError={(e) => {
-                      e.target.src = PLACEHOLDER_IMAGE;
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/50 via-transparent to-transparent z-20 opacity-40" />
+            {filteredCabins.map((cabin, index) => {
+              const orderStatus = getCabinOrderStatus(cabin);
+              return (
+                <div
+                  key={cabin._id}
+                  onClick={() => navigate(`/cabin/${cabin._id}`)}
+                  className="admin-dash__card group cursor-pointer flex flex-col h-full relative"
+                >
+                  <div className="relative h-48 overflow-hidden rounded-t-2xl">
+                    <div className="absolute inset-0 bg-slate-200 animate-pulse" />
+                    <img
+                      src={cabin.images?.[0] ? getImageUrl(cabin.images[0]) : PLACEHOLDER_IMAGE}
+                      alt={cabin.name}
+                      className="w-full h-full object-cover relative z-10 group-hover:scale-105 transition-transform duration-500"
+                      onError={(e) => {
+                        e.target.src = PLACEHOLDER_IMAGE;
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/50 via-transparent to-transparent z-20 opacity-40" />
 
-                  {/* Actions Layer */}
-                  <div className="absolute top-3 left-3 z-30 bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold text-indigo-700 shadow-sm flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
-                    Available
-                  </div>
-
-                  <div className="absolute top-3 right-3 z-30">
-                    <button
-                      onClick={(e) => handleDelete(e, cabin._id)}
-                      className="p-2.5 bg-white/90 backdrop-blur-sm text-red-500 rounded-full hover:bg-red-500 hover:text-white transition-colors shadow-sm"
-                      title="Delete Cabin"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Content Section */}
-                <div className="p-5 flex flex-col flex-grow">
-                  <div className="mb-4">
-                    <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest mb-1">Coworking Space</p>
-                    <h3 className="text-base font-bold text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors line-clamp-1">
-                      {cabin.name}
-                    </h3>
-                  </div>
-
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="p-2 bg-indigo-50 rounded-lg shrink-0 text-indigo-600">
-                      <MapPin size={16} />
+                    <div className="absolute top-3 left-3 z-30 bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold text-indigo-700 shadow-sm flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                      Cabin #{index + 1}
                     </div>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-900 line-clamp-1">{cabin.address?.split(',')[0] || "Location"}</p>
-                      <p className="text-xs text-slate-500 line-clamp-1">{cabin.address}</p>
+
+                    <div className={`absolute top-3 right-3 z-30 bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold shadow-sm flex items-center gap-1 ${
+                      orderStatus.color === 'green' ? 'text-emerald-600' : 
+                      orderStatus.color === 'red' ? 'text-red-600' : 'text-gray-600'
+                    }`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${
+                        orderStatus.color === 'green' ? 'bg-emerald-500' : 
+                        orderStatus.color === 'red' ? 'bg-red-500' : 'bg-gray-400'
+                      }`}></span>
+                      {orderStatus.status}
+                    </div>
+
+                    <div className="absolute bottom-3 right-3 z-30 bg-black/60 backdrop-blur-sm px-2 py-1 rounded text-[9px] font-medium text-white flex items-center gap-1">
+                      <Calendar size={10} />
+                      {orderStatus.daysLeft > 0 ? `${orderStatus.daysLeft}d left` : 'No order'}
                     </div>
                   </div>
 
-                  <p className="text-slate-500 text-xs leading-relaxed mb-4 line-clamp-2">
-                    {cabin.description || "Experience a premium workspace designed for focus and collaboration, featuring modern amenities."}
-                  </p>
+                  <div className="p-5 flex flex-col flex-grow">
+                    <div className="mb-4">
+                      <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest mb-1">Coworking Space</p>
+                      <h3 className="text-base font-bold text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors line-clamp-1">
+                        {cabin.name}
+                      </h3>
+                    </div>
 
-                  <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
-                    <div>
-                      <div className="flex items-baseline gap-0.5">
-                        <span className="text-xl font-bold text-slate-900">₹{cabin.price || '0'}</span>
-                        <span className="text-[10px] text-slate-400 font-bold uppercase">/ Hour</span>
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="p-2 bg-indigo-50 rounded-lg shrink-0 text-indigo-600">
+                        <MapPin size={16} />
                       </div>
-                      <div className="flex items-center gap-1 text-[10px] font-medium text-slate-500 mt-0.5">
-                        <Users size={10} />
-                        {cabin.capacity} Seats
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900 line-clamp-1">{cabin.address?.split(',')[0] || "Location"}</p>
+                        <p className="text-xs text-slate-500 line-clamp-1">{cabin.address}</p>
                       </div>
                     </div>
 
-                    <div 
-                      className="h-10 w-10 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center hover:bg-red-600 hover:text-white transition-colors"
-                      onClick={(e) => handleDelete(e, cabin._id)}
-                    >
-                      <Trash2 size={16} />
+                    <p className="text-slate-500 text-xs leading-relaxed mb-4 line-clamp-2">
+                      {cabin.description || "Experience a premium workspace designed for focus and collaboration, featuring modern amenities."}
+                    </p>
+
+                    <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
+                      <div>
+                        <div className="flex items-baseline gap-0.5">
+                          <span className="text-xl font-bold text-slate-900">₹{cabin.price || '0'}</span>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase">/ Hour</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-[10px] font-medium text-slate-500 mt-0.5">
+                          <Users size={10} />
+                          {cabin.capacity} Seats
+                        </div>
+                      </div>
+
+                      <div 
+                        className="h-10 w-10 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center hover:bg-red-600 hover:text-white transition-colors"
+                        onClick={(e) => handleDelete(e, cabin._id)}
+                      >
+                        <Trash2 size={16} />
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>
@@ -327,9 +559,7 @@ const MyCabin = () => {
         <div className="fixed inset-0 z-[1100] flex items-end sm:items-center justify-center p-4 sm:p-6 bg-slate-900/50 backdrop-blur-sm">
           <div
             className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200"
-            style={{
-              maxHeight: "90vh",
-            }}
+            style={{ maxHeight: "90vh" }}
           >
             <style>{`
               .cabin-field {
@@ -375,7 +605,6 @@ const MyCabin = () => {
               }
             `}</style>
 
-            {/* ── Modal Header ── */}
             <div style={{
               background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 60%, #06b6d4 100%)",
               padding: "1.25rem 1.5rem",
@@ -394,10 +623,12 @@ const MyCabin = () => {
                 </div>
                 <div>
                   <h2 style={{ margin: 0, fontSize: "1.125rem", fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>
-                    Add New Cabin
+                    Add New Cabin #{cabinCount + 1}
                   </h2>
                   <p style={{ margin: 0, fontSize: "0.75rem", color: "rgba(255,255,255,0.75)", marginTop: 2 }}>
-                    Create a new workspace listing for Ingrain
+                    Total Cabins: {cabinCount} | 
+                    Fee: ₹{isFirstCabin ? '2,000' : '1,000'} 
+                    {isFirstCabin ? ' (First Cabin)' : ` (Cabin #${cabinCount + 1})`}
                   </p>
                 </div>
               </div>
@@ -416,10 +647,8 @@ const MyCabin = () => {
               </button>
             </div>
 
-            {/* ── Modal Body ── */}
             <div style={{ overflowY: "auto", padding: "1.5rem", flex: 1 }} className="custom-scrollbar">
               <form onSubmit={handleSubmit}>
-                {/* ── Row 1: Building Name + Address ── */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div>
                     <label className="cabin-label">Building Name</label>
@@ -448,7 +677,6 @@ const MyCabin = () => {
                   </div>
                 </div>
 
-                {/* ── Row 2: Cabin Spec + Capacity + Price ── */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                   <div>
                     <label className="cabin-label">Cabin Spec</label>
@@ -494,7 +722,6 @@ const MyCabin = () => {
                   </div>
                 </div>
 
-                {/* ── Pricing Plans Section ── */}
                 <div style={{ marginBottom: "1rem", borderTop: "1.5px solid #f1f5f9", paddingTop: "1rem" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
                     <label className="cabin-label" style={{ margin: 0 }}>Pricing Plans (Packages)</label>
@@ -545,17 +772,16 @@ const MyCabin = () => {
                   )}
                 </div>
 
-                {/* ── Amenities ── */}
                 <div style={{ marginBottom: "1rem" }}>
                   <label className="cabin-label">Included Amenities</label>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {[
-                      { key: "wifi",            label: "Wi-Fi",            emoji: "📶" },
-                      { key: "parking",         label: "Parking",          emoji: "🅿️" },
-                      { key: "lockers",         label: "Lockers",          emoji: "🔐" },
+                      { key: "wifi", label: "Wi-Fi", emoji: "📶" },
+                      { key: "parking", label: "Parking", emoji: "🅿️" },
+                      { key: "lockers", label: "Lockers", emoji: "🔐" },
                       { key: "privateWashroom", label: "Private Washroom", emoji: "🚿" },
-                      { key: "secureAccess",    label: "Secure Access",    emoji: "🛡️" },
-                      { key: "comfortSeating",  label: "Comfort Seating",  emoji: "🪑" },
+                      { key: "secureAccess", label: "Secure Access", emoji: "🛡️" },
+                      { key: "comfortSeating", label: "Comfort Seating", emoji: "🪑" },
                     ].map(item => (
                       <button
                         key={item.key}
@@ -571,7 +797,6 @@ const MyCabin = () => {
                   </div>
                 </div>
 
-                {/* ── Description ── */}
                 <div style={{ marginBottom: "1rem" }}>
                   <label className="cabin-label">Space Description</label>
                   <div className="cabin-field-icon" style={{ alignItems: "flex-start" }}>
@@ -588,7 +813,6 @@ const MyCabin = () => {
                   </div>
                 </div>
 
-                {/* ── Photo Upload ── */}
                 <div style={{ marginBottom: "1.5rem" }}>
                   <label className="cabin-label">Photo Gallery</label>
                   <div style={{
@@ -656,7 +880,29 @@ const MyCabin = () => {
                   )}
                 </div>
 
-                {/* ── Action Buttons ── */}
+                <div style={{ 
+                  background: "#f0fdf4", 
+                  border: "1px solid #86efac",
+                  borderRadius: 10,
+                  padding: "0.75rem 1rem",
+                  marginBottom: "1rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.75rem"
+                }}>
+                  <CreditCard size={18} className="text-emerald-600" />
+                  <div>
+                    <p style={{ margin: 0, fontSize: "0.8rem", fontWeight: 600, color: "#065f46" }}>
+                      Cabin #{cabinCount + 1} Registration
+                    </p>
+                    <p style={{ margin: 0, fontSize: "0.7rem", color: "#047857" }}>
+                      Fee: ₹{isFirstCabin ? '2,000' : '1,000'} | 
+                      Validity: 30 days | 
+                      {isFirstCabin ? ' First Cabin' : ` ${cabinCount} cabins already added`}
+                    </p>
+                  </div>
+                </div>
+
                 <div className="flex flex-col sm:flex-row gap-3 border-t border-slate-100 pt-5">
                   <button
                     type="button"
@@ -675,39 +921,172 @@ const MyCabin = () => {
                   </button>
                   <button
                     type="submit"
-                    disabled={submitting}
+                    disabled={paymentProcessing}
                     style={{
                       flex: 2, padding: "0.75rem",
                       borderRadius: 10, border: "none",
-                      background: submitting
+                      background: paymentProcessing
                         ? "#a5b4fc"
                         : "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
                       color: "#fff", fontFamily: "inherit",
                       fontSize: "0.875rem", fontWeight: 700,
-                      cursor: submitting ? "not-allowed" : "pointer",
+                      cursor: paymentProcessing ? "not-allowed" : "pointer",
                       display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                      boxShadow: submitting ? "none" : "0 4px 14px rgba(99,102,241,0.35)",
+                      boxShadow: paymentProcessing ? "none" : "0 4px 14px rgba(99,102,241,0.35)",
                       transition: "all 160ms",
                     }}
+                    onMouseEnter={e => { if (!paymentProcessing) e.currentTarget.style.transform = "scale(1.02)"; }}
+                    onMouseLeave={e => { if (!paymentProcessing) e.currentTarget.style.transform = "scale(1)"; }}
                   >
-                    {submitting ? (
+                    {paymentProcessing ? (
                       <>
-                        <span style={{
-                          width: 16, height: 16, borderRadius: "50%",
-                          border: "2px solid rgba(255,255,255,0.4)",
-                          borderTopColor: "#fff",
-                          animation: "spin 0.7s linear infinite",
-                          display: "inline-block",
-                        }} />
-                        Saving…
+                        <Loader2 size={17} className="animate-spin" />
+                        Processing Payment...
                       </>
                     ) : (
-                      <><CheckCircle size={17} /> Confirm &amp; Add Cabin</>
+                      <>
+                        <CreditCard size={17} /> 
+                        Proceed to Pay ₹{isFirstCabin ? '2,000' : '1,000'}
+                      </>
                     )}
                   </button>
                 </div>
-                <style>{`@keyframes spin { to { transform:rotate(360deg); } }`}</style>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div style={{
+              background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 60%, #06b6d4 100%)",
+              padding: "1.5rem",
+              textAlign: "center"
+            }}>
+              <div style={{
+                width: 64, height: 64, borderRadius: "50%",
+                background: "rgba(255,255,255,0.2)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                margin: "0 auto 0.75rem"
+              }}>
+                <CreditCard size={32} color="#fff" />
+              </div>
+              <h3 style={{ margin: 0, color: "#fff", fontSize: "1.25rem", fontWeight: 700 }}>
+                Confirm Cabin Addition
+              </h3>
+              <p style={{ margin: "0.25rem 0 0", color: "rgba(255,255,255,0.8)", fontSize: "0.875rem" }}>
+                Please review the details below
+              </p>
+            </div>
+            
+            <div style={{ padding: "1.5rem" }}>
+              <div style={{ 
+                background: "#f8fafc", 
+                borderRadius: 12, 
+                padding: "1rem",
+                marginBottom: "1.25rem"
+              }}>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span style={{ color: "#64748b", fontSize: "0.875rem" }}>Cabin Number</span>
+                    <span style={{ fontWeight: 600, color: "#1e293b" }}>#{cabinCount + 1}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span style={{ color: "#64748b", fontSize: "0.875rem" }}>Total Cabins</span>
+                    <span style={{ fontWeight: 600, color: "#1e293b" }}>{cabinCount}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span style={{ color: "#64748b", fontSize: "0.875rem" }}>Registration Fee</span>
+                    <span style={{ fontSize: "1.25rem", fontWeight: 700, color: "#6366f1" }}>
+                      ₹{isFirstCabin ? '2,000' : '1,000'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center border-t border-slate-200 pt-2">
+                    <span style={{ color: "#64748b", fontSize: "0.75rem" }}>Validity</span>
+                    <span style={{ fontSize: "0.75rem", fontWeight: 500, color: "#059669" }}>
+                      <Calendar size={12} className="inline mr-1" />
+                      30 Days
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <div style={{ 
+                background: "#fef3c7", 
+                borderRadius: 8, 
+                padding: "0.75rem",
+                marginBottom: "1.25rem",
+                fontSize: "0.75rem",
+                color: "#92400e",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem"
+              }}>
+                <AlertCircle size={16} className="shrink-0" />
+                <span>This is a one-time registration fee. Your cabin will be active for 30 days.</span>
+              </div>
+              
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={createCabinAndOrder}
+                  disabled={submitting || !razorpayLoaded || paymentProcessing}
+                  style={{
+                    width: "100%",
+                    padding: "0.875rem",
+                    borderRadius: 10,
+                    border: "none",
+                    background: (submitting || !razorpayLoaded || paymentProcessing)
+                      ? "#a5b4fc"
+                      : "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+                    color: "#fff",
+                    fontFamily: "inherit",
+                    fontSize: "0.875rem",
+                    fontWeight: 700,
+                    cursor: (submitting || !razorpayLoaded || paymentProcessing) ? "not-allowed" : "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                    boxShadow: (submitting || !razorpayLoaded || paymentProcessing) ? "none" : "0 4px 14px rgba(99,102,241,0.35)",
+                    transition: "all 160ms",
+                  }}
+                >
+                  {submitting || paymentProcessing ? (
+                    <>
+                      <Loader2 size={17} className="animate-spin" />
+                      {paymentProcessing ? 'Processing Payment...' : 'Creating Cabin & Order...'}
+                    </>
+                  ) : !razorpayLoaded ? (
+                    "Loading Payment Gateway..."
+                  ) : (
+                    <>Pay ₹{isFirstCabin ? '2,000' : '1,000'}</>
+                  )}
+                </button>
+                <button
+                  onClick={() => setShowConfirmModal(false)}
+                  disabled={paymentProcessing}
+                  style={{
+                    width: "100%",
+                    padding: "0.75rem",
+                    borderRadius: 10,
+                    border: "1.5px solid #e2e8f0",
+                    background: "#fff",
+                    color: paymentProcessing ? "#94a3b8" : "#64748b",
+                    fontFamily: "inherit",
+                    fontSize: "0.875rem",
+                    fontWeight: 600,
+                    cursor: paymentProcessing ? "not-allowed" : "pointer",
+                    transition: "all 160ms",
+                  }}
+                  onMouseEnter={e => { if (!paymentProcessing) e.currentTarget.style.background = "#f8fafc"; }}
+                  onMouseLeave={e => { if (!paymentProcessing) e.currentTarget.style.background = "#fff"; }}
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         </div>

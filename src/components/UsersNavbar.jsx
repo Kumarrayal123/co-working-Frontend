@@ -9,6 +9,10 @@ import {
   X,
   ChevronDown,
   User,
+  Wallet,
+  CreditCard,
+  Store,
+  Banknote
 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -28,7 +32,6 @@ function UsersNavbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Close profile dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (profileRef.current && !profileRef.current.contains(event.target)) {
@@ -39,7 +42,6 @@ function UsersNavbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Close on Escape key
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === "Escape") {
@@ -51,7 +53,6 @@ function UsersNavbar() {
     return () => document.removeEventListener("keydown", handleEscape);
   }, []);
 
-  // Lock body scroll when mobile menu is open
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
@@ -68,10 +69,10 @@ function UsersNavbar() {
 
   const navLinks = [
     { name: "Dashboard", path: "/userdashboard", icon: LayoutDashboard, description: "Overview & stats" },
-    { name: "All Spaces", path: "/spaces",        icon: Building2,       description: "Browse workspaces" },
-    { name: "My Bookings", path: "/mybookings",    icon: Calendar,        description: "Your reservations" },
-    { name: "My Cabins", path: "/mycabin",          icon: Home,            description: "Your spaces"       },
-    // { name: "Add Cabin", path: "/addcabin",        icon: Plus,            description: "List a new workspace" },
+    { name: "All Spaces", path: "/spaces", icon: Building2, description: "Browse workspaces" },
+    { name: "My Bookings", path: "/mybookings", icon: Calendar, description: "Your reservations" },
+    { name: "My Cabins", path: "/mycabin", icon: Home, description: "Your spaces" },
+    { name: "My Wallet", path: "/my-wallet", icon: Wallet, description: "Your earnings" },
   ];
 
   const userString = localStorage.getItem("user");
@@ -83,18 +84,18 @@ function UsersNavbar() {
       <nav className={`an-nav${scrolled ? " an-nav--scrolled" : ""}`}>
         <div className="an-nav__inner">
 
-          {/* ── Logo ── */}
+          {/* Logo */}
           <Link to="/userdashboard" className="an-nav__logo">
             <div className="an-nav__logo-icon">
-              <span className="an-nav__logo-ig">IG</span>
+              <span className="an-nav__logo-ig">I</span>
             </div>
             <div className="an-nav__logo-text">
-              <span className="an-nav__logo-title">Ingrain workspace</span>
+              <span className="an-nav__logo-title">IRYAX</span>
               <span className="an-nav__logo-badge">User Portal</span>
             </div>
           </Link>
 
-          {/* ── Desktop Nav Links ── */}
+          {/* Desktop Nav Links */}
           <ul className="an-nav__links">
             {navLinks.map((link) => (
               <li key={link.path}>
@@ -111,7 +112,7 @@ function UsersNavbar() {
             ))}
           </ul>
 
-          {/* ── Right: Profile + Logout ── */}
+          {/* Right: Profile + Logout */}
           <div className="an-nav__right">
 
             {/* Divider */}
@@ -132,27 +133,45 @@ function UsersNavbar() {
                 </div>
                 <ChevronDown
                   size={14}
-                  className={`an-nav__chevron${profileOpen ? " an-nav__chevron--open" : ""}`}
+                  className={`an-nav__profile-chevron${profileOpen ? " an-nav__profile-chevron--open" : ""}`}
                 />
               </button>
 
               {profileOpen && (
-                <div className="an-nav__dropdown an-nav__dropdown--profile">
+                <div className="an-nav__profile-dropdown">
                   {/* Profile header */}
-                  <div className="an-nav__dropdown-head--profile">
+                  <div className="an-nav__profile-header">
                     <div className="an-nav__avatar an-nav__avatar--lg">{initials}</div>
                     <div>
                       <p className="an-nav__dd-name">{currentUser.name || "User"}</p>
                       <p className="an-nav__dd-role">Workspace Member</p>
                     </div>
                   </div>
-                  <div className="an-nav__dd-sep" />
+                  <div className="an-nav__dd-divider" />
                   
-                  {/* Profile Link */}
-                  <button className="an-nav__dd-item" onClick={() => { setProfileOpen(false); navigate("/myprofile"); }}>
+                  {/* My Wallet */}
+                  <button 
+                    className="an-nav__dd-item" 
+                    onClick={() => { 
+                      setProfileOpen(false); 
+                      navigate("/my-wallet"); 
+                    }}
+                  >
+                    <Wallet size={15} /> My Wallet
+                  </button>
+                  
+                  {/* My Profile */}
+                  <button 
+                    className="an-nav__dd-item" 
+                    onClick={() => { 
+                      setProfileOpen(false); 
+                      navigate("/myprofile"); 
+                    }}
+                  >
                     <User size={15} /> My Profile
                   </button>
-                  <div className="an-nav__dd-sep" />
+                  
+                  <div className="an-nav__dd-divider" />
                   
                   {/* Logout */}
                   <button className="an-nav__dd-logout" onClick={handleLogout}>
@@ -174,22 +193,19 @@ function UsersNavbar() {
         </div>
       </nav>
 
-      {/* ── Mobile Drawer ── */}
+      {/* Mobile Drawer */}
       <div className={`an-mobile${open ? " an-mobile--open" : ""}`}>
-        {/* Backdrop */}
         <div className="an-mobile__backdrop" onClick={() => setOpen(false)} />
 
-        {/* Drawer */}
         <div className="an-mobile__drawer">
-
           {/* Drawer Header */}
           <div className="an-mobile__head">
             <div className="an-mobile__logo">
               <div className="an-nav__logo-icon">
-                <span className="an-nav__logo-ig">IG</span>
+                <span className="an-nav__logo-ig">I</span>
               </div>
               <div className="an-nav__logo-text">
-                <span className="an-nav__logo-title">Ingrain workspace</span>
+                <span className="an-nav__logo-title">IRYAX</span>
                 <span className="an-nav__logo-badge">User Portal</span>
               </div>
             </div>
@@ -202,7 +218,7 @@ function UsersNavbar() {
           <div className="an-mobile__admin-card">
             <div className="an-nav__avatar an-nav__avatar--lg">{initials}</div>
             <div>
-              <p className="an-mobile__admin-name">{currentUser.name || "User"} </p>
+              <p className="an-mobile__admin-name">{currentUser.name || "User"}</p>
               <p className="an-mobile__admin-role">Workspace Member</p>
             </div>
           </div>
@@ -231,37 +247,26 @@ function UsersNavbar() {
           </ul>
 
           {/* Footer controls */}
-          <div className="an-mobile__footer" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          <div className="an-mobile__footer">
+            {/* My Wallet - Mobile */}
+            <button
+              onClick={() => { setOpen(false); navigate("/my-wallet"); }}
+              className="an-mobile__footer-btn"
+            >
+              <Wallet size={17} />
+              <span>My Wallet</span>
+            </button>
+
+            {/* My Profile - Mobile */}
             <button
               onClick={() => { setOpen(false); navigate("/myprofile"); }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.625rem",
-                width: "100%",
-                padding: "0.5625rem 0.75rem",
-                background: "none",
-                border: "none",
-                fontFamily: "inherit",
-                fontSize: "0.8125rem",
-                fontWeight: 500,
-                color: "var(--an-text-dim)",
-                cursor: "pointer",
-                borderRadius: "8px",
-                textAlign: "left",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = "var(--an-text)";
-                e.currentTarget.style.background = "var(--an-surface-hover)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = "var(--an-text-dim)";
-                e.currentTarget.style.background = "none";
-              }}
+              className="an-mobile__footer-btn"
             >
               <User size={17} />
               <span>My Profile</span>
             </button>
+
+            {/* Logout - Mobile */}
             <button className="an-mobile__logout" onClick={handleLogout}>
               <LogOut size={17} />
               Sign Out

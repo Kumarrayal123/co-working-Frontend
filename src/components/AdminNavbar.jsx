@@ -9,6 +9,11 @@ import {
   X,
   ChevronDown,
   Ticket,
+  CreditCard,
+  Wallet,
+  Banknote,
+  MoreHorizontal,
+  Plus
 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -18,9 +23,11 @@ function AdminNavbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const profileRef = useRef(null);
+  const moreRef = useRef(null);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
@@ -28,22 +35,24 @@ function AdminNavbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Close profile dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (profileRef.current && !profileRef.current.contains(event.target)) {
         setProfileOpen(false);
+      }
+      if (moreRef.current && !moreRef.current.contains(event.target)) {
+        setMoreOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Close on Escape key
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === "Escape") {
         setProfileOpen(false);
+        setMoreOpen(false);
         setOpen(false);
       }
     };
@@ -51,7 +60,6 @@ function AdminNavbar() {
     return () => document.removeEventListener("keydown", handleEscape);
   }, []);
 
-  // Lock body scroll when mobile menu is open
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
@@ -65,101 +73,121 @@ function AdminNavbar() {
     navigate("/login");
   };
 
-  const navLinks = [
-    { name: "Dashboard",   path: "/admindashboard", icon: LayoutDashboard, description: "Overview & analytics" },
-    { name: " Spaces",  path: "/adminspaces",    icon: Building2,       description: "Manage workspaces"   },
-    { name: "Bookings", path: "/allbookings",    icon: Ticket,          description: "All reservations"    },
-    { name: "My Bookings", path: "/mybookings",     icon: Calendar,        description: "Your reservations"   },
-    { name: "My Cabins",   path: "/admincabin",     icon: Home,            description: "Your spaces"         },
-    { name: "Users",       path: "/allusers",       icon: Users,           description: "Registered members"  },
+  const mainNavLinks = [
+    { name: "Dashboard", path: "/admindashboard", icon: LayoutDashboard },
+    { name: "Spaces", path: "/adminspaces", icon: Building2 },
+    { name: "Bookings", path: "/allbookings", icon: Ticket },
+    { name: "My Bookings", path: "/mybookings", icon: Calendar },
+    { name: "My Cabins", path: "/admincabin", icon: Home },
+    { name: "Users", path: "/allusers", icon: Users },
+  ];
+
+  const moreLinks = [
+    { name: "Cabin Payments", path: "/cabinpayments", icon: CreditCard },
+    { name: "User Wallets", path: "/userwallets", icon: Wallet },
+    { name: "Withdrawals", path: "/withdrawals", icon: Banknote },
   ];
 
   const adminString = localStorage.getItem("admin");
-  const adminUser   = adminString ? JSON.parse(adminString) : { name: "Admin" };
-  const initials    = adminUser.name?.substring(0, 2).toUpperCase() || "AD";
+  const adminUser = adminString ? JSON.parse(adminString) : { name: "Admin" };
+  const initials = adminUser.name?.substring(0, 2).toUpperCase() || "AD";
+  const isMoreActive = moreLinks.some(link => isActive(link.path));
 
   return (
     <>
       <nav className={`an-nav${scrolled ? " an-nav--scrolled" : ""}`}>
         <div className="an-nav__inner">
 
-          {/* ── Logo ── */}
           <Link to="/admindashboard" className="an-nav__logo">
             <div className="an-nav__logo-icon">
               <span className="an-nav__logo-ig">IG</span>
             </div>
             <div className="an-nav__logo-text">
-              <span className="an-nav__logo-title">Ingrain workspace</span>
-              <span className="an-nav__logo-badge">Admin Portal</span>
+              <span className="an-nav__logo-title">IRYAX CO</span>
+              <span className="an-nav__logo-badge">Admin</span>
             </div>
           </Link>
 
-          {/* ── Desktop Nav Links ── */}
           <ul className="an-nav__links">
-            {navLinks.map((link) => (
+            {mainNavLinks.map((link) => (
               <li key={link.path}>
                 <Link
                   to={link.path}
                   className={`an-nav__link${isActive(link.path) ? " an-nav__link--active" : ""}`}
-                  title={link.description}
                 >
-                  <link.icon size={15} />
+                  <link.icon size={17} />
                   <span>{link.name}</span>
                   {isActive(link.path) && <span className="an-nav__link-dot" />}
                 </Link>
               </li>
             ))}
+
+            <li className="an-nav__more-wrap" ref={moreRef}>
+              <button
+                className={`an-nav__link an-nav__link--more${isMoreActive ? " an-nav__link--active" : ""}`}
+                onClick={() => setMoreOpen(!moreOpen)}
+              >
+                <MoreHorizontal size={17} />
+                <span>More</span>
+                <ChevronDown size={12} className={`an-nav__more-chevron${moreOpen ? " an-nav__more-chevron--open" : ""}`} />
+                {isMoreActive && <span className="an-nav__link-dot" />}
+              </button>
+
+              {moreOpen && (
+                <div className="an-nav__more-dropdown">
+                  {moreLinks.map((link) => (
+                    <Link
+                      key={link.path}
+                      to={link.path}
+                      onClick={() => setMoreOpen(false)}
+                      className={`an-nav__more-item${isActive(link.path) ? " an-nav__more-item--active" : ""}`}
+                    >
+                      <span className="an-nav__more-icon">
+                        <link.icon size={16} />
+                      </span>
+                      <span>{link.name}</span>
+                      {isActive(link.path) && <span className="an-nav__more-active-dot" />}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </li>
           </ul>
 
-          {/* ── Right: Profile + Logout ── */}
           <div className="an-nav__right">
-
-            {/* Divider */}
-            <span className="an-nav__divider" />
-
-            {/* Profile Dropdown */}
             <div className="an-nav__dropdown-wrap" ref={profileRef}>
               <button
                 className="an-nav__profile-btn"
                 onClick={() => setProfileOpen(!profileOpen)}
-                aria-expanded={profileOpen}
-                aria-haspopup="true"
               >
                 <div className="an-nav__avatar">{initials}</div>
                 <div className="an-nav__profile-info">
                   <span className="an-nav__profile-name">{adminUser.name || "Admin"}</span>
-                  <span className="an-nav__profile-role">Administrator</span>
+                  <span className="an-nav__profile-role">Admin</span>
                 </div>
-                <ChevronDown
-                  size={14}
-                  className={`an-nav__chevron${profileOpen ? " an-nav__chevron--open" : ""}`}
-                />
+                <ChevronDown size={14} className={`an-nav__profile-chevron${profileOpen ? " an-nav__profile-chevron--open" : ""}`} />
               </button>
 
               {profileOpen && (
-                <div className="an-nav__dropdown an-nav__dropdown--profile">
-                  {/* Profile header */}
-                  <div className="an-nav__dropdown-head--profile">
+                <div className="an-nav__profile-dropdown">
+                  <div className="an-nav__profile-header">
                     <div className="an-nav__avatar an-nav__avatar--lg">{initials}</div>
                     <div>
                       <p className="an-nav__dd-name">{adminUser.name || "Admin"}</p>
                       <p className="an-nav__dd-role">Administrator</p>
                     </div>
                   </div>
-                  <div className="an-nav__dd-sep" />
-                  {/* Logout only */}
+                  <div className="an-nav__dd-divider" />
                   <button className="an-nav__dd-logout" onClick={handleLogout}>
-                    <LogOut size={15} /> Sign Out
+                    <LogOut size={16} /> Sign Out
                   </button>
                 </div>
               )}
             </div>
 
-            {/* Mobile Hamburger */}
             <button
               className="an-nav__hamburger"
               onClick={() => setOpen(!open)}
-              aria-label="Toggle menu"
             >
               {open ? <X size={22} /> : <Menu size={22} />}
             </button>
@@ -167,23 +195,17 @@ function AdminNavbar() {
         </div>
       </nav>
 
-      {/* ── Mobile Drawer ── */}
       <div className={`an-mobile${open ? " an-mobile--open" : ""}`}>
-        {/* Backdrop */}
         <div className="an-mobile__backdrop" onClick={() => setOpen(false)} />
-
-        {/* Drawer */}
         <div className="an-mobile__drawer">
-
-          {/* Drawer Header */}
           <div className="an-mobile__head">
             <div className="an-mobile__logo">
               <div className="an-nav__logo-icon">
                 <span className="an-nav__logo-ig">IG</span>
               </div>
-              <div className="an-nav__logo-text">
-                <span className="an-nav__logo-title">Ingrain workspace</span>
-                <span className="an-nav__logo-badge">Admin Portal</span>
+              <div>
+                <span className="an-mobile__logo-title">IRYAX CO</span>
+                <span className="an-mobile__logo-badge">Admin</span>
               </div>
             </div>
             <button className="an-mobile__close" onClick={() => setOpen(false)}>
@@ -191,7 +213,6 @@ function AdminNavbar() {
             </button>
           </div>
 
-          {/* Admin Card */}
           <div className="an-mobile__admin-card">
             <div className="an-nav__avatar an-nav__avatar--lg">{initials}</div>
             <div>
@@ -200,30 +221,38 @@ function AdminNavbar() {
             </div>
           </div>
 
-          {/* Nav Links */}
-          <p className="an-mobile__section-label">Navigation</p>
-          <ul className="an-mobile__links">
-            {navLinks.map((link) => (
-              <li key={link.path}>
-                <Link
-                  to={link.path}
-                  onClick={() => setOpen(false)}
-                  className={`an-mobile__link${isActive(link.path) ? " an-mobile__link--active" : ""}`}
-                >
-                  <span className="an-mobile__link-icon">
-                    <link.icon size={18} />
-                  </span>
-                  <div className="an-mobile__link-body">
-                    <span className="an-mobile__link-name">{link.name}</span>
-                    <span className="an-mobile__link-desc">{link.description}</span>
-                  </div>
-                  {isActive(link.path) && <span className="an-mobile__link-active-dot" />}
-                </Link>
-              </li>
+          <div className="an-mobile__section">
+            <p className="an-mobile__section-label">Main</p>
+            {mainNavLinks.map((link) => (
+              <Link
+                key={link.path}
+                to={link.path}
+                onClick={() => setOpen(false)}
+                className={`an-mobile__link${isActive(link.path) ? " an-mobile__link--active" : ""}`}
+              >
+                <link.icon size={18} />
+                <span>{link.name}</span>
+                {isActive(link.path) && <span className="an-mobile__link-dot" />}
+              </Link>
             ))}
-          </ul>
+          </div>
 
-          {/* Logout */}
+          <div className="an-mobile__section">
+            <p className="an-mobile__section-label">Finance</p>
+            {moreLinks.map((link) => (
+              <Link
+                key={link.path}
+                to={link.path}
+                onClick={() => setOpen(false)}
+                className={`an-mobile__link${isActive(link.path) ? " an-mobile__link--active" : ""}`}
+              >
+                <link.icon size={18} />
+                <span>{link.name}</span>
+                {isActive(link.path) && <span className="an-mobile__link-dot" />}
+              </Link>
+            ))}
+          </div>
+
           <div className="an-mobile__footer">
             <button className="an-mobile__logout" onClick={handleLogout}>
               <LogOut size={17} />

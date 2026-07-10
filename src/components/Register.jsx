@@ -77,8 +77,8 @@ function Register() {
             <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-indigo-500 via-purple-500 to-cyan-500 rounded-2xl mb-4 shadow-lg shadow-indigo-500/30 transform hover:scale-105 transition-all duration-300">
               <span className="font-sans text-xl font-extrabold text-white tracking-tighter select-none">IG</span>
             </div>
-            <h2 className="text-3xl font-bold text-slate-900 tracking-tight mb-2">Ingrain Workspace</h2>
-            <p className="text-slate-500 text-sm">Join the Ingrain Workspace community</p>
+            <h2 className="text-3xl font-bold text-slate-900 tracking-tight mb-2">IRYAX Workspace</h2>
+            <p className="text-slate-500 text-sm">Join the IRYAX Workspace community</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-8">

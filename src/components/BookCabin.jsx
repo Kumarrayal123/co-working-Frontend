@@ -1,3 +1,4 @@
+// BookCabin.jsx - Updated with Pay on Counter option (Frontend only)
 import axios from "axios";
 import {
   ArrowLeft,
@@ -6,7 +7,10 @@ import {
   MapPin,
   User,
   Users,
-  Building2 as BuildingIcon
+  CreditCard,
+  ShieldCheck,
+  Store,
+  CheckCircle
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -14,9 +18,20 @@ import { toast } from "react-toastify";
 import UsersNavbar from "./UsersNavbar";
 import AdminNavbar from "./AdminNavbar";
 import "./Dashboard.css";
+
 const API_URL = "http://localhost:5000";
 const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
 
+// Load Razorpay script
+const loadRazorpayScript = () => {
+  return new Promise((resolve) => {
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
 
 const BookCabin = () => {
   const { id } = useParams();
@@ -35,11 +50,13 @@ const BookCabin = () => {
 
   const [bookingBasis, setBookingBasis] = useState("hourly");
   const [selectedPlan, setSelectedPlan] = useState(null);
+  const [paymentMethod, setPaymentMethod] = useState("online");
 
   const [totalHours, setTotalHours] = useState(0);
   const [totalPrice, setTotalPrice] = useState(0);
   const [availabilityError, setAvailabilityError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [paymentProcessing, setPaymentProcessing] = useState(false);
 
   const getImageUrl = (img) => {
     if (!img) return PLACEHOLDER_IMAGE;
@@ -48,7 +65,12 @@ const BookCabin = () => {
     return `${API_URL}/${cleanPath}`;
   };
 
-  /* FETCH DATA */
+  const getAuthHeader = () => {
+    const token = localStorage.getItem("token");
+    return { headers: { Authorization: `Bearer ${token}` } };
+  };
+
+  // FETCH DATA
   useEffect(() => {
     window.scrollTo(0, 0);
     const fetchData = async () => {
@@ -68,7 +90,7 @@ const BookCabin = () => {
     fetchData();
   }, [id]);
 
-  /* PRICE CALC */
+  // PRICE CALC
   useEffect(() => {
     if (bookingBasis === "hourly") {
       if (startDate && startTime && endDate && endTime) {
@@ -105,54 +127,196 @@ const BookCabin = () => {
     }
   }, [startDate, startTime, endDate, endTime, bookingBasis, selectedPlan, cabin]);
 
-  /* BOOK */
-  const handleBooking = async (e) => {
+  // BOOK WITH PAY ON COUNTER
+const handleCounterBooking = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+
+  if (totalPrice <= 0) {
+    toast.error("Please select valid date/time or plan");
+    setLoading(false);
+    return;
+  }
+
+  const userStr = localStorage.getItem("user");
+  const adminStr = localStorage.getItem("admin");
+  let currentUser = null;
+  if (userStr) currentUser = JSON.parse(userStr);
+  else if (adminStr) currentUser = JSON.parse(adminStr);
+
+  const userId = currentUser?._id || currentUser?.id;
+
+  if (!userId) {
+    toast.error("Please log in to book a cabin.");
+    navigate("/login");
+    setLoading(false);
+    return;
+  }
+
+  try {
+    const bookingData = {
+      cabinId: id,
+      name,
+      mobile,
+      email: currentUser?.email || "",
+      startDate,
+      startTime,
+      endDate,
+      endTime,
+      bookingBasis,
+      selectedPlan,
+      paymentMethod: "counter" // ✅ Send payment method
+    };
+
+    const res = await axios.post(
+      `${API_URL}/api/bookings/createbooking/${userId}`,
+      bookingData,
+      getAuthHeader()
+    );
+
+    if (res.data.success) {
+      toast.success("Booking confirmed! Please pay at the counter.");
+      navigate("/mybookings");
+    }
+  } catch (err) {
+    const errorMsg = err.response?.data?.error || "Booking failed. Please try again.";
+    setAvailabilityError(errorMsg);
+    toast.error(errorMsg);
+  } finally {
+    setLoading(false);
+  }
+};
+  // BOOK WITH RAZORPAY PAYMENT
+  const handleOnlineBooking = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    // Check for User OR Admin
+    if (totalPrice <= 0) {
+      toast.error("Please select valid date/time or plan");
+      setLoading(false);
+      return;
+    }
+
     const userStr = localStorage.getItem("user");
     const adminStr = localStorage.getItem("admin");
-
     let currentUser = null;
     if (userStr) currentUser = JSON.parse(userStr);
     else if (adminStr) currentUser = JSON.parse(adminStr);
 
-    // Normalize ID (Admin login returns 'id', User might use '_id')
     const userId = currentUser?._id || currentUser?.id;
 
     if (!userId) {
       toast.error("Please log in to book a cabin.");
       navigate("/login");
+      setLoading(false);
       return;
     }
 
     try {
-      await axios.post(
+      const bookingData = {
+        cabinId: id,
+        name,
+        mobile,
+        email: currentUser?.email || "",
+        startDate,
+        startTime,
+        endDate,
+        endTime,
+        bookingBasis,
+        selectedPlan,
+        paymentMethod: "online"
+      };
+
+      const res = await axios.post(
         `${API_URL}/api/bookings/createbooking/${userId}`,
-        {
-          cabinId: id,
-          name,
-          mobile,
-          email: currentUser?.email || "",
-          startDate,
-          startTime,
-          endDate,
-          endTime,
-          totalHours,
-          totalPrice,
-          bookingBasis,
-          selectedPlan,
-        }
+        bookingData,
+        getAuthHeader()
       );
-      toast.success("Booking confirmed successfully!");
-      navigate("/mybookings");
+
+      if (res.data.success) {
+        const { razorpay, booking } = res.data;
+        
+        const scriptLoaded = await loadRazorpayScript();
+        if (!scriptLoaded) {
+          toast.error("Payment gateway failed to load. Please try again.");
+          setLoading(false);
+          return;
+        }
+
+        setPaymentProcessing(true);
+        const options = {
+          key: razorpay.key,
+          amount: razorpay.amount,
+          currency: razorpay.currency,
+          name: "IRYAX Workspace",
+          description: `Booking - ${booking.cabinName}`,
+          image: "https://iryax.com/logo.png",
+          order_id: razorpay.orderId,
+          handler: async function (response) {
+            try {
+              const verifyRes = await axios.post(
+                `${API_URL}/api/bookings/verify-payment`,
+                {
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  bookingId: booking.id
+                },
+                getAuthHeader()
+              );
+
+              if (verifyRes.data.success) {
+                toast.success("Payment successful! Booking confirmed.");
+                navigate("/mybookings");
+              } else {
+                toast.error("Payment verification failed. Please contact support.");
+              }
+            } catch (error) {
+              console.error("Payment verification error:", error);
+              toast.error("Payment verification failed. Please contact support.");
+            } finally {
+              setPaymentProcessing(false);
+              setLoading(false);
+            }
+          },
+          prefill: {
+            name: name,
+            email: currentUser?.email || "",
+            contact: mobile
+          },
+          notes: {
+            cabinId: id,
+            bookingId: booking.id
+          },
+          theme: {
+            color: "#6366f1"
+          },
+          modal: {
+            ondismiss: function() {
+              toast.info("Payment cancelled");
+              setPaymentProcessing(false);
+              setLoading(false);
+            }
+          }
+        };
+
+        const razorpayInstance = new window.Razorpay(options);
+        razorpayInstance.open();
+      }
     } catch (err) {
-      const errorMsg = err.response?.data?.error || "Selected slot is not available. Please try another time.";
+      const errorMsg = err.response?.data?.error || "Booking failed. Please try again.";
       setAvailabilityError(errorMsg);
       toast.error(errorMsg);
-    } finally {
       setLoading(false);
+      setPaymentProcessing(false);
+    }
+  };
+
+  const handleSubmit = (e) => {
+    if (paymentMethod === "online") {
+      handleOnlineBooking(e);
+    } else {
+      handleCounterBooking(e);
     }
   };
 
@@ -173,7 +337,6 @@ const BookCabin = () => {
       {isAdmin ? <AdminNavbar /> : <UsersNavbar />}
 
       <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-16">
-        {/* Header */}
         <button
           onClick={() => navigate(-1)}
           className="flex items-center gap-2 text-xs uppercase tracking-widest font-bold text-slate-400 hover:text-indigo-600 mb-6 transition-colors"
@@ -214,7 +377,7 @@ const BookCabin = () => {
               <div className="grid grid-cols-2 gap-3 mb-6">
                 <div className="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-300 flex flex-col justify-center">
                   <div className="text-[10px] uppercase tracking-[0.1em] text-indigo-700 font-bold mb-1">
-                    Capacity Profile
+                    Capacity
                   </div>
                   <div className="font-black text-slate-900 text-base flex items-center gap-1.5">
                     <Users size={18} className="text-indigo-600" /> {cabin.capacity} <span className="text-[10px] text-slate-400 uppercase">Seats</span>
@@ -223,7 +386,7 @@ const BookCabin = () => {
 
                 <div className="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-300 flex flex-col justify-center">
                   <div className="text-[10px] uppercase tracking-[0.1em] text-indigo-700 font-bold mb-1">
-                    Booking Rate
+                    Rate
                   </div>
                   <div className="font-black text-slate-900 text-base flex items-baseline gap-0.5">
                     ₹{cabin.price} <span className="text-[10px] text-slate-400">/ HOUR</span>
@@ -231,16 +394,16 @@ const BookCabin = () => {
                 </div>
               </div>
 
-              {/* <div className="flex items-center gap-3 pt-5 border-t border-slate-100 text-slate-500 text-xs font-medium">
+              <div className="flex items-center gap-3 pt-5 border-t border-slate-100 text-slate-500 text-xs font-medium">
                 <ShieldCheck size={16} className="text-emerald-600" />
                 Verified professional workspace
-              </div> */}
+              </div>
             </div>
           </div>
 
           {/* Right Form */}
           <div className="lg:col-span-7 space-y-6">
-            <form onSubmit={handleBooking} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
               {/* User */}
               <div className="admin-dash__card p-6 sm:p-8">
                 <div className="flex items-center gap-3 mb-6 sm:mb-8">
@@ -281,6 +444,45 @@ const BookCabin = () => {
                     </div>
                   </div>
                 </div>
+              </div>
+
+              {/* Payment Method Selection */}
+              <div className="admin-dash__card p-4 sm:p-5 bg-white shadow-sm border border-slate-100 rounded-2xl">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 block ml-1">
+                  Payment Method
+                </label>
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod("online")}
+                    className={`flex items-center justify-center gap-3 py-3.5 px-4 rounded-xl font-bold text-sm uppercase tracking-wider transition-all border ${
+                      paymentMethod === "online"
+                        ? "bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-500/20"
+                        : "border-slate-200 text-slate-600 hover:bg-slate-50 bg-white"
+                    }`}
+                  >
+                    <CreditCard size={18} />
+                    Online Payment
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod("counter")}
+                    className={`flex items-center justify-center gap-3 py-3.5 px-4 rounded-xl font-bold text-sm uppercase tracking-wider transition-all border ${
+                      paymentMethod === "counter"
+                        ? "bg-emerald-600 border-emerald-600 text-white shadow-md shadow-emerald-500/20"
+                        : "border-slate-200 text-slate-600 hover:bg-slate-50 bg-white"
+                    }`}
+                  >
+                    <Store size={18} />
+                    Pay at Counter
+                  </button>
+                </div>
+                {paymentMethod === "counter" && (
+                  <div className="mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2 text-emerald-700 text-sm font-medium">
+                    <CheckCircle size={16} />
+                    Booking confirmed immediately. Pay at the counter when you arrive.
+                  </div>
+                )}
               </div>
 
               {/* Hourly / Plan Toggles */}
@@ -360,13 +562,13 @@ const BookCabin = () => {
                     <History size={20} />
                   </div>
                   <h3 className="text-base sm:text-lg font-black uppercase text-slate-900 tracking-tight">
-                    {bookingBasis === "hourly" ? "Temporal Window" : "Plan Start Window"}
+                    {bookingBasis === "hourly" ? "Booking Schedule" : "Plan Start Window"}
                   </h3>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-6 sm:gap-8">
                   <div className="space-y-3">
-                    <label className="text-xs font-bold text-slate-500 mb-2 block uppercase tracking-widest px-1">Check-in Date & Time</label>
+                    <label className="text-xs font-bold text-slate-500 mb-2 block uppercase tracking-widest px-1">Start Date & Time</label>
                     <div className="flex gap-2">
                       <input
                         type="date"
@@ -387,7 +589,7 @@ const BookCabin = () => {
 
                   {bookingBasis === "hourly" ? (
                     <div className="space-y-3">
-                      <label className="text-xs font-bold text-slate-500 mb-2 block uppercase tracking-widest px-1">Check-out Date & Time</label>
+                      <label className="text-xs font-bold text-slate-500 mb-2 block uppercase tracking-widest px-1">End Date & Time</label>
                       <div className="flex gap-2">
                         <input
                           type="date"
@@ -408,7 +610,7 @@ const BookCabin = () => {
                   ) : (
                     selectedPlan && endDate && (
                       <div className="space-y-2 bg-indigo-50/40 border border-indigo-100 rounded-2xl p-4 flex flex-col justify-center">
-                        <p className="text-[10px] uppercase font-bold text-indigo-700 tracking-wider">Plan Validity Info</p>
+                        <p className="text-[10px] uppercase font-bold text-indigo-700 tracking-wider">Plan Validity</p>
                         <p className="text-sm font-bold text-slate-800">
                           Active until: <span className="text-indigo-600">{endDate}</span>
                         </p>
@@ -419,18 +621,22 @@ const BookCabin = () => {
                 </div>
               </div>
 
-               {/* Price Overview */}
-               {totalHours > 0 && (
-                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl p-6 sm:p-8 shadow-2xl shadow-indigo-500/30 flex items-center justify-between">
+              {/* Price Overview */}
+              {totalHours > 0 && (
+                <div className={`rounded-2xl p-6 sm:p-8 shadow-2xl flex items-center justify-between ${
+                  paymentMethod === "online" 
+                    ? "bg-gradient-to-r from-indigo-600 to-purple-600 shadow-indigo-500/30 text-white"
+                    : "bg-gradient-to-r from-emerald-600 to-teal-600 shadow-emerald-500/30 text-white"
+                }`}>
                   <div>
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-200 block mb-2">Aggregate Billing</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70 block mb-2">Total Amount</span>
                     <div className="text-3xl sm:text-4xl font-black tracking-tighter">
                       ₹{totalPrice.toLocaleString("en-IN")}
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-200 block mb-2">Duration</span>
-                    <div className="text-lg sm:text-xl font-black text-indigo-200 uppercase tracking-tight">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70 block mb-2">Duration</span>
+                    <div className="text-lg sm:text-xl font-black text-white/90 uppercase tracking-tight">
                       {totalHours} HOURS
                     </div>
                   </div>
@@ -445,15 +651,48 @@ const BookCabin = () => {
               )}
 
               <button
-                disabled={loading}
-                className={`w-full py-4 rounded-xl font-bold text-sm uppercase tracking-[0.1em] flex justify-center items-center gap-3 transition-all shadow-lg active:scale-[0.98] ${loading
-                  ? "bg-slate-100 text-slate-300 cursor-not-allowed"
-                  : "bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-indigo-500/20"
-                  }`}
+                type="submit"
+                disabled={loading || paymentProcessing || totalPrice <= 0}
+                className={`w-full py-4 rounded-xl font-bold text-sm uppercase tracking-[0.1em] flex justify-center items-center gap-3 transition-all shadow-lg active:scale-[0.98] ${
+                  loading || paymentProcessing || totalPrice <= 0
+                    ? "bg-slate-100 text-slate-300 cursor-not-allowed"
+                    : paymentMethod === "online"
+                      ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-indigo-500/20"
+                      : "bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-700 hover:to-teal-700 shadow-emerald-500/20"
+                }`}
               >
-                {loading ? "Synchronizing…" : "Confirm Booking"}
-                {!loading && <ArrowRight size={18} />}
+                {paymentProcessing ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Processing Payment...
+                  </>
+                ) : loading ? (
+                  "Synchronizing…"
+                ) : paymentMethod === "online" ? (
+                  <>
+                    <CreditCard size={18} />
+                    Pay ₹{totalPrice.toLocaleString("en-IN")} & Book
+                  </>
+                ) : (
+                  <>
+                    <Store size={18} />
+                    Confirm & Pay at Counter
+                  </>
+                )}
+                {!loading && !paymentProcessing && <ArrowRight size={18} />}
               </button>
+
+              {paymentMethod === "online" ? (
+                <div className="text-center text-xs text-slate-400 flex items-center justify-center gap-2">
+                  <ShieldCheck size={14} className="text-emerald-500" />
+                  Secure payment via Razorpay
+                </div>
+              ) : (
+                <div className="text-center text-xs text-slate-400 flex items-center justify-center gap-2">
+                  <Store size={14} className="text-emerald-500" />
+                  Pay at the counter when you arrive
+                </div>
+              )}
             </form>
           </div>
         </div>

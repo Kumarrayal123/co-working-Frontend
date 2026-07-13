@@ -28,7 +28,7 @@ import AdminNavbar from "./AdminNavbar";
 import * as XLSX from 'xlsx';
 import "./Dashboard.css";
 
-const API_URL = "http://localhost:5000";
+const API_URL = "http://62.72.29.27:5003";
 
 const MyWallet = () => {
   const [wallet, setWallet] = useState({

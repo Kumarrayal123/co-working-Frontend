@@ -1,5 +1,4 @@
-// AllBookings.jsx - Complete with Payment Method & Payment Status
-
+// AllBookings.jsx - Complete with Professional Invoice
 import axios from "axios";
 import {
   Calendar,
@@ -32,7 +31,9 @@ import {
   Bath,
   Shield,
   Armchair,
-  Store
+  Store,
+  Receipt,
+  Hash
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
@@ -40,7 +41,7 @@ import AdminNavbar from "./AdminNavbar";
 import * as XLSX from 'xlsx';
 import "./Dashboard.css";
 
-const API_URL = "http://localhost:5000";
+const API_URL = "http://62.72.29.27:5003";
 const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
 
 const AllBookings = () => {
@@ -75,7 +76,6 @@ const AllBookings = () => {
   const [deleteBooking, setDeleteBooking] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  // Payment Status Modal
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentBooking, setPaymentBooking] = useState(null);
   const [newPaymentStatus, setNewPaymentStatus] = useState("");
@@ -129,11 +129,10 @@ const AllBookings = () => {
     return statusMap[status?.toLowerCase()] || defaultStatus;
   };
 
-  // Payment Method Badge
   const getPaymentMethodBadge = (method) => {
-    if (method === 'counter') {
+    if (method === 'cash' || method === 'counter') {
       return {
-        label: 'Counter',
+        label: 'Cash',
         color: 'bg-orange-50 text-orange-700 border-orange-200',
         icon: <Store size={12} className="text-orange-500" />
       };
@@ -145,13 +144,26 @@ const AllBookings = () => {
     };
   };
 
-  // Payment Status Badge
   const getPaymentStatusBadge = (status) => {
     if (status === 'paid') {
       return {
         label: 'Paid',
         color: 'bg-emerald-50 text-emerald-700 border-emerald-200',
         icon: <CheckCircle size={12} className="text-emerald-500" />
+      };
+    }
+    if (status === 'refunded') {
+      return {
+        label: 'Refunded',
+        color: 'bg-purple-50 text-purple-700 border-purple-200',
+        icon: <XCircle size={12} className="text-purple-500" />
+      };
+    }
+    if (status === 'failed') {
+      return {
+        label: 'Failed',
+        color: 'bg-red-50 text-red-700 border-red-200',
+        icon: <XCircle size={12} className="text-red-500" />
       };
     }
     return {
@@ -266,7 +278,7 @@ const AllBookings = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.put(
-        `${API_URL}/api/bookings/booking/${paymentBooking._id}/payment-status`,
+        `${API_URL}/api/bookings/bookingpayment-status/${paymentBooking._id}`,
         { paymentStatus: newPaymentStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -293,17 +305,11 @@ const AllBookings = () => {
     }
   };
 
-  // ======================
-  // VIEW BOOKING
-  // ======================
   const handleViewBooking = (booking) => {
     setViewBooking(booking);
     setShowViewModal(true);
   };
 
-  // ======================
-  // DELETE BOOKING
-  // ======================
   const handleDeleteBooking = async () => {
     if (!deleteBooking) return;
     
@@ -330,9 +336,6 @@ const AllBookings = () => {
     }
   };
 
-  // ======================
-  // EXPORT TO EXCEL
-  // ======================
   const exportToExcel = () => {
     try {
       if (filteredBookings.length === 0) {
@@ -341,45 +344,35 @@ const AllBookings = () => {
       }
 
       const exportData = filteredBookings.map((booking, index) => {
-        const isVisit = booking.bookingType === "visit";
         const statusBadge = getStatusBadge(booking.status);
         const paymentMethod = getPaymentMethodBadge(booking.paymentMethod);
         const paymentStatus = getPaymentStatusBadge(booking.paymentStatus);
         return {
           'S.No': index + 1,
-          'Booking Type': isVisit ? 'Site Visit' : 
-                           booking.bookingBasis === 'plan' ? 'Plan Booking' : 'Hourly Booking',
+          'Booking Type': booking.bookingBasis === 'plan' ? 'Plan Booking' : 'Hourly Booking',
           'Cabin Name': booking.cabinId?.name || 'Unknown Cabin',
           'Address': booking.cabinId?.address || 'No Address',
           'Owner Name': booking.cabinId?.owner?.name || 'N/A',
-          'Owner Mobile': booking.cabinId?.owner?.mobile || 'N/A',
           'Customer Name': booking.name || booking.userId?.name || 'Unknown Guest',
-          'Customer Mobile': booking.mobile || booking.userId?.mobile || 'N/A',
+          'Mobile': booking.mobile || booking.userId?.mobile || 'N/A',
           'Email': booking.email || booking.userId?.email || 'N/A',
           'Start Date': booking.startDate || 'N/A',
           'Start Time': booking.startTime || 'N/A',
           'End Date': booking.endDate || 'N/A',
           'End Time': booking.endTime || 'N/A',
-          'Duration (Hours)': isVisit ? 'Visit' : (booking.totalHours || 0),
-          'Hours Used': booking.hoursUsed || 0,
-          'Remaining Hours': booking.remainingHours || 0,
+          'Duration (Hours)': booking.totalHours || 0,
+          'Subtotal (₹)': booking.subtotal || 0,
+          'GST (18%)': booking.gstAmount || 0,
+          'Total (₹)': booking.totalPrice || 0,
           'Status': statusBadge.label,
           'Payment Method': paymentMethod.label,
           'Payment Status': paymentStatus.label,
-          'Amount (₹)': isVisit ? 'Free' : (booking.totalPrice || 0),
-          'Transaction ID': booking.transactionId || 'N/A'
+          'Transaction ID': booking.transactionId || 'N/A',
+          'Terms Accepted': booking.termsAccepted ? 'Yes' : 'No'
         };
       });
 
       const ws = XLSX.utils.json_to_sheet(exportData);
-      ws['!cols'] = [
-        { wch: 6 }, { wch: 18 }, { wch: 25 }, { wch: 30 },
-        { wch: 20 }, { wch: 15 }, { wch: 20 }, { wch: 15 },
-        { wch: 25 }, { wch: 15 }, { wch: 12 }, { wch: 15 },
-        { wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 15 },
-        { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 20 }
-      ];
-
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'All_Bookings');
       
@@ -394,30 +387,40 @@ const AllBookings = () => {
   };
 
   // ======================
-  // DOWNLOAD INVOICE
+  // PROFESSIONAL INVOICE DOWNLOAD
   // ======================
   const downloadInvoice = (booking) => {
     try {
-      const cabinName = booking.cabinId?.name || 'Unknown Cabin';
-      const cabinAddress = booking.cabinId?.address || 'N/A';
+      const cabin = booking.cabinId || {};
+      const owner = cabin.owner || {};
+      const cabinName = cabin.name || 'Unknown Cabin';
+      const cabinAddress = cabin.address || 'N/A';
+      const ownerOrganization = owner.organizationName || 'IRYAX Workspace';
+      const ownerGst = owner.gstNumber || 'N/A';
+      const ownerAddress = owner.address || 'N/A';
+      
       const amount = booking.totalPrice || 0;
+      const subtotal = booking.subtotal || 0;
+      const gstAmount = booking.gstAmount || 0;
       const orderId = booking._id.slice(-8).toUpperCase();
       const startDate = booking.startDate || 'N/A';
       const startTime = booking.startTime || 'N/A';
       const endDate = booking.endDate || 'N/A';
       const endTime = booking.endTime || 'N/A';
       const status = booking.status?.charAt(0).toUpperCase() + booking.status?.slice(1) || 'N/A';
-      const paymentStatus = booking.paymentStatus === 'paid' ? 'Paid ✅' : 'Pending ⏳';
-      const paymentMethod = booking.paymentMethod === 'counter' ? 'Pay at Counter' : 'Online Payment';
-      const isVisit = booking.bookingType === 'visit';
-      const customerName = booking.name || booking.userId?.name || 'N/A';
+      const paymentStatus = booking.paymentStatus === 'paid' ? 'Paid' : 'Pending';
+      const paymentMethod = booking.paymentMethod === 'cash' || booking.paymentMethod === 'counter' ? 'Cash' : 'Online';
+      const totalHours = booking.totalHours || 0;
+      const customerName = booking.name || booking.userId?.name || 'Customer';
       const customerMobile = booking.mobile || booking.userId?.mobile || 'N/A';
       const customerEmail = booking.email || booking.userId?.email || 'N/A';
-      const ownerName = booking.cabinId?.owner?.name || 'N/A';
-      const totalHours = booking.totalHours || 0;
-      const hoursUsed = booking.hoursUsed || 0;
-      const remainingHours = booking.remainingHours || 0;
       const transactionId = booking.transactionId || 'N/A';
+      const termsAccepted = booking.termsAccepted ? 'Yes' : 'No';
+      const today = new Date().toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
 
       const invoiceHTML = `
         <!DOCTYPE html>
@@ -428,219 +431,339 @@ const AllBookings = () => {
           <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body {
-              font-family: 'Segoe UI', Arial, sans-serif;
-              background: #f0f2f5;
+              font-family: 'Times New Roman', 'Georgia', serif;
+              background: #ffffff;
               padding: 40px;
               display: flex;
               justify-content: center;
               min-height: 100vh;
+              color: #000000;
             }
             .invoice-container {
               max-width: 800px;
               width: 100%;
-              background: white;
-              border-radius: 16px;
-              box-shadow: 0 10px 40px rgba(0,0,0,0.08);
-              overflow: hidden;
+              background: #ffffff;
+              border: 2px solid #000000;
+              padding: 40px 45px;
             }
             .invoice-header {
-              background: linear-gradient(135deg, #1e1b4b 0%, #4f46e5 100%);
-              padding: 30px 40px;
-              color: white;
               display: flex;
               justify-content: space-between;
-              align-items: center;
+              align-items: flex-start;
+              border-bottom: 3px double #000000;
+              padding-bottom: 20px;
+              margin-bottom: 25px;
             }
-            .invoice-header h1 { font-size: 28px; font-weight: 700; }
-            .invoice-header .sub { font-size: 14px; opacity: 0.8; }
-            .invoice-header .order-id {
-              background: rgba(255,255,255,0.2);
-              padding: 8px 16px;
-              border-radius: 8px;
+            .brand h1 {
+              font-size: 28px;
+              font-weight: 700;
+              letter-spacing: 2px;
+              text-transform: uppercase;
+              color: #1a56db;
+            }
+            .brand .gst {
+              font-size: 11px;
+              color: #666666;
+              margin-top: 2px;
+            }
+            .brand .address-line {
+              font-size: 11px;
+              color: #666666;
+              margin-top: 2px;
+            }
+            .invoice-number {
+              text-align: right;
+            }
+            .invoice-number .label {
+              font-size: 10px;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+              color: #666666;
+            }
+            .invoice-number .number {
+              font-size: 22px;
+              font-weight: 700;
+              color: #000000;
+              margin-top: 2px;
+            }
+            .invoice-number .date {
+              font-size: 12px;
+              color: #333333;
+              margin-top: 4px;
+            }
+            .info-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 30px;
+              margin-bottom: 25px;
+              padding-bottom: 20px;
+              border-bottom: 1px solid #cccccc;
+            }
+            .info-group .title {
+              font-size: 10px;
+              font-weight: 700;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+              color: #666666;
+              margin-bottom: 6px;
+            }
+            .info-group .value {
               font-size: 14px;
               font-weight: 600;
+              color: #000000;
+              line-height: 1.6;
             }
-            .invoice-body { padding: 40px; }
-            .invoice-row {
-              display: flex;
-              justify-content: space-between;
-              padding: 12px 0;
-              border-bottom: 1px solid #f1f5f9;
-            }
-            .invoice-row:last-child { border-bottom: none; }
-            .invoice-label { color: #64748b; font-size: 14px; font-weight: 500; }
-            .invoice-value { color: #0f172a; font-size: 14px; font-weight: 600; }
-            .invoice-value.amount { font-size: 24px; color: #4f46e5; }
-            .invoice-total {
-              background: #f8fafc;
-              border-radius: 12px;
-              padding: 20px 24px;
-              margin-top: 20px;
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-            }
-            .invoice-total .label { color: #475569; font-size: 16px; font-weight: 600; }
-            .invoice-total .amount { font-size: 28px; font-weight: 700; color: #4f46e5; }
-            .status-badge {
-              display: inline-block;
-              padding: 4px 12px;
-              border-radius: 20px;
+            .info-group .value-small {
               font-size: 12px;
+              font-weight: 400;
+              color: #333333;
+            }
+            .info-group .address-line {
+              font-size: 12px;
+              color: #333333;
+              margin-top: 2px;
+            }
+            .invoice-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin: 20px 0 25px;
+            }
+            .invoice-table thead {
+              border-top: 2px solid #000000;
+              border-bottom: 2px solid #000000;
+            }
+            .invoice-table thead th {
+              padding: 10px 12px;
+              text-align: left;
+              font-size: 10px;
+              font-weight: 700;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+              color: #000000;
+            }
+            .invoice-table thead th:last-child {
+              text-align: right;
+            }
+            .invoice-table tbody td {
+              padding: 10px 12px;
+              font-size: 13px;
+              color: #000000;
+              border-bottom: 1px solid #eeeeee;
+            }
+            .invoice-table tbody td:last-child {
+              text-align: right;
               font-weight: 600;
             }
-            .status-badge.confirmed { background: #d1fae5; color: #065f46; }
-            .status-badge.pending { background: #fef3c7; color: #92400e; }
-            .status-badge.active { background: #e0e7ff; color: #3730a3; }
-            .status-badge.completed { background: #dbeafe; color: #1e40af; }
-            .status-badge.cancelled { background: #fee2e2; color: #991b1b; }
-            .status-badge.paid { background: #d1fae5; color: #065f46; }
-            .payment-badge {
-              display: inline-block;
-              padding: 2px 10px;
-              border-radius: 12px;
-              font-size: 11px;
-              font-weight: 600;
+            .invoice-table tbody tr:last-child td {
+              border-bottom: none;
             }
-            .payment-badge.online { background: #dbeafe; color: #1e40af; }
-            .payment-badge.counter { background: #fffbeb; color: #92400e; }
+            .totals {
+              margin-top: 20px;
+              padding-top: 20px;
+              border-top: 2px solid #000000;
+              display: flex;
+              justify-content: flex-end;
+            }
+            .totals-box {
+              width: 320px;
+            }
+            .totals-row {
+              display: flex;
+              justify-content: space-between;
+              padding: 6px 0;
+              font-size: 13px;
+              color: #333333;
+            }
+            .totals-row.total {
+              font-size: 20px;
+              font-weight: 700;
+              color: #000000;
+              border-top: 2px solid #000000;
+              padding-top: 12px;
+              margin-top: 6px;
+            }
+            .status-row {
+              display: flex;
+              gap: 30px;
+              margin-top: 15px;
+              padding-top: 15px;
+              border-top: 1px solid #cccccc;
+              flex-wrap: wrap;
+            }
+            .status-row .item {
+              font-size: 12px;
+            }
+            .status-row .item .label {
+              color: #666666;
+              text-transform: uppercase;
+              font-weight: 700;
+              font-size: 9px;
+              letter-spacing: 0.5px;
+            }
+            .status-row .item .value {
+              font-weight: 600;
+              color: #000000;
+              margin-top: 2px;
+            }
             .footer {
               text-align: center;
-              padding: 20px 40px;
-              border-top: 1px solid #f1f5f9;
-              color: #94a3b8;
-              font-size: 12px;
+              padding-top: 25px;
+              margin-top: 25px;
+              border-top: 2px solid #000000;
             }
-            .footer strong { color: #4f46e5; }
+            .footer .powered {
+              font-size: 14px;
+              font-weight: 700;
+              letter-spacing: 2px;
+              color: #1a56db;
+            }
+            .footer .powered span {
+              color: #1a56db;
+            }
+            .footer .sub {
+              font-size: 10px;
+              color: #666666;
+              margin-top: 4px;
+            }
             .print-btn {
               position: fixed;
               bottom: 30px;
               right: 30px;
-              padding: 12px 24px;
-              background: #4f46e5;
-              color: white;
+              padding: 14px 28px;
+              background: #000000;
+              color: #ffffff;
               border: none;
-              border-radius: 12px;
+              border-radius: 4px;
               font-weight: 600;
+              font-size: 13px;
               cursor: pointer;
-              box-shadow: 0 4px 14px rgba(79,70,229,0.4);
+              box-shadow: 0 4px 20px rgba(0,0,0,0.15);
               display: flex;
               align-items: center;
               gap: 10px;
+              font-family: 'Segoe UI', Arial, sans-serif;
+              letter-spacing: 0.5px;
             }
-            .print-btn:hover { background: #4338ca; }
+            .print-btn:hover {
+              background: #222222;
+            }
             @media print {
-              body { background: white; padding: 0; }
-              .invoice-container { box-shadow: none; border-radius: 0; }
+              body { background: white; padding: 20px; }
+              .invoice-container { border: 1px solid #000000; padding: 30px; }
               .print-btn { display: none !important; }
-              .invoice-header { background: #1e1b4b !important; -webkit-print-color-adjust: exact; }
-              .status-badge { -webkit-print-color-adjust: exact; }
-              .payment-badge { -webkit-print-color-adjust: exact; }
             }
             @media (max-width: 640px) {
               body { padding: 20px; }
-              .invoice-header { flex-direction: column; text-align: center; gap: 15px; padding: 25px; }
-              .invoice-body { padding: 25px; }
+              .invoice-container { padding: 25px; }
+              .invoice-header { flex-direction: column; text-align: center; gap: 15px; }
+              .invoice-number { text-align: center; }
+              .info-grid { grid-template-columns: 1fr; gap: 15px; }
+              .totals { justify-content: center; }
+              .totals-box { width: 100%; }
+              .status-row { flex-direction: column; gap: 8px; }
             }
           </style>
         </head>
         <body>
           <div class="invoice-container">
             <div class="invoice-header">
-              <div>
-                <h1>🧾 INVOICE</h1>
-                <div class="sub">IRYAX Workspace • Booking</div>
+              <div class="brand">
+                <h1>${ownerOrganization.toUpperCase()}</h1>
+                <div class="gst">GST: ${ownerGst}</div>
+                <div class="address-line">${ownerAddress}</div>
               </div>
-              <div class="order-id">#${orderId}</div>
+              <div class="invoice-number">
+                <div class="label">Invoice</div>
+                <div class="number">#${orderId}</div>
+                <div class="date">${today}</div>
+              </div>
             </div>
-            <div class="invoice-body">
-              <div class="invoice-row">
-                <span class="invoice-label">Cabin</span>
-                <span class="invoice-value">${cabinName}</span>
+
+            <div class="info-grid">
+              <div>
+                <div class="title">Bill To</div>
+                <div class="value">${customerName}</div>
+                <div class="value-small">${customerMobile}</div>
+                <div class="value-small">${customerEmail}</div>
               </div>
-              <div class="invoice-row">
-                <span class="invoice-label">Address</span>
-                <span class="invoice-value">${cabinAddress}</span>
+              <div>
+                <div class="title">Cabin Details</div>
+                <div class="value">${cabinName}</div>
+                <div class="address-line">${cabinAddress}</div>
+                <div class="value-small" style="margin-top:4px;">${totalHours} Hours • ${booking.bookingBasis === 'plan' ? 'Plan Booking' : 'Hourly'}</div>
               </div>
-              <div class="invoice-row">
-                <span class="invoice-label">Payment Method</span>
-                <span class="invoice-value"><span class="payment-badge ${booking.paymentMethod}">${paymentMethod}</span></span>
+            </div>
+
+            <table class="invoice-table">
+              <thead>
+                <tr>
+                  <th>Description</th>
+                  <th>Details</th>
+                  <th>Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Cabin Booking</strong></td>
+                  <td>
+                    ${cabinName}<br>
+                    <span style="font-size:11px;color:#666666;">${startDate} · ${startTime} to ${endDate} · ${endTime}</span>
+                    ${booking.bookingBasis === 'plan' && booking.selectedPlan ? `<br><span style="font-size:11px;color:#666666;">Plan: ${booking.selectedPlan.label || 'Subscription'}</span>` : ''}
+                    ${transactionId !== 'N/A' ? `<br><span style="font-size:10px;color:#888888;font-family:monospace;">TXN: ${transactionId}</span>` : ''}
+                    <br><span style="font-size:10px;color:#888888;">Terms Accepted: ${termsAccepted}</span>
+                  </td>
+                  <td>₹${subtotal.toFixed(2)}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="status-row">
+              <div class="item">
+                <div class="label">Payment Method</div>
+                <div class="value">${paymentMethod}</div>
               </div>
-              <div class="invoice-row">
-                <span class="invoice-label">Payment Status</span>
-                <span class="invoice-value"><span class="status-badge ${booking.paymentStatus}">${paymentStatus}</span></span>
+              <div class="item">
+                <div class="label">Payment Status</div>
+                <div class="value">${paymentStatus}</div>
               </div>
-              <div class="invoice-row">
-                <span class="invoice-label">Owner</span>
-                <span class="invoice-value">${ownerName}</span>
+              <div class="item">
+                <div class="label">Booking Status</div>
+                <div class="value">${status}</div>
               </div>
-              <div class="invoice-row">
-                <span class="invoice-label">Customer</span>
-                <span class="invoice-value">${customerName}</span>
-              </div>
-              <div class="invoice-row">
-                <span class="invoice-label">Mobile</span>
-                <span class="invoice-value">${customerMobile}</span>
-              </div>
-              <div class="invoice-row">
-                <span class="invoice-label">Email</span>
-                <span class="invoice-value">${customerEmail}</span>
-              </div>
-              ${isVisit ? `
-              <div class="invoice-row">
-                <span class="invoice-label">Type</span>
-                <span class="invoice-value">Site Visit</span>
-              </div>
-              ` : `
-              <div class="invoice-row">
-                <span class="invoice-label">Total Hours</span>
-                <span class="invoice-value">${totalHours} Hours</span>
-              </div>
-              <div class="invoice-row">
-                <span class="invoice-label">Hours Used</span>
-                <span class="invoice-value">${hoursUsed} Hours</span>
-              </div>
-              <div class="invoice-row">
-                <span class="invoice-label">Remaining</span>
-                <span class="invoice-value">${remainingHours} Hours</span>
-              </div>
-              `}
-              <div class="invoice-row">
-                <span class="invoice-label">Start</span>
-                <span class="invoice-value">${startDate} · ${startTime}</span>
-              </div>
-              ${!isVisit ? `
-              <div class="invoice-row">
-                <span class="invoice-label">End</span>
-                <span class="invoice-value">${endDate} · ${endTime}</span>
+              ${transactionId !== 'N/A' ? `
+              <div class="item">
+                <div class="label">Transaction ID</div>
+                <div class="value" style="font-family:monospace;font-size:11px;">${transactionId}</div>
               </div>
               ` : ''}
-              <div class="invoice-row">
-                <span class="invoice-label">Status</span>
-                <span class="invoice-value"><span class="status-badge ${booking.status}">${status}</span></span>
-              </div>
-              <div class="invoice-row">
-                <span class="invoice-label">Transaction ID</span>
-                <span class="invoice-value" style="font-family:monospace;font-size:12px;">${transactionId}</span>
-              </div>
-              ${isVisit ? `
-              <div class="invoice-total">
-                <span class="label">Site Visit</span>
-                <span class="amount" style="color:#059669;">FREE</span>
-              </div>
-              ` : `
-              <div class="invoice-total">
-                <span class="label">Total Amount</span>
-                <span class="amount">₹${amount.toLocaleString('en-IN')}</span>
-              </div>
-              `}
             </div>
+
+            <div class="totals">
+              <div class="totals-box">
+                <div class="totals-row">
+                  <span>Subtotal</span>
+                  <span>₹${subtotal.toFixed(2)}</span>
+                </div>
+                <div class="totals-row">
+                  <span>GST (18%)</span>
+                  <span>₹${gstAmount.toFixed(2)}</span>
+                </div>
+                <div class="totals-row total">
+                  <span>Total Amount</span>
+                  <span>₹${amount.toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+
             <div class="footer">
-              Thank you for choosing <strong>IRYAX Workspace</strong> • System generated invoice
+              <div class="powered">POWERED BY <span>IRYAX SPACE</span></div>
+              <div class="sub">Thank you for choosing ${ownerOrganization}</div>
+              <div class="sub" style="margin-top:2px;">This is a system generated invoice</div>
             </div>
           </div>
+
           <button class="print-btn" onclick="window.print()">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="6 9 6 2 18 2 18 9"/>
               <path d="M18 9H6"/>
               <path d="M18 13v6H6v-6"/>
@@ -662,20 +785,11 @@ const AllBookings = () => {
       } else {
         toast.error('Please allow popups to download invoice');
       }
+
     } catch (error) {
       console.error('Invoice download error:', error);
       toast.error('Failed to generate invoice');
     }
-  };
-
-  // Amenity Icon Map
-  const amenityMap = {
-    wifi: { label: "Wi-Fi", icon: Wifi },
-    parking: { label: "Parking", icon: Car },
-    lockers: { label: "Lockers", icon: Lock },
-    privateWashroom: { label: "Private Washroom", icon: Bath },
-    secureAccess: { label: "Secure Access", icon: Shield },
-    comfortSeating: { label: "Comfort Seating", icon: Armchair },
   };
 
   const filteredBookings = bookings.filter((b) => {
@@ -886,23 +1000,20 @@ const AllBookings = () => {
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-200">
                       <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Type</th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Cabin Details</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Cabin</th>
                       <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Owner</th>
                       <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Customer</th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Contact</th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Booking Period</th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Duration</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Period</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Hours</th>
                       <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Payment Method</th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Payment Status</th>
-                      <th className="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Price</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Payment</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Pmt Status</th>
+                      <th className="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Amount</th>
                       <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {filteredBookings.map((booking) => {
-                      const isVisit = booking.bookingType === "visit";
-                      const userName = booking.userId?.name || booking.name || "Unknown";
                       const statusBadge = getStatusBadge(booking.status);
                       const paymentMethodBadge = getPaymentMethodBadge(booking.paymentMethod);
                       const paymentStatusBadge = getPaymentStatusBadge(booking.paymentStatus);
@@ -911,27 +1022,22 @@ const AllBookings = () => {
                       return (
                       <tr key={booking._id} className="hover:bg-slate-50 transition-colors">
                         <td className="px-6 py-4">
-                          {isVisit ? (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold border border-blue-100">
-                              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block"></span>
-                              Site Visit
-                            </span>
-                          ) : booking.bookingBasis === "plan" ? (
+                          {booking.bookingBasis === "plan" ? (
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 text-xs font-bold border border-purple-100">
                               <span className="w-1.5 h-1.5 rounded-full bg-purple-500 inline-block"></span>
-                              Plan: {booking.selectedPlan?.label || "Subscription"}
+                              Plan
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-100">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
-                              Hourly Booking
+                              Hourly
                             </span>
                           )}
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-start gap-3">
-                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${isVisit ? "bg-blue-50" : "bg-indigo-50"}`}>
-                              <Calendar size={18} className={isVisit ? "text-blue-500" : "text-indigo-600"} />
+                            <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
+                              <Building2 size={18} className="text-indigo-600" />
                             </div>
                             <div>
                               <p className="font-semibold text-slate-900 text-sm">
@@ -946,13 +1052,8 @@ const AllBookings = () => {
                         </td>
                         <td className="px-6 py-4">
                           <div>
-                            <p className="font-medium text-slate-800 text-sm">
-                              {ownerName}
-                            </p>
-                            <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-0.5">
-                              <Phone size={12} className="text-indigo-400" />
-                              {booking.cabinId?.owner?.mobile || "N/A"}
-                            </div>
+                            <p className="font-medium text-slate-800 text-sm">{ownerName}</p>
+                            <p className="text-xs text-slate-400">{booking.cabinId?.owner?.mobile || "N/A"}</p>
                           </div>
                         </td>
                         <td className="px-6 py-4">
@@ -962,58 +1063,30 @@ const AllBookings = () => {
                             </div>
                             <div>
                               <p className="font-medium text-slate-900 text-sm">
-                                {userName}
+                                {booking.name || booking.userId?.name || "Unknown Guest"}
                               </p>
+                              <p className="text-xs text-slate-400">{booking.mobile || "No Mobile"}</p>
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="space-y-1.5">
-                            <div className="flex items-center gap-2 text-sm text-slate-600">
-                              <svg className="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
-                              </svg>
-                              {booking.userId?.mobile || booking.mobile || "No Mobile"}
-                            </div>
-                            {booking.email && (
-                              <div className="text-xs text-slate-400">{booking.email}</div>
-                            )}
+                          <div className="space-y-1">
+                            <p className="text-sm text-slate-900 font-medium">
+                              {booking.startDate} · {booking.startTime}
+                            </p>
+                            <p className="text-sm text-slate-500">
+                              {booking.endDate} · {booking.endTime}
+                            </p>
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="flex items-start gap-2">
-                            <Clock size={16} className="text-indigo-500 mt-0.5 flex-shrink-0" />
-                            <div className="space-y-1">
-                              <p className="text-sm text-slate-900 font-medium">
-                                {booking.startDate} · {booking.startTime}
-                              </p>
-                              {!isVisit && (
-                                <p className="text-sm text-slate-500">
-                                  {booking.endDate} · {booking.endTime}
-                                </p>
-                              )}
-                              {booking.isCheckedIn && (
-                                <p className="text-[8px] text-emerald-600 font-bold mt-0.5">
-                                  ⏱ Checked In
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          {isVisit ? (
-                            <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold">Visit</span>
-                          ) : (
-                            <div>
-                              <span className="inline-flex items-center px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-semibold">
-                                {booking.totalHours}h
-                              </span>
-                              {booking.remainingHours > 0 && (
-                                <span className="block text-[8px] text-emerald-600 font-bold">
-                                  {booking.remainingHours}h left
-                                </span>
-                              )}
-                            </div>
+                          <span className="inline-flex items-center px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-semibold">
+                            {booking.totalHours}h
+                          </span>
+                          {booking.remainingHours > 0 && (
+                            <span className="block text-[8px] text-emerald-600 font-bold">
+                              {booking.remainingHours}h left
+                            </span>
                           )}
                         </td>
                         <td className="px-6 py-4">
@@ -1022,14 +1095,12 @@ const AllBookings = () => {
                             {statusBadge.label}
                           </span>
                         </td>
-                        {/* Payment Method - Separate Column */}
                         <td className="px-6 py-4">
                           <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border ${paymentMethodBadge.color}`}>
                             {paymentMethodBadge.icon}
                             {paymentMethodBadge.label}
                           </span>
                         </td>
-                        {/* Payment Status - Separate Column */}
                         <td className="px-6 py-4">
                           <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border ${paymentStatusBadge.color}`}>
                             {paymentStatusBadge.icon}
@@ -1037,13 +1108,14 @@ const AllBookings = () => {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          {isVisit ? (
-                            <span className="font-bold text-emerald-600 text-sm">Free</span>
-                          ) : (
-                            <div className="flex items-center justify-end gap-1 text-indigo-600 font-bold text-lg">
-                              <IndianRupee size={18} />
-                              {booking.totalPrice?.toLocaleString("en-IN") || "0"}
-                            </div>
+                          <div className="flex items-center justify-end gap-1 text-indigo-600 font-bold text-lg">
+                            <IndianRupee size={18} />
+                            {booking.totalPrice?.toLocaleString("en-IN") || "0"}
+                          </div>
+                          {booking.subtotal && booking.gstAmount && (
+                            <p className="text-[8px] text-slate-400">
+                              Base: ₹{booking.subtotal} + GST: ₹{booking.gstAmount}
+                            </p>
                           )}
                         </td>
                         <td className="px-6 py-4">
@@ -1076,8 +1148,7 @@ const AllBookings = () => {
                               <Edit size={15} />
                             </button>
 
-                            {/* Payment Status Update - Only for counter payments with pending status */}
-                            {booking.paymentMethod === 'counter' && booking.paymentStatus === 'pending' && (
+                            {(booking.paymentMethod === 'cash' || booking.paymentMethod === 'counter') && booking.paymentStatus === 'pending' && (
                               <button
                                 onClick={() => {
                                   setPaymentBooking(booking);
@@ -1114,8 +1185,6 @@ const AllBookings = () => {
             {/* Mobile Card View */}
             <div className="md:hidden space-y-4">
               {filteredBookings.map((booking) => {
-                const isVisit = booking.bookingType === "visit";
-                const userName = booking.userId?.name || booking.name || "Unknown";
                 const statusBadge = getStatusBadge(booking.status);
                 const paymentMethodBadge = getPaymentMethodBadge(booking.paymentMethod);
                 const paymentStatusBadge = getPaymentStatusBadge(booking.paymentStatus);
@@ -1123,44 +1192,47 @@ const AllBookings = () => {
                 
                 return (
                   <div key={booking._id} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {isVisit ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold border border-blue-100">
-                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block"></span>
-                            Site Visit
+                    <div className="flex justify-between items-start">
+                      <div className="flex flex-col gap-1.5">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {booking.bookingBasis === "plan" ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 text-xs font-bold border border-purple-100">
+                              <span className="w-1.5 h-1.5 rounded-full bg-purple-500 inline-block"></span>
+                              Plan
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-100">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
+                              Hourly
+                            </span>
+                          )}
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border ${statusBadge.color}`}>
+                            {statusBadge.icon}
+                            {statusBadge.label}
                           </span>
-                        ) : booking.bookingBasis === "plan" ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 text-xs font-bold border border-purple-100">
-                            <span className="w-1.5 h-1.5 rounded-full bg-purple-500 inline-block"></span>
-                            Plan: {booking.selectedPlan?.label || "Subscription"}
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold border ${paymentMethodBadge.color}`}>
+                            {paymentMethodBadge.icon}
+                            {paymentMethodBadge.label}
                           </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-100">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
-                            Hourly Booking
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold border ${paymentStatusBadge.color}`}>
+                            {paymentStatusBadge.icon}
+                            {paymentStatusBadge.label}
                           </span>
-                        )}
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border ${statusBadge.color}`}>
-                          {statusBadge.icon}
-                          {statusBadge.label}
-                        </span>
+                        </div>
                       </div>
                       <div className="text-right">
-                        {isVisit ? (
-                          <span className="font-bold text-emerald-600 text-sm">Free</span>
-                        ) : (
-                          <div className="flex items-center gap-0.5 text-indigo-600 font-bold text-base">
-                            <IndianRupee size={14} />
-                            {booking.totalPrice?.toLocaleString("en-IN") || "0"}
-                          </div>
-                        )}
+                        <div className="flex items-center gap-0.5 text-indigo-600 font-bold text-base">
+                          <IndianRupee size={14} />
+                          {booking.totalPrice?.toLocaleString("en-IN") || "0"}
+                        </div>
                       </div>
                     </div>
 
                     <div className="flex items-start gap-3 border-t border-slate-100 pt-3">
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${isVisit ? "bg-blue-50" : "bg-indigo-50"}`}>
-                        <Calendar size={18} className={isVisit ? "text-blue-500" : "text-indigo-600"} />
+                      <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
+                        <Building2 size={18} className="text-indigo-600" />
                       </div>
                       <div>
                         <h4 className="font-semibold text-slate-900 text-sm">
@@ -1184,49 +1256,35 @@ const AllBookings = () => {
                           <p className="text-xs font-semibold">{booking.startDate}</p>
                           <p className="text-[11px] text-slate-500">{booking.startTime}</p>
                         </div>
-                        {!isVisit && (
-                          <div>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase">To</p>
-                            <p className="text-xs font-semibold">{booking.endDate}</p>
-                            <p className="text-[11px] text-slate-500">{booking.endTime}</p>
-                          </div>
-                        )}
+                        <div>
+                          <p className="text-[10px] text-slate-400 font-bold uppercase">To</p>
+                          <p className="text-xs font-semibold">{booking.endDate}</p>
+                          <p className="text-[11px] text-slate-500">{booking.endTime}</p>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Payment Info in Mobile */}
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold border ${paymentMethodBadge.color}`}>
-                        {paymentMethodBadge.icon}
-                        {paymentMethodBadge.label}
-                      </span>
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold border ${paymentStatusBadge.color}`}>
-                        {paymentStatusBadge.icon}
-                        {paymentStatusBadge.label}
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between items-center pt-3 border-t border-slate-100 text-xs">
+                    <div className="flex justify-between items-center pt-3 border-t border-slate-100">
                       <div className="flex items-center gap-2">
                         <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0">
                           <User size={12} className="text-slate-600" />
                         </div>
-                        <span className="font-medium text-slate-700">{userName}</span>
+                        <span className="font-medium text-slate-700 text-xs">{booking.name || 'N/A'}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <button
                           onClick={() => handleViewBooking(booking)}
-                          className="p-1 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors"
+                          className="p-1.5 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors"
                           title="View"
                         >
-                          <Eye size={12} />
+                          <Eye size={14} />
                         </button>
                         <button
                           onClick={() => downloadInvoice(booking)}
-                          className="p-1 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors"
+                          className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors"
                           title="Invoice"
                         >
-                          <FileDown size={12} />
+                          <FileDown size={14} />
                         </button>
                         <button
                           onClick={() => {
@@ -1234,25 +1292,23 @@ const AllBookings = () => {
                             setNewStatus(booking.status || 'pending');
                             setShowStatusModal(true);
                           }}
-                          className="p-1 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors"
+                          className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors"
                           title="Update"
                         >
-                          <Edit size={12} />
+                          <Edit size={14} />
                         </button>
                         <button
                           onClick={() => {
                             setDeleteBooking(booking);
                             setShowDeleteModal(true);
                           }}
-                          className="p-1 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                          className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
                           title="Delete"
                         >
-                          <Trash2 size={12} />
+                          <Trash2 size={14} />
                         </button>
                       </div>
                     </div>
-                    
-                    {/* Owner Info in Mobile */}
                     <div className="pt-2 border-t border-slate-100">
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-slate-400 font-medium">Owner</span>
@@ -1289,7 +1345,7 @@ const AllBookings = () => {
                   background: "rgba(255,255,255,0.2)",
                   display: "flex", alignItems: "center", justifyContent: "center"
                 }}>
-                  <Eye size={20} color="#fff" />
+                  <Receipt size={20} color="#fff" />
                 </div>
                 <div>
                   <h3 style={{ margin: 0, color: "#fff", fontSize: "1rem", fontWeight: 700 }}>
@@ -1315,9 +1371,8 @@ const AllBookings = () => {
 
             <div style={{ padding: "1.5rem" }}>
               <div className="space-y-4">
-                {/* Cabin Details */}
                 <div className="bg-slate-50 rounded-xl p-4">
-                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Cabin Details</p>
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Cabin</p>
                   <p className="font-semibold text-slate-800 mt-1">{viewBooking.cabinId?.name || 'Unknown'}</p>
                   <p className="text-sm text-slate-600 flex items-center gap-1 mt-0.5">
                     <MapPin size={14} />
@@ -1325,19 +1380,17 @@ const AllBookings = () => {
                   </p>
                 </div>
 
-                {/* Owner Details */}
-                <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-100">
-                  <p className="text-xs font-medium text-indigo-600 uppercase tracking-wider">👤 Owner</p>
-                  <p className="font-semibold text-slate-800 mt-1">
-                    {viewBooking.cabinId?.owner?.name || 'N/A'}
-                  </p>
-                  <p className="text-sm text-slate-600 flex items-center gap-1 mt-0.5">
-                    <Phone size={14} className="text-indigo-500" />
-                    {viewBooking.cabinId?.owner?.mobile || 'N/A'}
-                  </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-slate-50 rounded-xl p-4">
+                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Customer</p>
+                    <p className="font-semibold text-slate-800 mt-1">{viewBooking.name || viewBooking.userId?.name || 'N/A'}</p>
+                  </div>
+                  <div className="bg-slate-50 rounded-xl p-4">
+                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Mobile</p>
+                    <p className="font-semibold text-slate-800 mt-1">{viewBooking.mobile || viewBooking.userId?.mobile || 'N/A'}</p>
+                  </div>
                 </div>
 
-                {/* Payment Method & Status */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-orange-50 rounded-xl p-4 border border-orange-100">
                     <p className="text-xs font-medium text-orange-600 uppercase tracking-wider">Payment Method</p>
@@ -1361,42 +1414,74 @@ const AllBookings = () => {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-slate-50 rounded-xl p-4">
-                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Customer</p>
-                    <p className="font-semibold text-slate-800 mt-1">{viewBooking.name || viewBooking.userId?.name || 'N/A'}</p>
+                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Start</p>
+                    <p className="font-semibold text-slate-800 mt-1">{viewBooking.startDate} · {viewBooking.startTime}</p>
                   </div>
                   <div className="bg-slate-50 rounded-xl p-4">
-                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Mobile</p>
-                    <p className="font-semibold text-slate-800 mt-1">{viewBooking.mobile || viewBooking.userId?.mobile || 'N/A'}</p>
+                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">End</p>
+                    <p className="font-semibold text-slate-800 mt-1">{viewBooking.endDate} · {viewBooking.endTime}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-indigo-50 rounded-xl p-3 text-center">
+                    <p className="text-[8px] font-bold text-indigo-500 uppercase tracking-wider">Total</p>
+                    <p className="text-lg font-bold text-indigo-700">{viewBooking.totalHours}h</p>
+                  </div>
+                  <div className="bg-slate-50 rounded-xl p-3 text-center">
+                    <p className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Booking</p>
+                    <p className="text-lg font-bold text-slate-700">{viewBooking.bookingBasis === 'plan' ? 'Plan' : 'Hourly'}</p>
+                  </div>
+                  <div className="bg-emerald-50 rounded-xl p-3 text-center">
+                    <p className="text-[8px] font-bold text-emerald-500 uppercase tracking-wider">Amount</p>
+                    <p className="text-lg font-bold text-emerald-700">₹{viewBooking.totalPrice}</p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-slate-50 rounded-xl p-4">
-                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Start</p>
-                    <p className="font-semibold text-slate-800 mt-1">{viewBooking.startDate} · {viewBooking.startTime}</p>
+                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Subtotal</p>
+                    <p className="font-semibold text-slate-800 mt-1">₹{viewBooking.subtotal?.toFixed(2) || '0'}</p>
                   </div>
-                  {viewBooking.bookingType !== 'visit' && (
-                    <div className="bg-slate-50 rounded-xl p-4">
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">End</p>
-                      <p className="font-semibold text-slate-800 mt-1">{viewBooking.endDate} · {viewBooking.endTime}</p>
-                    </div>
-                  )}
+                  <div className="bg-slate-50 rounded-xl p-4">
+                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">GST (18%)</p>
+                    <p className="font-semibold text-slate-800 mt-1">₹{viewBooking.gstAmount?.toFixed(2) || '0'}</p>
+                  </div>
                 </div>
 
-                {/* Hours Info */}
-                {viewBooking.bookingType !== 'visit' && (
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="bg-indigo-50 rounded-xl p-3 text-center">
-                      <p className="text-[8px] font-bold text-indigo-500 uppercase tracking-wider">Total</p>
-                      <p className="text-lg font-bold text-indigo-700">{viewBooking.totalHours}h</p>
+                {/* Terms Accepted Display */}
+                <div className="bg-green-50 rounded-xl p-4 border border-green-100">
+                  <p className="text-xs font-medium text-green-600 uppercase tracking-wider flex items-center gap-1">
+                    <CheckCircle size={14} />
+                    Terms & Conditions
+                  </p>
+                  <p className="font-semibold text-green-700 mt-1">
+                    {viewBooking.termsAccepted ? '✅ Accepted' : '❌ Not Accepted'}
+                  </p>
+                </div>
+
+                {/* Visiting Timings Display */}
+                {viewBooking.visitingTimings && viewBooking.visitingTimings.length > 0 && (
+                  <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-medium text-blue-600 uppercase tracking-wider flex items-center gap-1">
+                        <Clock size={14} />
+                        Visit Log ({viewBooking.visitingTimings.length} entries)
+                      </p>
                     </div>
-                    <div className="bg-emerald-50 rounded-xl p-3 text-center">
-                      <p className="text-[8px] font-bold text-emerald-500 uppercase tracking-wider">Used</p>
-                      <p className="text-lg font-bold text-emerald-700">{viewBooking.hoursUsed || 0}h</p>
-                    </div>
-                    <div className={`rounded-xl p-3 text-center ${viewBooking.remainingHours > 0 ? 'bg-blue-50' : 'bg-red-50'}`}>
-                      <p className={`text-[8px] font-bold uppercase tracking-wider ${viewBooking.remainingHours > 0 ? 'text-blue-500' : 'text-red-500'}`}>Remaining</p>
-                      <p className={`text-lg font-bold ${viewBooking.remainingHours > 0 ? 'text-blue-700' : 'text-red-700'}`}>{viewBooking.remainingHours || 0}h</p>
+                    <div className="space-y-1.5">
+                      {viewBooking.visitingTimings.map((timing, idx) => (
+                        <div key={idx} className="flex items-center justify-between text-sm bg-white rounded-lg p-2 border border-blue-100">
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs font-bold text-blue-600">Day {idx + 1}</span>
+                            <span className="text-slate-600">{formatDate(timing.date)}</span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs font-medium text-emerald-600">IN: {timing.checkIn}</span>
+                            <span className="text-xs font-medium text-red-500">OUT: {timing.checkOut}</span>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -1410,36 +1495,12 @@ const AllBookings = () => {
                     </span>
                   </div>
                   <div className="bg-slate-50 rounded-xl p-4">
-                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Amount</p>
+                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Amount</p>
                     <p className="text-xl font-bold text-indigo-600 mt-1">
-                      {viewBooking.bookingType === 'visit' ? 'Free' : `₹${viewBooking.totalPrice?.toLocaleString('en-IN') || 0}`}
+                      ₹{viewBooking.totalPrice?.toLocaleString('en-IN') || 0}
                     </p>
                   </div>
                 </div>
-
-                {/* Check History */}
-                {viewBooking.checkHistory && viewBooking.checkHistory.length > 0 && (
-                  <div className="bg-slate-50 rounded-xl p-4">
-                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Check History</p>
-                    <div className="mt-2 space-y-1">
-                      {viewBooking.checkHistory.map((entry, idx) => (
-                        <div key={idx} className="flex items-center justify-between text-xs border-b border-slate-200 pb-1 last:border-0">
-                          <div className="flex items-center gap-2">
-                            {entry.type === 'in' ? (
-                              <span className="text-emerald-600 font-bold">IN</span>
-                            ) : (
-                              <span className="text-blue-600 font-bold">OUT</span>
-                            )}
-                            <span className="text-slate-600">{formatDate(entry.timestamp)} {formatTime(entry.timestamp)}</span>
-                          </div>
-                          <div className="text-slate-500">
-                            {entry.hoursUsed}h used · {entry.remainingHours}h left
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
                 {viewBooking.transactionId && (
                   <div className="bg-slate-50 rounded-xl p-4">
@@ -1867,9 +1928,7 @@ const AllBookings = () => {
         </div>
       )}
 
-      {/* ====================== */}
-      {/* PAYMENT STATUS UPDATE MODAL */}
-      {/* ====================== */}
+      {/* Payment Status Update Modal */}
       {showPaymentModal && paymentBooking && (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={(e) => {
           if (e.target === e.currentTarget) {

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { Building2, CheckCircle, Lock, Mail, MapPin, Phone, Upload, User } from "lucide-react";
+import { Building2, CheckCircle, FileText, Lock, Mail, MapPin, Phone, Upload, User, Briefcase, Clipboard, ArrowRight, Eye, EyeOff } from "lucide-react";
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -12,6 +12,8 @@ function Register() {
     mobile: "",
     address: "",
     organizationName: "",
+    gstNumber: "",
+    dmhoNumber: ""
   });
 
   const [files, setFiles] = useState({
@@ -23,6 +25,7 @@ function Register() {
   });
 
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -33,21 +36,24 @@ function Register() {
     setFiles({ ...files, [e.target.name]: e.target.files[0] });
   };
 
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     const data = new FormData();
-    data.append("role", "doctor"); // Default to doctor for document verification
+    data.append("role", "doctor");
     Object.keys(formData).forEach((key) => data.append(key, formData[key]));
 
-    // Add documents if provided (optional)
     Object.keys(files).forEach((key) => {
       if (files[key]) data.append(key, files[key]);
     });
 
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/register", data, {
+      const res = await axios.post("http://62.72.29.27:5003/api/auth/register", data, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -70,8 +76,8 @@ function Register() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl"></div>
       </div>
 
-      <div className="flex-grow flex items-center justify-center py-20 px-4 sm:px-6 lg:px-8 z-10 relative">
-        <div className="max-w-[1000px] w-full bg-white/95 backdrop-blur-xl p-8 sm:p-10 rounded-3xl shadow-2xl border border-white/20">
+      <div className="flex-grow flex items-center justify-center py-16 px-4 sm:px-6 lg:px-8 z-10 relative">
+        <div className="max-w-[1200px] w-full bg-white/95 backdrop-blur-xl p-8 sm:p-10 rounded-3xl shadow-2xl border border-white/20">
 
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-indigo-500 via-purple-500 to-cyan-500 rounded-2xl mb-4 shadow-lg shadow-indigo-500/30 transform hover:scale-105 transition-all duration-300">
@@ -82,11 +88,11 @@ function Register() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-              {/* Personal Information Section (Left Side) */}
+              {/* Personal Information Section */}
               <div className="space-y-6">
-                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 border-b border-slate-100 pb-3">
                   <User size={16} /> Personal Information
                 </h3>
 
@@ -107,14 +113,30 @@ function Register() {
                     value={formData.email}
                     onChange={handleChange}
                   />
-                  <InputField
-                    icon={<Lock size={18} />}
-                    name="password"
-                    type="password"
-                    placeholder="Password"
-                    value={formData.password}
-                    onChange={handleChange}
-                  />
+                  
+                  {/* Password Field with Toggle */}
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <Lock size={18} className="text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                    </div>
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      name="password"
+                      placeholder="Password"
+                      required
+                      value={formData.password}
+                      onChange={handleChange}
+                      className="block w-full pl-11 pr-12 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 hover:border-slate-300 transition-all shadow-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={togglePasswordVisibility}
+                      className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+
                   <InputField
                     icon={<Phone size={18} />}
                     name="mobile"
@@ -125,18 +147,28 @@ function Register() {
                   />
                   <div className="relative group">
                     <div className="absolute top-3.5 left-0 pl-4 flex items-center pointer-events-none">
-                      <MapPin size={18} className="text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
+                      <MapPin size={18} className="text-slate-400 group-focus-within:text-blue-500 transition-colors" />
                     </div>
                     <textarea
                       name="address"
                       placeholder="Address"
                       required
-                      rows="3"
-                      className="block w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 hover:border-slate-300 transition-all shadow-sm resize-none"
+                      rows="2"
+                      className="block w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 hover:border-slate-300 transition-all shadow-sm resize-none"
                       value={formData.address}
                       onChange={handleChange}
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* Organization & Registration Section */}
+              <div className="space-y-6">
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 border-b border-slate-100 pb-3">
+                  <Briefcase size={16} /> Organization Details
+                </h3>
+
+                <div className="space-y-4">
                   <InputField
                     icon={<Building2 size={18} />}
                     name="organizationName"
@@ -145,13 +177,45 @@ function Register() {
                     value={formData.organizationName}
                     onChange={handleChange}
                   />
+                  <InputField
+                    icon={<FileText size={18} />}
+                    name="gstNumber"
+                    type="text"
+                    placeholder="GST Number"
+                    value={formData.gstNumber}
+                    onChange={handleChange}
+                  />
+                  <InputField
+                    icon={<Clipboard size={18} />}
+                    name="dmhoNumber"
+                    type="text"
+                    placeholder="DMHO Registration Number"
+                    value={formData.dmhoNumber}
+                    onChange={handleChange}
+                  />
+                  
+                  {/* Info Cards */}
+                  <div className="bg-gradient-to-r from-emerald-50 to-blue-50 rounded-xl p-4 border border-emerald-100/50 mt-2">
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 mt-0.5">
+                        <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center">
+                          <span className="text-xs font-bold text-emerald-600">i</span>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-xs text-slate-600 leading-relaxed">
+                          <span className="font-semibold text-slate-700">Note:</span> GST and DMHO numbers are optional but recommended for complete verification.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Documentation Section (Right Side) */}
+              {/* Documentation Section */}
               <div className="space-y-6">
-                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <Upload size={16} /> Documents Verification (Optional)
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 border-b border-slate-100 pb-3">
+                  <Upload size={16} /> Documents (Optional)
                 </h3>
 
                 <div className="space-y-4">
@@ -165,28 +229,58 @@ function Register() {
 
             </div>
 
-            <div className="pt-6 border-t border-slate-100 text-center">
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full flex justify-center items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-blue-600 px-4 py-3.5 text-white font-semibold hover:from-emerald-600 hover:to-blue-700 transition-all duration-300 shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
-                    Registering...
-                  </>
-                ) : (
-                  "Create Account"
-                )}
-              </button>
+            <div className="pt-6 border-t border-slate-100">
+              {/* Clean Capsule Button with Blue to White Gradient */}
+              <div className="flex flex-col items-center gap-4">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="inline-flex items-center gap-2 px-10 py-3 bg-gradient-to-r from-blue-600 via-blue-500 to-white text-blue-900 font-semibold text-sm rounded-full shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-105 active:scale-95 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 border border-blue-400/30"
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-blue-700">Creating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-white">Create Account</span>
+                      <ArrowRight size={16} className="text-white" />
+                    </>
+                  )}
+                </button>
 
-              <p className="mt-8 text-slate-500 text-sm">
-                Already have an account?{" "}
-                <Link to="/login" className="font-semibold text-indigo-600 hover:text-indigo-700 hover:underline transition-colors">
-                  Sign In
-                </Link>
-              </p>
+                {/* Progress Steps */}
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] text-slate-400 font-medium">Personal</span>
+                  <div className="flex gap-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                    <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
+                    <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-medium">Organization</span>
+                  <div className="flex gap-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
+                    <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
+                    <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-medium">Documents</span>
+                </div>
+
+                {/* Footer */}
+                <div className="flex items-center gap-6 pt-2">
+                  <p className="text-sm text-slate-500">
+                    Already have an account?{" "}
+                    <Link to="/login" className="font-semibold text-blue-600 hover:text-blue-700 hover:underline transition-colors">
+                      Sign In
+                    </Link>
+                  </p>
+                  <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                    <Lock size={13} />
+                    <span>Secure</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
           </form>
@@ -200,13 +294,13 @@ const InputField = ({ icon, ...props }) => (
   <div className="relative group">
     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
       {React.cloneElement(icon, {
-        className: "text-slate-400 group-focus-within:text-emerald-500 transition-colors"
+        className: "text-slate-400 group-focus-within:text-blue-500 transition-colors"
       })}
     </div>
     <input
       {...props}
       required
-      className="block w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 hover:border-slate-300 transition-all shadow-sm"
+      className="block w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 hover:border-slate-300 transition-all shadow-sm"
     />
   </div>
 );
@@ -222,16 +316,16 @@ const FileInput = ({ label, name, file, onChange }) => (
         onChange={onChange}
         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
       />
-      <div className={`flex items-center justify-between pl-4 pr-3 py-3 bg-slate-50 border rounded-xl transition-all shadow-sm ${file ? "border-emerald-500/30 bg-emerald-50/20" : "border-slate-200 group-hover:border-slate-300"
+      <div className={`flex items-center justify-between pl-4 pr-3 py-3 bg-slate-50 border rounded-xl transition-all shadow-sm ${file ? "border-blue-500/30 bg-blue-50/20" : "border-slate-200 group-hover:border-slate-300"
         }`}>
         <div className="flex items-center gap-3 overflow-hidden">
-          {file ? <CheckCircle size={18} className="text-emerald-500 flex-shrink-0" /> : <Upload size={18} className="text-slate-400 flex-shrink-0" />}
+          {file ? <CheckCircle size={18} className="text-blue-500 flex-shrink-0" /> : <Upload size={18} className="text-slate-400 flex-shrink-0" />}
           <span className={`text-sm truncate ${file ? "text-slate-900 font-medium" : "text-slate-400"}`}>
-            {file ? file.name : "Choose file... (Optional)"}
+            {file ? file.name : "Choose file..."}
           </span>
         </div>
         {file && (
-          <span className="flex-shrink-0 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-lg border border-emerald-500/30">
+          <span className="flex-shrink-0 bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-lg border border-blue-500/30">
             Selected
           </span>
         )}

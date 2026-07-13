@@ -1,4 +1,4 @@
-// AllWithdrawals.jsx
+// AllWithdrawals.jsx - Complete with Organization & GST
 import axios from "axios";
 import {
   Wallet,
@@ -27,7 +27,10 @@ import {
   ArrowDownRight,
   Users,
   Banknote,
-  Loader
+  Loader,
+  Mail,
+  Building,
+  Receipt
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
@@ -35,7 +38,7 @@ import AdminNavbar from "./AdminNavbar";
 import * as XLSX from 'xlsx';
 import "./Dashboard.css";
 
-const API_URL = "http://localhost:5000";
+const API_URL = "http://62.72.29.27:5003";
 
 const AllWithdrawals = () => {
   const [withdrawals, setWithdrawals] = useState([]);
@@ -161,7 +164,6 @@ const AllWithdrawals = () => {
         const updatedWithdrawals = withdrawals.filter(w => w._id !== deleteWithdrawal._id);
         setWithdrawals(updatedWithdrawals);
         
-        // Update stats
         const newStats = {
           total: updatedWithdrawals.length,
           pending: updatedWithdrawals.filter(w => w.status === 'pending').length,
@@ -204,7 +206,6 @@ const AllWithdrawals = () => {
         );
         setWithdrawals(updatedWithdrawals);
         
-        // Update stats
         const newStats = {
           total: updatedWithdrawals.length,
           pending: updatedWithdrawals.filter(w => w.status === 'pending').length,
@@ -231,13 +232,23 @@ const AllWithdrawals = () => {
     }
   };
 
+  // ======================
+  // PROFESSIONAL WITHDRAWAL DETAILS - WITH ORGANIZATION & GST
+  // ======================
   const downloadWithdrawalDetails = (withdrawal) => {
     try {
       const ownerName = withdrawal.owner?.name || 'N/A';
       const ownerEmail = withdrawal.owner?.email || 'N/A';
       const ownerMobile = withdrawal.owner?.mobile || 'N/A';
+      const ownerAddress = withdrawal.owner?.address || 'N/A';
+      const ownerOrganization = withdrawal.ownerOrganization || 'N/A';
+      const ownerGst = withdrawal.ownerGst || 'N/A';
       const withdrawalId = withdrawal._id.slice(-8).toUpperCase();
-      const statusBadge = getStatusBadge(withdrawal.status);
+      const today = new Date().toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
 
       const detailsHTML = `
         <!DOCTYPE html>
@@ -248,167 +259,291 @@ const AllWithdrawals = () => {
           <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body {
-              font-family: 'Segoe UI', Arial, sans-serif;
-              background: #f0f2f5;
+              font-family: 'Times New Roman', 'Georgia', serif;
+              background: #ffffff;
               padding: 40px;
               display: flex;
               justify-content: center;
               min-height: 100vh;
+              color: #000000;
             }
             .container {
-              max-width: 700px;
+              max-width: 800px;
               width: 100%;
-              background: white;
-              border-radius: 16px;
-              box-shadow: 0 10px 40px rgba(0,0,0,0.08);
-              overflow: hidden;
+              background: #ffffff;
+              border: 2px solid #000000;
+              padding: 40px 45px;
             }
             .header {
-              background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-              padding: 30px 40px;
-              color: white;
               display: flex;
               justify-content: space-between;
-              align-items: center;
+              align-items: flex-start;
+              border-bottom: 3px double #000000;
+              padding-bottom: 20px;
+              margin-bottom: 25px;
             }
-            .header h1 { font-size: 28px; font-weight: 700; }
-            .header .sub { font-size: 14px; opacity: 0.8; }
-            .header .id {
-              background: rgba(255,255,255,0.2);
-              padding: 8px 16px;
-              border-radius: 8px;
+            .brand h1 {
+              font-size: 28px;
+              font-weight: 700;
+              letter-spacing: 2px;
+              text-transform: uppercase;
+              color: #1a56db;
+            }
+            .brand .gst {
+              font-size: 11px;
+              color: #666666;
+              margin-top: 2px;
+            }
+            .brand .address-line {
+              font-size: 11px;
+              color: #666666;
+              margin-top: 2px;
+            }
+            .brand .org-name {
               font-size: 14px;
               font-weight: 600;
+              color: #000000;
+              margin-top: 4px;
             }
-            .body { padding: 40px; }
-            .row {
-              display: flex;
-              justify-content: space-between;
-              padding: 12px 0;
-              border-bottom: 1px solid #f1f5f9;
+            .withdrawal-number {
+              text-align: right;
             }
-            .row:last-child { border-bottom: none; }
-            .label { color: #64748b; font-size: 14px; font-weight: 500; }
-            .value { color: #0f172a; font-size: 14px; font-weight: 600; }
-            .value.amount { font-size: 28px; color: #dc2626; }
-            .status-badge {
-              display: inline-block;
-              padding: 4px 14px;
-              border-radius: 20px;
+            .withdrawal-number .label {
+              font-size: 10px;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+              color: #666666;
+            }
+            .withdrawal-number .number {
+              font-size: 22px;
+              font-weight: 700;
+              color: #000000;
+              margin-top: 2px;
+            }
+            .withdrawal-number .date {
               font-size: 12px;
-              font-weight: 600;
+              color: #333333;
+              margin-top: 4px;
             }
-            .status-badge.pending { background: #fef3c7; color: #92400e; }
-            .status-badge.completed { background: #d1fae5; color: #065f46; }
-            .status-badge.failed { background: #fee2e2; color: #991b1b; }
-            .status-badge.rejected { background: #f1f5f9; color: #475569; }
-            .total-box {
+            .info-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 30px;
+              margin-bottom: 25px;
+              padding-bottom: 20px;
+              border-bottom: 1px solid #cccccc;
+            }
+            .info-group .title {
+              font-size: 10px;
+              font-weight: 700;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+              color: #666666;
+              margin-bottom: 6px;
+            }
+            .info-group .value {
+              font-size: 14px;
+              font-weight: 600;
+              color: #000000;
+              line-height: 1.6;
+            }
+            .info-group .value-small {
+              font-size: 12px;
+              font-weight: 400;
+              color: #333333;
+            }
+            .amount-box {
               background: #fef2f2;
-              border-radius: 12px;
-              padding: 20px 24px;
-              margin-top: 20px;
+              border: 2px solid #dc2626;
+              border-radius: 4px;
+              padding: 16px 20px;
+              margin: 15px 0;
               display: flex;
               justify-content: space-between;
               align-items: center;
-              border: 1px solid #fecaca;
             }
-            .total-box .label { color: #991b1b; font-size: 16px; font-weight: 600; }
-            .total-box .amount { font-size: 28px; font-weight: 700; color: #dc2626; }
+            .amount-box .label {
+              font-size: 14px;
+              font-weight: 600;
+              color: #991b1b;
+            }
+            .amount-box .amount {
+              font-size: 28px;
+              font-weight: 700;
+              color: #dc2626;
+            }
+            .details-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin: 15px 0;
+            }
+            .details-table thead {
+              border-top: 2px solid #000000;
+              border-bottom: 2px solid #000000;
+            }
+            .details-table thead th {
+              padding: 10px 12px;
+              text-align: left;
+              font-size: 9px;
+              font-weight: 700;
+              text-transform: uppercase;
+              letter-spacing: 0.06em;
+              color: #000000;
+            }
+            .details-table tbody td {
+              padding: 10px 12px;
+              font-size: 12px;
+              color: #000000;
+              border-bottom: 1px solid #eeeeee;
+            }
+            .badge {
+              display: inline-block;
+              padding: 2px 10px;
+              border-radius: 12px;
+              font-size: 10px;
+              font-weight: 600;
+            }
+            .badge.pending { background: #fef3c7; color: #92400e; }
+            .badge.completed { background: #d1fae5; color: #065f46; }
+            .badge.failed { background: #fee2e2; color: #991b1b; }
+            .badge.rejected { background: #f1f5f9; color: #475569; }
             .footer {
               text-align: center;
-              padding: 20px 40px;
-              border-top: 1px solid #f1f5f9;
-              color: #94a3b8;
-              font-size: 12px;
+              padding-top: 25px;
+              margin-top: 25px;
+              border-top: 2px solid #000000;
             }
-            .footer strong { color: #dc2626; }
+            .footer .powered {
+              font-size: 14px;
+              font-weight: 700;
+              letter-spacing: 2px;
+              color: #1a56db;
+            }
+            .footer .powered span {
+              color: #1a56db;
+            }
+            .footer .sub {
+              font-size: 10px;
+              color: #666666;
+              margin-top: 4px;
+            }
             .print-btn {
               position: fixed;
               bottom: 30px;
               right: 30px;
-              padding: 12px 24px;
-              background: #dc2626;
-              color: white;
+              padding: 14px 28px;
+              background: #000000;
+              color: #ffffff;
               border: none;
-              border-radius: 12px;
+              border-radius: 4px;
               font-weight: 600;
+              font-size: 13px;
               cursor: pointer;
-              box-shadow: 0 4px 14px rgba(220,38,38,0.4);
+              box-shadow: 0 4px 20px rgba(0,0,0,0.15);
               display: flex;
               align-items: center;
               gap: 10px;
+              font-family: 'Segoe UI', Arial, sans-serif;
+              letter-spacing: 0.5px;
             }
-            .print-btn:hover { background: #b91c1c; }
+            .print-btn:hover {
+              background: #222222;
+            }
             @media print {
-              body { background: white; padding: 0; }
-              .container { box-shadow: none; border-radius: 0; }
+              body { background: white; padding: 20px; }
+              .container { border: 1px solid #000000; padding: 30px; }
               .print-btn { display: none !important; }
-              .header { background: #dc2626 !important; -webkit-print-color-adjust: exact; }
-              .status-badge { -webkit-print-color-adjust: exact; }
+              .badge { -webkit-print-color-adjust: exact; }
+            }
+            @media (max-width: 640px) {
+              body { padding: 20px; }
+              .container { padding: 25px; }
+              .header { flex-direction: column; text-align: center; gap: 15px; }
+              .withdrawal-number { text-align: center; }
+              .info-grid { grid-template-columns: 1fr; gap: 15px; }
             }
           </style>
         </head>
         <body>
           <div class="container">
             <div class="header">
+              <div class="brand">
+                <h1>${ownerOrganization.toUpperCase()}</h1>
+                <div class="org-name">${ownerName}</div>
+                <div class="gst">GST: ${ownerGst}</div>
+                <div class="address-line">${ownerAddress}</div>
+              </div>
+              <div class="withdrawal-number">
+                <div class="label">Withdrawal</div>
+                <div class="number">#${withdrawalId}</div>
+                <div class="date">${today}</div>
+              </div>
+            </div>
+
+            <div class="info-grid">
               <div>
-                <h1>💳 WITHDRAWAL</h1>
-                <div class="sub">IRYAX Workspace • Withdrawal Details</div>
+                <div class="title">Account Holder</div>
+                <div class="value">${ownerName}</div>
+                <div class="value-small">${ownerEmail}</div>
+                <div class="value-small">${ownerMobile}</div>
               </div>
-              <div class="id">#${withdrawalId}</div>
-            </div>
-            <div class="body">
-              <div class="row">
-                <span class="label">Owner</span>
-                <span class="value">${ownerName}</span>
-              </div>
-              <div class="row">
-                <span class="label">Email</span>
-                <span class="value">${ownerEmail}</span>
-              </div>
-              <div class="row">
-                <span class="label">Mobile</span>
-                <span class="value">${ownerMobile}</span>
-              </div>
-              <div class="row">
-                <span class="label">Bank Name</span>
-                <span class="value">${withdrawal.bankName || 'N/A'}</span>
-              </div>
-              <div class="row">
-                <span class="label">Account Number</span>
-                <span class="value">${withdrawal.accountNumber || 'N/A'}</span>
-              </div>
-              <div class="row">
-                <span class="label">IFSC Code</span>
-                <span class="value">${withdrawal.ifscCode || 'N/A'}</span>
-              </div>
-              <div class="row">
-                <span class="label">Status</span>
-                <span class="value"><span class="status-badge ${withdrawal.status}">${withdrawal.status.toUpperCase()}</span></span>
-              </div>
-              <div class="row">
-                <span class="label">Description</span>
-                <span class="value">${withdrawal.description || 'N/A'}</span>
-              </div>
-              <div class="row">
-                <span class="label">Requested On</span>
-                <span class="value">${formatDate(withdrawal.createdAt)} ${formatTime(withdrawal.createdAt)}</span>
-              </div>
-              <div class="row">
-                <span class="label">Wallet Balance</span>
-                <span class="value">${formatCurrency(withdrawal.walletBalance || 0)}</span>
-              </div>
-              <div class="total-box">
-                <span class="label">Withdrawal Amount</span>
-                <span class="amount">${formatCurrency(withdrawal.amount)}</span>
+              <div>
+                <div class="title">Bank Details</div>
+                <div class="value">${withdrawal.bankName || 'N/A'}</div>
+                <div class="value-small">Account: ${withdrawal.accountNumber || 'N/A'}</div>
+                <div class="value-small">IFSC: ${withdrawal.ifscCode || 'N/A'}</div>
               </div>
             </div>
+
+            <div class="amount-box">
+              <span class="label">Withdrawal Amount</span>
+              <span class="amount">${formatCurrency(withdrawal.amount)}</span>
+            </div>
+
+            <table class="details-table">
+              <thead>
+                <tr>
+                  <th>Field</th>
+                  <th>Details</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Status</strong></td>
+                  <td><span class="badge ${withdrawal.status}">${withdrawal.status.toUpperCase()}</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Description</strong></td>
+                  <td>${withdrawal.description || 'N/A'}</td>
+                </tr>
+                <tr>
+                  <td><strong>Requested On</strong></td>
+                  <td>${formatDate(withdrawal.createdAt)} ${formatTime(withdrawal.createdAt)}</td>
+                </tr>
+                <tr>
+                  <td><strong>Wallet Balance</strong></td>
+                  <td>${formatCurrency(withdrawal.walletBalance || 0)}</td>
+                </tr>
+                <tr>
+                  <td><strong>Organization</strong></td>
+                  <td>${ownerOrganization}</td>
+                </tr>
+                <tr>
+                  <td><strong>GST Number</strong></td>
+                  <td>${ownerGst}</td>
+                </tr>
+              </tbody>
+            </table>
+
             <div class="footer">
-              Generated by <strong>IRYAX Workspace</strong> • System generated document
+              <div class="powered">POWERED BY <span>IRYAX SPACE</span></div>
+              <div class="sub">Thank you for choosing ${ownerOrganization}</div>
+              <div class="sub" style="margin-top:2px;">This is a system generated document</div>
             </div>
           </div>
+
           <button class="print-btn" onclick="window.print()">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="6 9 6 2 18 2 18 9"/>
               <path d="M18 9H6"/>
               <path d="M18 13v6H6v-6"/>
@@ -421,7 +556,7 @@ const AllWithdrawals = () => {
         </html>
       `;
 
-      const win = window.open('', '_blank', 'width=800,height=600');
+      const win = window.open('', '_blank', 'width=900,height=700');
       if (win) {
         win.document.write(detailsHTML);
         win.document.close();
@@ -432,7 +567,7 @@ const AllWithdrawals = () => {
       }
     } catch (error) {
       console.error('Download error:', error);
-      toast.error('Failed to generate document');
+      toast.error('Failed to generate document: ' + error.message);
     }
   };
 
@@ -446,6 +581,8 @@ const AllWithdrawals = () => {
       const exportData = filteredWithdrawals.map((w, index) => ({
         'S.No': index + 1,
         'Owner Name': w.owner?.name || 'N/A',
+        'Organization': w.ownerOrganization || 'N/A',
+        'GST Number': w.ownerGst || 'N/A',
         'Email': w.owner?.email || 'N/A',
         'Mobile': w.owner?.mobile || 'N/A',
         'Amount': w.amount || 0,
@@ -460,9 +597,10 @@ const AllWithdrawals = () => {
 
       const ws = XLSX.utils.json_to_sheet(exportData);
       ws['!cols'] = [
-        { wch: 6 }, { wch: 20 }, { wch: 25 }, { wch: 15 },
-        { wch: 12 }, { wch: 12 }, { wch: 20 }, { wch: 15 },
-        { wch: 12 }, { wch: 30 }, { wch: 15 }, { wch: 12 }
+        { wch: 6 }, { wch: 20 }, { wch: 20 }, { wch: 15 },
+        { wch: 25 }, { wch: 15 }, { wch: 12 }, { wch: 12 },
+        { wch: 20 }, { wch: 15 }, { wch: 12 }, { wch: 30 },
+        { wch: 15 }, { wch: 12 }
       ];
 
       const wb = XLSX.utils.book_new();
@@ -481,12 +619,14 @@ const AllWithdrawals = () => {
   const filteredWithdrawals = withdrawals.filter((w) => {
     const ownerName = w.owner?.name?.toLowerCase() || "";
     const ownerEmail = w.owner?.email?.toLowerCase() || "";
+    const ownerOrganization = w.ownerOrganization?.toLowerCase() || "";
     const bankName = w.bankName?.toLowerCase() || "";
     const accountNumber = w.accountNumber || "";
     
     const matchesSearch =
       ownerName.includes(searchTerm.toLowerCase()) ||
       ownerEmail.includes(searchTerm.toLowerCase()) ||
+      ownerOrganization.includes(searchTerm.toLowerCase()) ||
       bankName.includes(searchTerm.toLowerCase()) ||
       accountNumber.includes(searchTerm);
     
@@ -527,7 +667,7 @@ const AllWithdrawals = () => {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
               <input
                 type="text"
-                placeholder="Search by owner, bank, account..."
+                placeholder="Search by owner, organization, bank..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all w-full sm:w-64"
@@ -637,6 +777,7 @@ const AllWithdrawals = () => {
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200">
                     <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Owner</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Organization</th>
                     <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Bank Details</th>
                     <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Amount</th>
                     <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
@@ -648,6 +789,7 @@ const AllWithdrawals = () => {
                   {filteredWithdrawals.map((withdrawal) => {
                     const statusBadge = getStatusBadge(withdrawal.status);
                     const ownerName = withdrawal.owner?.name || 'N/A';
+                    const ownerOrganization = withdrawal.ownerOrganization || 'N/A';
                     const ownerMobile = withdrawal.owner?.mobile || 'N/A';
                     
                     return (
@@ -661,6 +803,16 @@ const AllWithdrawals = () => {
                               <Phone size={12} className="text-indigo-400" />
                               {ownerMobile}
                             </div>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div>
+                            <p className="font-medium text-indigo-600 text-sm">
+                              {ownerOrganization}
+                            </p>
+                            {withdrawal.ownerGst && withdrawal.ownerGst !== 'N/A' && (
+                              <p className="text-xs text-slate-400">GST: {withdrawal.ownerGst}</p>
+                            )}
                           </div>
                         </td>
                         <td className="py-3 px-4">
@@ -773,7 +925,7 @@ const AllWithdrawals = () => {
                   background: "rgba(255,255,255,0.2)",
                   display: "flex", alignItems: "center", justifyContent: "center"
                 }}>
-                  <Banknote size={20} color="#fff" />
+                  <Receipt size={20} color="#fff" />
                 </div>
                 <div>
                   <h3 style={{ margin: 0, color: "#fff", fontSize: "1rem", fontWeight: 700 }}>
@@ -805,13 +957,27 @@ const AllWithdrawals = () => {
                   <p className="font-semibold text-slate-800 mt-1">
                     {selectedWithdrawal.owner?.name || 'N/A'}
                   </p>
-                  <div className="flex items-center gap-4 text-sm text-slate-600 mt-1">
-                    <span>{selectedWithdrawal.owner?.email || 'N/A'}</span>
+                  {selectedWithdrawal.ownerOrganization && selectedWithdrawal.ownerOrganization !== 'N/A' && (
+                    <p className="text-sm text-indigo-600 font-medium mt-1">
+                      🏢 {selectedWithdrawal.ownerOrganization}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-4 text-sm text-slate-600 mt-1 flex-wrap">
+                    <span className="flex items-center gap-1">
+                      <Mail size={12} />
+                      {selectedWithdrawal.owner?.email || 'N/A'}
+                    </span>
                     <span>•</span>
                     <span className="flex items-center gap-1">
                       <Phone size={12} />
                       {selectedWithdrawal.owner?.mobile || 'N/A'}
                     </span>
+                    {selectedWithdrawal.ownerGst && selectedWithdrawal.ownerGst !== 'N/A' && (
+                      <>
+                        <span>•</span>
+                        <span className="text-xs text-slate-500">GST: {selectedWithdrawal.ownerGst}</span>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -821,7 +987,7 @@ const AllWithdrawals = () => {
                   <p className="font-semibold text-slate-800 mt-1">
                     {selectedWithdrawal.bankName || 'N/A'}
                   </p>
-                  <div className="flex items-center gap-4 text-sm text-slate-600 mt-1">
+                  <div className="flex items-center gap-4 text-sm text-slate-600 mt-1 flex-wrap">
                     <span>Ac: {selectedWithdrawal.accountNumber || 'N/A'}</span>
                     <span>•</span>
                     <span className="font-mono">IFSC: {selectedWithdrawal.ifscCode || 'N/A'}</span>

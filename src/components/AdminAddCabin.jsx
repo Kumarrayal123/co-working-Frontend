@@ -139,9 +139,9 @@ function AdminAddCabin() {
       }
 
       // Target Coworking Backend (Port 5050)
-      console.log("Submitting to: http://localhost:5000/api/cabins");
+      console.log("Submitting to: http://62.72.29.27:5003/api/cabins");
 
-      await axios.post("http://localhost:5000/api/cabins", data, {
+      await axios.post("http://62.72.29.27:5003/api/cabins", data, {
         headers: {
           Authorization: `Bearer ${token}`,
           // Content-Type is incorrectly set manually in some versions, ensuring it is NOT set here so axios handles multipart/form-data boundary

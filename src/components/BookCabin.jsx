@@ -1,4 +1,4 @@
-// BookCabin.jsx - Updated with Pay on Counter option (Frontend only)
+// BookCabin.jsx - Complete with Razorpay key + Toggle Terms
 import axios from "axios";
 import {
   ArrowLeft,
@@ -9,8 +9,13 @@ import {
   Users,
   CreditCard,
   ShieldCheck,
-  Store,
-  CheckCircle
+  CheckCircle,
+  IndianRupee,
+  Receipt,
+  FileText,
+  X,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -19,10 +24,12 @@ import UsersNavbar from "./UsersNavbar";
 import AdminNavbar from "./AdminNavbar";
 import "./Dashboard.css";
 
-const API_URL = "http://localhost:5000";
+const API_URL = "http://62.72.29.27:5003";
 const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
+const GST_RATE = 0.18;
 
-// Load Razorpay script
+const RAZORPAY_KEY = "rzp_test_BxtRNvflG06PTV";
+
 const loadRazorpayScript = () => {
   return new Promise((resolve) => {
     const script = document.createElement('script');
@@ -52,7 +59,13 @@ const BookCabin = () => {
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState("online");
 
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
+  const [termsExpanded, setTermsExpanded] = useState(true); // Default expanded
+
   const [totalHours, setTotalHours] = useState(0);
+  const [subtotal, setSubtotal] = useState(0);
+  const [gstAmount, setGstAmount] = useState(0);
   const [totalPrice, setTotalPrice] = useState(0);
   const [availabilityError, setAvailabilityError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -70,7 +83,6 @@ const BookCabin = () => {
     return { headers: { Authorization: `Bearer ${token}` } };
   };
 
-  // FETCH DATA
   useEffect(() => {
     window.scrollTo(0, 0);
     const fetchData = async () => {
@@ -90,8 +102,20 @@ const BookCabin = () => {
     fetchData();
   }, [id]);
 
-  // PRICE CALC
   useEffect(() => {
+    if (startDate && startTime && totalPrice > 0) {
+      setShowTerms(true);
+      setTermsExpanded(true); // Auto expand when terms appear
+    } else {
+      setShowTerms(false);
+      setTermsAccepted(false);
+    }
+  }, [startDate, startTime, totalPrice]);
+
+  useEffect(() => {
+    let hours = 0;
+    let price = 0;
+
     if (bookingBasis === "hourly") {
       if (startDate && startTime && endDate && endTime) {
         const start = new Date(`${startDate}T${startTime}`);
@@ -99,19 +123,23 @@ const BookCabin = () => {
 
         if (end <= start) {
           setTotalHours(0);
+          setSubtotal(0);
+          setGstAmount(0);
           setTotalPrice(0);
           return;
         }
 
-        const hours = Math.ceil((end - start) / (1000 * 60 * 60));
+        hours = Math.ceil((end - start) / (1000 * 60 * 60));
+        price = hours * (cabin?.price || 0);
         setTotalHours(hours);
-        setTotalPrice(hours * (cabin?.price || 0));
-        setAvailabilityError("");
+        setSubtotal(price);
       }
     } else {
       if (selectedPlan) {
-        setTotalHours(Number(selectedPlan.hours) || 0);
-        setTotalPrice(Number(selectedPlan.cost) || 0);
+        hours = Number(selectedPlan.hours) || 0;
+        price = Number(selectedPlan.cost) || 0;
+        setTotalHours(hours);
+        setSubtotal(price);
         
         if (startDate && startTime) {
           const start = new Date(`${startDate}T${startTime}`);
@@ -122,73 +150,27 @@ const BookCabin = () => {
         }
       } else {
         setTotalHours(0);
+        setSubtotal(0);
+        setGstAmount(0);
         setTotalPrice(0);
       }
     }
+
+    const gst = price * GST_RATE;
+    const total = price + gst;
+    setGstAmount(gst);
+    setTotalPrice(total);
+    setAvailabilityError("");
   }, [startDate, startTime, endDate, endTime, bookingBasis, selectedPlan, cabin]);
 
-  // BOOK WITH PAY ON COUNTER
-const handleCounterBooking = async (e) => {
-  e.preventDefault();
-  setLoading(true);
-
-  if (totalPrice <= 0) {
-    toast.error("Please select valid date/time or plan");
-    setLoading(false);
-    return;
-  }
-
-  const userStr = localStorage.getItem("user");
-  const adminStr = localStorage.getItem("admin");
-  let currentUser = null;
-  if (userStr) currentUser = JSON.parse(userStr);
-  else if (adminStr) currentUser = JSON.parse(adminStr);
-
-  const userId = currentUser?._id || currentUser?.id;
-
-  if (!userId) {
-    toast.error("Please log in to book a cabin.");
-    navigate("/login");
-    setLoading(false);
-    return;
-  }
-
-  try {
-    const bookingData = {
-      cabinId: id,
-      name,
-      mobile,
-      email: currentUser?.email || "",
-      startDate,
-      startTime,
-      endDate,
-      endTime,
-      bookingBasis,
-      selectedPlan,
-      paymentMethod: "counter" // ✅ Send payment method
-    };
-
-    const res = await axios.post(
-      `${API_URL}/api/bookings/createbooking/${userId}`,
-      bookingData,
-      getAuthHeader()
-    );
-
-    if (res.data.success) {
-      toast.success("Booking confirmed! Please pay at the counter.");
-      navigate("/mybookings");
-    }
-  } catch (err) {
-    const errorMsg = err.response?.data?.error || "Booking failed. Please try again.";
-    setAvailabilityError(errorMsg);
-    toast.error(errorMsg);
-  } finally {
-    setLoading(false);
-  }
-};
-  // BOOK WITH RAZORPAY PAYMENT
-  const handleOnlineBooking = async (e) => {
+  const handleCashBooking = async (e) => {
     e.preventDefault();
+    
+    if (!termsAccepted) {
+      toast.error("Please accept Terms & Conditions to proceed");
+      return;
+    }
+
     setLoading(true);
 
     if (totalPrice <= 0) {
@@ -224,7 +206,81 @@ const handleCounterBooking = async (e) => {
         endTime,
         bookingBasis,
         selectedPlan,
-        paymentMethod: "online"
+        paymentMethod: "cash",
+        subtotal: subtotal,
+        gstAmount: gstAmount,
+        totalAmount: totalPrice,
+        termsAccepted: true
+      };
+
+      const res = await axios.post(
+        `${API_URL}/api/bookings/createbooking/${userId}`,
+        bookingData,
+        getAuthHeader()
+      );
+
+      if (res.data.success) {
+        toast.success(`Booking confirmed! Total: ₹${totalPrice.toFixed(2)} (incl. GST ₹${gstAmount.toFixed(2)})`);
+        toast.info("Please pay cash at the counter.");
+        navigate("/mybookings");
+      }
+    } catch (err) {
+      const errorMsg = err.response?.data?.error || "Booking failed. Please try again.";
+      setAvailabilityError(errorMsg);
+      toast.error(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOnlineBooking = async (e) => {
+    e.preventDefault();
+    
+    if (!termsAccepted) {
+      toast.error("Please accept Terms & Conditions to proceed");
+      return;
+    }
+
+    setLoading(true);
+
+    if (totalPrice <= 0) {
+      toast.error("Please select valid date/time or plan");
+      setLoading(false);
+      return;
+    }
+
+    const userStr = localStorage.getItem("user");
+    const adminStr = localStorage.getItem("admin");
+    let currentUser = null;
+    if (userStr) currentUser = JSON.parse(userStr);
+    else if (adminStr) currentUser = JSON.parse(adminStr);
+
+    const userId = currentUser?._id || currentUser?.id;
+
+    if (!userId) {
+      toast.error("Please log in to book a cabin.");
+      navigate("/login");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const bookingData = {
+        cabinId: id,
+        name,
+        mobile,
+        email: currentUser?.email || "",
+        startDate,
+        startTime,
+        endDate,
+        endTime,
+        bookingBasis,
+        selectedPlan,
+        paymentMethod: "online",
+        subtotal: subtotal,
+        gstAmount: gstAmount,
+        totalAmount: totalPrice,
+        termsAccepted: true
       };
 
       const res = await axios.post(
@@ -245,7 +301,7 @@ const handleCounterBooking = async (e) => {
 
         setPaymentProcessing(true);
         const options = {
-          key: razorpay.key,
+          key: RAZORPAY_KEY,
           amount: razorpay.amount,
           currency: razorpay.currency,
           name: "IRYAX Workspace",
@@ -316,8 +372,12 @@ const handleCounterBooking = async (e) => {
     if (paymentMethod === "online") {
       handleOnlineBooking(e);
     } else {
-      handleCounterBooking(e);
+      handleCashBooking(e);
     }
+  };
+
+  const toggleTerms = () => {
+    setTermsExpanded(!termsExpanded);
   };
 
   if (!cabin) {
@@ -345,7 +405,6 @@ const handleCounterBooking = async (e) => {
         </button>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10">
-          {/* Left Summary */}
           <div className="lg:col-span-5">
             <div className="admin-dash__card p-6 sticky top-28">
               <div className="h-48 sm:h-60 rounded-2xl overflow-hidden mb-6 relative group">
@@ -401,10 +460,8 @@ const handleCounterBooking = async (e) => {
             </div>
           </div>
 
-          {/* Right Form */}
           <div className="lg:col-span-7 space-y-6">
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* User */}
               <div className="admin-dash__card p-6 sm:p-8">
                 <div className="flex items-center gap-3 mb-6 sm:mb-8">
                   <div className="p-2.5 bg-indigo-600 rounded-xl text-white shadow-lg">
@@ -446,7 +503,6 @@ const handleCounterBooking = async (e) => {
                 </div>
               </div>
 
-              {/* Payment Method Selection */}
               <div className="admin-dash__card p-4 sm:p-5 bg-white shadow-sm border border-slate-100 rounded-2xl">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 block ml-1">
                   Payment Method
@@ -466,26 +522,25 @@ const handleCounterBooking = async (e) => {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setPaymentMethod("counter")}
+                    onClick={() => setPaymentMethod("cash")}
                     className={`flex items-center justify-center gap-3 py-3.5 px-4 rounded-xl font-bold text-sm uppercase tracking-wider transition-all border ${
-                      paymentMethod === "counter"
+                      paymentMethod === "cash"
                         ? "bg-emerald-600 border-emerald-600 text-white shadow-md shadow-emerald-500/20"
                         : "border-slate-200 text-slate-600 hover:bg-slate-50 bg-white"
                     }`}
                   >
-                    <Store size={18} />
-                    Pay at Counter
+                    <IndianRupee size={18} />
+                    Pay Cash
                   </button>
                 </div>
-                {paymentMethod === "counter" && (
+                {paymentMethod === "cash" && (
                   <div className="mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2 text-emerald-700 text-sm font-medium">
                     <CheckCircle size={16} />
-                    Booking confirmed immediately. Pay at the counter when you arrive.
+                    Booking confirmed immediately. Pay cash at the counter when you arrive.
                   </div>
                 )}
               </div>
 
-              {/* Hourly / Plan Toggles */}
               {cabin.pricingPlans && cabin.pricingPlans.length > 0 && (
                 <div className="admin-dash__card p-4 sm:p-5 flex gap-4 bg-white shadow-sm border border-slate-100 rounded-2xl">
                   <button
@@ -519,7 +574,6 @@ const handleCounterBooking = async (e) => {
                 </div>
               )}
 
-              {/* Plan Selector */}
               {bookingBasis === "plan" && cabin.pricingPlans && cabin.pricingPlans.length > 0 && (
                 <div className="admin-dash__card p-6 sm:p-8 bg-white shadow-sm border border-slate-100 rounded-2xl">
                   <h3 className="text-xs font-bold uppercase text-slate-500 tracking-wider mb-4 ml-1">
@@ -555,7 +609,6 @@ const handleCounterBooking = async (e) => {
                 </div>
               )}
 
-              {/* Schedule */}
               <div className="admin-dash__card p-6 sm:p-8">
                 <div className="flex items-center gap-3 mb-6 sm:mb-8">
                   <div className="p-2.5 bg-indigo-600 rounded-xl text-white shadow-lg">
@@ -621,23 +674,107 @@ const handleCounterBooking = async (e) => {
                 </div>
               </div>
 
-              {/* Price Overview */}
-              {totalHours > 0 && (
-                <div className={`rounded-2xl p-6 sm:p-8 shadow-2xl flex items-center justify-between ${
+              {/* ─── TOGGLE TERMS & CONDITIONS ─── */}
+              {showTerms && (
+                <div className="admin-dash__card p-6 sm:p-8 bg-white border border-slate-200 rounded-2xl animate-in fade-in slide-in-from-top duration-300">
+                  <div 
+                    className="flex items-center justify-between cursor-pointer"
+                    onClick={toggleTerms}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-indigo-50 rounded-xl text-indigo-600 shrink-0">
+                        <FileText size={18} />
+                      </div>
+                      <h4 className="text-sm font-semibold text-slate-900">Terms & Conditions</h4>
+                    </div>
+                    <button
+                      type="button"
+                      className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors text-slate-500"
+                    >
+                      {termsExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                    </button>
+                  </div>
+
+                  {/* ─── TERMS CONTENT - Toggleable ─── */}
+                  <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                    termsExpanded ? 'max-h-[800px] opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0'
+                  }`}>
+                    <div className="space-y-3 text-sm text-slate-600">
+                      <div className="pl-3 border-l-2 border-indigo-400">
+                        <p className="font-medium text-slate-700">1. Booking Confirmation</p>
+                        <p className="text-slate-500 text-xs mt-0.5">Your booking becomes active immediately upon successful payment or cash confirmation at the counter.</p>
+                      </div>
+
+                      <div className="pl-3 border-l-2 border-amber-400">
+                        <p className="font-medium text-slate-700">2. Booking Replacement / Reschedule</p>
+                        <p className="text-slate-500 text-xs mt-0.5">
+                          You may replace or reschedule your booking within 24 hours of the scheduled start time, subject to availability of another cabin under the same owner.
+                        </p>
+                        <p className="text-slate-500 text-xs mt-1">
+                          <span className="font-medium text-slate-700">Price Adjustment:</span> If the replacement cabin has a higher price, you will need to pay the remaining amount difference. If the replacement cabin has a lower price, the difference will be refunded to your account.
+                        </p>
+                      </div>
+
+                      <div className="pl-3 border-l-2 border-emerald-400">
+                        <p className="font-medium text-slate-700">3. Refund Policy — Single Day Booking</p>
+                        <p className="text-slate-500 text-xs mt-0.5">
+                          For bookings of 1 day or less, cancellations made within 24 hours of booking confirmation are eligible for a full refund, minus applicable payment gateway charges.
+                        </p>
+                      </div>
+
+                      <div className="pl-3 border-l-2 border-rose-400">
+                        <p className="font-medium text-slate-700">4. Refund Policy — Multi-Day Booking</p>
+                        <p className="text-slate-500 text-xs mt-0.5">
+                          For bookings exceeding 1 day, cancellations will receive a 50% refund of the total booking amount. No refunds are applicable for no-shows or late cancellations.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-slate-200">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="termsCheckbox"
+                          checked={termsAccepted}
+                          onChange={(e) => setTermsAccepted(e.target.checked)}
+                          className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                        />
+                        <label htmlFor="termsCheckbox" className="text-xs font-medium text-slate-700 cursor-pointer">
+                          I have read and accept the Terms & Conditions
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {totalPrice > 0 && (
+                <div className={`rounded-2xl p-6 sm:p-8 shadow-2xl ${
                   paymentMethod === "online" 
                     ? "bg-gradient-to-r from-indigo-600 to-purple-600 shadow-indigo-500/30 text-white"
                     : "bg-gradient-to-r from-emerald-600 to-teal-600 shadow-emerald-500/30 text-white"
                 }`}>
-                  <div>
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70 block mb-2">Total Amount</span>
-                    <div className="text-3xl sm:text-4xl font-black tracking-tighter">
-                      ₹{totalPrice.toLocaleString("en-IN")}
-                    </div>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70">Price Breakdown</span>
+                    <Receipt size={18} className="text-white/60" />
                   </div>
-                  <div className="text-right">
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70 block mb-2">Duration</span>
-                    <div className="text-lg sm:text-xl font-black text-white/90 uppercase tracking-tight">
-                      {totalHours} HOURS
+                  
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between items-center text-white/80">
+                      <span>Subtotal ({totalHours} hours)</span>
+                      <span className="font-semibold">₹{subtotal.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-white/80">
+                      <span>GST (18%)</span>
+                      <span className="font-semibold">₹{gstAmount.toFixed(2)}</span>
+                    </div>
+                    <div className="border-t border-white/20 pt-2 mt-2">
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-white/90">Total Amount</span>
+                        <div className="text-2xl sm:text-3xl font-black tracking-tighter">
+                          ₹{totalPrice.toFixed(2)}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -652,9 +789,9 @@ const handleCounterBooking = async (e) => {
 
               <button
                 type="submit"
-                disabled={loading || paymentProcessing || totalPrice <= 0}
+                disabled={loading || paymentProcessing || totalPrice <= 0 || (showTerms && !termsAccepted)}
                 className={`w-full py-4 rounded-xl font-bold text-sm uppercase tracking-[0.1em] flex justify-center items-center gap-3 transition-all shadow-lg active:scale-[0.98] ${
-                  loading || paymentProcessing || totalPrice <= 0
+                  loading || paymentProcessing || totalPrice <= 0 || (showTerms && !termsAccepted)
                     ? "bg-slate-100 text-slate-300 cursor-not-allowed"
                     : paymentMethod === "online"
                       ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-indigo-500/20"
@@ -668,18 +805,23 @@ const handleCounterBooking = async (e) => {
                   </>
                 ) : loading ? (
                   "Synchronizing…"
+                ) : (showTerms && !termsAccepted) ? (
+                  <>
+                    <FileText size={18} />
+                    Accept Terms First
+                  </>
                 ) : paymentMethod === "online" ? (
                   <>
                     <CreditCard size={18} />
-                    Pay ₹{totalPrice.toLocaleString("en-IN")} & Book
+                    Pay ₹{totalPrice.toFixed(2)} & Book
                   </>
                 ) : (
                   <>
-                    <Store size={18} />
-                    Confirm & Pay at Counter
+                    <IndianRupee size={18} />
+                    Pay Cash ₹{totalPrice.toFixed(2)}
                   </>
                 )}
-                {!loading && !paymentProcessing && <ArrowRight size={18} />}
+                {!loading && !paymentProcessing && termsAccepted && <ArrowRight size={18} />}
               </button>
 
               {paymentMethod === "online" ? (
@@ -689,15 +831,14 @@ const handleCounterBooking = async (e) => {
                 </div>
               ) : (
                 <div className="text-center text-xs text-slate-400 flex items-center justify-center gap-2">
-                  <Store size={14} className="text-emerald-500" />
-                  Pay at the counter when you arrive
+                  <IndianRupee size={14} className="text-emerald-500" />
+                  Pay cash at the counter when you arrive
                 </div>
               )}
             </form>
           </div>
         </div>
 
-        {/* Related */}
         {relatedCabins.length > 0 && (
           <div className="mt-16 border-t border-slate-200 pt-12">
             <h2 className="text-xl sm:text-2xl font-bold uppercase text-slate-900 mb-6 sm:mb-8 tracking-tight">

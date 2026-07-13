@@ -1,4 +1,4 @@
-// MyCabin.jsx
+// MyCabin.jsx - Fully Responsive with Fixed Status Display
 import axios from "axios";
 import {
   Building2,
@@ -19,7 +19,26 @@ import {
   Clock,
   AlertCircle,
   Check,
-  Loader2
+  Loader2,
+  Star,
+  Crown,
+  Wifi,
+  ParkingCircle,
+  Lock,
+  Bath,
+  Shield,
+  Armchair,
+  Coffee,
+  Dumbbell,
+  Fan,
+  Tv,
+  Printer,
+  Phone,
+  Clipboard,
+  Receipt,
+  Percent,
+  Menu,
+  ArrowLeft
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -38,8 +57,33 @@ const loadRazorpayScript = () => {
   });
 };
 
-const API_URL = "http://localhost:5000";
+const API_URL = "http://62.72.29.27:5003";
 const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
+const GST_RATE = 0.18;
+
+// Normal Amenities
+const NORMAL_AMENITIES = [
+  { key: "wifi", label: "Wi-Fi", emoji: "📶", icon: Wifi },
+  { key: "parking", label: "Parking", emoji: "🅿️", icon: ParkingCircle },
+  { key: "lockers", label: "Lockers", emoji: "🔐", icon: Lock },
+  { key: "comfortSeating", label: "Comfort Seating", emoji: "🪑", icon: Armchair },
+];
+
+// Exclusive Amenities
+const EXCLUSIVE_AMENITIES = [
+  { key: "wifi", label: "High-Speed Wi-Fi", emoji: "📶", icon: Wifi },
+  { key: "parking", label: "Reserved Parking", emoji: "🅿️", icon: ParkingCircle },
+  { key: "lockers", label: "Secure Lockers", emoji: "🔐", icon: Lock },
+  { key: "privateWashroom", label: "Private Washroom", emoji: "🚿", icon: Bath },
+  { key: "secureAccess", label: "24/7 Secure Access", emoji: "🛡️", icon: Shield },
+  { key: "comfortSeating", label: "Premium Seating", emoji: "🪑", icon: Armchair },
+  { key: "coffee", label: "Coffee & Tea", emoji: "☕", icon: Coffee },
+  { key: "gym", label: "Gym Access", emoji: "💪", icon: Dumbbell },
+  { key: "ac", label: "Air Conditioning", emoji: "❄️", icon: Fan },
+  { key: "tv", label: "Smart TV", emoji: "📺", icon: Tv },
+  { key: "printer", label: "Printer Access", emoji: "🖨️", icon: Printer },
+  { key: "phone", label: "Conference Phone", emoji: "📞", icon: Phone },
+];
 
 const MyCabin = () => {
   const [cabins, setCabins] = useState([]);
@@ -54,7 +98,6 @@ const MyCabin = () => {
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const navigate = useNavigate();
 
-  // Add Cabin Form State
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -62,6 +105,7 @@ const MyCabin = () => {
     address: "",
     price: "",
     cabin: "",
+    cabinType: "normal",
     amenities: {
       wifi: false,
       parking: false,
@@ -69,11 +113,32 @@ const MyCabin = () => {
       privateWashroom: false,
       secureAccess: false,
       comfortSeating: false,
+      coffee: false,
+      gym: false,
+      ac: false,
+      tv: false,
+      printer: false,
+      phone: false,
     },
   });
   const [images, setImages] = useState([]);
 
-  // Load Razorpay script on component mount
+  const getAmenitiesForType = (type) => {
+    return type === 'exclusive' ? EXCLUSIVE_AMENITIES : NORMAL_AMENITIES;
+  };
+
+  const resetAmenitiesForType = (type) => {
+    const amenitiesKeys = getAmenitiesForType(type).map(a => a.key);
+    const newAmenities = {};
+    amenitiesKeys.forEach(key => {
+      newAmenities[key] = false;
+    });
+    setFormData(prev => ({
+      ...prev,
+      amenities: newAmenities
+    }));
+  };
+
   useEffect(() => {
     loadRazorpayScript().then((loaded) => {
       setRazorpayLoaded(loaded);
@@ -142,6 +207,11 @@ const MyCabin = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleCabinTypeChange = (type) => {
+    setFormData({ ...formData, cabinType: type });
+    resetAmenitiesForType(type);
+  };
+
   const toggleAmenity = (key) => {
     setFormData((prev) => ({
       ...prev,
@@ -160,38 +230,37 @@ const MyCabin = () => {
     setImages(images.filter((_, i) => i !== index));
   };
 
-  // ======================
-  // RAZORPAY PAYMENT HANDLER
-  // ======================
+  const calculateGST = (amount) => {
+    const gstAmount = amount * GST_RATE;
+    const totalWithGST = amount + gstAmount;
+    return { gstAmount, totalWithGST };
+  };
+
+  const getFeeWithGST = () => {
+    const baseFee = isFirstCabin ? 2000 : 1000;
+    const { gstAmount, totalWithGST } = calculateGST(baseFee);
+    return { baseFee, gstAmount, totalWithGST };
+  };
+
   const initiateRazorpayPayment = async (cabinId, orderData) => {
     setPaymentProcessing(true);
     try {
-      // Check if Razorpay is loaded
       if (typeof window.Razorpay === 'undefined') {
         toast.error('Razorpay not loaded. Please refresh the page.');
         setPaymentProcessing(false);
         return;
       }
 
-      // Ensure we have the key
       const razorpayKey = orderData.razorpayKey || 'rzp_test_BxtRNvflG06PTV';
       
-      console.log('Initiating Razorpay payment with:', {
-        key: razorpayKey,
-        amount: orderData.order.amount * 100,
-        orderId: orderData.order.razorpayOrderId
-      });
-
       const options = {
         key: razorpayKey,
         amount: orderData.order.amount * 100,
         currency: "INR",
         name: "Cabin Registration",
-        description: `Cabin #${cabinCount + 1} Registration Fee`,
+        description: `Cabin #${cabinCount + 1} Registration Fee (incl. GST)`,
         order_id: orderData.order.razorpayOrderId,
         handler: async function(response) {
-          console.log('Payment response:', response);
-          // Verify payment on backend
           try {
             const verifyRes = await axios.post(
               `${API_URL}/api/cabins/verify-cabin-payment`,
@@ -204,10 +273,7 @@ const MyCabin = () => {
               getAuthHeader()
             );
 
-            console.log('Verify response:', verifyRes.data);
-
             if (verifyRes.data.success) {
-              // Get transaction ID from response
               const transactionId = verifyRes.data.transactionId || 
                                    verifyRes.data.order?.transactionId || 
                                    'N/A';
@@ -226,7 +292,6 @@ const MyCabin = () => {
               setIsModalOpen(false);
               setPaymentProcessing(false);
               
-              // Reset form
               setFormData({
                 name: "",
                 description: "",
@@ -234,6 +299,7 @@ const MyCabin = () => {
                 address: "",
                 price: "",
                 cabin: "",
+                cabinType: "normal",
                 amenities: {
                   wifi: false,
                   parking: false,
@@ -241,6 +307,12 @@ const MyCabin = () => {
                   privateWashroom: false,
                   secureAccess: false,
                   comfortSeating: false,
+                  coffee: false,
+                  gym: false,
+                  ac: false,
+                  tv: false,
+                  printer: false,
+                  phone: false,
                 },
               });
               setImages([]);
@@ -281,7 +353,6 @@ const MyCabin = () => {
     }
   };
 
-  // Create Cabin and Order with Razorpay
   const createCabinAndOrder = async () => {
     setSubmitting(true);
     const data = new FormData();
@@ -291,6 +362,7 @@ const MyCabin = () => {
     data.append("capacity", formData.capacity);
     data.append("address", formData.address);
     data.append("price", formData.price);
+    data.append("cabinType", formData.cabinType);
     data.append("pricingPlans", JSON.stringify(pricingPlans));
     data.append("amenities", JSON.stringify(formData.amenities));
     images.forEach((img) => data.append("images", img));
@@ -298,7 +370,6 @@ const MyCabin = () => {
     try {
       const token = localStorage.getItem("token");
       
-      // Step 1: Create Cabin
       const cabinRes = await axios.post(`${API_URL}/api/cabins`, data, {
         headers: { 
           Authorization: `Bearer ${token}`,
@@ -309,7 +380,6 @@ const MyCabin = () => {
       const newCabin = cabinRes.data.cabin;
       toast.success("Cabin created successfully!");
 
-      // Step 2: Create Cabin Order with Razorpay
       const orderRes = await axios.post(
         `${API_URL}/api/cabins/createcabinorder`,
         { cabinId: newCabin._id },
@@ -317,11 +387,8 @@ const MyCabin = () => {
       );
 
       if (orderRes.data.success) {
-        // Close confirmation modal and open Razorpay
         setShowConfirmModal(false);
         setSubmitting(false);
-        
-        // Initiate Razorpay payment
         await initiateRazorpayPayment(newCabin._id, orderRes.data);
       }
       
@@ -334,17 +401,14 @@ const MyCabin = () => {
     }
   };
 
-  // Handle Form Submit - Show Confirmation Modal
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Validate form
     if (!formData.name || !formData.address || !formData.capacity || !formData.price || !formData.cabin) {
       toast.error("Please fill all required fields");
       return;
     }
     
-    // Show confirmation modal
     setShowConfirmModal(true);
   };
 
@@ -353,198 +417,202 @@ const MyCabin = () => {
     cabin.address?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getCabinOrderStatus = (cabin) => {
-    if (cabin.isActive && cabin.hasActiveOrder) {
-      return { 
-        status: 'Active', 
-        color: 'green', 
-        daysLeft: 30 
-      };
+  // ✅ FIXED: Get cabin status from isActive
+  const getCabinStatus = (cabin) => {
+    if (cabin.isActive === true) {
+      return { status: 'Active', color: 'green' };
     }
-    return { status: 'Inactive', color: 'gray', daysLeft: 0 };
+    return { status: 'Inactive', color: 'gray' };
   };
 
   const isFirstCabin = cabinCount === 0;
+  const currentAmenities = getAmenitiesForType(formData.cabinType);
+  const { baseFee, gstAmount, totalWithGST } = getFeeWithGST();
 
   return (
     <div className="admin-dash">
       <UsersNavbar />
 
-      <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-16">
+      <main className="pt-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-7xl mx-auto pb-16">
         {/* Header */}
-        <div className="admin-dash__header">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <h1 className="admin-dash__greeting">
-              My <span>Cabins</span>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
+              My <span className="text-indigo-600">Cabins</span>
             </h1>
-            <p className="admin-dash__subtitle">
-              Total Cabins: <strong>{cabinCount}</strong> | 
-              Next Cabin #{cabinCount + 1} | 
-              Fee: ₹{isFirstCabin ? '2,000' : '1,000'}
+            <p className="text-sm text-slate-500 mt-1 flex flex-wrap items-center gap-2">
+              <span>Total: <strong className="text-slate-900">{cabinCount}</strong></span>
+              <span className="hidden xs:inline">•</span>
+              <span>Next: <strong className="text-indigo-600">#{cabinCount + 1}</strong></span>
+              <span className="hidden xs:inline">•</span>
+              <span>Fee: <strong className="text-emerald-600">₹{isFirstCabin ? '2,000' : '1,000'} + GST</strong></span>
             </p>
           </div>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
-            <div className="relative flex-grow sm:flex-grow-0">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-              <input
-                type="text"
-                placeholder="Search cabins..."
-                className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all w-full sm:w-64"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <button
-                onClick={() => navigate("/my-cabin-payments")}
-                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-50 text-indigo-700 rounded-xl text-sm font-medium hover:bg-indigo-100 transition-colors border border-indigo-200"
-              >
-                <CreditCard size={16} />
-                My Payments
-              </button>
-              <button
-                onClick={() => navigate("/cabin-bookings")}
-                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors"
-              >
-                <FileText size={16} className="text-indigo-600" />
-                View Bookings
-              </button>
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors"
-              >
-                <Plus size={16} />
-                Add New Cabin
-              </button>
-            </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => navigate("/my-cabin-payments")}
+              className="flex items-center gap-1.5 px-3 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-xs sm:text-sm font-medium hover:bg-indigo-100 transition-colors border border-indigo-200"
+            >
+              <CreditCard size={15} />
+              <span className="hidden xs:inline">My Payments</span>
+              <span className="xs:hidden">Payments</span>
+            </button>
+            <button
+              onClick={() => navigate("/cabin-bookings")}
+              className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-xs sm:text-sm font-medium hover:bg-slate-50 transition-colors"
+            >
+              <FileText size={15} className="text-indigo-600" />
+              <span className="hidden xs:inline">View Bookings</span>
+              <span className="xs:hidden">Bookings</span>
+            </button>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-indigo-700 transition-colors"
+            >
+              <Plus size={15} />
+              <span className="hidden xs:inline">Add New Cabin</span>
+              <span className="xs:hidden">Add</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Search */}
+        <div className="mb-6">
+          <div className="relative max-w-xs sm:max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            <input
+              type="text"
+              placeholder="Search cabins..."
+              className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
         </div>
 
         {/* Cabin Count Info Card */}
         <div className="mb-6 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-4 border border-indigo-100">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="bg-indigo-100 p-3 rounded-xl">
-                <Building2 size={24} className="text-indigo-600" />
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="bg-indigo-100 p-2.5 rounded-xl">
+                <Building2 size={20} className="text-indigo-600" />
               </div>
               <div>
-                <p className="text-sm text-indigo-700 font-medium">Your Cabin Stats</p>
-                <div className="flex items-center gap-4 mt-1">
-                  <span className="text-2xl font-bold text-slate-900">{cabinCount}</span>
-                  <span className="text-sm text-slate-600">Total Cabins</span>
-                  <span className="w-px h-6 bg-slate-300"></span>
-                  <span className="text-sm font-semibold text-indigo-600">
-                    Next: #{cabinCount + 1}
-                  </span>
-                  <span className="w-px h-6 bg-slate-300"></span>
-                  <span className="text-sm font-semibold text-emerald-600">
-                    Fee: ₹{isFirstCabin ? '2,000' : '1,000'}
-                  </span>
+                <p className="text-xs text-indigo-700 font-medium">Your Cabin Stats</p>
+                <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                  <span className="text-xl font-bold text-slate-900">{cabinCount}</span>
+                  <span className="text-xs text-slate-600">Total</span>
+                  <span className="w-px h-4 bg-slate-300 hidden xs:block"></span>
+                  <span className="text-xs font-semibold text-indigo-600">Next: #{cabinCount + 1}</span>
+                  <span className="w-px h-4 bg-slate-300 hidden xs:block"></span>
+                  <span className="text-xs font-semibold text-emerald-600">Fee: ₹{isFirstCabin ? '2,000' : '1,000'}</span>
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2 text-xs bg-white px-3 py-2 rounded-lg shadow-sm">
-              <Clock size={14} className="text-indigo-500" />
-              <span className="text-slate-600">30 days validity after payment</span>
+            <div className="flex items-center gap-1.5 text-[10px] bg-white px-3 py-1.5 rounded-lg shadow-sm">
+              <Clock size={12} className="text-indigo-500" />
+              <span className="text-slate-600">30 days validity</span>
             </div>
           </div>
         </div>
 
         {loading ? (
-          <div className="admin-dash__loading">
+          <div className="flex justify-center items-center py-20">
             <div className="admin-dash__spinner" />
-            <p className="admin-dash__loading-text">Loading cabins...</p>
           </div>
         ) : filteredCabins.length === 0 ? (
-          <div className="admin-dash__error" style={{ background: '#f8fafc', borderColor: '#e2e8f0' }}>
-            <BuildingIcon size={48} className="text-slate-300 mb-4" />
-            <p className="admin-dash__error-title" style={{ color: '#475569' }}>No cabins found</p>
-            <p className="admin-dash__error-message">Add your first workspace to get started. (First cabin: ₹2,000)</p>
+          <div className="bg-slate-50 rounded-2xl border border-slate-200 p-12 text-center">
+            <BuildingIcon size={48} className="text-slate-300 mx-auto mb-4" />
+            <p className="text-slate-600 font-medium">No cabins found</p>
+            <p className="text-sm text-slate-400 mt-1">Add your first workspace to get started.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
             {filteredCabins.map((cabin, index) => {
-              const orderStatus = getCabinOrderStatus(cabin);
+              const cabinStatus = getCabinStatus(cabin);
+              const isExclusive = cabin.cabinType === 'exclusive';
+              
               return (
                 <div
                   key={cabin._id}
                   onClick={() => navigate(`/cabin/${cabin._id}`)}
-                  className="admin-dash__card group cursor-pointer flex flex-col h-full relative"
+                  className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden group"
                 >
-                  <div className="relative h-48 overflow-hidden rounded-t-2xl">
-                    <div className="absolute inset-0 bg-slate-200 animate-pulse" />
+                  <div className="relative h-40 xs:h-44 sm:h-48 overflow-hidden">
                     <img
                       src={cabin.images?.[0] ? getImageUrl(cabin.images[0]) : PLACEHOLDER_IMAGE}
                       alt={cabin.name}
-                      className="w-full h-full object-cover relative z-10 group-hover:scale-105 transition-transform duration-500"
-                      onError={(e) => {
-                        e.target.src = PLACEHOLDER_IMAGE;
-                      }}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/50 via-transparent to-transparent z-20 opacity-40" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/50 via-transparent to-transparent opacity-40" />
 
-                    <div className="absolute top-3 left-3 z-30 bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold text-indigo-700 shadow-sm flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
-                      Cabin #{index + 1}
+                    <div className="absolute top-2 left-2 bg-white/95 backdrop-blur-md px-2 py-0.5 rounded-full text-[9px] font-bold text-indigo-700 shadow-sm flex items-center gap-1">
+                      <span className="w-1 h-1 rounded-full bg-indigo-500"></span>
+                      #{index + 1}
                     </div>
 
-                    <div className={`absolute top-3 right-3 z-30 bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold shadow-sm flex items-center gap-1 ${
-                      orderStatus.color === 'green' ? 'text-emerald-600' : 
-                      orderStatus.color === 'red' ? 'text-red-600' : 'text-gray-600'
+                    {/* ✅ Status Badge - Shows Active/Inactive from isActive */}
+                    <div className={`absolute top-2 right-2 bg-white/95 backdrop-blur-md px-2 py-0.5 rounded-full text-[9px] font-bold shadow-sm flex items-center gap-1 ${
+                      cabinStatus.color === 'green' ? 'text-emerald-600' : 'text-gray-600'
                     }`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${
-                        orderStatus.color === 'green' ? 'bg-emerald-500' : 
-                        orderStatus.color === 'red' ? 'bg-red-500' : 'bg-gray-400'
+                      <span className={`w-1 h-1 rounded-full ${
+                        cabinStatus.color === 'green' ? 'bg-emerald-500' : 'bg-gray-400'
                       }`}></span>
-                      {orderStatus.status}
+                      {cabinStatus.status}
                     </div>
 
-                    <div className="absolute bottom-3 right-3 z-30 bg-black/60 backdrop-blur-sm px-2 py-1 rounded text-[9px] font-medium text-white flex items-center gap-1">
-                      <Calendar size={10} />
-                      {orderStatus.daysLeft > 0 ? `${orderStatus.daysLeft}d left` : 'No order'}
+                    <div className="absolute bottom-2 left-2">
+                      {isExclusive ? (
+                        <span className="bg-gradient-to-r from-amber-500 to-yellow-500 text-white px-2 py-0.5 rounded-full text-[8px] font-bold flex items-center gap-1 shadow-lg">
+                          <Crown size={10} />
+                          Exclusive
+                        </span>
+                      ) : (
+                        <span className="bg-blue-500/80 backdrop-blur-sm text-white px-2 py-0.5 rounded-full text-[8px] font-bold shadow-lg">
+                          Normal
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded text-[8px] font-medium text-white flex items-center gap-1">
+                      <Calendar size={8} />
+                      {cabinStatus.color === 'green' ? '30d left' : 'No order'}
                     </div>
                   </div>
 
-                  <div className="p-5 flex flex-col flex-grow">
-                    <div className="mb-4">
-                      <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest mb-1">Coworking Space</p>
-                      <h3 className="text-base font-bold text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors line-clamp-1">
-                        {cabin.name}
-                      </h3>
+                  <div className="p-3 sm:p-4">
+                    <h3 className="text-sm font-bold text-slate-900 leading-tight line-clamp-1 group-hover:text-indigo-600 transition-colors">
+                      {cabin.name}
+                    </h3>
+                    {isExclusive && (
+                      <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full mt-0.5">
+                        <Star size={9} /> Premium
+                      </span>
+                    )}
+                    
+                    <div className="flex items-start gap-2 mt-2">
+                      <MapPin size={13} className="text-indigo-500 shrink-0 mt-0.5" />
+                      <p className="text-xs text-slate-500 line-clamp-1">{cabin.address}</p>
                     </div>
 
-                    <div className="flex items-start gap-3 mb-3">
-                      <div className="p-2 bg-indigo-50 rounded-lg shrink-0 text-indigo-600">
-                        <MapPin size={16} />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-900 line-clamp-1">{cabin.address?.split(',')[0] || "Location"}</p>
-                        <p className="text-xs text-slate-500 line-clamp-1">{cabin.address}</p>
-                      </div>
-                    </div>
-
-                    <p className="text-slate-500 text-xs leading-relaxed mb-4 line-clamp-2">
-                      {cabin.description || "Experience a premium workspace designed for focus and collaboration, featuring modern amenities."}
-                    </p>
-
-                    <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
+                    <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
                       <div>
                         <div className="flex items-baseline gap-0.5">
-                          <span className="text-xl font-bold text-slate-900">₹{cabin.price || '0'}</span>
-                          <span className="text-[10px] text-slate-400 font-bold uppercase">/ Hour</span>
+                          <span className="text-lg font-bold text-slate-900">₹{cabin.price || '0'}</span>
+                          <span className="text-[9px] text-slate-400 font-bold">/hr</span>
                         </div>
-                        <div className="flex items-center gap-1 text-[10px] font-medium text-slate-500 mt-0.5">
-                          <Users size={10} />
-                          {cabin.capacity} Seats
+                        <div className="flex items-center gap-1 text-[9px] font-medium text-slate-500">
+                          <Users size={9} />
+                          {cabin.capacity} seats
                         </div>
                       </div>
-
-                      <div 
-                        className="h-10 w-10 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center hover:bg-red-600 hover:text-white transition-colors"
+                      <button 
+                        className="p-2 rounded-full bg-slate-100 text-slate-600 hover:bg-red-600 hover:text-white transition-colors"
                         onClick={(e) => handleDelete(e, cabin._id)}
                       >
-                        <Trash2 size={16} />
-                      </div>
+                        <Trash2 size={14} />
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -554,184 +622,197 @@ const MyCabin = () => {
         )}
       </main>
 
-      {/* Add Cabin Modal */}
+      {/* Add Cabin Modal - Responsive */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[1100] flex items-end sm:items-center justify-center p-4 sm:p-6 bg-slate-900/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[1100] flex items-end sm:items-center justify-center p-2 sm:p-4 bg-slate-900/50 backdrop-blur-sm">
           <div
             className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200"
-            style={{ maxHeight: "90vh" }}
+            style={{ maxHeight: "95vh" }}
           >
-            <style>{`
-              .cabin-field {
-                width:100%; padding:0.65rem 0.875rem;
-                border:1.5px solid #e2e8f0; border-radius:10px;
-                font-size:0.875rem; font-family:inherit; color:#1e293b;
-                outline:none; transition:border-color 180ms, box-shadow 180ms;
-                background:#fff; box-sizing:border-box;
-              }
-              .cabin-field:focus {
-                border-color:#6366f1;
-                box-shadow:0 0 0 3px rgba(99,102,241,0.12);
-              }
-              .cabin-field-icon { position:relative; }
-              .cabin-field-icon svg {
-                position:absolute; left:12px; top:50%;
-                transform:translateY(-50%); color:#94a3b8; pointer-events:none;
-              }
-              .cabin-field-icon .cabin-field { padding-left:2.5rem; }
-              .cabin-amenity {
-                display:flex; align-items:center; gap:8px;
-                padding:0.5rem 0.875rem; border-radius:10px;
-                border:1.5px solid #e2e8f0; background:#fff;
-                font-size:0.8rem; font-weight:600; color:#64748b;
-                cursor:pointer; transition:all 180ms; user-select:none;
-              }
-              .cabin-amenity.active {
-                border-color:#6366f1; background:rgba(99,102,241,0.07);
-                color:#4f46e5;
-              }
-              .cabin-amenity .dot {
-                width:8px; height:8px; border-radius:50%;
-                border:2px solid #cbd5e1; flex-shrink:0; transition:all 180ms;
-              }
-              .cabin-amenity.active .dot {
-                border-color:#6366f1; background:#6366f1;
-                box-shadow:0 0 0 3px rgba(99,102,241,0.2);
-              }
-              .cabin-label {
-                display:block; font-size:0.7rem; font-weight:700;
-                letter-spacing:0.06em; text-transform:uppercase;
-                color:#64748b; margin-bottom:6px;
-              }
-            `}</style>
-
-            <div style={{
-              background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 60%, #06b6d4 100%)",
-              padding: "1.25rem 1.5rem",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              flexShrink: 0,
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.875rem" }}>
-                <div style={{
-                  width: 44, height: 44, borderRadius: 12,
-                  background: "rgba(255,255,255,0.18)", backdropFilter: "blur(8px)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
-                  <Home size={22} color="#fff" />
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 sm:p-5 flex items-center justify-between flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-white/20 flex items-center justify-center">
+                  <Home size={18} className="text-white sm:w-5 sm:h-5" />
                 </div>
                 <div>
-                  <h2 style={{ margin: 0, fontSize: "1.125rem", fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>
+                  <h2 className="text-base sm:text-lg font-bold text-white">
                     Add New Cabin #{cabinCount + 1}
                   </h2>
-                  <p style={{ margin: 0, fontSize: "0.75rem", color: "rgba(255,255,255,0.75)", marginTop: 2 }}>
-                    Total Cabins: {cabinCount} | 
-                    Fee: ₹{isFirstCabin ? '2,000' : '1,000'} 
-                    {isFirstCabin ? ' (First Cabin)' : ` (Cabin #${cabinCount + 1})`}
+                  <p className="text-[10px] sm:text-xs text-white/75">
+                    Fee: ₹{isFirstCabin ? '2,000' : '1,000'} + GST (18%)
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setIsModalOpen(false)}
-                style={{
-                  width: 36, height: 36, borderRadius: 10,
-                  background: "rgba(255,255,255,0.15)", border: "none",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  cursor: "pointer", color: "#fff", transition: "background 150ms",
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.25)"}
-                onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.15)"}
+                className="w-8 h-8 rounded-xl bg-white/15 hover:bg-white/25 transition-colors flex items-center justify-center text-white"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
 
-            <div style={{ overflowY: "auto", padding: "1.5rem", flex: 1 }} className="custom-scrollbar">
-              <form onSubmit={handleSubmit}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            {/* Modal Body - Scrollable */}
+            <div className="overflow-y-auto p-4 sm:p-6 flex-1">
+              <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+                {/* Basic Info - Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
-                    <label className="cabin-label">Building Name</label>
+                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Building Name *</label>
                     <input
-                      className="cabin-field"
+                      className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
                       type="text" name="name"
-                      placeholder="e.g. Tech Hub Alpha"
+                      placeholder="e.g. Tech Hub"
                       value={formData.name}
                       onChange={handleChange}
                       required
                     />
                   </div>
                   <div>
-                    <label className="cabin-label">Address / Location</label>
-                    <div className="cabin-field-icon">
-                      <MapPin size={16} />
-                      <input
-                        className="cabin-field"
-                        type="text" name="address"
-                        placeholder="e.g. Floor 4, Suite 10, Bangalore"
-                        value={formData.address}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
+                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Address *</label>
+                    <input
+                      className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                      type="text" name="address"
+                      placeholder="e.g. Bangalore"
+                      value={formData.address}
+                      onChange={handleChange}
+                      required
+                    />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                {/* Cabin Details - Grid */}
+                <div className="grid grid-cols-1 xs:grid-cols-3 gap-3 sm:gap-4">
                   <div>
-                    <label className="cabin-label">Cabin Spec</label>
-                    <div className="cabin-field-icon">
-                      <Building2 size={16} />
-                      <input
-                        className="cabin-field"
-                        type="text" name="cabin"
-                        placeholder="e.g. Private Office B"
-                        value={formData.cabin}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
+                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Cabin Spec *</label>
+                    <input
+                      className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                      type="text" name="cabin"
+                      placeholder="e.g. Office B"
+                      value={formData.cabin}
+                      onChange={handleChange}
+                      required
+                    />
                   </div>
                   <div>
-                    <label className="cabin-label">Capacity (Seats)</label>
-                    <div className="cabin-field-icon">
-                      <Users size={16} />
-                      <input
-                        className="cabin-field"
-                        type="number" name="capacity" min="1"
-                        placeholder="e.g. 10"
-                        value={formData.capacity}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
+                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Capacity *</label>
+                    <input
+                      className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                      type="number" name="capacity" min="1"
+                      placeholder="10"
+                      value={formData.capacity}
+                      onChange={handleChange}
+                      required
+                    />
                   </div>
                   <div>
-                    <label className="cabin-label">Price / Hour (₹)</label>
-                    <div className="cabin-field-icon">
-                      <IndianRupee size={16} />
-                      <input
-                        className="cabin-field"
-                        type="number" name="price" min="0"
-                        placeholder="e.g. 25000"
-                        value={formData.price}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
+                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Price/hr *</label>
+                    <input
+                      className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                      type="number" name="price" min="0"
+                      placeholder="25000"
+                      value={formData.price}
+                      onChange={handleChange}
+                      required
+                    />
                   </div>
                 </div>
 
-                <div style={{ marginBottom: "1rem", borderTop: "1.5px solid #f1f5f9", paddingTop: "1rem" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
-                    <label className="cabin-label" style={{ margin: 0 }}>Pricing Plans (Packages)</label>
+                {/* Cabin Type */}
+                <div>
+                  <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Cabin Type</label>
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-1">
+                    <button
+                      type="button"
+                      onClick={() => handleCabinTypeChange("normal")}
+                      className={`py-2.5 sm:py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold border-2 transition-all ${
+                        formData.cabinType === 'normal'
+                          ? 'border-indigo-600 bg-indigo-50 text-indigo-600'
+                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      <Building2 size={14} className="inline mr-1.5" />
+                      Normal
+                      <span className="text-[9px] sm:text-[10px] text-slate-400 block sm:inline sm:ml-1">
+                        ({NORMAL_AMENITIES.length} amenities)
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleCabinTypeChange("exclusive")}
+                      className={`py-2.5 sm:py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold border-2 transition-all ${
+                        formData.cabinType === 'exclusive'
+                          ? 'border-amber-500 bg-amber-50 text-amber-600'
+                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      <Crown size={14} className="inline mr-1.5 text-amber-500" />
+                      Exclusive
+                      <span className="text-[9px] sm:text-[10px] text-slate-400 block sm:inline sm:ml-1">
+                        ({EXCLUSIVE_AMENITIES.length} amenities)
+                      </span>
+                    </button>
+                  </div>
+                  {formData.cabinType === 'exclusive' && (
+                    <div className="mt-2 p-2.5 sm:p-3 bg-amber-50 rounded-lg text-xs sm:text-sm text-amber-700 flex items-start gap-2">
+                      <Star size={14} className="shrink-0 mt-0.5" />
+                      <span>Exclusive cabins get premium visibility, higher booking priority, and {EXCLUSIVE_AMENITIES.length} premium amenities.</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Amenities */}
+                <div>
+                  <div className="flex justify-between items-center mb-1.5">
+                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      Amenities ({currentAmenities.length} available)
+                    </label>
+                    <span className="text-[9px] sm:text-[10px] text-slate-400">
+                      {formData.cabinType === 'exclusive' ? '⭐ Premium' : 'Standard'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 xs:grid-cols-3 gap-1.5 sm:gap-2">
+                    {currentAmenities.map(item => {
+                      const Icon = item.icon;
+                      const isActive = formData.amenities[item.key] || false;
+                      return (
+                        <button
+                          key={item.key}
+                          type="button"
+                          onClick={() => toggleAmenity(item.key)}
+                          className={`flex items-center gap-1.5 sm:gap-2 p-2 sm:p-2.5 rounded-lg text-[10px] sm:text-xs font-semibold border transition-all ${
+                            isActive
+                              ? 'border-indigo-500 bg-indigo-50 text-indigo-600'
+                              : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                          }`}
+                        >
+                          <span className={`w-1.5 h-1.5 rounded-full border-2 ${
+                            isActive ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300'
+                          }`}></span>
+                          <Icon size={12} className="sm:w-3.5 sm:h-3.5" />
+                          <span className="truncate">{item.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {formData.cabinType === 'normal' && (
+                    <p className="mt-1.5 text-[9px] sm:text-[10px] text-slate-400">
+                      💡 Upgrade to Exclusive for {EXCLUSIVE_AMENITIES.length - NORMAL_AMENITIES.length} more premium amenities
+                    </p>
+                  )}
+                </div>
+
+                {/* Pricing Plans */}
+                <div>
+                  <div className="flex justify-between items-center mb-1.5">
+                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Pricing Plans</label>
                     <button
                       type="button"
                       onClick={() => {
-                        const label = prompt("Plan Label (e.g. Monthly Plan, Weekly Plan):");
-                        const hours = prompt("Included Hours (e.g. 50):");
-                        const cost = prompt("Cost (e.g. 8000):");
-                        const validity = prompt("Validity in Days (e.g. 30):");
+                        const label = prompt("Plan Label:");
+                        const hours = prompt("Included Hours:");
+                        const cost = prompt("Cost (₹):");
+                        const validity = prompt("Validity (Days):");
                         if (hours && cost && validity) {
                           setPricingPlans([...pricingPlans, {
                             label: (label || "").trim(),
@@ -741,26 +822,22 @@ const MyCabin = () => {
                           }]);
                         }
                       }}
-                      style={{
-                        padding: "0.25rem 0.65rem", borderRadius: 8, border: "1.5px solid #6366f1",
-                        fontSize: "0.75rem", cursor: "pointer", background: "rgba(99,102,241,0.07)",
-                        color: "#4f46e5", fontWeight: "bold"
-                      }}
+                      className="text-[10px] sm:text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 sm:px-3 py-1 rounded-lg hover:bg-indigo-100 transition-colors"
                     >
                       + Add Plan
                     </button>
                   </div>
                   {pricingPlans.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 xs:grid-cols-2 gap-1.5 sm:gap-2">
                       {pricingPlans.map((plan, idx) => (
-                        <div key={idx} style={{ padding: "0.65rem", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: "0.75rem", background: "#f8fafc", position: "relative" }}>
+                        <div key={idx} className="p-2 sm:p-2.5 bg-slate-50 rounded-lg text-[10px] sm:text-xs border border-slate-200 relative">
                           <div><strong>{plan.label || "Plan"}</strong></div>
-                          <div>Hours: {plan.hours} hrs | Price: ₹{plan.cost}</div>
-                          <div>Validity: {plan.validity} Days</div>
+                          <div>{plan.hours}h · ₹{plan.cost}</div>
+                          <div className="text-slate-400">{plan.validity}d validity</div>
                           <button
                             type="button"
                             onClick={() => setPricingPlans(pricingPlans.filter((_, i) => i !== idx))}
-                            style={{ position: "absolute", top: 4, right: 4, border: "none", background: "none", color: "#ef4444", cursor: "pointer", fontSize: "1rem", fontWeight: "bold" }}
+                            className="absolute top-1 right-1 text-red-500 hover:text-red-700 text-xs font-bold"
                           >
                             ×
                           </button>
@@ -768,111 +845,47 @@ const MyCabin = () => {
                       ))}
                     </div>
                   ) : (
-                    <p style={{ margin: 0, fontSize: "0.75rem", color: "#94a3b8" }}>No plans defined. Cabin will only support hourly booking.</p>
+                    <p className="text-[10px] sm:text-xs text-slate-400">No plans defined. Hourly booking only.</p>
                   )}
                 </div>
 
-                <div style={{ marginBottom: "1rem" }}>
-                  <label className="cabin-label">Included Amenities</label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {[
-                      { key: "wifi", label: "Wi-Fi", emoji: "📶" },
-                      { key: "parking", label: "Parking", emoji: "🅿️" },
-                      { key: "lockers", label: "Lockers", emoji: "🔐" },
-                      { key: "privateWashroom", label: "Private Washroom", emoji: "🚿" },
-                      { key: "secureAccess", label: "Secure Access", emoji: "🛡️" },
-                      { key: "comfortSeating", label: "Comfort Seating", emoji: "🪑" },
-                    ].map(item => (
-                      <button
-                        key={item.key}
-                        type="button"
-                        onClick={() => toggleAmenity(item.key)}
-                        className={`cabin-amenity${formData.amenities[item.key] ? " active" : ""}`}
-                      >
-                        <span className="dot" />
-                        <span style={{ fontSize: "1rem" }}>{item.emoji}</span>
-                        {item.label}
-                      </button>
-                    ))}
-                  </div>
+                {/* Description */}
+                <div>
+                  <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Description</label>
+                  <textarea
+                    className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all resize-none"
+                    name="description"
+                    placeholder="Describe your workspace..."
+                    value={formData.description}
+                    onChange={handleChange}
+                    rows={2}
+                  />
                 </div>
 
-                <div style={{ marginBottom: "1rem" }}>
-                  <label className="cabin-label">Space Description</label>
-                  <div className="cabin-field-icon" style={{ alignItems: "flex-start" }}>
-                    <FileText size={16} style={{ top: "14px" }} />
-                    <textarea
-                      className="cabin-field"
-                      name="description"
-                      placeholder="Describe this workspace — layout, vibe, special features…"
-                      value={formData.description}
-                      onChange={handleChange}
-                      rows={3}
-                      style={{ resize: "vertical", paddingTop: "0.65rem" }}
-                    />
-                  </div>
-                </div>
-
-                <div style={{ marginBottom: "1.5rem" }}>
-                  <label className="cabin-label">Photo Gallery</label>
-                  <div style={{
-                    border: "2px dashed #c7d2fe", borderRadius: 14,
-                    padding: "1.5rem", textAlign: "center",
-                    background: "rgba(99,102,241,0.03)",
-                    cursor: "pointer", position: "relative",
-                    transition: "border-color 180ms, background 180ms",
-                  }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = "#6366f1"; e.currentTarget.style.background = "rgba(99,102,241,0.06)"; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = "#c7d2fe"; e.currentTarget.style.background = "rgba(99,102,241,0.03)"; }}
-                  >
+                {/* Images */}
+                <div>
+                  <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Photos</label>
+                  <div className="mt-1 border-2 border-dashed border-indigo-200 rounded-xl p-4 sm:p-6 text-center hover:border-indigo-400 transition-colors relative">
                     <input
                       type="file" multiple accept="image/*"
                       onChange={handleImageChange}
-                      style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }}
+                      className="absolute inset-0 opacity-0 cursor-pointer"
                     />
-                    <div style={{ display: "flex", flexDirection: "column", items: "center", gap: 8, pointerEvents: "none" }}>
-                      <div style={{
-                        width: 48, height: 48, borderRadius: 12,
-                        background: "rgba(99,102,241,0.1)",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                      }}>
-                        <Upload size={22} color="#6366f1" />
-                      </div>
-                      <div>
-                        <p style={{ margin: 0, fontSize: "0.875rem", fontWeight: 600, color: "#4f46e5" }}>
-                          Click to upload photos
-                        </p>
-                        <p style={{ margin: "2px 0 0", fontSize: "0.72rem", color: "#94a3b8" }}>
-                          PNG, JPG, WEBP — multiple files allowed
-                        </p>
-                      </div>
-                    </div>
+                    <Upload size={20} className="mx-auto text-indigo-400 sm:w-6 sm:h-6" />
+                    <p className="text-[10px] sm:text-xs text-slate-500 mt-1">Click to upload photos</p>
+                    <p className="text-[8px] sm:text-[10px] text-slate-400">PNG, JPG, WEBP</p>
                   </div>
-
                   {images.length > 0 && (
-                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mt-3">
+                    <div className="grid grid-cols-3 xs:grid-cols-4 sm:grid-cols-5 gap-2 mt-2">
                       {images.map((file, index) => (
-                        <div key={index} style={{
-                          position: "relative", aspectRatio: "1",
-                          borderRadius: 10, overflow: "hidden",
-                          border: "1.5px solid #e2e8f0",
-                          boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-                        }}>
-                          <img src={URL.createObjectURL(file)} alt="preview"
-                            style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-slate-200">
+                          <img src={URL.createObjectURL(file)} alt="preview" className="w-full h-full object-cover" />
                           <button
                             type="button"
                             onClick={() => removeImage(index)}
-                            style={{
-                              position: "absolute", top: 4, right: 4,
-                              width: 20, height: 20, borderRadius: "50%",
-                              background: "#ef4444", border: "none",
-                              display: "flex", alignItems: "center", justifyContent: "center",
-                              cursor: "pointer", color: "#fff",
-                              boxShadow: "0 1px 4px rgba(0,0,0,0.25)",
-                            }}
+                            className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs"
                           >
-                            <X size={11} />
+                            ×
                           </button>
                         </div>
                       ))}
@@ -880,74 +893,49 @@ const MyCabin = () => {
                   )}
                 </div>
 
-                <div style={{ 
-                  background: "#f0fdf4", 
-                  border: "1px solid #86efac",
-                  borderRadius: 10,
-                  padding: "0.75rem 1rem",
-                  marginBottom: "1rem",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.75rem"
-                }}>
-                  <CreditCard size={18} className="text-emerald-600" />
-                  <div>
-                    <p style={{ margin: 0, fontSize: "0.8rem", fontWeight: 600, color: "#065f46" }}>
-                      Cabin #{cabinCount + 1} Registration
-                    </p>
-                    <p style={{ margin: 0, fontSize: "0.7rem", color: "#047857" }}>
-                      Fee: ₹{isFirstCabin ? '2,000' : '1,000'} | 
-                      Validity: 30 days | 
-                      {isFirstCabin ? ' First Cabin' : ` ${cabinCount} cabins already added`}
-                    </p>
+                {/* Fee Summary */}
+                <div className={`p-3 sm:p-4 rounded-xl ${
+                  formData.cabinType === 'exclusive' ? 'bg-amber-50 border border-amber-200' : 'bg-emerald-50 border border-emerald-200'
+                }`}>
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    {formData.cabinType === 'exclusive' ? (
+                      <Crown size={16} className="text-amber-600 sm:w-5 sm:h-5" />
+                    ) : (
+                      <CreditCard size={16} className="text-emerald-600 sm:w-5 sm:h-5" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] sm:text-xs font-bold text-slate-700">
+                        Cabin #{cabinCount + 1} {formData.cabinType === 'exclusive' ? '⭐ Exclusive' : 'Normal'}
+                      </p>
+                      <p className="text-[8px] sm:text-[10px] text-slate-600 truncate">
+                        Base: ₹{baseFee} | GST: ₹{gstAmount.toFixed(2)} | Total: ₹{totalWithGST.toFixed(2)}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-3 border-t border-slate-100 pt-5">
+                {/* Actions */}
+                <div className="grid grid-cols-2 gap-2 sm:gap-3 pt-2">
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    style={{
-                      flex: 1, padding: "0.75rem",
-                      borderRadius: 10, border: "1.5px solid #e2e8f0",
-                      background: "#fff", fontFamily: "inherit",
-                      fontSize: "0.875rem", fontWeight: 600, color: "#64748b",
-                      cursor: "pointer", transition: "all 160ms",
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "#f8fafc"; e.currentTarget.style.borderColor = "#cbd5e1"; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.borderColor = "#e2e8f0"; }}
+                    className="py-2.5 sm:py-3 rounded-xl border border-slate-200 text-slate-600 font-semibold text-xs sm:text-sm hover:bg-slate-50 transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={paymentProcessing}
-                    style={{
-                      flex: 2, padding: "0.75rem",
-                      borderRadius: 10, border: "none",
-                      background: paymentProcessing
-                        ? "#a5b4fc"
-                        : "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
-                      color: "#fff", fontFamily: "inherit",
-                      fontSize: "0.875rem", fontWeight: 700,
-                      cursor: paymentProcessing ? "not-allowed" : "pointer",
-                      display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                      boxShadow: paymentProcessing ? "none" : "0 4px 14px rgba(99,102,241,0.35)",
-                      transition: "all 160ms",
-                    }}
-                    onMouseEnter={e => { if (!paymentProcessing) e.currentTarget.style.transform = "scale(1.02)"; }}
-                    onMouseLeave={e => { if (!paymentProcessing) e.currentTarget.style.transform = "scale(1)"; }}
+                    className={`py-2.5 sm:py-3 rounded-xl text-white font-bold text-xs sm:text-sm transition-all ${
+                      paymentProcessing
+                        ? 'bg-slate-400 cursor-not-allowed'
+                        : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:shadow-lg'
+                    }`}
                   >
                     {paymentProcessing ? (
-                      <>
-                        <Loader2 size={17} className="animate-spin" />
-                        Processing Payment...
-                      </>
+                      <Loader2 size={16} className="animate-spin mx-auto" />
                     ) : (
-                      <>
-                        <CreditCard size={17} /> 
-                        Proceed to Pay ₹{isFirstCabin ? '2,000' : '1,000'}
-                      </>
+                      `Pay ₹${totalWithGST.toFixed(2)}`
                     )}
                   </button>
                 </div>
@@ -957,134 +945,77 @@ const MyCabin = () => {
         </div>
       )}
 
-      {/* Payment Confirmation Modal */}
+      {/* Confirm Modal - Responsive */}
       {showConfirmModal && (
-        <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div style={{
-              background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 60%, #06b6d4 100%)",
-              padding: "1.5rem",
-              textAlign: "center"
-            }}>
-              <div style={{
-                width: 64, height: 64, borderRadius: "50%",
-                background: "rgba(255,255,255,0.2)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                margin: "0 auto 0.75rem"
-              }}>
-                <CreditCard size={32} color="#fff" />
+        <div className="fixed inset-0 z-[1200] flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-sm sm:max-w-md rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
+            <div className={`p-4 sm:p-6 text-center ${
+              formData.cabinType === 'exclusive' 
+                ? 'bg-gradient-to-r from-amber-500 to-amber-600'
+                : 'bg-gradient-to-r from-indigo-600 to-purple-600'
+            }`}>
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-white/20 flex items-center justify-center mx-auto">
+                {formData.cabinType === 'exclusive' ? (
+                  <Crown size={24} className="text-white sm:w-8 sm:h-8" />
+                ) : (
+                  <CreditCard size={24} className="text-white sm:w-8 sm:h-8" />
+                )}
               </div>
-              <h3 style={{ margin: 0, color: "#fff", fontSize: "1.25rem", fontWeight: 700 }}>
-                Confirm Cabin Addition
+              <h3 className="text-white font-bold text-base sm:text-lg mt-2">
+                {formData.cabinType === 'exclusive' ? '⭐ Exclusive Cabin' : 'Confirm Cabin'}
               </h3>
-              <p style={{ margin: "0.25rem 0 0", color: "rgba(255,255,255,0.8)", fontSize: "0.875rem" }}>
-                Please review the details below
+              <p className="text-white/80 text-xs sm:text-sm">
+                {formData.cabinType === 'exclusive' ? 'Premium exclusive cabin' : 'Review details below'}
               </p>
             </div>
-            
-            <div style={{ padding: "1.5rem" }}>
-              <div style={{ 
-                background: "#f8fafc", 
-                borderRadius: 12, 
-                padding: "1rem",
-                marginBottom: "1.25rem"
-              }}>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span style={{ color: "#64748b", fontSize: "0.875rem" }}>Cabin Number</span>
-                    <span style={{ fontWeight: 600, color: "#1e293b" }}>#{cabinCount + 1}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span style={{ color: "#64748b", fontSize: "0.875rem" }}>Total Cabins</span>
-                    <span style={{ fontWeight: 600, color: "#1e293b" }}>{cabinCount}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span style={{ color: "#64748b", fontSize: "0.875rem" }}>Registration Fee</span>
-                    <span style={{ fontSize: "1.25rem", fontWeight: 700, color: "#6366f1" }}>
-                      ₹{isFirstCabin ? '2,000' : '1,000'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center border-t border-slate-200 pt-2">
-                    <span style={{ color: "#64748b", fontSize: "0.75rem" }}>Validity</span>
-                    <span style={{ fontSize: "0.75rem", fontWeight: 500, color: "#059669" }}>
-                      <Calendar size={12} className="inline mr-1" />
-                      30 Days
-                    </span>
-                  </div>
+
+            <div className="p-4 sm:p-6">
+              <div className="bg-slate-50 rounded-xl p-3 sm:p-4 space-y-2 sm:space-y-3 text-xs sm:text-sm">
+                <div className="flex justify-between"><span className="text-slate-500">Cabin</span><span className="font-semibold">#{cabinCount + 1}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Type</span>
+                  <span className={`font-semibold ${formData.cabinType === 'exclusive' ? 'text-amber-600' : 'text-indigo-600'}`}>
+                    {formData.cabinType === 'exclusive' ? '⭐ Exclusive' : 'Normal'}
+                  </span>
                 </div>
+                <div className="flex justify-between"><span className="text-slate-500">Amenities</span>
+                  <span className="font-semibold">{Object.values(formData.amenities).filter(v => v).length} / {currentAmenities.length}</span>
+                </div>
+                <div className="border-t border-slate-200 pt-2 flex justify-between"><span className="text-slate-500">Base Fee</span><span>₹{baseFee}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">GST (18%)</span><span>₹{gstAmount.toFixed(2)}</span></div>
+                <div className="border-t border-slate-200 pt-2 flex justify-between font-bold"><span>Total</span><span className="text-indigo-600">₹{totalWithGST.toFixed(2)}</span></div>
               </div>
-              
-              <div style={{ 
-                background: "#fef3c7", 
-                borderRadius: 8, 
-                padding: "0.75rem",
-                marginBottom: "1.25rem",
-                fontSize: "0.75rem",
-                color: "#92400e",
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem"
-              }}>
-                <AlertCircle size={16} className="shrink-0" />
-                <span>This is a one-time registration fee. Your cabin will be active for 30 days.</span>
+
+              <div className="mt-3 sm:mt-4 p-2.5 sm:p-3 bg-amber-50 rounded-lg text-[10px] sm:text-xs text-amber-700 flex items-start gap-2">
+                <Receipt size={14} className="shrink-0 mt-0.5" />
+                <span>Total includes 18% GST (₹{gstAmount.toFixed(2)})</span>
               </div>
-              
-              <div className="flex flex-col gap-2">
-                <button
-                  onClick={createCabinAndOrder}
-                  disabled={submitting || !razorpayLoaded || paymentProcessing}
-                  style={{
-                    width: "100%",
-                    padding: "0.875rem",
-                    borderRadius: 10,
-                    border: "none",
-                    background: (submitting || !razorpayLoaded || paymentProcessing)
-                      ? "#a5b4fc"
-                      : "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
-                    color: "#fff",
-                    fontFamily: "inherit",
-                    fontSize: "0.875rem",
-                    fontWeight: 700,
-                    cursor: (submitting || !razorpayLoaded || paymentProcessing) ? "not-allowed" : "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 8,
-                    boxShadow: (submitting || !razorpayLoaded || paymentProcessing) ? "none" : "0 4px 14px rgba(99,102,241,0.35)",
-                    transition: "all 160ms",
-                  }}
-                >
-                  {submitting || paymentProcessing ? (
-                    <>
-                      <Loader2 size={17} className="animate-spin" />
-                      {paymentProcessing ? 'Processing Payment...' : 'Creating Cabin & Order...'}
-                    </>
-                  ) : !razorpayLoaded ? (
-                    "Loading Payment Gateway..."
-                  ) : (
-                    <>Pay ₹{isFirstCabin ? '2,000' : '1,000'}</>
-                  )}
-                </button>
+
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-3 sm:mt-4">
                 <button
                   onClick={() => setShowConfirmModal(false)}
                   disabled={paymentProcessing}
-                  style={{
-                    width: "100%",
-                    padding: "0.75rem",
-                    borderRadius: 10,
-                    border: "1.5px solid #e2e8f0",
-                    background: "#fff",
-                    color: paymentProcessing ? "#94a3b8" : "#64748b",
-                    fontFamily: "inherit",
-                    fontSize: "0.875rem",
-                    fontWeight: 600,
-                    cursor: paymentProcessing ? "not-allowed" : "pointer",
-                    transition: "all 160ms",
-                  }}
-                  onMouseEnter={e => { if (!paymentProcessing) e.currentTarget.style.background = "#f8fafc"; }}
-                  onMouseLeave={e => { if (!paymentProcessing) e.currentTarget.style.background = "#fff"; }}
+                  className="py-2.5 sm:py-3 rounded-xl border border-slate-200 text-slate-600 font-semibold text-xs sm:text-sm hover:bg-slate-50 transition-colors"
                 >
                   Cancel
+                </button>
+                <button
+                  onClick={createCabinAndOrder}
+                  disabled={submitting || !razorpayLoaded || paymentProcessing}
+                  className={`py-2.5 sm:py-3 rounded-xl text-white font-bold text-xs sm:text-sm transition-all ${
+                    (submitting || !razorpayLoaded || paymentProcessing)
+                      ? 'bg-slate-400 cursor-not-allowed'
+                      : formData.cabinType === 'exclusive'
+                        ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:shadow-lg'
+                        : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:shadow-lg'
+                  }`}
+                >
+                  {submitting || paymentProcessing ? (
+                    <Loader2 size={16} className="animate-spin mx-auto" />
+                  ) : !razorpayLoaded ? (
+                    "Loading..."
+                  ) : (
+                    `Pay ₹${totalWithGST.toFixed(2)}`
+                  )}
                 </button>
               </div>
             </div>

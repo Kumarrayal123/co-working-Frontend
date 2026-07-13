@@ -1,4 +1,4 @@
-// MyCabinPayments.jsx
+// MyCabinPayments.jsx - Complete with All Data and Professional Invoice
 import axios from "axios";
 import {
   CreditCard,
@@ -25,7 +25,8 @@ import {
   Tag,
   User,
   Calendar as CalendarIcon,
-  Clock as ClockIcon
+  Clock as ClockIcon,
+  Percent
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -33,7 +34,7 @@ import { toast } from "react-toastify";
 import UsersNavbar from "./UsersNavbar";
 import "./Dashboard.css";
 
-const API_URL = "http://localhost:5000";
+const API_URL = "http://62.72.29.27:5003";
 
 const MyCabinPayments = () => {
   const [orders, setOrders] = useState([]);
@@ -239,18 +240,25 @@ const MyCabinPayments = () => {
   };
 
   // ======================
-  // INVOICE DOWNLOAD FUNCTION
+  // PROFESSIONAL INVOICE DOWNLOAD
   // ======================
   const downloadInvoice = (order) => {
     try {
-      const cabinName = getCabinName(order);
-      const cabinAddress = getCabinAddress(order);
-      const amount = formatCurrency(order.amount);
+      const cabin = order.cabin || {};
+      const cabinName = cabin.name || 'Cabin Deleted';
+      const cabinAddress = cabin.address || 'N/A';
+      
+      const amount = order.amount || 0;
+      const baseAmount = order.baseAmount || amount;
+      const gstAmount = order.gstAmount || 0;
+      const gstRate = order.gstRate || 0.18;
       const orderId = order._id.slice(-8).toUpperCase();
       const startDate = formatDate(order.startDate);
       const expiryDate = formatDate(order.expiryDate);
-      const status = order.status.charAt(0).toUpperCase() + order.status.slice(1);
-      const paymentStatus = order.paymentStatus === 'completed' ? 'Completed ✅' : 'Pending ⏳';
+      const status = order.status?.charAt(0).toUpperCase() + order.status?.slice(1) || 'N/A';
+      const paymentStatus = order.paymentStatus === 'completed' ? 'Paid' : 'Pending';
+      const transactionId = order.transactionId || 'N/A';
+      const paymentCount = order.paymentCount || 1;
       const today = new Date().toLocaleDateString('en-IN', {
         day: '2-digit',
         month: 'short',
@@ -270,137 +278,124 @@ const MyCabinPayments = () => {
           <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body {
-              font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-              background: #f0f2f5;
+              font-family: 'Times New Roman', 'Georgia', serif;
+              background: #ffffff;
               padding: 40px;
               display: flex;
               justify-content: center;
-              align-items: center;
               min-height: 100vh;
+              color: #000000;
             }
             .invoice-container {
-              max-width: 900px;
+              max-width: 800px;
               width: 100%;
               background: #ffffff;
-              border-radius: 20px;
-              box-shadow: 0 20px 60px rgba(0,0,0,0.10);
-              overflow: hidden;
+              border: 2px solid #000000;
+              padding: 40px 45px;
             }
             .invoice-header {
-              background: linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #4f46e5 100%);
-              padding: 35px 45px;
-              color: white;
               display: flex;
               justify-content: space-between;
-              align-items: center;
-              position: relative;
-            }
-            .invoice-header::after {
-              content: '';
-              position: absolute;
-              bottom: 0;
-              left: 0;
-              right: 0;
-              height: 4px;
-              background: linear-gradient(90deg, #818cf8, #c7d2fe, #818cf8);
-            }
-            .brand {
-              display: flex;
-              align-items: center;
-              gap: 15px;
-            }
-            .brand-icon {
-              width: 50px;
-              height: 50px;
-              background: rgba(255,255,255,0.15);
-              border-radius: 12px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              font-size: 28px;
+              align-items: flex-start;
+              border-bottom: 3px double #000000;
+              padding-bottom: 20px;
+              margin-bottom: 25px;
             }
             .brand h1 {
-              font-size: 26px;
-              font-weight: 800;
-              letter-spacing: -0.5px;
+              font-size: 28px;
+              font-weight: 700;
+              letter-spacing: 2px;
+              text-transform: uppercase;
+              color: #1a56db;
             }
-            .brand .tagline {
-              font-size: 12px;
-              opacity: 0.7;
-              font-weight: 400;
-              letter-spacing: 1px;
+            .brand .gst {
+              font-size: 11px;
+              color: #666666;
+              margin-top: 2px;
+            }
+            .brand .address-line {
+              font-size: 11px;
+              color: #666666;
+              margin-top: 2px;
             }
             .invoice-number {
               text-align: right;
             }
             .invoice-number .label {
-              font-size: 11px;
-              opacity: 0.6;
+              font-size: 10px;
               text-transform: uppercase;
               letter-spacing: 1px;
+              color: #666666;
             }
             .invoice-number .number {
               font-size: 22px;
               font-weight: 700;
-              margin-top: 4px;
+              color: #000000;
+              margin-top: 2px;
             }
-            .invoice-body {
-              padding: 40px 45px;
+            .invoice-number .date {
+              font-size: 12px;
+              color: #333333;
+              margin-top: 4px;
             }
             .info-grid {
               display: grid;
               grid-template-columns: 1fr 1fr;
               gap: 30px;
-              margin-bottom: 30px;
-              padding-bottom: 25px;
-              border-bottom: 2px solid #f1f5f9;
+              margin-bottom: 25px;
+              padding-bottom: 20px;
+              border-bottom: 1px solid #cccccc;
             }
             .info-group .title {
-              font-size: 11px;
+              font-size: 10px;
               font-weight: 700;
               text-transform: uppercase;
-              letter-spacing: 0.8px;
-              color: #94a3b8;
-              margin-bottom: 8px;
+              letter-spacing: 1px;
+              color: #666666;
+              margin-bottom: 6px;
             }
             .info-group .value {
-              font-size: 15px;
+              font-size: 14px;
               font-weight: 600;
-              color: #0f172a;
+              color: #000000;
               line-height: 1.6;
             }
             .info-group .value-small {
-              font-size: 13px;
+              font-size: 12px;
               font-weight: 400;
-              color: #475569;
+              color: #333333;
+            }
+            .info-group .address-line {
+              font-size: 12px;
+              color: #333333;
+              margin-top: 2px;
             }
             .invoice-table {
               width: 100%;
               border-collapse: collapse;
-              margin: 25px 0;
+              margin: 20px 0 25px;
             }
             .invoice-table thead {
-              background: #f8fafc;
-              border-radius: 10px;
+              border-top: 2px solid #000000;
+              border-bottom: 2px solid #000000;
             }
             .invoice-table thead th {
-              padding: 14px 16px;
+              padding: 10px 12px;
               text-align: left;
-              font-size: 11px;
+              font-size: 10px;
               font-weight: 700;
               text-transform: uppercase;
-              letter-spacing: 0.8px;
-              color: #64748b;
-              border-bottom: 2px solid #e2e8f0;
+              letter-spacing: 1px;
+              color: #000000;
             }
             .invoice-table thead th:last-child {
               text-align: right;
             }
             .invoice-table tbody td {
-              padding: 14px 16px;
-              font-size: 14px;
-              color: #1e293b;
-              border-bottom: 1px solid #f1f5f9;
+              padding: 10px 12px;
+              font-size: 13px;
+              color: #000000;
+              border-bottom: 1px solid #eeeeee;
             }
             .invoice-table tbody td:last-child {
               text-align: right;
@@ -409,129 +404,110 @@ const MyCabinPayments = () => {
             .invoice-table tbody tr:last-child td {
               border-bottom: none;
             }
-            .badge {
-              display: inline-block;
-              padding: 4px 14px;
-              border-radius: 20px;
-              font-size: 11px;
-              font-weight: 600;
-            }
-            .badge-active { background: #d1fae5; color: #065f46; }
-            .badge-expired { background: #fee2e2; color: #991b1b; }
-            .badge-cancelled { background: #fef3c7; color: #92400e; }
-            .badge-completed { background: #d1fae5; color: #065f46; }
-            .badge-pending { background: #fef3c7; color: #92400e; }
-            .countdown-box {
-              background: linear-gradient(135deg, #f0fdf4, #dcfce7);
-              border: 1px solid #86efac;
-              border-radius: 12px;
-              padding: 16px 20px;
-              margin: 15px 0;
-              display: flex;
-              align-items: center;
-              justify-content: space-between;
-            }
-            .countdown-box .label { font-size: 13px; font-weight: 600; color: #065f46; }
-            .countdown-box .time { font-size: 20px; font-weight: 700; color: #065f46; }
-            .payment-history-box {
-              background: #f8fafc;
-              border-radius: 12px;
-              padding: 16px 20px;
-              margin: 15px 0;
-              border: 1px solid #e2e8f0;
-            }
-            .payment-history-box .title {
-              font-size: 12px;
-              font-weight: 600;
-              color: #94a3b8;
-              text-transform: uppercase;
-              letter-spacing: 0.5px;
-            }
-            .payment-history-box .count {
-              font-size: 18px;
-              font-weight: 700;
-              color: #1e293b;
-            }
             .totals {
-              margin-top: 25px;
-              padding-top: 25px;
-              border-top: 2px solid #f1f5f9;
+              margin-top: 20px;
+              padding-top: 20px;
+              border-top: 2px solid #000000;
               display: flex;
               justify-content: flex-end;
             }
-            .totals-box { width: 320px; }
+            .totals-box {
+              width: 320px;
+            }
             .totals-row {
               display: flex;
               justify-content: space-between;
-              padding: 8px 0;
-              font-size: 14px;
-              color: #475569;
+              padding: 6px 0;
+              font-size: 13px;
+              color: #333333;
             }
             .totals-row.total {
               font-size: 20px;
-              font-weight: 800;
-              color: #0f172a;
-              border-top: 2px solid #e2e8f0;
-              padding-top: 14px;
+              font-weight: 700;
+              color: #000000;
+              border-top: 2px solid #000000;
+              padding-top: 12px;
               margin-top: 6px;
             }
-            .totals-row.total .amount { color: #4f46e5; }
-            .invoice-footer {
-              padding: 20px 45px;
-              background: #f8fafc;
-              text-align: center;
-              border-top: 1px solid #e2e8f0;
+            .status-row {
+              display: flex;
+              gap: 30px;
+              margin-top: 15px;
+              padding-top: 15px;
+              border-top: 1px solid #cccccc;
+              flex-wrap: wrap;
             }
-            .invoice-footer p { font-size: 12px; color: #94a3b8; }
-            .invoice-footer .highlight { color: #4f46e5; font-weight: 600; }
+            .status-row .item {
+              font-size: 12px;
+            }
+            .status-row .item .label {
+              color: #666666;
+              text-transform: uppercase;
+              font-weight: 700;
+              font-size: 9px;
+              letter-spacing: 0.5px;
+            }
+            .status-row .item .value {
+              font-weight: 600;
+              color: #000000;
+              margin-top: 2px;
+            }
+            .footer {
+              text-align: center;
+              padding-top: 25px;
+              margin-top: 25px;
+              border-top: 2px solid #000000;
+            }
+            .footer .powered {
+              font-size: 14px;
+              font-weight: 700;
+              letter-spacing: 2px;
+              color: #1a56db;
+            }
+            .footer .powered span {
+              color: #1a56db;
+            }
+            .footer .sub {
+              font-size: 10px;
+              color: #666666;
+              margin-top: 4px;
+            }
             .print-btn {
               position: fixed;
               bottom: 30px;
               right: 30px;
-              padding: 14px 32px;
-              background: linear-gradient(135deg, #4f46e5, #6366f1);
-              color: white;
+              padding: 14px 28px;
+              background: #000000;
+              color: #ffffff;
               border: none;
-              border-radius: 14px;
+              border-radius: 4px;
               font-weight: 600;
-              font-size: 14px;
+              font-size: 13px;
               cursor: pointer;
-              box-shadow: 0 8px 30px rgba(79, 70, 229, 0.4);
+              box-shadow: 0 4px 20px rgba(0,0,0,0.15);
               display: flex;
               align-items: center;
               gap: 10px;
-              transition: all 0.3s ease;
-              z-index: 999;
+              font-family: 'Segoe UI', Arial, sans-serif;
+              letter-spacing: 0.5px;
             }
             .print-btn:hover {
-              transform: translateY(-2px);
-              box-shadow: 0 12px 40px rgba(79, 70, 229, 0.5);
+              background: #222222;
             }
             @media print {
-              body { background: white; padding: 0; }
-              .invoice-container { box-shadow: none; border-radius: 0; }
+              body { background: white; padding: 20px; }
+              .invoice-container { border: 1px solid #000000; padding: 30px; }
               .print-btn { display: none !important; }
-              .invoice-header { background: #1e1b4b !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-              .invoice-header::after { display: none; }
-              .badge-active, .badge-expired, .badge-cancelled, .badge-completed, .badge-pending {
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-              }
-              .countdown-box { background: #f0fdf4 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-              .payment-history-box { background: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             }
             @media (max-width: 640px) {
               body { padding: 20px; }
-              .invoice-header { flex-direction: column; text-align: center; gap: 15px; padding: 25px; }
+              .invoice-container { padding: 25px; }
+              .invoice-header { flex-direction: column; text-align: center; gap: 15px; }
               .invoice-number { text-align: center; }
               .info-grid { grid-template-columns: 1fr; gap: 15px; }
-              .invoice-body { padding: 25px; }
-              .invoice-table thead th { font-size: 10px; padding: 10px 12px; }
-              .invoice-table tbody td { font-size: 12px; padding: 10px 12px; }
               .totals { justify-content: center; }
               .totals-box { width: 100%; }
-              .print-btn { bottom: 20px; right: 20px; padding: 12px 20px; font-size: 12px; }
-              .countdown-box { flex-direction: column; gap: 8px; text-align: center; }
+              .status-row { flex-direction: column; gap: 8px; }
             }
           </style>
         </head>
@@ -539,130 +515,101 @@ const MyCabinPayments = () => {
           <div class="invoice-container">
             <div class="invoice-header">
               <div class="brand">
-                <div class="brand-icon">🏢</div>
-                <div>
-                  <h1>IRYAX Workspace</h1>
-                  <div class="tagline">Premium Coworking Spaces</div>
-                </div>
+                <h1>${cabinName.toUpperCase()}</h1>
+                <div class="gst">GST: ${order.gstRate ? (order.gstRate * 100) + '%' : '18%'}</div>
+                <div class="address-line">${cabinAddress}</div>
               </div>
               <div class="invoice-number">
-                <div class="label">Invoice #</div>
-                <div class="number">${orderId}</div>
+                <div class="label">Invoice</div>
+                <div class="number">#${orderId}</div>
+                <div class="date">${today}</div>
               </div>
             </div>
 
-            <div class="invoice-body">
-              <div class="info-grid">
-                <div>
-                  <div class="title">Bill To</div>
-                  <div class="value">${localStorage.getItem('userName') || 'Customer'}</div>
-                  <div class="value-small">Cabin Registration</div>
-                </div>
-                <div>
-                  <div class="title">Invoice Details</div>
-                  <div class="value-small">
-                    <div>📅 Date: ${today}</div>
-                    <div>🆔 Order: #${order._id.slice(-12)}</div>
-                    ${order.transactionId ? `<div>💳 TXN: ${order.transactionId}</div>` : ''}
-                  </div>
-                </div>
+            <div class="info-grid">
+              <div>
+                <div class="title">Bill To</div>
+                <div class="value">${localStorage.getItem('userName') || 'Customer'}</div>
+                <div class="value-small">Cabin Registration</div>
               </div>
-
-              ${order.status === 'active' ? `
-              <div class="countdown-box">
-                <span class="label">⏱️ Time Remaining</span>
-                <span class="time">${daysRemaining} days ${new Date(order.expiryDate).getHours()}h ${new Date(order.expiryDate).getMinutes()}m</span>
+              <div>
+                <div class="title">Cabin Details</div>
+                <div class="value">${cabinName}</div>
+                <div class="address-line">${cabinAddress}</div>
+                <div class="value-small" style="margin-top:4px;">${order.isFirstCabin ? '⭐ First Cabin' : 'Cabin #' + (orders.indexOf(order) + 1)}</div>
               </div>
-              ` : `
-              <div class="countdown-box" style="background:#fef2f2;border-color:#fca5a5;">
-                <span class="label" style="color:#991b1b;">⏱️ Expired</span>
-                <span class="time" style="color:#991b1b;">Renew to activate</span>
+            </div>
+
+            <table class="invoice-table">
+              <thead>
+                <tr>
+                  <th>Description</th>
+                  <th>Details</th>
+                  <th>Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Cabin Registration</strong></td>
+                  <td>
+                    ${cabinName}<br>
+                    <span style="font-size:11px;color:#666666;">${order.isFirstCabin ? 'First Cabin Registration' : 'Cabin Registration'}</span>
+                    ${order.transactionId ? `<br><span style="font-size:10px;color:#888888;font-family:monospace;">TXN: ${order.transactionId}</span>` : ''}
+                    ${order.paymentCount > 1 ? `<br><span style="font-size:11px;color:#059669;font-weight:600;">🔄 Renewal #${order.paymentCount}</span>` : ''}
+                  </td>
+                  <td>₹${baseAmount.toFixed(2)}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="status-row">
+              <div class="item">
+                <div class="label">Payment Method</div>
+                <div class="value">Online</div>
               </div>
-              `}
-
-              <div class="payment-history-box">
-                <div class="title">💰 Payment History</div>
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
-                  <span class="count">${order.paymentCount || 1} payments</span>
-                  <span style="font-size:13px;color:#64748b;">Total: ${formatCurrency((order.paymentCount || 1) * order.amount)}</span>
-                </div>
+              <div class="item">
+                <div class="label">Payment Status</div>
+                <div class="value">${paymentStatus}</div>
               </div>
-
-              <table class="invoice-table">
-                <thead>
-                  <tr>
-                    <th>Description</th>
-                    <th>Details</th>
-                    <th>Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td><strong>Cabin Registration</strong></td>
-                    <td>
-                      <div>${cabinName}</div>
-                      <div style="font-size:12px;color:#94a3b8;">${cabinAddress}</div>
-                      ${order.isFirstCabin ? '<div style="font-size:11px;color:#4f46e5;font-weight:600;">⭐ First Cabin</div>' : ''}
-                      ${order.paymentCount > 1 ? `<div style="font-size:11px;color:#059669;font-weight:600;">🔄 Renewal #${order.paymentCount}</div>` : ''}
-                      ${order.transactionId ? `<div style="font-size:10px;color:#64748b;font-family:monospace;margin-top:4px;">TXN: ${order.transactionId}</div>` : ''}
-                    </td>
-                    <td>${amount}</td>
-                  </tr>
-                </tbody>
-              </table>
-
-              <div style="display:flex;gap:20px;flex-wrap:wrap;margin:10px 0 20px;">
-                <div>
-                  <span style="font-size:12px;color:#94a3b8;">Payment Status</span>
-                  <div><span class="badge badge-${order.paymentStatus}">${paymentStatus}</span></div>
-                </div>
-                <div>
-                  <span style="font-size:12px;color:#94a3b8;">Order Status</span>
-                  <div><span class="badge badge-${order.status}">${status}</span></div>
-                </div>
-                <div>
-                  <span style="font-size:12px;color:#94a3b8;">Validity</span>
-                  <div style="font-size:14px;font-weight:600;color:#0f172a;">${startDate} — ${expiryDate}</div>
-                </div>
-                ${order.razorpayPaymentId ? `
-                <div>
-                  <span style="font-size:12px;color:#94a3b8;">Payment ID</span>
-                  <div style="font-size:12px;font-family:monospace;color:#475569;">${order.razorpayPaymentId}</div>
-                </div>
-                ` : ''}
+              <div class="item">
+                <div class="label">Order Status</div>
+                <div class="value">${status}</div>
               </div>
+              ${order.transactionId ? `
+              <div class="item">
+                <div class="label">Transaction ID</div>
+                <div class="value" style="font-family:monospace;font-size:11px;">${order.transactionId}</div>
+              </div>
+              ` : ''}
+            </div>
 
-              <div class="totals">
-                <div class="totals-box">
-                  <div class="totals-row">
-                    <span>Subtotal</span>
-                    <span>${amount}</span>
-                  </div>
-                  <div class="totals-row">
-                    <span>Tax (GST)</span>
-                    <span>₹0.00</span>
-                  </div>
-                  <div class="totals-row total">
-                    <span>Total Amount</span>
-                    <span class="amount">${amount}</span>
-                  </div>
+            <div class="totals">
+              <div class="totals-box">
+                <div class="totals-row">
+                  <span>Subtotal</span>
+                  <span>₹${baseAmount.toFixed(2)}</span>
+                </div>
+                <div class="totals-row">
+                  <span>GST (${(gstRate * 100).toFixed(0)}%)</span>
+                  <span>₹${gstAmount.toFixed(2)}</span>
+                </div>
+                <div class="totals-row total">
+                  <span>Total Amount</span>
+                  <span class="amount">₹${amount.toFixed(2)}</span>
                 </div>
               </div>
             </div>
 
-            <div class="invoice-footer">
-              <p>
-                Thank you for choosing <span class="highlight">IRYAX Workspace</span> • 
-                This is a system generated invoice • Valid for 30 days
-              </p>
-              <p style="font-size:10px;margin-top:6px;color:#cbd5e1;">
-                For any queries, contact support@ingrainworkspace.com
-              </p>
+            <div class="footer">
+              <div class="powered">POWERED BY <span>IRYAX SPACE</span></div>
+              <div class="sub">Thank you for choosing ${cabinName}</div>
+              <div class="sub" style="margin-top:2px;">This is a system generated invoice</div>
+              <div class="sub" style="margin-top:2px;font-size:8px;">${order.isFirstCabin ? '⭐ First Cabin Registration' : `Payment #${order.paymentCount || 1}`}</div>
             </div>
           </div>
 
           <button class="print-btn" onclick="window.print()">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="6 9 6 2 18 2 18 9"/>
               <path d="M18 9H6"/>
               <path d="M18 13v6H6v-6"/>
@@ -839,12 +786,22 @@ const MyCabinPayments = () => {
                               {order.cabin === null && (
                                 <span className="text-[10px] text-red-500 font-medium">⚠️ Cabin Deleted</span>
                               )}
+                              {order.isFirstCabin && (
+                                <span className="text-[10px] text-indigo-600 font-medium ml-1">⭐ First</span>
+                              )}
                             </div>
                           </td>
                           <td className="py-3 px-4">
-                            <p className="font-bold text-indigo-600 text-sm">
-                              {formatCurrency(order.amount)}
-                            </p>
+                            <div>
+                              <p className="font-bold text-indigo-600 text-sm">
+                                {formatCurrency(order.amount)}
+                              </p>
+                              {order.baseAmount && order.gstAmount && (
+                                <p className="text-[8px] text-slate-400">
+                                  Base: ₹{order.baseAmount} + GST: ₹{order.gstAmount}
+                                </p>
+                              )}
+                            </div>
                           </td>
                           <td className="py-3 px-4">
                             {order.transactionId ? (
@@ -995,7 +952,7 @@ const MyCabinPayments = () => {
         </div>
       </main>
 
-      {/* Order Detail Modal - Fixed Overlay */}
+      {/* Order Detail Modal */}
       {showDetailModal && selectedOrder && (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={(e) => {
           if (e.target === e.currentTarget) setShowDetailModal(false);
@@ -1043,7 +1000,6 @@ const MyCabinPayments = () => {
 
             <div style={{ padding: "1.5rem" }}>
               <div className="space-y-4">
-                {/* Cabin Info */}
                 <div className="bg-slate-50 rounded-xl p-4">
                   <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Cabin Details</p>
                   <p className="font-semibold text-slate-800 mt-1">{getCabinName(selectedOrder)}</p>
@@ -1051,14 +1007,35 @@ const MyCabinPayments = () => {
                     <MapPin size={14} />
                     {getCabinAddress(selectedOrder)}
                   </p>
+                  {selectedOrder.isFirstCabin && (
+                    <span className="text-xs text-indigo-600 font-medium mt-1 inline-block">⭐ First Cabin</span>
+                  )}
                   {selectedOrder.cabin === null && (
                     <span className="text-xs text-red-500 font-medium mt-1 inline-block">⚠️ Cabin Deleted</span>
                   )}
                 </div>
 
-                {/* Transaction ID */}
+                {/* Amount Breakdown */}
+                <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-100">
+                  <p className="text-xs font-medium text-indigo-600 uppercase tracking-wider">Amount Breakdown</p>
+                  <div className="mt-2 space-y-1.5">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-600">Base Amount</span>
+                      <span className="font-semibold">₹{selectedOrder.baseAmount?.toFixed(2) || selectedOrder.amount}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-600">GST ({(selectedOrder.gstRate * 100).toFixed(0)}%)</span>
+                      <span className="font-semibold">₹{selectedOrder.gstAmount?.toFixed(2) || '0.00'}</span>
+                    </div>
+                    <div className="border-t border-indigo-200 pt-1.5 flex justify-between text-sm font-bold">
+                      <span>Total</span>
+                      <span className="text-indigo-600">₹{selectedOrder.amount.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+
                 {selectedOrder.transactionId && (
-                  <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-100">
+                  <div className="bg-slate-50 rounded-xl p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Hash size={18} className="text-indigo-600" />
@@ -1071,12 +1048,11 @@ const MyCabinPayments = () => {
                   </div>
                 )}
 
-                {/* Payment Count */}
                 <div className="bg-purple-50 rounded-xl p-4 border border-purple-100">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <History size={18} className="text-purple-600" />
-                      <span className="text-sm font-medium text-slate-700">Total Payments</span>
+                      <span className="text-sm font-medium text-slate-700">Payment Count</span>
                     </div>
                     <span className="text-xl font-bold text-purple-600">
                       {selectedOrder.paymentCount || 1}
@@ -1084,7 +1060,6 @@ const MyCabinPayments = () => {
                   </div>
                 </div>
 
-                {/* Countdown in Modal */}
                 {selectedOrder.status === 'active' && countdowns[selectedOrder._id] > 0 && (
                   <div className={`rounded-xl p-4 border ${
                     countdowns[selectedOrder._id] < 86400 
@@ -1122,7 +1097,6 @@ const MyCabinPayments = () => {
                   </div>
                 )}
 
-                {/* Payment Info */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-slate-50 rounded-xl p-4">
                     <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Amount</p>
@@ -1141,7 +1115,6 @@ const MyCabinPayments = () => {
                   </div>
                 </div>
 
-                {/* Razorpay Details */}
                 <div className="bg-slate-50 rounded-xl p-4">
                   <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Payment Details</p>
                   {selectedOrder.razorpayPaymentId && (
@@ -1168,7 +1141,6 @@ const MyCabinPayments = () => {
                   </div>
                 </div>
 
-                {/* Dates */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-slate-50 rounded-xl p-4">
                     <p className="text-xs font-medium text-slate-500 uppercase tracking-wider flex items-center gap-1">
@@ -1196,7 +1168,6 @@ const MyCabinPayments = () => {
                   </div>
                 </div>
 
-                {/* Order Info */}
                 <div className="bg-slate-50 rounded-xl p-4">
                   <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Order Info</p>
                   <div className="flex justify-between items-center mt-1">
@@ -1211,6 +1182,10 @@ const MyCabinPayments = () => {
                     <span className="text-sm text-slate-600">Last Updated</span>
                     <span className="text-xs text-slate-500">{formatDateTime(selectedOrder.updatedAt)}</span>
                   </div>
+                  <div className="flex justify-between items-center mt-1">
+                    <span className="text-sm text-slate-600">Payment Count</span>
+                    <span className="text-sm font-medium text-slate-700">{selectedOrder.paymentCount || 1}</span>
+                  </div>
                   {selectedOrder.isFirstCabin && (
                     <div className="flex justify-between items-center mt-1">
                       <span className="text-sm text-slate-600">Type</span>
@@ -1219,7 +1194,6 @@ const MyCabinPayments = () => {
                   )}
                 </div>
 
-                {/* Action Buttons */}
                 <div className="flex flex-col gap-2">
                   <button
                     onClick={() => {
@@ -1251,7 +1225,6 @@ const MyCabinPayments = () => {
                     Download Invoice
                   </button>
 
-                  {/* Renew Button - ALWAYS VISIBLE in Modal */}
                   <button
                     onClick={() => {
                       setShowDetailModal(false);

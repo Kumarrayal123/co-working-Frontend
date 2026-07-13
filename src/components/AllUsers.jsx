@@ -12,13 +12,19 @@ import {
   UserX,
   Building2,
   RefreshCw,
+  Home,
+  ShoppingBag,
+  IndianRupee,
+  TrendingUp,
+  CheckCircle,
+  Clock
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import AdminNavbar from "./AdminNavbar";
 import "./Dashboard.css";
 import { toast } from "react-toastify";
 
-const API_URL = "http://localhost:5000";
+const API_URL = "http://62.72.29.27:5003";
 
 const ROLE_COLORS = {
   user:   { bg: "#eff6ff", color: "#1d4ed8", label: "User" },
@@ -40,6 +46,10 @@ const fmt = (dateStr) => {
   return new Date(dateStr).toLocaleDateString("en-IN", {
     day: "numeric", month: "short", year: "numeric",
   });
+};
+
+const fmtCurrency = (amount) => {
+  return `₹${amount?.toLocaleString('en-IN') || 0}`;
 };
 
 export default function AllUsers() {
@@ -87,10 +97,17 @@ export default function AllUsers() {
     setError(null);
     try {
       const res = await axios.get(`${API_URL}/api/admin/users`);
-      setUsers(Array.isArray(res.data) ? res.data : []);
+      if (res.data && res.data.success) {
+        setUsers(Array.isArray(res.data.users) ? res.data.users : []);
+      } else if (Array.isArray(res.data)) {
+        setUsers(res.data);
+      } else {
+        setUsers([]);
+        setError("Invalid response format");
+      }
     } catch (err) {
       console.error(err);
-      setError("Failed to load users. Please try again.");
+      setError(err.response?.data?.message || "Failed to load users. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -153,8 +170,8 @@ export default function AllUsers() {
           .au-stats { display:grid; grid-template-columns:repeat(2,1fr); gap:0.75rem; margin-bottom:1.5rem; }
           @media(min-width:768px){ .au-stats { grid-template-columns:repeat(4,1fr); } }
           .au-table-wrap { background:#fff; border:1px solid #e4e7ec; border-radius:16px; overflow:hidden; box-shadow:0 1px 2px rgba(16,24,40,.05); }
-          .au-thead { display:grid; grid-template-columns:2fr 2fr 1.5fr 1fr 1fr 160px; padding:.75rem 1.25rem; background:#f8fafc; border-bottom:1px solid #e4e7ec; gap:.75rem; }
-          .au-trow  { display:grid; grid-template-columns:2fr 2fr 1.5fr 1fr 1fr 160px; padding:.875rem 1.25rem; gap:.75rem; align-items:center; border-bottom:1px solid #f1f5f9; transition:background 120ms; }
+          .au-thead { display:grid; grid-template-columns:2fr 2fr 1.5fr 0.8fr 1fr 1fr 120px; padding:.75rem 1.25rem; background:#f8fafc; border-bottom:1px solid #e4e7ec; gap:.75rem; }
+          .au-trow  { display:grid; grid-template-columns:2fr 2fr 1.5fr 0.8fr 1fr 1fr 120px; padding:.875rem 1.25rem; gap:.75rem; align-items:center; border-bottom:1px solid #f1f5f9; transition:background 120ms; }
           .au-trow:last-child { border-bottom:none; }
           .au-trow:hover { background:#fafafa; }
           .au-mobile-card { display:none; flex-direction:column; gap:0; border-radius:16px; overflow:hidden; border:1px solid #e4e7ec; background:#fff; box-shadow:0 1px 2px rgba(16,24,40,.05); }
@@ -190,7 +207,6 @@ export default function AllUsers() {
           display: "flex", gap: "0.75rem", flexWrap: "wrap",
           marginBottom: "1.25rem", alignItems: "center",
         }}>
-          {/* Search */}
           <div style={{ position: "relative", flex: "1 1 260px", minWidth: 220 }}>
             <Search
               size={16}
@@ -215,7 +231,6 @@ export default function AllUsers() {
             />
           </div>
 
-          {/* Role filter pills */}
           {["all", "user", "doctor"].map(r => (
             <button
               key={r}
@@ -278,9 +293,8 @@ export default function AllUsers() {
           <>
             {/* Desktop Table */}
             <div className="au-table-wrap">
-              {/* Table Header */}
               <div className="au-thead">
-                {["User", "Contact", "Address", "Role", "Status", "Action"].map(h => (
+                {["User", "Contact", "Address", "Cabins", "Role", "Status", "Action"].map(h => (
                   <span key={h} style={{
                     fontSize: "0.68rem", fontWeight: 700,
                     color: "#64748b", textTransform: "uppercase",
@@ -291,17 +305,16 @@ export default function AllUsers() {
                 ))}
               </div>
 
-              {/* Rows */}
               {filtered.map((user, idx) => {
                 const st  = getStatus(user.status);
                 const rl  = getRole(user.role);
+                const cabinCount = user.cabinStats?.total || user.cabins?.length || 0;
                 return (
                   <div
                     key={user._id}
                     className="au-trow"
                     style={{ borderBottom: idx < filtered.length - 1 ? "1px solid #f1f5f9" : "none" }}
                   >
-                    {/* User Name + Avatar */}
                     <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", minWidth: 0 }}>
                       <div style={{
                         width: 38, height: 38, borderRadius: "50%", flexShrink: 0,
@@ -321,7 +334,6 @@ export default function AllUsers() {
                       </div>
                     </div>
 
-                    {/* Contact */}
                     <div style={{ minWidth: 0 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 3 }}>
                         <Mail size={12} color="#6366f1" />
@@ -337,7 +349,6 @@ export default function AllUsers() {
                       </div>
                     </div>
 
-                    {/* Address */}
                     <div style={{ display: "flex", alignItems: "flex-start", gap: 5, minWidth: 0 }}>
                       <MapPin size={12} color="#94a3b8" style={{ marginTop: 2, flexShrink: 0 }} />
                       <span style={{ fontSize: "0.75rem", color: "#64748b", overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
@@ -345,7 +356,21 @@ export default function AllUsers() {
                       </span>
                     </div>
 
-                    {/* Role badge */}
+                    {/* ─── CABIN COUNT COLUMN ─── */}
+                    <div>
+                      <span style={{
+                        display: "inline-flex", alignItems: "center", gap: 4,
+                        padding: "3px 10px",
+                        borderRadius: 999,
+                        fontSize: "0.68rem", fontWeight: 700,
+                        background: cabinCount > 0 ? "#f0fdf4" : "#f1f5f9",
+                        color: cabinCount > 0 ? "#15803d" : "#94a3b8",
+                      }}>
+                        <Home size={12} />
+                        {cabinCount}
+                      </span>
+                    </div>
+
                     <div>
                       <span style={{
                         display: "inline-block",
@@ -359,7 +384,6 @@ export default function AllUsers() {
                       </span>
                     </div>
 
-                    {/* Status badge */}
                     <div>
                       <span style={{
                         display: "inline-flex", alignItems: "center", gap: 5,
@@ -374,7 +398,6 @@ export default function AllUsers() {
                       </span>
                     </div>
 
-                    {/* Action buttons */}
                     <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
                       {user.status === "pending" ? (
                         <>
@@ -436,6 +459,7 @@ export default function AllUsers() {
               {filtered.map((user) => {
                 const st = getStatus(user.status);
                 const rl = getRole(user.role);
+                const cabinCount = user.cabinStats?.total || user.cabins?.length || 0;
                 return (
                   <div key={user._id} className="au-card-row">
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", marginBottom: "0.75rem" }}>
@@ -466,6 +490,10 @@ export default function AllUsers() {
                       <div style={{ display: "flex", alignItems: "center", gap: 5 }}><Mail size={12} color="#6366f1" /><span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{user.email || "—"}</span></div>
                       <div style={{ display: "flex", alignItems: "center", gap: 5 }}><Phone size={12} color="#6366f1" /><span>{user.mobile || "—"}</span></div>
                       {user.address && <div style={{ display: "flex", alignItems: "flex-start", gap: 5 }}><MapPin size={12} color="#94a3b8" style={{ marginTop: 2, flexShrink: 0 }} /><span>{user.address}</span></div>}
+                      <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                        <Home size={12} color="#6366f1" />
+                        <span style={{ fontWeight: 600, color: "#1e293b" }}>{cabinCount} {cabinCount === 1 ? 'Cabin' : 'Cabins'}</span>
+                      </div>
                     </div>
                     <div style={{ display: "flex", gap: "0.5rem" }}>
                       {user.status === "pending" && (
@@ -490,7 +518,7 @@ export default function AllUsers() {
         )}
       </main>
 
-      {/* ── User Detail Modal ── */}
+      {/* ── User Detail Modal WITH CABIN STATS ── */}
       {viewUser && (
         <div
           style={{
@@ -505,9 +533,12 @@ export default function AllUsers() {
             onClick={e => e.stopPropagation()}
             style={{
               background: "#fff", borderRadius: 20,
-              width: "100%", maxWidth: 520,
+              width: "100%", maxWidth: 560,
               boxShadow: "0 24px 60px rgba(0,0,0,0.18)",
               overflow: "hidden",
+              maxHeight: "90vh",
+              display: "flex",
+              flexDirection: "column",
               animation: "modalIn 200ms cubic-bezier(0.34,1.3,0.64,1) forwards",
             }}
           >
@@ -518,6 +549,7 @@ export default function AllUsers() {
               background: "linear-gradient(135deg,#6366f1 0%,#8b5cf6 60%,#06b6d4 100%)",
               padding: "1.5rem",
               position: "relative",
+              flexShrink: 0,
             }}>
               <button
                 onClick={() => setViewUser(null)}
@@ -568,41 +600,220 @@ export default function AllUsers() {
               </div>
             </div>
 
-            {/* Modal Body */}
-            <div style={{ padding: "1.5rem", maxHeight: "60vh", overflowY: "auto" }} className="custom-scrollbar">
-              {[
-                { icon: Mail,      label: "Email",        value: viewUser.email },
-                { icon: Phone,     label: "Mobile",       value: viewUser.mobile },
-                { icon: MapPin,    label: "Address",      value: viewUser.address },
-                { icon: Building2, label: "Organization", value: viewUser.organizationName },
-                { icon: Calendar,  label: "Registered",   value: fmt(viewUser.createdAt) },
-              ].map(({ icon: Icon, label, value }) => (
-                <div key={label} style={{
-                  display: "flex", alignItems: "flex-start", gap: "0.875rem",
-                  padding: "0.75rem 0",
-                  borderBottom: "1px solid #f1f5f9",
-                }}>
-                  <div style={{
-                    width: 34, height: 34, borderRadius: 10, flexShrink: 0,
-                    background: "#eef2ff",
-                    display: "flex", alignItems: "center", justifyContent: "center",
+            {/* Modal Body - Scrollable */}
+            <div style={{ padding: "1.5rem", overflowY: "auto", flex: 1 }} className="custom-scrollbar">
+
+              {/* User Details */}
+              <div style={{ marginBottom: "1rem" }}>
+                <h4 style={{ margin: "0 0 0.75rem 0", fontSize: "0.75rem", fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  User Information
+                </h4>
+                {[
+                  { icon: Mail,      label: "Email",        value: viewUser.email },
+                  { icon: Phone,     label: "Mobile",       value: viewUser.mobile },
+                  { icon: MapPin,    label: "Address",      value: viewUser.address },
+                  { icon: Building2, label: "Organization", value: viewUser.organizationName || "—" },
+                  { icon: Calendar,  label: "Registered",   value: fmt(viewUser.createdAt) },
+                ].map(({ icon: Icon, label, value }) => (
+                  <div key={label} style={{
+                    display: "flex", alignItems: "flex-start", gap: "0.875rem",
+                    padding: "0.6rem 0",
+                    borderBottom: "1px solid #f1f5f9",
                   }}>
-                    <Icon size={16} color="#6366f1" />
+                    <div style={{
+                      width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+                      background: "#eef2ff",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>
+                      <Icon size={16} color="#6366f1" />
+                    </div>
+                    <div>
+                      <p style={{ margin: 0, fontSize: "0.68rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                        {label}
+                      </p>
+                      <p style={{ margin: 0, fontSize: "0.875rem", fontWeight: 600, color: "#101828", marginTop: 2 }}>
+                        {value || "—"}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p style={{ margin: 0, fontSize: "0.68rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                      {label}
-                    </p>
-                    <p style={{ margin: 0, fontSize: "0.875rem", fontWeight: 600, color: "#101828", marginTop: 2 }}>
-                      {value || "—"}
-                    </p>
+                ))}
+              </div>
+
+              {/* ─── CABIN STATS ─── */}
+              {viewUser.cabinStats && (
+                <div style={{ marginBottom: "1rem" }}>
+                  <h4 style={{ margin: "0 0 0.75rem 0", fontSize: "0.75rem", fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                    <Home size={14} style={{ display: "inline", marginRight: 4 }} /> Cabin Statistics
+                  </h4>
+                  <div style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))",
+                    gap: "0.5rem",
+                  }}>
+                    <div style={{
+                      background: "#f8fafc",
+                      borderRadius: 10,
+                      padding: "0.75rem",
+                      textAlign: "center",
+                      border: "1px solid #e4e7ec",
+                    }}>
+                      <p style={{ margin: 0, fontSize: "0.6rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                        Total Cabins
+                      </p>
+                      <p style={{ margin: 0, fontSize: "1.25rem", fontWeight: 800, color: "#1e293b" }}>
+                        {viewUser.cabinStats.total || 0}
+                      </p>
+                    </div>
+                    <div style={{
+                      background: "#f0fdf4",
+                      borderRadius: 10,
+                      padding: "0.75rem",
+                      textAlign: "center",
+                      border: "1px solid #dcfce7",
+                    }}>
+                      <p style={{ margin: 0, fontSize: "0.6rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                        Active
+                      </p>
+                      <p style={{ margin: 0, fontSize: "1.25rem", fontWeight: 800, color: "#15803d" }}>
+                        {viewUser.cabinStats.active || 0}
+                      </p>
+                    </div>
+                    <div style={{
+                      background: "#fef2f2",
+                      borderRadius: 10,
+                      padding: "0.75rem",
+                      textAlign: "center",
+                      border: "1px solid #fee2e2",
+                    }}>
+                      <p style={{ margin: 0, fontSize: "0.6rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                        Inactive
+                      </p>
+                      <p style={{ margin: 0, fontSize: "1.25rem", fontWeight: 800, color: "#dc2626" }}>
+                        {viewUser.cabinStats.inactive || 0}
+                      </p>
+                    </div>
+                    <div style={{
+                      background: "#fefce8",
+                      borderRadius: 10,
+                      padding: "0.75rem",
+                      textAlign: "center",
+                      border: "1px solid #fef08a",
+                    }}>
+                      <p style={{ margin: 0, fontSize: "0.6rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                        <IndianRupee size={10} style={{ display: "inline" }} /> Earnings
+                      </p>
+                      <p style={{ margin: 0, fontSize: "1rem", fontWeight: 800, color: "#ca8a04" }}>
+                        {fmtCurrency(viewUser.cabinStats.totalEarnings || 0)}
+                      </p>
+                    </div>
+                    <div style={{
+                      background: "#eff6ff",
+                      borderRadius: 10,
+                      padding: "0.75rem",
+                      textAlign: "center",
+                      border: "1px solid #bfdbfe",
+                    }}>
+                      <p style={{ margin: 0, fontSize: "0.6rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                        <ShoppingBag size={10} style={{ display: "inline" }} /> Active Orders
+                      </p>
+                      <p style={{ margin: 0, fontSize: "1.25rem", fontWeight: 800, color: "#2563eb" }}>
+                        {viewUser.cabinStats.activeOrders || 0}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              ))}
+              )}
+
+              {/* ─── USER'S CABINS ─── */}
+              {viewUser.cabins && viewUser.cabins.length > 0 && (
+                <div style={{ marginBottom: "1rem" }}>
+                  <h4 style={{ margin: "0 0 0.75rem 0", fontSize: "0.75rem", fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                    <Home size={14} style={{ display: "inline", marginRight: 4 }} /> User's Cabins ({viewUser.cabins.length})
+                  </h4>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                    {viewUser.cabins.map((cabin) => (
+                      <div key={cabin._id} style={{
+                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                        padding: "0.5rem 0.75rem",
+                        background: "#f8fafc",
+                        border: "1px solid #e2e8f0",
+                        borderRadius: 8,
+                      }}>
+                        <div style={{ minWidth: 0 }}>
+                          <p style={{ margin: 0, fontSize: "0.78rem", fontWeight: 600, color: "#1e293b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {cabin.name || "—"}
+                          </p>
+                          <p style={{ margin: 0, fontSize: "0.65rem", color: "#94a3b8" }}>
+                            {cabin.address || "—"} • ₹{cabin.price}/hr • {cabin.capacity} seats
+                          </p>
+                        </div>
+                        <span style={{
+                          display: "inline-flex", alignItems: "center", gap: 4,
+                          padding: "2px 8px",
+                          borderRadius: 999,
+                          fontSize: "0.6rem",
+                          fontWeight: 700,
+                          background: cabin.isActive ? "#f0fdf4" : "#fef2f2",
+                          color: cabin.isActive ? "#15803d" : "#dc2626",
+                        }}>
+                          {cabin.isActive ? <CheckCircle size={10} /> : <X size={10} />}
+                          {cabin.isActive ? "Active" : "Inactive"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ─── USER'S ORDERS ─── */}
+              {viewUser.orders && viewUser.orders.length > 0 && (
+                <div style={{ marginBottom: "1rem" }}>
+                  <h4 style={{ margin: "0 0 0.75rem 0", fontSize: "0.75rem", fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                    <ShoppingBag size={14} style={{ display: "inline", marginRight: 4 }} /> Recent Orders ({viewUser.orders.length})
+                  </h4>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                    {viewUser.orders.slice(0, 5).map((order) => (
+                      <div key={order._id} style={{
+                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                        padding: "0.5rem 0.75rem",
+                        background: "#f8fafc",
+                        border: "1px solid #e2e8f0",
+                        borderRadius: 8,
+                      }}>
+                        <div>
+                          <p style={{ margin: 0, fontSize: "0.75rem", fontWeight: 600, color: "#1e293b" }}>
+                            {fmtCurrency(order.amount)}
+                          </p>
+                          <p style={{ margin: 0, fontSize: "0.6rem", color: "#94a3b8" }}>
+                            {order.startDate ? fmt(order.startDate) : "—"} • {order.expiryDate ? fmt(order.expiryDate) : "—"}
+                          </p>
+                        </div>
+                        <span style={{
+                          display: "inline-flex", alignItems: "center", gap: 4,
+                          padding: "2px 8px",
+                          borderRadius: 999,
+                          fontSize: "0.6rem",
+                          fontWeight: 700,
+                          background: order.status === "active" ? "#f0fdf4" : order.status === "completed" ? "#eff6ff" : "#fef2f2",
+                          color: order.status === "active" ? "#15803d" : order.status === "completed" ? "#2563eb" : "#dc2626",
+                        }}>
+                          {order.status === "active" ? <Clock size={10} /> : order.status === "completed" ? <CheckCircle size={10} /> : <X size={10} />}
+                          {order.status || "pending"}
+                        </span>
+                      </div>
+                    ))}
+                    {viewUser.orders.length > 5 && (
+                      <p style={{ fontSize: "0.65rem", color: "#94a3b8", textAlign: "center" }}>
+                        +{viewUser.orders.length - 5} more orders
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Uploaded Documents */}
               {(viewUser.role === "doctor" || viewUser.adharCard || viewUser.panCard || viewUser.mbbsCertificate) && (
-                <div style={{ marginTop: "1.5rem" }}>
+                <div style={{ marginTop: "0.5rem" }}>
                   <h4 style={{ margin: "0 0 0.75rem 0", fontSize: "0.75rem", fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.06em" }}>
                     Uploaded Documents
                   </h4>
@@ -611,7 +822,7 @@ export default function AllUsers() {
                       { label: "Aadhar Card", file: viewUser.adharCard },
                       { label: "PAN Card", file: viewUser.panCard },
                       { label: "MBBS Certificate", file: viewUser.mbbsCertificate },
-                      { label: "PMC Registration Certificate", file: viewUser.pmcRegistration },
+                      { label: "PMC Registration", file: viewUser.pmcRegistration },
                       { label: "NMR ID Card", file: viewUser.nmrId },
                     ].map(({ label, file }) => {
                       if (!file) return null;
@@ -619,18 +830,18 @@ export default function AllUsers() {
                       return (
                         <div key={label} style={{
                           display: "flex", alignItems: "center", justifyContent: "space-between",
-                          padding: "0.625rem 0.75rem", background: "#f8fafc",
+                          padding: "0.5rem 0.75rem", background: "#f8fafc",
                           border: "1px solid #e2e8f0", borderRadius: 8,
                         }}>
-                          <span style={{ fontSize: "0.78rem", fontWeight: 600, color: "#334155" }}>{label}</span>
+                          <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "#334155" }}>{label}</span>
                           <a href={fileUrl} target="_blank" rel="noopener noreferrer" style={{
-                            fontSize: "0.75rem", fontWeight: 600, color: "#6366f1",
+                            fontSize: "0.7rem", fontWeight: 600, color: "#6366f1",
                             textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 3,
                           }}
                           onMouseEnter={e => e.target.style.textDecoration = "underline"}
                           onMouseLeave={e => e.target.style.textDecoration = "none"}
                           >
-                            <Eye size={12} /> View Document
+                            <Eye size={12} /> View
                           </a>
                         </div>
                       );
@@ -641,7 +852,7 @@ export default function AllUsers() {
             </div>
 
             {/* Modal Footer */}
-            <div style={{ padding: "1rem 1.5rem", borderTop: "1px solid #f1f5f9", display: "flex", gap: "0.75rem" }}>
+            <div style={{ padding: "1rem 1.5rem", borderTop: "1px solid #f1f5f9", display: "flex", gap: "0.75rem", flexShrink: 0 }}>
               {viewUser.status === "pending" ? (
                 <>
                   <button

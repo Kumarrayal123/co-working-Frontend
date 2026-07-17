@@ -1,6 +1,6 @@
-// PromotionalPage.jsx
+// PromotionalPage.jsx - Complete with CABINS (#cabins) + Doctor Icon (Postfix)
 import React, { useEffect, useState, createContext, useContext, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   Building2,
   Users,
@@ -14,118 +14,142 @@ import {
   MapPin,
   Wifi,
   Coffee,
-  Monitor,
   Menu,
   X,
   PlayCircle,
   Wallet,
-  Globe,
   Sparkles,
   Zap,
   ChevronDown,
-  ChevronUp,
   HelpCircle,
   Mail,
   Phone,
   Send,
   Sun,
   Moon,
-  Award,
-  TrendingUp,
-  Rocket,
-  Target,
   ParkingCircle,
   Lock,
   Sofa,
   Bath,
-  Dumbbell,
   Tv,
   Printer,
   PhoneCall,
   Fan,
   Eye,
   Grid3x3,
-  Bed,
-  Square,
-  LayoutGrid
+  Stethoscope,
+  Heart,
+  Activity,
+  Brain,
+  Bone,
+  EyeOff,
+  UsersRound,
+  Briefcase,
+  HeartPulse,
+  ClipboardCheck,
+  Microscope,
+  TestTube,
+  ShieldCheck,
+  Sparkles as SparklesIcon,
+  Star as StarIcon,
+  Dumbbell,
+  TrendingUp,
+  Award,
+  Target,
+  Rocket,
+  Car,
+  Wifi as WifiIcon,
+  Users as UsersIcon,
+  DollarSign,
+  Stethoscope as StethoscopeIcon,
+  Target as TargetIcon,
+  Eye as EyeIcon,
+  Flag
 } from "lucide-react";
 import logo from "../assets/logo.png";
 
-// ─── INLINE STYLES FOR ANIMATIONS ───
-const animationStyles = `
+// ─── STYLES ───
+const styles = `
   @keyframes float {
-    0%, 100% { transform: translateY(0px) rotate(0deg); }
-    50% { transform: translateY(-30px) rotate(180deg); }
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
   }
   @keyframes gradient {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
   }
-  @keyframes fade-in-up {
-    from { opacity: 0; transform: translateY(50px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes fade-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
   @keyframes bounce-slow {
     0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-12px); }
-  }
-  @keyframes pulse-slow {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.7; transform: scale(0.98); }
+    50% { transform: translateY(-10px); }
   }
   @keyframes spin-slow {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
   }
-  @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+  @keyframes heartbeat {
+    0%, 100% { transform: scale(1); }
+    14% { transform: scale(1.05); }
+    28% { transform: scale(1); }
+    42% { transform: scale(1.05); }
+    70% { transform: scale(1); }
+  }
+  @keyframes shimmer {
+    0% { background-position: -200% center; }
+    100% { background-position: 200% center; }
   }
   @keyframes scale-in {
-    from { opacity: 0; transform: scale(0.9); }
+    from { opacity: 0; transform: scale(0.8); }
     to { opacity: 1; transform: scale(1); }
   }
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(60px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes glass-shine {
+    0% { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+  @keyframes float-glass {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-10px) rotate(2deg); }
+  }
+  @keyframes modal-in {
+    from { opacity: 0; transform: scale(0.9) translateY(30px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  @keyframes pulse-ring {
+    0% { transform: scale(0.8); opacity: 0.8; }
+    100% { transform: scale(1.3); opacity: 0; }
+  }
+  @keyframes shine {
+    0% { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
 
-  .animate-float {
-    animation: float linear infinite;
-  }
-  .animate-gradient {
-    background-size: 200% 200%;
-    animation: gradient 3s ease infinite;
-  }
-  .animate-bounce-slow {
-    animation: bounce-slow 2s ease-in-out infinite;
-  }
-  .animate-pulse-slow {
-    animation: pulse-slow 3s ease-in-out infinite;
-  }
-  .animate-spin-slow {
-    animation: spin-slow 4s linear infinite;
-  }
-  .animate-spin {
-    animation: spin 0.5s linear;
-  }
+  .animate-float { animation: float 6s ease-in-out infinite; }
+  .animate-gradient { background-size: 200% 200%; animation: gradient 3s ease infinite; }
+  .animate-bounce-slow { animation: bounce-slow 2s ease-in-out infinite; }
+  .animate-spin-slow { animation: spin-slow 4s linear infinite; }
+  .animate-heartbeat { animation: heartbeat 1.5s ease-in-out infinite; }
+  .animate-shimmer { background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.1) 50%, transparent 100%); background-size: 200% center; animation: shimmer 3s ease-in-out infinite; }
+  .animate-scale-in { animation: scale-in 0.6s ease-out; }
+  .animate-slide-up { animation: slide-up 0.8s ease-out; }
+  .animate-glass-shine { background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%); background-size: 200% center; animation: glass-shine 4s ease-in-out infinite; }
+  .animate-float-glass { animation: float-glass 6s ease-in-out infinite; }
+  .animate-modal-in { animation: modal-in 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+  .animate-pulse-ring { animation: pulse-ring 2s ease-out infinite; }
+  .animate-shine { background-size: 200% center; animation: shine 3s ease-in-out infinite; }
 
   .reveal {
     opacity: 0;
-    transform: translateY(50px);
+    transform: translateY(40px);
     transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .reveal.visible {
     opacity: 1;
     transform: translateY(0);
   }
-  .reveal-delay-100 { transition-delay: 0.1s; }
-  .reveal-delay-200 { transition-delay: 0.2s; }
-  .reveal-delay-300 { transition-delay: 0.3s; }
-  .reveal-delay-400 { transition-delay: 0.4s; }
-  .reveal-delay-500 { transition-delay: 0.5s; }
-  .reveal-delay-600 { transition-delay: 0.6s; }
 
   .line-clamp-2 {
     display: -webkit-box;
@@ -134,22 +158,821 @@ const animationStyles = `
     overflow: hidden;
   }
 
-  ::-webkit-scrollbar {
-    width: 8px;
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #1a3a6b; border-radius: 10px; }
+  
+  .medical-glow {
+    box-shadow: 0 0 40px rgba(26, 58, 107, 0.15);
   }
-  ::-webkit-scrollbar-track {
+  .medical-glow:hover {
+    box-shadow: 0 0 60px rgba(26, 58, 107, 0.3);
+  }
+
+  .typing-text {
+    display: inline-block;
+  }
+  .typing-text .cursor {
+    display: none;
+  }
+  
+  .footer-heart {
+    color: #ef4444;
+    display: inline-block;
+    animation: heartbeat 1.5s ease-in-out infinite;
+  }
+
+  /* Hero styles */
+  .hero-section {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    padding: 80px 24px 60px;
+    overflow: hidden;
+  }
+
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+  }
+
+  .hero-bg img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .hero-text-box {
+    max-width: 580px;
+    margin-left: 0;
+    margin-right: auto;
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    background: rgba(255,255,255,0.85);
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 500;
+    color: #1a3a6b;
+    margin-bottom: 16px;
+    backdrop-filter: blur(4px);
+  }
+
+  .hero-title {
+    font-size: 2.2rem !important;
+    font-weight: 300 !important;
+    line-height: 1.2 !important;
+    color: #0a1628;
+    margin-bottom: 4px;
+  }
+
+  .hero-title-gradient {
+    background: linear-gradient(135deg, #0a1628, #1a3a6b, #0a1628);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 700 !important;
+    animation: gradient 3s ease infinite;
+  }
+
+  .hero-subtitle {
+    font-size: 1.4rem !important;
+    font-weight: 200 !important;
+    line-height: 1.3 !important;
+    color: #1a2a4a;
+  }
+
+  .hero-desc {
+    font-size: 0.85rem !important;
+    line-height: 1.6 !important;
+    color: #1a2a4a;
+    max-width: 480px;
+    margin-top: 8px;
+    font-weight: 300;
+  }
+
+  .hero-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-top: 20px;
+  }
+
+  .btn-primary {
+    padding: 8px 24px !important;
+    font-size: 0.8rem !important;
+    font-weight: 500 !important;
+    color: white;
+    background: linear-gradient(135deg, #0a1628, #1a3a6b);
+    border-radius: 12px;
+    border: none;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+  }
+
+  .btn-primary:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 30px rgba(26, 58, 107, 0.3);
+  }
+
+  .btn-secondary {
+    padding: 8px 24px !important;
+    font-size: 0.8rem !important;
+    font-weight: 300 !important;
+    color: #0a1628;
+    background: rgba(255,255,255,0.7);
+    border: 1px solid rgba(0,0,0,0.15);
+    border-radius: 12px;
+    backdrop-filter: blur(4px);
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+  }
+
+  .btn-secondary:hover {
+    transform: scale(1.05);
+    background: rgba(255,255,255,0.9);
+  }
+
+  .hero-scroll {
+    margin-top: 40px;
+    display: flex;
+    justify-content: flex-start;
+    animation: bounce-slow 2s ease-in-out infinite;
+  }
+
+  .hero-scroll-text {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #4a5a7a;
+  }
+
+  /* NAVBAR STYLES */
+  .navbar-link {
+    font-size: 0.9rem !important;
+    font-weight: 500 !important;
+    padding: 8px 16px !important;
+    color: #1a2a4a !important;
+    cursor: pointer;
+    transition: all 0.3s;
+    border-radius: 9999px;
+    background: none;
+    border: none;
+    font-family: inherit;
+  }
+
+  .navbar-link:hover {
+    color: #0a1628 !important;
+    background: rgba(255,255,255,0.2) !important;
+  }
+
+  .navbar-brand {
+    font-size: 1.2rem !important;
+    font-weight: 700 !important;
+    color: #0a1628 !important;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .navbar-brand .brand-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0a1628, #1a3a6b);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+  }
+
+  .navbar-btn {
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    padding: 8px 20px !important;
+  }
+
+  .navbar-signin {
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+    color: #1a2a4a !important;
+  }
+
+  .navbar-signin:hover {
+    color: #0a1628 !important;
+  }
+
+  .navbar-logo {
+    width: 48px !important;
+    height: 48px !important;
+    border-width: 3px !important;
+    padding: 4px !important;
+  }
+
+  .navbar-logo img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+  }
+
+  /* ─── EQUAL SIZE GLASSMORPHISM CARDS ─── */
+  .glass-card {
+    border-radius: 28px !important;
+    padding: 32px 28px;
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 
+      0 8px 32px rgba(0, 0, 0, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.15) !important;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 240px;
+  }
+
+  .glass-card::before {
+    content: '';
+    position: absolute;
+    top: -60%;
+    left: -60%;
+    width: 220%;
+    height: 220%;
+    background: radial-gradient(
+      circle at 30% 25%,
+      rgba(255, 255, 255, 0.4) 0%,
+      rgba(255, 255, 255, 0.05) 40%,
+      transparent 70%
+    );
+    pointer-events: none;
+    z-index: 0;
+    animation: float-glass 8s ease-in-out infinite;
+  }
+
+  .glass-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40%;
+    background: linear-gradient(
+      to top,
+      rgba(255, 255, 255, 0.05),
+      transparent
+    );
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .glass-card:hover {
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 
+      0 30px 80px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    border-color: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.25) !important;
+  }
+
+  .glass-card .icon-wrapper {
+    width: 60px;
+    height: 60px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 18px;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: white !important;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    flex-shrink: 0;
+  }
+
+  .glass-card:hover .icon-wrapper {
+    transform: scale(1.08) rotate(-4deg);
+    background: rgba(255, 255, 255, 0.3) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  }
+
+  .glass-card h3 {
+    position: relative;
+    z-index: 1;
+    color: #0a1628 !important;
+    font-weight: 700;
+    font-size: 1.15rem;
+    letter-spacing: -0.01em;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
+    margin-bottom: 6px;
+  }
+
+  .glass-card p {
+    position: relative;
+    z-index: 1;
+    color: #1a2a4a !important;
+    font-weight: 400;
+    font-size: 0.9rem;
+    line-height: 1.7;
+    opacity: 0.9;
+    flex: 1;
+  }
+
+  .glass-blue {
+    background: rgba(26, 58, 107, 0.2) !important;
+    border-color: rgba(26, 58, 107, 0.15);
+  }
+  .glass-blue:hover {
+    background: rgba(26, 58, 107, 0.3) !important;
+    border-color: rgba(26, 58, 107, 0.3);
+  }
+  .glass-blue .icon-wrapper {
+    background: rgba(26, 58, 107, 0.3) !important;
+    color: #1a3a6b !important;
+  }
+
+  .glass-teal {
+    background: rgba(13, 148, 136, 0.2) !important;
+    border-color: rgba(13, 148, 136, 0.15);
+  }
+  .glass-teal:hover {
+    background: rgba(13, 148, 136, 0.3) !important;
+    border-color: rgba(13, 148, 136, 0.3);
+  }
+  .glass-teal .icon-wrapper {
+    background: rgba(13, 148, 136, 0.3) !important;
+    color: #0d9488 !important;
+  }
+
+  .glass-purple {
+    background: rgba(124, 58, 237, 0.2) !important;
+    border-color: rgba(124, 58, 237, 0.15);
+  }
+  .glass-purple:hover {
+    background: rgba(124, 58, 237, 0.3) !important;
+    border-color: rgba(124, 58, 237, 0.3);
+  }
+  .glass-purple .icon-wrapper {
+    background: rgba(124, 58, 237, 0.3) !important;
+    color: #7c3aed !important;
+  }
+
+  .glass-rose {
+    background: rgba(220, 38, 38, 0.2) !important;
+    border-color: rgba(220, 38, 38, 0.15);
+  }
+  .glass-rose:hover {
+    background: rgba(220, 38, 38, 0.3) !important;
+    border-color: rgba(220, 38, 38, 0.3);
+  }
+  .glass-rose .icon-wrapper {
+    background: rgba(220, 38, 38, 0.3) !important;
+    color: #dc2626 !important;
+  }
+
+  /* Feature Cards */
+  .feature-card {
+    border-radius: 24px !important;
+    padding: 32px 28px;
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    border: 1px solid rgba(255,255,255,0.1);
+    position: relative;
+    background: rgba(255,255,255,0.05) !important;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .feature-card:hover {
+    transform: translateY(-10px);
+    background: rgba(255,255,255,0.1) !important;
+  }
+
+  .feature-card .feature-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    font-size: 28px;
+    flex-shrink: 0;
+  }
+
+  /* Specialties Gradient */
+  .specialties-gradient-heading {
+    background: linear-gradient(135deg, #0a1628, #1a3a6b, #0a1628);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 700 !important;
+    animation: gradient 3s ease infinite;
+  }
+
+  /* Location List Item */
+  .location-list-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px 20px;
+    border-radius: 16px;
+    transition: all 0.3s;
+    background: white;
+    border: 1px solid rgba(0,0,0,0.04);
+  }
+
+  .location-list-item:hover {
+    background: #f8fafc;
+    transform: translateX(4px);
+    border-color: rgba(26, 58, 107, 0.15);
+  }
+
+  .location-list-item .loc-icon {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #1a3a6b;
+    color: white;
+    transition: all 0.3s;
+    flex-shrink: 0;
+  }
+
+  .location-list-item:hover .loc-icon {
+    transform: scale(1.05) rotate(-3deg);
+  }
+
+  .location-list-item .loc-content h4 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #0a1628;
+    margin-bottom: 2px;
+  }
+
+  .location-list-item .loc-content p {
+    font-size: 0.85rem;
+    color: #666;
+    line-height: 1.5;
+  }
+
+  .location-grid-images {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .location-grid-images .img-main {
+    grid-row: span 2;
+    border-radius: 16px;
+    overflow: hidden;
+    height: 280px;
+  }
+
+  .location-grid-images .img-main img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s;
+  }
+
+  .location-grid-images .img-main:hover img {
+    transform: scale(1.05);
+  }
+
+  .location-grid-images .img-side {
+    border-radius: 16px;
+    overflow: hidden;
+    height: 134px;
+  }
+
+  .location-grid-images .img-side img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s;
+  }
+
+  .location-grid-images .img-side:hover img {
+    transform: scale(1.05);
+  }
+
+  /* ─── CABINS MODAL STYLES ─── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .modal-content {
+    background: white;
+    border-radius: 32px;
+    max-width: 900px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 24px;
+    position: relative;
+    animation: modal-in 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 40px 120px rgba(0, 0, 0, 0.3);
+  }
+
+  .modal-content::-webkit-scrollbar {
+    width: 4px;
+  }
+  .modal-content::-webkit-scrollbar-track {
     background: transparent;
   }
-  ::-webkit-scrollbar-thumb {
-    background: #3b82f6;
+  .modal-content::-webkit-scrollbar-thumb {
+    background: #1a3a6b;
     border-radius: 10px;
   }
-  ::-webkit-scrollbar-thumb:hover {
-    background: #2563eb;
+
+  .modal-close {
+    position: sticky;
+    top: 0;
+    float: right;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    z-index: 10;
+    margin-bottom: 8px;
+  }
+
+  .modal-close:hover {
+    background: #e2e8f0;
+    transform: rotate(90deg);
+  }
+
+  .modal-close svg {
+    color: #1a2a4a;
+  }
+
+  .cabin-card-modal {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .cabin-card-modal:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(26, 58, 107, 0.1);
+    border-color: #1a3a6b;
+  }
+
+  .cabin-card-modal .cabin-image {
+    height: 140px;
+    overflow: hidden;
+    position: relative;
+    background: #f1f5f9;
+  }
+
+  .cabin-card-modal .cabin-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s;
+  }
+
+  .cabin-card-modal:hover .cabin-image img {
+    transform: scale(1.05);
+  }
+
+  .cabin-card-modal .cabin-image .cabin-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    color: white;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+
+  .cabin-card-modal .cabin-body {
+    padding: 14px 16px 16px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .cabin-card-modal .cabin-body h4 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #0a1628;
+    margin-bottom: 2px;
+  }
+
+  .cabin-card-modal .cabin-body .cabin-location {
+    font-size: 0.7rem;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 6px;
+  }
+
+  .cabin-card-modal .cabin-body .cabin-desc {
+    font-size: 0.75rem;
+    color: #64748b;
+    line-height: 1.4;
+    flex: 1;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .cabin-card-modal .cabin-body .cabin-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #f1f5f9;
+  }
+
+  .cabin-card-modal .cabin-body .cabin-price {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #0a1628;
+  }
+
+  .cabin-card-modal .cabin-body .cabin-price span {
+    font-size: 0.65rem;
+    font-weight: 400;
+    color: #94a3b8;
+  }
+
+  .btn-book-now {
+    padding: 5px 14px;
+    background: linear-gradient(135deg, #0a1628, #1a3a6b);
+    color: white;
+    border: none;
+    border-radius: 9999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .btn-book-now:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 20px rgba(26, 58, 107, 0.3);
+  }
+
+  @media (max-width: 640px) {
+    .hero-title {
+      font-size: 1.6rem !important;
+    }
+    .hero-subtitle {
+      font-size: 1.1rem !important;
+    }
+    .hero-desc {
+      font-size: 0.8rem !important;
+    }
+    .hero-text-box {
+      max-width: 100%;
+    }
+    .btn-primary, .btn-secondary {
+      padding: 6px 18px !important;
+      font-size: 0.75rem !important;
+    }
+    .navbar-link {
+      font-size: 0.75rem !important;
+      padding: 6px 12px !important;
+    }
+    .navbar-brand {
+      font-size: 1rem !important;
+    }
+    .navbar-brand .brand-icon {
+      width: 28px;
+      height: 28px;
+    }
+    .navbar-btn {
+      font-size: 0.7rem !important;
+      padding: 6px 14px !important;
+    }
+    .navbar-signin {
+      font-size: 0.7rem !important;
+    }
+    .navbar-logo {
+      width: 38px !important;
+      height: 38px !important;
+    }
+    .glass-card {
+      padding: 20px 16px;
+      border-radius: 20px !important;
+      min-height: 200px;
+    }
+    .glass-card .icon-wrapper {
+      width: 48px;
+      height: 48px;
+    }
+    .glass-card h3 {
+      font-size: 1rem;
+    }
+    .glass-card p {
+      font-size: 0.8rem;
+    }
+    .feature-card {
+      padding: 24px 20px;
+    }
+    .location-grid-images .img-main {
+      height: 180px;
+    }
+    .location-grid-images .img-side {
+      height: 86px;
+    }
+    .location-list-item {
+      padding: 12px 16px;
+    }
+    .modal-content {
+      padding: 16px;
+      border-radius: 20px;
+      max-height: 95vh;
+    }
+    .modal-close {
+      width: 32px;
+      height: 32px;
+    }
+    .cabin-card-modal .cabin-image {
+      height: 120px;
+    }
+    .modal-content {
+      max-width: 100%;
+    }
   }
 `;
 
-// ─── SCROLL REVEAL HOOK ───
+// ─── HOOKS ───
 const useScrollReveal = () => {
   const [isVisible, setIsVisible] = useState(false);
   const ref = useRef(null);
@@ -157,73 +980,45 @@ const useScrollReveal = () => {
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting && !isVisible) {
-          setIsVisible(true);
-        }
+        if (entry.isIntersecting && !isVisible) setIsVisible(true);
       },
-      {
-        threshold: 0.15,
-        rootMargin: "0px 0px -50px 0px"
-      }
+      { threshold: 0.15, rootMargin: "0px 0px -50px 0px" }
     );
-
-    if (ref.current) {
-      observer.observe(ref.current);
-    }
-
-    return () => {
-      if (ref.current) {
-        observer.unobserve(ref.current);
-      }
-    };
+    if (ref.current) observer.observe(ref.current);
+    return () => { if (ref.current) observer.unobserve(ref.current); };
   }, [isVisible]);
 
   return { ref, isVisible };
 };
 
-// ─── THEME CONTEXT ───
-const ThemeContext = createContext();
-
-const ThemeProvider = ({ children }) => {
-  const [theme, setTheme] = useState(() => {
-    const saved = localStorage.getItem("iryax-theme");
-    return saved || "dark";
-  });
-
-  useEffect(() => {
-    localStorage.setItem("iryax-theme", theme);
-    document.documentElement.className = theme;
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark");
-  };
-
-  return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
-      {children}
-    </ThemeContext.Provider>
-  );
-};
-
-const useTheme = () => useContext(ThemeContext);
-
-// ─── REVEAL SECTION COMPONENT ───
 const RevealSection = ({ children, delay = 0, className = "" }) => {
   const { ref, isVisible } = useScrollReveal();
   return (
-    <div 
-      ref={ref} 
-      className={`reveal ${isVisible ? 'visible' : ''} ${className}`}
-      style={{ transitionDelay: `${delay}s` }}
-    >
+    <div ref={ref} className={`reveal ${isVisible ? 'visible' : ''} ${className}`} style={{ transitionDelay: `${delay}s` }}>
       {children}
     </div>
   );
 };
 
-// ─── TYPING ANIMATION ───
-const TypingText = ({ words, speed = 150, pause = 2000 }) => {
+// ─── THEME ───
+const ThemeContext = createContext();
+
+const ThemeProvider = ({ children }) => {
+  const [theme, setTheme] = useState("light");
+
+  useEffect(() => {
+    document.documentElement.className = "light";
+  }, []);
+
+  const toggleTheme = () => {};
+
+  return <ThemeContext.Provider value={{ theme: "light", toggleTheme }}>{children}</ThemeContext.Provider>;
+};
+
+const useTheme = () => useContext(ThemeContext);
+
+// ─── TYPING ───
+const TypingText = ({ words, speed = 130, pause = 2000 }) => {
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [currentText, setCurrentText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
@@ -231,23 +1026,14 @@ const TypingText = ({ words, speed = 150, pause = 2000 }) => {
 
   useEffect(() => {
     const word = words[currentWordIndex];
-    const shouldDelete = isDeleting;
-    const shouldPause = isPaused;
-
-    if (shouldPause) {
-      const pauseTimeout = setTimeout(() => {
-        setIsPaused(false);
-        setIsDeleting(true);
-      }, pause);
-      return () => clearTimeout(pauseTimeout);
+    if (isPaused) {
+      const timeout = setTimeout(() => { setIsPaused(false); setIsDeleting(true); }, pause);
+      return () => clearTimeout(timeout);
     }
-
     const timeout = setTimeout(() => {
-      if (!shouldDelete) {
+      if (!isDeleting) {
         setCurrentText(word.substring(0, currentText.length + 1));
-        if (currentText.length + 1 === word.length) {
-          setIsPaused(true);
-        }
+        if (currentText.length + 1 === word.length) setIsPaused(true);
       } else {
         setCurrentText(word.substring(0, currentText.length - 1));
         if (currentText.length === 0) {
@@ -255,136 +1041,158 @@ const TypingText = ({ words, speed = 150, pause = 2000 }) => {
           setCurrentWordIndex((prev) => (prev + 1) % words.length);
         }
       }
-    }, shouldDelete ? speed / 2 : speed);
-
+    }, isDeleting ? speed / 2 : speed);
     return () => clearTimeout(timeout);
   }, [currentText, isDeleting, isPaused, currentWordIndex, words, speed, pause]);
 
-  return (
-    <span className="inline-block min-w-[140px]">
-      {currentText}
-      <span className="animate-pulse text-blue-400 font-bold">|</span>
-    </span>
-  );
+  return <span className="typing-text">{currentText}</span>;
 };
 
-// ─── COUNTER ANIMATION ───
+// ─── COUNTER ───
 const Counter = ({ target, suffix = "", duration = 2000 }) => {
   const [count, setCount] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
-  const elementRef = useRef(null);
+  const ref = useRef(null);
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !isVisible) {
-          setIsVisible(true);
-        }
-      },
-      { threshold: 0.3 }
-    );
-
-    if (elementRef.current) {
-      observer.observe(elementRef.current);
-    }
-
-    return () => {
-      if (elementRef.current) {
-        observer.unobserve(elementRef.current);
-      }
-    };
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !isVisible) setIsVisible(true);
+    }, { threshold: 0.3 });
+    if (ref.current) observer.observe(ref.current);
+    return () => { if (ref.current) observer.unobserve(ref.current); };
   }, [isVisible]);
 
   useEffect(() => {
     if (!isVisible) return;
-
     let startTime;
-    let animationFrame;
-
-    const updateCount = (timestamp) => {
+    const update = (timestamp) => {
       if (!startTime) startTime = timestamp;
       const progress = Math.min((timestamp - startTime) / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
       setCount(Math.floor(eased * target));
-      if (progress < 1) {
-        animationFrame = requestAnimationFrame(updateCount);
-      }
+      if (progress < 1) requestAnimationFrame(update);
     };
-
-    animationFrame = requestAnimationFrame(updateCount);
-    return () => cancelAnimationFrame(animationFrame);
+    requestAnimationFrame(update);
   }, [isVisible, target, duration]);
 
+  return <span ref={ref}>{count}{suffix}</span>;
+};
+
+// ─── CABINS MODAL ───
+const CabinsModal = ({ isOpen, onClose, cabins, loading, onBookClick }) => {
+  if (!isOpen) return null;
+
+  const activeCabins = cabins?.filter(c => c.isActive === true) || [];
+
   return (
-    <span ref={elementRef}>
-      {count}{suffix}
-    </span>
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose}>
+          <X size={18} />
+        </button>
+
+        <div className="mb-4">
+          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+            <Building2 size={22} className="text-blue-800" />
+            Explore Our Cabins
+          </h2>
+          <p className="text-xs text-gray-500 mt-1">
+            Discover fully-equipped medical practice cabins available for booking
+          </p>
+        </div>
+
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-800 rounded-full animate-spin"></div>
+            <p className="text-sm text-gray-500 mt-3">Loading cabins...</p>
+          </div>
+        ) : activeCabins.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {activeCabins.map((cabin) => (
+              <div key={cabin._id} className="cabin-card-modal">
+                <div className="cabin-image">
+                  {cabin.images && cabin.images.length > 0 ? (
+                    <img 
+                      src={`http://62.72.29.27:5003/${cabin.images[0]}`} 
+                      alt={cabin.name}
+                      onError={(e) => {
+                        e.target.src = "https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=300&fit=crop";
+                      }}
+                    />
+                  ) : (
+                    <img 
+                      src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=300&fit=crop" 
+                      alt={cabin.name}
+                    />
+                  )}
+                  <span className="cabin-badge" style={{ background: 'rgba(16, 185, 129, 0.8)' }}>
+                    Available
+                  </span>
+                </div>
+                <div className="cabin-body">
+                  <h4>{cabin.name}</h4>
+                  <div className="cabin-location">
+                    <MapPin size={11} /> {cabin.address || 'Location not specified'}
+                  </div>
+                  <p className="cabin-desc">{cabin.description || 'No description available'}</p>
+                  <div className="cabin-footer">
+                    <div className="cabin-price">
+                      ₹{cabin.price?.toLocaleString('en-IN') || 0} <span>/ day</span>
+                    </div>
+                    <button 
+                      className="btn-book-now"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onBookClick(cabin);
+                      }}
+                    >
+                      Book Now <ArrowRight size={12} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <Building2 size={40} className="mx-auto text-gray-300 mb-3" />
+            <p className="text-gray-500">No cabins available at the moment.</p>
+          </div>
+        )}
+
+        <div className="mt-4 text-center text-xs text-gray-400 border-t border-gray-100 pt-3">
+          Showing {activeCabins.length} active cabins
+        </div>
+      </div>
+    </div>
   );
 };
 
-// ─── GET AMENITY FUNCTIONS ───
-const getAmenityIcon = (amenityKey) => {
-  const icons = {
-    wifi: Wifi,
-    parking: ParkingCircle,
-    lockers: Lock,
-    comfortSeating: Sofa,
-    privateWashroom: Bath,
-    secureAccess: Shield,
-    coffee: Coffee,
-    gym: Dumbbell,
-    ac: Fan,
-    tv: Tv,
-    printer: Printer,
-    phone: PhoneCall
-  };
-  return icons[amenityKey] || null;
-};
-
-const getAmenityLabel = (amenityKey) => {
-  const labels = {
-    wifi: "WiFi",
-    parking: "Parking",
-    lockers: "Lockers",
-    comfortSeating: "Comfort Seating",
-    privateWashroom: "Private Washroom",
-    secureAccess: "Secure Access",
-    coffee: "Coffee",
-    gym: "Gym",
-    ac: "AC",
-    tv: "TV",
-    printer: "Printer",
-    phone: "Phone"
-  };
-  return labels[amenityKey] || amenityKey;
-};
-
-// ─── MAIN COMPONENT ───
+// ─── MAIN ───
 const PromotionalPage = () => {
   const { theme, toggleTheme } = useTheme();
-  const isDark = theme === "dark";
   const navigate = useNavigate();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [openFaq, setOpenFaq] = useState(null);
-  const [formData, setFormData] = useState({ name: "", email: "", message: "" });
+  const [formData, setFormData] = useState({ name: "", email: "", message: "", specialty: "" });
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [cabins, setCabins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isCabinsModalOpen, setIsCabinsModalOpen] = useState(false);
 
-  const typingWords = ["Space", "Office", "Cabin", "Meeting Room", "Workspace"];
+  const typingWords = ["Medical Chamber", "Clinic Space", "Practice Room", "Consultation Suite"];
 
-  // Fetch cabins from API
+  // Fetch cabins
   useEffect(() => {
     const fetchCabins = async () => {
       try {
         setLoading(true);
         const response = await fetch("http://62.72.29.27:5003/api/cabins");
-        if (!response.ok) throw new Error("Failed to fetch cabins");
+        if (!response.ok) throw new Error("Failed to fetch");
         const data = await response.json();
-        const activeCabins = data.filter(cabin => cabin.isActive === true);
-        setCabins(activeCabins);
+        setCabins(Array.isArray(data) ? data : []);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -395,542 +1203,653 @@ const PromotionalPage = () => {
   }, []);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
-    };
+    const handleScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const handleGetStarted = () => navigate("/login");
-  const handleExplore = () => navigate("/spaces");
-  const handleViewAll = () => navigate("/spaces");
+  const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
+  const toggleFaq = (index) => setOpenFaq(openFaq === index ? null : index);
 
-  const toggleFaq = (index) => {
-    setOpenFaq(openFaq === index ? null : index);
-  };
-
-  const handleFormSubmit = (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (formData.name && formData.email && formData.message) {
       setFormSubmitted(true);
       setTimeout(() => setFormSubmitted(false), 3000);
-      setFormData({ name: "", email: "", message: "" });
+      setFormData({ name: "", email: "", message: "", specialty: "" });
     }
   };
 
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  // ─── MODAL FUNCTIONS ───
+  const openCabinsModal = () => {
+    setIsCabinsModalOpen(true);
   };
 
-  // Theme colors
-  const bg = isDark ? "bg-[#0a0a0f]" : "bg-white";
-  const bgNav = isDark ? "bg-[#0a0a0f]/80" : "bg-white/80";
-  const border = isDark ? "border-white/10" : "border-gray-200";
-  const text = isDark ? "text-white" : "text-gray-900";
-  const textSecondary = isDark ? "text-gray-400" : "text-gray-600";
+  const closeCabinsModal = () => {
+    setIsCabinsModalOpen(false);
+  };
 
-  const features = [
-    { icon: Building2, title: "Premium Spaces", description: "Fully furnished cabins with high-speed internet and modern amenities.", delay: 0 },
-    { icon: Clock, title: "Flexible Booking", description: "Book by hour, day, or month. Cancel anytime.", delay: 0.1 },
-    { icon: Wallet, title: "Smart Payments", description: "Secure payments with wallet system. Transparent pricing.", delay: 0.2 },
-    { icon: Shield, title: "Safe & Secure", description: "24/7 security and insured spaces.", delay: 0.3 },
-    { icon: Users, title: "Community Events", description: "Networking events and workshops to grow your business.", delay: 0.4 },
-    { icon: Headphones, title: "Dedicated Support", description: "24/7 customer support for all your needs.", delay: 0.5 }
-  ];
+  const handleBookClick = (cabin) => {
+    navigate("/login");
+  };
+
+  // ─── SCROLL TO SECTION ───
+  const scrollToSection = (id) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   const stats = [
-    { label: "Happy Users", value: 5000, suffix: "+" },
-    { label: "Spaces", value: 150, suffix: "+" },
-    { label: "Bookings", value: 12000, suffix: "+" },
-    { label: "Cities", value: 15, suffix: "+" }
+    { label: "Doctors Trust Us", value: 120, suffix: "+" },
+    { label: "Clinic Cabins", value: 15, suffix: "+" },
+    { label: "Patient Visits", value: 2500, suffix: "+" },
+    { label: "Specializations", value: 20, suffix: "+" },
+    { label: "Practice Hours", value: 24, suffix: "/7" }
   ];
 
-  const amenities = [
-    { icon: Wifi, label: "High-Speed WiFi" },
-    { icon: Coffee, label: "Free Coffee" },
-    { icon: Monitor, label: "Meeting Rooms" },
-    { icon: MapPin, label: "Prime Locations" },
-    { icon: Shield, label: "24/7 Security" }
+  const specialties = [
+    "Permanent Makeup Artist", "Consulting Periodontist", "RDI Consultant",
+    "Psychotherapist", "Psychiatric", "Paramedical Camouflage Specialist",
+    "Implantologist", "Hypnotherapist", "Cardiologist", "Neurologist",
+    "Dermatologist", "Orthopedic", "Pediatrician", "Gynecologist",
+    "ENT Specialist", "Ophthalmologist", "General Physician", "Radiologist",
+    "Pathologist", "Dentist"
+  ];
+
+  const specialtyIconMap = {
+    "Permanent Makeup Artist": Briefcase,
+    "Consulting Periodontist": Users,
+    "RDI Consultant": ClipboardCheck,
+    "Psychotherapist": Brain,
+    "Psychiatric": Brain,
+    "Paramedical Camouflage Specialist": EyeOff,
+    "Implantologist": Users,
+    "Hypnotherapist": Brain,
+    "Cardiologist": HeartPulse,
+    "Neurologist": Brain,
+    "Dermatologist": EyeOff,
+    "Orthopedic": Bone,
+    "Pediatrician": UsersRound,
+    "Gynecologist": Heart,
+    "ENT Specialist": Stethoscope,
+    "Ophthalmologist": Eye,
+    "General Physician": Stethoscope,
+    "Radiologist": Microscope,
+    "Pathologist": TestTube,
+    "Dentist": Users,
+  };
+
+  const doctorBenefits = [
+    { icon: Shield, title: "No Long Leases", desc: "Avoid long-term commitments and heavy rental deposits.", glassClass: "glass-blue" },
+    { icon: Wallet, title: "Low Operational Costs", desc: "Pay only for what you use. No hidden charges.", glassClass: "glass-teal" },
+    { icon: Users, title: "Admin Hassle-Free", desc: "We manage staff, billing, and daily operations for you.", glassClass: "glass-purple" },
+    { icon: SparklesIcon, title: "Modern Infrastructure", desc: "Fully-equipped with state-of-the-art medical tools.", glassClass: "glass-rose" }
+  ];
+
+  const features = [
+    { icon: Rocket, title: "Quick Setup", desc: "Get started in 24 hours with fully-equipped cabins", number: "01", color: "bg-blue-500/20 text-blue-300" },
+    { icon: TrendingUp, title: "Grow Your Practice", desc: "Scale your practice without property ownership hassles", number: "02", color: "bg-emerald-500/20 text-emerald-300" },
+    { icon: Award, title: "Premium Quality", desc: "High-end medical infrastructure at affordable rates", number: "03", color: "bg-purple-500/20 text-purple-300" },
+    { icon: Target, title: "Prime Locations", desc: "High-visibility clinics in premium areas", number: "04", color: "bg-rose-500/20 text-rose-300" }
+  ];
+
+  const locationList = [
+    { 
+      icon: Building2, 
+      title: "High-Visibility Locations", 
+      desc: "Premium clinics in prime areas with high foot traffic. Get maximum patient exposure."
+    },
+    { 
+      icon: Wallet, 
+      title: "Easy Start", 
+      desc: "Minimal investment required. Everything is set up for you. Just bring your expertise."
+    },
+    { 
+      icon: ShieldCheck, 
+      title: "Zero Operational Stress", 
+      desc: "We handle staff, billing, and daily operations for you. Focus on patient care."
+    }
+  ];
+
+  const locationImages = [
+    "https://th.bing.com/th/id/OIP.aIwddIt_WCGKYrz2xxTrQAHaDt?w=349&h=174&c=7&r=0&o=7&dpr=1.3&pid=1.7&rm=3",
+    "https://th.bing.com/th/id/OIP.v2AxCJV4t4vmtUwgllub9AHaEJ?w=322&h=180&c=7&r=0&o=7&dpr=1.3&pid=1.7&rm=3",
+    "https://th.bing.com/th/id/OIP.5MLq7lZwAKyxLHiBbv-sfgHaE8?w=236&h=180&c=7&r=0&o=7&dpr=1.3&pid=1.7&rm=3"
   ];
 
   const faqs = [
+    { category: "Practice Cabins", q: "What types of medical practice cabins are available?", a: "We offer fully-equipped consultation rooms, procedure rooms, and multi-specialty clinic cabins." },
+    { category: "Flexibility", q: "Do I need to sign a long-term lease?", a: "No! Our model is completely flexible. You can book by hour, day, or month." },
+    { category: "Facilities", q: "What equipment and facilities are included?", a: "All cabins include medical-grade equipment, comfortable patient areas, high-speed WiFi, and 24/7 security." },
+    { category: "Payment", q: "What payment methods are accepted?", a: "We accept credit/debit cards, UPI, net banking, and offer flexible payment plans." },
+    { category: "Support", q: "What administrative support do you provide?", a: "We provide full administrative support including reception services, billing assistance, and patient scheduling." },
+    { category: "Earning", q: "How can I earn from my unused clinic cabin?", a: "List your cabin on our platform and connect with trusted healthcare professionals. We handle the booking and management." }
+  ];
+
+  const medicalImages = [
+    "https://img.magnific.com/free-photo/indian-patient-with-impairment-cervical-foam-attends-check-up_482257-118444.jpg?t=st=1784267836~exp=1784271436~hmac=1e1dac8ba6f8ca799ef165b50ec53a1939a503912d4089316627660437fb3912&w=1480",
+    "https://th.bing.com/th/id/OIP.aIwddIt_WCGKYrz2xxTrQAHaDt?w=349&h=174&c=7&r=0&o=7&dpr=1.3&pid=1.7&rm=3",
+    "https://th.bing.com/th/id/OIP.v2AxCJV4t4vmtUwgllub9AHaEJ?w=322&h=180&c=7&r=0&o=7&dpr=1.3&pid=1.7&rm=3",
+    "https://th.bing.com/th/id/OIP.5MLq7lZwAKyxLHiBbv-sfgHaE8?w=236&h=180&c=7&r=0&o=7&dpr=1.3&pid=1.7&rm=3",
+    "https://th.bing.com/th/id/OIP.rU0X0v1uviFvvgnyoictpAHaEa?w=275&h=180&c=7&r=0&o=7&dpr=1.3&pid=1.7&rm=3",
+    "https://th.bing.com/th/id/OIP.HdHAd9dl-09CIRK3wyCKUwHaDt?w=338&h=175&c=7&r=0&o=7&dpr=1.3&pid=1.7&rm=3"
+  ];
+
+  const heroBgImage = "https://www.kevinmd.com/wp-content/uploads/shutterstock_255837643-1.jpg";
+
+  // ─── HANDLE #cabins LINK ───
+  const handleCabinsClick = (e) => {
+    e.preventDefault();
+    openCabinsModal();
+  };
+
+  // ─── BRAND WITH DOCTOR ICON (POSTFIX - Icon after text) ───
+  const BrandWithIcon = () => (
+    <span className="navbar-brand hidden sm:block group-hover:text-blue-800 transition flex items-center gap-2">
+      IRYAX SPACE
+      <span className="brand-icon flex items-center justify-center">
+        <StethoscopeIcon size={18} />
+      </span>
+    </span>
+  );
+
+  // ─── MISSION & VISION DATA (Smaller cards) ───
+  const missionVisionData = [
     {
-      category: "Subscription & Plans",
-      question: "What are the subscription plans available?",
-      answer: "We offer flexible plans - Hourly (₹199/hr), Daily (₹999/day), and Monthly (₹19,999/month)."
+      title: "Our Mission",
+      icon: TargetIcon,
+      description: "To empower healthcare professionals by providing fully-equipped, flexible medical practice spaces that eliminate the barriers of high costs and long-term commitments, enabling them to focus entirely on patient care.",
+      color: "from-blue-600 to-blue-800",
+      bgColor: "bg-blue-50",
+      borderColor: "border-blue-200"
     },
     {
-      category: "Features & Functionality",
-      question: "What amenities are included?",
-      answer: "All spaces include high-speed WiFi, free coffee/tea, ergonomic seating, meeting room access, and 24/7 security."
-    },
-    {
-      category: "Booking & Access",
-      question: "How do I book a space?",
-      answer: "Browse available spaces, select your preferred cabin, choose date/time, and complete booking."
-    },
-    {
-      category: "Payment & Billing",
-      question: "What payment methods are accepted?",
-      answer: "We accept credit/debit cards, UPI, net banking, Razorpay, and counter payments."
-    },
-    {
-      category: "Support & Help",
-      question: "How can I get support?",
-      answer: "Our support team is available 24/7 via email at support@iryax.com."
-    },
-    {
-      category: "Cancellation & Refund",
-      question: "Can I cancel my booking?",
-      answer: "Yes, cancellations are allowed. Refunds are processed based on our policy."
+      title: "Our Vision",
+      icon: EyeIcon,
+      description: "To revolutionize the healthcare landscape by creating a seamless ecosystem where every doctor can access premium clinic infrastructure without ownership burden, fostering innovation and excellence in medical practice.",
+      color: "from-purple-600 to-indigo-800",
+      bgColor: "bg-purple-50",
+      borderColor: "border-purple-200"
     }
   ];
 
   return (
     <>
-      <style>{animationStyles}</style>
+      <style>{styles}</style>
+      <div className="min-h-screen bg-white text-gray-900 font-light antialiased">
 
-      <div className={`min-h-screen ${bg} ${text} font-light antialiased tracking-wide transition-colors duration-300`}>
+        {/* ─── CABINS MODAL ─── */}
+        <CabinsModal 
+          isOpen={isCabinsModalOpen}
+          onClose={closeCabinsModal}
+          cabins={cabins}
+          loading={loading}
+          onBookClick={handleBookClick}
+        />
 
         {/* ─── NAVBAR ─── */}
-        <nav className={`fixed top-4 left-0 right-0 z-50 px-4 transition-all duration-300 flex items-center justify-center ${
-          scrolled ? "backdrop-blur-xl" : ""
+        <nav className={`fixed top-0 left-0 right-0 z-50 px-6 transition-all duration-300 ${
+          scrolled ? 'backdrop-blur-xl bg-white/95 border-b border-gray-200 shadow-sm' : 'bg-transparent'
         }`}>
-          <div className={`max-w-6xl w-full mx-auto flex items-center justify-between px-5 py-2.5 rounded-full ${
-            scrolled ? `${bgNav} border ${border} shadow-xl` : "bg-transparent"
-          } transition-all duration-300`}>
-            
-            <button onClick={scrollToTop} className="flex items-center gap-2 no-underline flex-shrink-0 cursor-pointer group">
-              <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-white/30 shadow-lg shadow-blue-500/20 flex-shrink-0 bg-white/10 group-hover:scale-110 transition-transform duration-300">
-                <img src={logo} alt="IRYAX Space Logo" className="w-full h-full object-contain p-1" />
+          <div className="max-w-6xl mx-auto flex items-center justify-between h-[72px]">
+            <button onClick={scrollToTop} className="flex items-center gap-3 group">
+              <div className="navbar-logo rounded-full overflow-hidden border-2 border-blue-800/30 shadow-lg shadow-blue-900/20 flex-shrink-0 bg-white/10 group-hover:scale-110 transition">
+                <img src={logo} alt="Logo" className="w-full h-full object-contain" />
               </div>
-              <span className={`text-base font-semibold ${text} tracking-tight hidden sm:block group-hover:text-blue-400 transition-colors duration-300`}>IRYAX Space</span>
+              <BrandWithIcon />
             </button>
 
             <div className="hidden md:flex items-center gap-1">
-              {["Features", "Spaces", "About", "FAQ", "Contact"].map((item, idx) => (
-                <a 
-                  key={item}
-                  href={`#${item.toLowerCase()}`} 
-                  className={`px-4 py-1.5 text-sm ${textSecondary} hover:${isDark ? 'text-white' : 'text-blue-600'} transition-all duration-300 font-light rounded-full hover:bg-white/10 hover:scale-105`}
-                >
-                  {item}
-                </a>
-              ))}
+              <button onClick={() => scrollToSection('benefits')} className="navbar-link">Benefits</button>
+              <a href="#cabins" onClick={handleCabinsClick} className="navbar-link">Cabins</a>
+              <button onClick={() => scrollToSection('specialties')} className="navbar-link">Specialties</button>
+              <button onClick={() => scrollToSection('mission-vision')} className="navbar-link">About</button>
+              <button onClick={() => scrollToSection('faq')} className="navbar-link">FAQ</button>
+              <button onClick={() => scrollToSection('contact')} className="navbar-link">Contact</button>
             </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={toggleTheme}
-                className={`p-1.5 rounded-full ${isDark ? 'bg-white/10 hover:bg-white/20' : 'bg-gray-100 hover:bg-gray-200'} transition-all duration-300 hover:scale-110`}
-              >
-                {isDark ? <Sun size={16} className="text-yellow-400 animate-spin-slow" /> : <Moon size={16} className="text-gray-700" />}
+            <div className="flex items-center gap-3">
+              <button onClick={() => navigate("/login")} className="navbar-signin hidden sm:block hover:text-blue-800 transition px-4 py-2 rounded-full hover:bg-gray-100/50">
+                Sign In
               </button>
-              <button onClick={() => navigate("/login")} className={`hidden sm:block text-sm ${textSecondary} hover:${isDark ? 'text-white' : 'text-blue-600'} transition-all duration-300 font-light px-3 py-1.5 rounded-full hover:bg-white/10 hover:scale-105`}>Sign In</button>
-              <button onClick={handleGetStarted} className="px-4 py-1.5 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm">Get Started</button>
-              <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden p-1.5 rounded-full hover:bg-white/10 transition-all duration-300 hover:scale-110">
-                {mobileMenuOpen ? <X size={20} className="animate-spin" /> : <Menu size={20} />}
+              <button onClick={() => navigate("/login")} className="navbar-btn font-medium text-white bg-gradient-to-r from-blue-900 to-blue-700 rounded-full hover:shadow-lg hover:shadow-blue-900/25 transition hover:scale-105 flex items-center gap-2">
+                <Stethoscope size={14} /> Start Practice
+              </button>
+              <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden p-2 rounded-full hover:bg-gray-100/50 transition">
+                {mobileOpen ? <X size={22} /> : <Menu size={22} />}
               </button>
             </div>
           </div>
         </nav>
 
         {/* ─── MOBILE MENU ─── */}
-        <div className={`fixed inset-0 z-40 ${bg} pt-24 px-6 transition-all duration-500 ${
-          mobileMenuOpen ? "opacity-100 pointer-events-auto translate-x-0" : "opacity-0 pointer-events-none translate-x-full"
-        }`}>
+        <div className={`fixed inset-0 z-40 bg-white pt-20 px-6 transition-all duration-500 ${mobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
           <div className="flex flex-col gap-2 max-w-sm mx-auto">
-            <button onClick={() => { scrollToTop(); setMobileMenuOpen(false); }} className="flex items-center gap-3 px-4 py-2 cursor-pointer group">
-              <div className="w-10 h-10 rounded-full overflow-hidden border border-white/20 flex-shrink-0 bg-white/10 group-hover:scale-110 transition-transform duration-300">
-                <img src={logo} alt="Logo" className="w-full h-full object-contain p-1.5" />
-              </div>
-              <span className={`text-base font-medium ${text} group-hover:text-blue-400 transition-colors duration-300`}>IRYAX Space</span>
+            <button onClick={() => { setMobileOpen(false); scrollToSection('benefits'); }} className="px-4 py-3 text-base text-gray-700 hover:text-blue-800 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-medium text-left">Benefits</button>
+            <a href="#cabins" onClick={(e) => { e.preventDefault(); setMobileOpen(false); openCabinsModal(); }} className="px-4 py-3 text-base text-gray-700 hover:text-blue-800 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-medium text-left block">Cabins</a>
+            <button onClick={() => { setMobileOpen(false); scrollToSection('specialties'); }} className="px-4 py-3 text-base text-gray-700 hover:text-blue-800 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-medium text-left">Specialties</button>
+            <button onClick={() => { setMobileOpen(false); scrollToSection('mission-vision'); }} className="px-4 py-3 text-base text-gray-700 hover:text-blue-800 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-medium text-left">About</button>
+            <button onClick={() => { setMobileOpen(false); scrollToSection('faq'); }} className="px-4 py-3 text-base text-gray-700 hover:text-blue-800 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-medium text-left">FAQ</button>
+            <button onClick={() => { setMobileOpen(false); scrollToSection('contact'); }} className="px-4 py-3 text-base text-gray-700 hover:text-blue-800 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-medium text-left">Contact</button>
+            <div className="h-px bg-gray-200 my-1" />
+            <button onClick={() => { navigate("/login"); setMobileOpen(false); }} className="px-4 py-3 text-base text-center text-white bg-gradient-to-r from-blue-900 to-blue-700 rounded-lg font-semibold">
+              Start Practice
             </button>
-            {["Features", "Spaces", "About", "FAQ", "Contact"].map((item) => (
-              <a 
-                key={item}
-                href={`#${item.toLowerCase()}`} 
-                onClick={() => setMobileMenuOpen(false)} 
-                className={`px-4 py-2.5 text-sm ${textSecondary} hover:${isDark ? 'text-white hover:bg-white/5' : 'text-blue-600 hover:bg-gray-100'} rounded-lg transition-all duration-300 hover:translate-x-2`}
-              >
-                {item}
-              </a>
-            ))}
-            <div className="h-px bg-white/10 my-1" />
-            <button onClick={() => { navigate("/login"); setMobileMenuOpen(false); }} className={`px-4 py-2.5 text-sm text-center ${textSecondary} hover:${isDark ? 'text-white hover:bg-white/5' : 'text-blue-600 hover:bg-gray-100'} rounded-lg transition-all duration-300 hover:translate-x-2`}>Sign In</button>
-            <button onClick={() => { handleGetStarted(); setMobileMenuOpen(false); }} className="px-4 py-2.5 text-sm text-center text-white bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300 hover:scale-105 active:scale-95 font-medium">Get Started</button>
           </div>
         </div>
 
         {/* ─── HERO ─── */}
-        <section className="relative min-h-screen flex items-center justify-center px-6 pt-24 pb-16 overflow-hidden">
-          {isDark && (
-            <>
-              <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/15 rounded-full blur-3xl animate-pulse" />
-              <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-cyan-500/15 rounded-full blur-3xl animate-pulse delay-1000" />
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-purple-500/5 rounded-full blur-3xl animate-pulse delay-2000" />
-            </>
-          )}
-
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            {[...Array(30)].map((_, i) => (
-              <div
-                key={i}
-                className={`absolute rounded-full ${isDark ? 'bg-blue-400/20' : 'bg-blue-400/10'} animate-float`}
-                style={{
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                  animationDuration: `${8 + Math.random() * 15}s`,
-                  animationDelay: `${Math.random() * 10}s`,
-                  width: `${2 + Math.random() * 6}px`,
-                  height: `${2 + Math.random() * 6}px`,
-                }}
-              />
-            ))}
+        <section className="hero-section">
+          <div className="hero-bg">
+            <img src={heroBgImage} alt="Medical Practice" />
           </div>
 
-          <div className="relative max-w-4xl mx-auto text-center z-10">
-            <RevealSection delay={0}>
-              <div className={`inline-flex items-center gap-2 px-4 py-2 ${isDark ? 'bg-white/5 border-white/10' : 'bg-gray-100 border-gray-200'} border rounded-full text-sm ${isDark ? 'text-blue-300' : 'text-blue-600'} mb-6 backdrop-blur-sm font-light tracking-wider hover:scale-105 transition-transform duration-300`}>
-                <Zap size={14} className="animate-pulse" />
-                <span>India's Growing Space Platform</span>
-              </div>
-            </RevealSection>
+          <div className="hero-content">
+            <div className="hero-text-box">
+              <RevealSection>
+                <div className="hero-badge">
+                  <HeartPulse size={12} className="animate-heartbeat" />
+                  <span>India's Premier Medical Co-Working Platform</span>
+                </div>
+              </RevealSection>
 
-            <RevealSection delay={0.1}>
-              <h1 className={`text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-light leading-tight tracking-tight ${text}`}>
-                Find Your Perfect
-                <br />
-                <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent font-bold animate-gradient bg-[length:200%]">
-                  <TypingText words={typingWords} speed={130} pause={1800} />
+              <RevealSection delay={0.1}>
+                <h1 className="hero-title">
+                  Modern Medical Cabins
+                  <br />
+                  <span className="hero-title-gradient">
+                    <TypingText words={typingWords} />
+                  </span>
+                  <br />
+                  <span className="hero-subtitle">for Independent Practice</span>
+                </h1>
+              </RevealSection>
+
+              <RevealSection delay={0.2}>
+                <p className="hero-desc">
+                  Fully-equipped clinic cabins. Flexible hours. Zero admin stress.
+                  Join 120+ doctors who've transformed their practice.
+                </p>
+              </RevealSection>
+
+              <RevealSection delay={0.3}>
+                <div className="hero-buttons">
+                  <button onClick={() => navigate("/login")} className="btn-primary">
+                    <Stethoscope size={14} />
+                    Start Your Practice
+                    <ArrowRight size={14} className="group-hover:translate-x-1 transition" />
+                  </button>
+                  <a href="#cabins" onClick={handleCabinsClick} className="btn-secondary" style={{ textDecoration: 'none' }}>
+                    <Eye size={14} /> Explore Cabins
+                  </a>
+                </div>
+              </RevealSection>
+
+             
+            </div>
+          </div>
+        </section>
+
+        {/* ─── STATS ─── */}
+        <section className="py-16 px-6 border-t border-gray-100 bg-gray-50">
+          <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-5 gap-8">
+            {stats.map((stat, i) => (
+              <RevealSection key={i} delay={i * 0.1}>
+                <div className="text-center group p-4 rounded-2xl hover:bg-white transition shadow-sm hover:shadow-lg">
+                  <div className="text-4xl font-bold bg-gradient-to-r from-blue-900 to-blue-600 bg-clip-text text-transparent group-hover:scale-110 transition">
+                    <Counter target={stat.value} suffix={stat.suffix} />
+                  </div>
+                  <div className="text-sm text-gray-500 mt-1 font-medium">{stat.label}</div>
+                </div>
+              </RevealSection>
+            ))}
+          </div>
+        </section>
+
+        {/* ─── MISSION & VISION SECTION (Smaller) ─── */}
+        <section id="mission-vision" className="py-16 px-6 bg-gradient-to-br from-blue-50 via-white to-purple-50">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-10">
+              <RevealSection>
+                <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/80 backdrop-blur-sm border border-gray-200 text-gray-700 text-xs rounded-full mb-4 tracking-widest uppercase font-medium shadow-sm">
+                  <Flag size={12} className="text-blue-700" /> About Us
                 </span>
-                <br />
-                <span className={`text-2xl sm:text-3xl md:text-4xl ${isDark ? 'text-gray-400' : 'text-gray-500'} font-thin`}>in Minutes</span>
-              </h1>
-            </RevealSection>
-
-            <RevealSection delay={0.2}>
-              <p className={`mt-6 text-lg ${isDark ? 'text-gray-400' : 'text-gray-600'} max-w-2xl mx-auto font-light leading-relaxed`}>
-                Book premium coworking spaces, private cabins, and meeting rooms.
-                Flexible plans. Join 5,000+ professionals.
-              </p>
-            </RevealSection>
-
-            <RevealSection delay={0.3}>
-              <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-                <button onClick={handleGetStarted} className="px-8 py-3.5 text-base font-medium text-white bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl hover:shadow-2xl hover:shadow-blue-500/25 transition-all duration-300 shadow-md flex items-center gap-2 tracking-wide hover:scale-105 active:scale-95 group">
-                  Get Started 
-                  <ArrowRight size={18} className="group-hover:translate-x-2 transition-transform duration-300" />
-                </button>
-                <button onClick={handleExplore} className={`px-8 py-3.5 text-base font-light ${isDark ? 'text-white border-white/10 hover:bg-white/5' : 'text-gray-700 border-gray-300 hover:bg-gray-50'} border rounded-xl transition-all duration-300 flex items-center gap-2 backdrop-blur-sm hover:scale-105 active:scale-95 group`}>
-                  <PlayCircle size={18} className="text-blue-400 group-hover:scale-110 transition-transform duration-300" /> Explore Spaces
-                </button>
-              </div>
-            </RevealSection>
-
-            <RevealSection delay={0.4}>
-              <div className="mt-16 flex justify-center">
-                <div className="flex flex-col items-center gap-2 animate-bounce-slow">
-                  <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'} font-light tracking-widest uppercase`}>Scroll</span>
-                  <ChevronDown size={20} className={isDark ? 'text-gray-500' : 'text-gray-400'} />
-                </div>
-              </div>
-            </RevealSection>
-          </div>
-        </section>
-
-        {/* ─── STATS WITH COUNTER ─── */}
-        <section className={`py-16 px-6 border-t ${isDark ? 'border-white/5 bg-white/5' : 'border-gray-200 bg-gray-50'} transition-colors duration-300`}>
-          <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat, index) => (
-              <RevealSection key={index} delay={index * 0.1}>
-                <div className="text-center group">
-                  <div className="text-3xl font-medium bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent group-hover:scale-110 transition-transform duration-300">
-                    <Counter target={stat.value} suffix={stat.suffix} duration={2000 + index * 500} />
-                  </div>
-                  <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'} mt-0.5 font-light`}>{stat.label}</div>
-                </div>
-              </RevealSection>
-            ))}
-          </div>
-        </section>
-
-        {/* ─── FEATURES ─── */}
-        <section id="features" className="py-20 px-6 transition-colors duration-300">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-12">
-              <RevealSection delay={0}>
-                <span className={`inline-block px-4 py-1.5 ${isDark ? 'bg-white/5 border-white/10 text-blue-300' : 'bg-gray-100 border-gray-200 text-blue-600'} border text-xs font-light rounded-full mb-4 tracking-widest uppercase`}>Features</span>
               </RevealSection>
               <RevealSection delay={0.1}>
-                <h2 className={`text-3xl sm:text-4xl font-light ${text}`}>Everything You Need to <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent font-medium">Work Better</span></h2>
+                <h2 className="text-2xl sm:text-3xl font-light text-gray-900">
+                  Our <span className="bg-gradient-to-r from-blue-900 to-purple-700 bg-clip-text text-transparent font-bold">Mission & Vision</span>
+                </h2>
               </RevealSection>
               <RevealSection delay={0.2}>
-                <p className={`mt-2 text-base ${isDark ? 'text-gray-400' : 'text-gray-600'} max-w-2xl mx-auto font-light`}>Modern spaces designed for productivity and collaboration.</p>
+                <p className="mt-2 text-sm text-gray-600 max-w-2xl mx-auto">
+                  Driving healthcare innovation by creating accessible, flexible, and premium medical practice spaces for every doctor.
+                </p>
               </RevealSection>
             </div>
 
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {features.map((feature, index) => (
-                <RevealSection key={index} delay={feature.delay}>
-                  <div className={`group p-6 rounded-xl ${isDark ? 'bg-white/5 border-white/5 hover:border-blue-500/20 hover:bg-white/10' : 'bg-gray-50 border-gray-200 hover:border-blue-300 hover:bg-gray-100'} border transition-all duration-500 hover:-translate-y-2 hover:shadow-xl`}>
-                    <div className={`w-12 h-12 rounded-lg ${isDark ? 'bg-white/10' : 'bg-gray-200'} flex items-center justify-center text-blue-400 mb-3 group-hover:scale-110 transition-transform duration-300 group-hover:rotate-6`}>
-                      <feature.icon size={20} />
-                    </div>
-                    <h3 className={`text-base font-medium ${text} mb-1 group-hover:text-blue-400 transition-colors duration-300`}>{feature.title}</h3>
-                    <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'} leading-relaxed font-light`}>{feature.description}</p>
-                  </div>
-                </RevealSection>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ─── SPACES FROM API - COMPACT CARDS ─── */}
-        <section id="spaces" className={`py-20 px-6 ${isDark ? 'bg-white/5' : 'bg-gray-50'} transition-colors duration-300`}>
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-12">
-              <RevealSection delay={0}>
-                <span className={`inline-block px-4 py-1.5 ${isDark ? 'bg-white/5 border-white/10 text-blue-300' : 'bg-gray-100 border-gray-200 text-blue-600'} border text-xs font-light rounded-full mb-4 tracking-widest uppercase`}>Our Spaces</span>
-              </RevealSection>
-              <RevealSection delay={0.1}>
-                <h2 className={`text-3xl sm:text-4xl font-light ${text}`}>Premium Spaces <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent font-medium">for Every Need</span></h2>
-              </RevealSection>
-              <RevealSection delay={0.2}>
-                <p className={`mt-2 text-base ${isDark ? 'text-gray-400' : 'text-gray-600'} max-w-2xl mx-auto font-light`}>From private cabins to collaborative spaces.</p>
-              </RevealSection>
-            </div>
-
-            {loading ? (
-              <div className="flex justify-center items-center py-20">
-                <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-              </div>
-            ) : error ? (
-              <div className="text-center py-10 text-red-500">Failed to load spaces: {error}</div>
-            ) : cabins.length === 0 ? (
-              <div className="text-center py-10 text-gray-400">No active spaces available right now.</div>
-            ) : (
-              <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {cabins.slice(0, 3).map((cabin, index) => {
-                    const activeAmenities = cabin.amenities ? Object.keys(cabin.amenities).filter(key => cabin.amenities[key] === true) : [];
-                    const price = cabin.price || 0;
-                    const capacity = cabin.capacity || "N/A";
-                    
-                    return (
-                      <RevealSection key={cabin._id} delay={index * 0.1}>
-                        <div className={`group relative rounded-xl overflow-hidden ${isDark ? 'bg-[#141416]' : 'bg-white'} border ${isDark ? 'border-white/10' : 'border-gray-200'} transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-500/15 cursor-pointer`}>
-                          
-                          {/* Hover Glow */}
-                          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-blue-500/5 to-cyan-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
-                          
-                          {/* Image */}
-                          <div className="relative overflow-hidden h-44">
-                            <img 
-                              src={cabin.images && cabin.images.length > 0 ? `http://62.72.29.27:5003/${cabin.images[0]}` : "https://images.unsplash.com/photo-1497366216548-37526070297c?w=600"} 
-                              alt={cabin.name} 
-                              className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                            
-                            {/* Available Badge */}
-                            {cabin.isActive && (
-                              <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-emerald-500/90 backdrop-blur-sm text-white text-[10px] px-2.5 py-1 rounded-full font-medium shadow-lg shadow-emerald-500/20">
-                                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
-                                Available
-                              </div>
-                            )}
-                            
-                            {/* Price */}
-                            <div className="absolute bottom-3 left-3">
-                              <span className="text-white font-bold text-lg">₹{price}</span>
-                              <span className="text-white/70 text-xs ml-1">/ hr</span>
-                            </div>
-                            
-                            {/* Capacity */}
-                            <div className="absolute bottom-3 right-3 bg-black/50 backdrop-blur-sm text-white text-[10px] px-2.5 py-1 rounded-full font-medium flex items-center gap-1">
-                              <Users size={12} className="text-blue-400" />
-                              {capacity}
-                            </div>
-                          </div>
-                          
-                          {/* Content */}
-                          <div className="p-4 space-y-2">
-                            {/* Title */}
-                            <h3 className={`text-sm font-semibold ${text} group-hover:text-blue-400 transition-colors duration-300 truncate`}>
-                              {cabin.name}
-                            </h3>
-                            
-                            {/* Description - Shows on hover */}
-                            <div className="overflow-hidden max-h-0 group-hover:max-h-20 transition-all duration-500 ease-in-out">
-                              <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'} font-light line-clamp-2`}>
-                                {cabin.description || "Premium workspace with modern amenities."}
-                              </p>
-                            </div>
-                            
-                            {/* Location */}
-                            <div className="flex items-center gap-1 text-[10px] text-gray-400">
-                              <MapPin size={12} className="text-blue-400 flex-shrink-0" />
-                              <span className="truncate">{cabin.address || "Location not specified"}</span>
-                            </div>
-                            
-                            {/* Amenities - Shows on hover */}
-                            <div className="flex flex-wrap gap-1 max-h-0 group-hover:max-h-20 overflow-hidden transition-all duration-500 ease-in-out pt-0 group-hover:pt-1">
-                              {activeAmenities.slice(0, 4).map((amenity) => {
-                                const Icon = getAmenityIcon(amenity);
-                                return Icon ? (
-                                  <span 
-                                    key={amenity} 
-                                    className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[8px] font-medium ${isDark ? 'bg-white/10 text-gray-300' : 'bg-gray-100 text-gray-600'} border ${isDark ? 'border-white/5' : 'border-gray-200'}`}
-                                  >
-                                    <Icon size={10} className="text-blue-400" />
-                                    {getAmenityLabel(amenity)}
-                                  </span>
-                                ) : null;
-                              })}
-                              {activeAmenities.length > 4 && (
-                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[8px] font-medium ${isDark ? 'bg-white/10 text-gray-300' : 'bg-gray-100 text-gray-600'} border ${isDark ? 'border-white/5' : 'border-gray-200'}`}>
-                                  +{activeAmenities.length - 4}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          
-                          {/* Hover Border */}
-                          <div className="absolute inset-0 rounded-xl border-2 border-transparent group-hover:border-blue-500/40 transition-all duration-500 pointer-events-none" />
+            <div className="grid md:grid-cols-2 gap-6">
+              {missionVisionData.map((item, index) => {
+                const Icon = item.icon;
+                return (
+                  <RevealSection key={index} delay={index * 0.15}>
+                    <div className={`relative p-6 rounded-2xl ${item.bgColor} border ${item.borderColor} transition-all duration-500 hover:shadow-xl hover:-translate-y-1 group overflow-hidden`}>
+                      <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${item.color} rounded-full blur-2xl opacity-10 group-hover:opacity-20 transition`} />
+                      
+                      <div className="relative z-10">
+                        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center text-white shadow-md mb-3 group-hover:scale-110 transition group-hover:rotate-6`}>
+                          <Icon size={22} />
                         </div>
-                      </RevealSection>
-                    );
-                  })}
-                </div>
-                
-                {/* ─── VIEW ALL BUTTON - SIMPLE TEXT ─── */}
-                {cabins.length > 3 && (
-                  <RevealSection delay={0.3}>
-                    <div className="text-center mt-10">
-                      <button 
-                        onClick={handleViewAll}
-                        className={`px-6 py-2.5 text-sm font-medium ${isDark ? 'text-white border-white/20 hover:bg-white/5' : 'text-gray-700 border-gray-300 hover:bg-gray-100'} border rounded-xl transition-all duration-300 hover:scale-105 active:scale-95 flex items-center gap-2 mx-auto group`}
-                      >
-                        <Grid3x3 size={16} className="text-blue-400 group-hover:rotate-12 transition-transform duration-300" />
-                        View All Spaces
-                        <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform duration-300" />
-                      </button>
+                        
+                        <h3 className={`text-lg font-bold text-gray-900 mb-2`}>{item.title}</h3>
+                        <p className="text-gray-700 leading-relaxed text-sm">
+                          {item.description}
+                        </p>
+                        
+                        <div className="mt-3 flex items-center gap-2 text-[10px] font-medium text-gray-400">
+                          <span className="w-6 h-0.5 bg-gray-300"></span>
+                          <span>IRYAX SPACE</span>
+                          <span className="w-6 h-0.5 bg-gray-300"></span>
+                        </div>
+                      </div>
                     </div>
                   </RevealSection>
-                )}
-              </>
-            )}
-          </div>
-        </section>
-
-        {/* ─── AMENITIES ─── */}
-        <section className="py-16 px-6 transition-colors duration-300">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-10">
-              <RevealSection delay={0}>
-                <span className={`inline-block px-4 py-1.5 ${isDark ? 'bg-white/5 border-white/10 text-blue-300' : 'bg-gray-100 border-gray-200 text-blue-600'} border text-xs font-light rounded-full mb-4 tracking-widest uppercase`}>Amenities</span>
-              </RevealSection>
-              <RevealSection delay={0.1}>
-                <h2 className={`text-3xl font-light ${text}`}>What's <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent font-medium">Included</span></h2>
-              </RevealSection>
+                );
+              })}
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-              {amenities.map((item, index) => (
-                <RevealSection key={index} delay={index * 0.08}>
-                  <div className={`group flex flex-col items-center gap-2 p-4 rounded-xl ${isDark ? 'bg-white/5 border-white/5 hover:border-blue-500/20 hover:bg-white/10' : 'bg-gray-50 border-gray-200 hover:border-blue-300 hover:bg-gray-100'} border transition-all duration-500 hover:-translate-y-2 hover:shadow-lg`}>
-                    <div className={`w-10 h-10 rounded-full ${isDark ? 'bg-white/10' : 'bg-gray-200'} flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform duration-300 group-hover:rotate-12`}>
-                      <item.icon size={18} />
-                    </div>
-                    <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'} text-center font-light group-hover:text-blue-400 transition-colors duration-300`}>{item.label}</span>
+
+            {/* Core Values - Smaller */}
+            <RevealSection delay={0.3}>
+              <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-3">
+                {[
+                  { label: "Innovation", icon: SparklesIcon },
+                  { label: "Excellence", icon: Award },
+                  { label: "Accessibility", icon: Users },
+                  { label: "Trust", icon: ShieldCheck }
+                ].map((value, i) => (
+                  <div key={i} className="text-center p-3 rounded-xl bg-white border border-gray-100 hover:border-blue-300 transition hover:shadow-md">
+                    <value.icon size={20} className="mx-auto text-blue-700 mb-1" />
+                    <p className="text-xs font-medium text-gray-700">{value.label}</p>
                   </div>
-                </RevealSection>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ─── ABOUT ─── */}
-        <section id="about" className={`py-20 px-6 ${isDark ? 'bg-white/5' : 'bg-gray-50'} transition-colors duration-300`}>
-          <div className="max-w-4xl mx-auto text-center">
-            <RevealSection delay={0}>
-              <div className={`inline-flex items-center gap-2 px-4 py-1.5 ${isDark ? 'bg-white/5 border-white/10 text-blue-300' : 'bg-gray-100 border-gray-200 text-blue-600'} border text-xs font-light rounded-full mb-6 tracking-widest uppercase`}>
-                <Users size={14} />
-                <span>About Us</span>
+                ))}
               </div>
             </RevealSection>
-            <RevealSection delay={0.1}>
-              <h2 className={`text-3xl sm:text-4xl font-light ${text} mb-6`}>
-                Who We <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent font-medium">Are</span>
-              </h2>
-            </RevealSection>
-            <RevealSection delay={0.2}>
-              <p className={`text-lg ${isDark ? 'text-gray-400' : 'text-gray-600'} max-w-3xl mx-auto font-light leading-relaxed`}>
-                IRYAX Space is India's growing platform for finding and booking premium coworking spaces, 
-                private cabins, and meeting rooms. We connect professionals with the perfect workspace 
-                to boost productivity and collaboration.
-              </p>
-            </RevealSection>
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6 text-left max-w-3xl mx-auto">
-              {[
-                { icon: "🚀", title: "Our Mission", desc: "Empower professionals with flexible, premium workspaces.", delay: 0 },
-                { icon: "💡", title: "Our Vision", desc: "Transform how India works by making spaces accessible.", delay: 0.1 },
-                { icon: "❤️", title: "Our Promise", desc: "Quality spaces, transparent pricing, dedicated support.", delay: 0.2 }
-              ].map((item, index) => (
-                <RevealSection key={index} delay={item.delay}>
-                  <div className={`p-6 rounded-xl ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-gray-200'} border transition-all duration-500 hover:-translate-y-2 hover:shadow-xl`}>
-                    <div className="text-2xl mb-2 animate-bounce-slow">{item.icon}</div>
-                    <h4 className={`text-sm font-medium ${text} mb-1`}>{item.title}</h4>
-                    <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'} font-light`}>{item.desc}</p>
+          </div>
+        </section>
+
+        {/* ─── BENEFITS ─── */}
+        <section id="benefits" className="py-20 px-6 bg-gradient-to-b from-gray-100 via-white to-gray-50">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-14">
+              <RevealSection>
+                <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/60 backdrop-blur-sm border border-white/30 text-blue-800 text-xs rounded-full mb-4 tracking-widest uppercase font-medium shadow-sm">
+                  <StarIcon size={12} className="fill-blue-800 text-blue-800" /> Doctor Benefits
+                </span>
+              </RevealSection>
+              <RevealSection delay={0.1}>
+                <h2 className="text-3xl sm:text-4xl font-light text-gray-900">
+                  Helping Doctors <span className="bg-gradient-to-r from-blue-900 to-blue-600 bg-clip-text text-transparent font-bold">Avoid Long Leases</span> & High Costs
+                </h2>
+              </RevealSection>
+              <RevealSection delay={0.2}>
+                <p className="mt-3 text-base text-gray-600 max-w-2xl mx-auto">Focus on patient care while we handle everything else.</p>
+              </RevealSection>
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {doctorBenefits.map((benefit, i) => (
+                <RevealSection key={i} delay={i * 0.1}>
+                  <div className={`glass-card ${benefit.glassClass}`}>
+                    <div className="icon-wrapper">
+                      <benefit.icon size={24} />
+                    </div>
+                    <h3>{benefit.title}</h3>
+                    <p>{benefit.desc}</p>
                   </div>
                 </RevealSection>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* ─── FEATURES SECTION ─── */}
+        <section className="py-20 px-6 bg-gradient-to-b from-blue-900 via-blue-800 to-blue-900 text-white">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-14">
+              <RevealSection>
+                <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 border border-white/20 text-white/80 text-xs rounded-full mb-4 tracking-widest uppercase font-medium">
+                  <SparklesIcon size={12} /> Why Choose Us
+                </span>
+              </RevealSection>
+              <RevealSection delay={0.1}>
+                <h2 className="text-3xl sm:text-4xl font-light">
+                  Built for <span className="font-bold bg-gradient-to-r from-blue-200 to-cyan-200 bg-clip-text text-transparent">Modern Healthcare</span>
+                </h2>
+              </RevealSection>
+              <RevealSection delay={0.2}>
+                <p className="mt-3 text-base text-blue-200 max-w-2xl mx-auto">Everything you need to start and grow your practice.</p>
+              </RevealSection>
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {features.map((feature, i) => (
+                <RevealSection key={i} delay={i * 0.1}>
+                  <div className="feature-card">
+                    <span className="text-4xl font-bold text-white/10 absolute top-4 right-6">{feature.number}</span>
+                    <div className={`feature-icon ${feature.color}`}>
+                      <feature.icon size={28} />
+                    </div>
+                    <h3 className="text-lg font-semibold text-white mb-2">{feature.title}</h3>
+                    <p className="text-sm text-blue-200 leading-relaxed">{feature.desc}</p>
+                  </div>
+                </RevealSection>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ─── PRIME LOCATIONS ─── */}
+        <section className="py-20 px-6 bg-gray-50">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-14">
+              <RevealSection>
+                <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-full mb-4 tracking-widest uppercase font-medium">
+                  <MapPin size={12} /> Prime Locations
+                </span>
+              </RevealSection>
+              <RevealSection delay={0.1}>
+                <h2 className="text-3xl sm:text-4xl font-light text-gray-900">
+                  Accessible, High-Visibility <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent font-bold">Clinics</span>
+                </h2>
+              </RevealSection>
+              <RevealSection delay={0.2}>
+                <p className="mt-3 text-base text-gray-600 max-w-2xl mx-auto">Minimal investment. No operational stress. Just focus on your practice.</p>
+              </RevealSection>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-12 items-start">
+              <div className="space-y-4">
+                {locationList.map((item, i) => (
+                  <RevealSection key={i} delay={i * 0.1}>
+                    <div className="location-list-item">
+                      <div className="loc-icon">
+                        <item.icon size={22} />
+                      </div>
+                      <div className="loc-content">
+                        <h4>{item.title}</h4>
+                        <p>{item.desc}</p>
+                      </div>
+                    </div>
+                  </RevealSection>
+                ))}
+              </div>
+
+              <RevealSection delay={0.2}>
+                <div className="location-grid-images">
+                  <div className="img-main">
+                    <img src={locationImages[0]} alt="Location 1" />
+                  </div>
+                  <div className="img-side">
+                    <img src={locationImages[1]} alt="Location 2" />
+                  </div>
+                  <div className="img-side">
+                    <img src={locationImages[2]} alt="Location 3" />
+                  </div>
+                </div>
+              </RevealSection>
+            </div>
+          </div>
+        </section>
+
+        {/* ─── EARN SECTION ─── */}
+        <section className="py-20 px-6 bg-white">
+          <div className="max-w-6xl mx-auto">
+            <div className="grid md:grid-cols-2 gap-12 items-center">
+              <RevealSection>
+                <div>
+                  <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-full mb-4 tracking-widest uppercase font-medium">
+                    <Wallet size={12} /> Earn Passive Income
+                  </span>
+                  <h2 className="text-3xl sm:text-4xl font-light text-gray-900 mb-4">
+                    Earn From <span className="bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent font-bold">Your Clinic</span>
+                  </h2>
+                  <p className="text-base text-gray-600 leading-relaxed mb-6">
+                    Monetize your unused clinic cabin and connect with trusted healthcare professionals. No added operational stress — we handle everything.
+                  </p>
+                  <ul className="space-y-3 mb-6">
+                    {["List your cabin on our platform", "Connect with verified healthcare professionals", "We handle booking and management", "You earn passive income"].map((item, i) => (
+                      <li key={i} className="flex items-start gap-3 text-sm">
+                        <CheckCircle size={18} className="text-amber-600 mt-0.5 flex-shrink-0" />
+                        <span className="text-gray-700">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <button className="px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-amber-600 to-orange-600 rounded-xl hover:shadow-lg hover:shadow-amber-500/25 transition hover:scale-105 flex items-center gap-2 group">
+                    <Building2 size={16} /> List Your Cabin <ArrowRight size={14} className="group-hover:translate-x-1 transition" />
+                  </button>
+                </div>
+              </RevealSection>
+              <RevealSection delay={0.2}>
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-amber-500/20 to-orange-500/20 rounded-2xl blur-2xl animate-pulse" />
+                  <div className="relative rounded-2xl overflow-hidden bg-white border border-gray-200 p-6 shadow-xl">
+                    <img src={medicalImages[4]} alt="Medical Practice" className="w-full h-64 object-cover rounded-xl" />
+                    <div className="mt-4 flex items-center gap-3">
+                      <div className="flex -space-x-2">
+                        {[1,2,3].map((i) => <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-amber-600/20 flex items-center justify-center text-xs text-amber-600 font-bold">D</div>)}
+                      </div>
+                      <span className="text-sm text-gray-500">Trusted by 50+ healthcare professionals</span>
+                    </div>
+                  </div>
+                </div>
+              </RevealSection>
+            </div>
+          </div>
+        </section>
+
+        {/* ─── SPECIALTIES ─── */}
+        <section id="specialties" className="py-20 px-6 bg-gray-50">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-14">
+              <RevealSection>
+                <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-blue-50 border border-blue-200 text-blue-800 text-xs rounded-full mb-4 tracking-widest uppercase font-medium">
+                  <UsersRound size={12} /> Our Specialists
+                </span>
+              </RevealSection>
+              <RevealSection delay={0.1}>
+                <h2 className="text-3xl sm:text-4xl font-light text-gray-900">
+                  We Serve Across <span className="specialties-gradient-heading">Multiple Specializations</span>
+                </h2>
+              </RevealSection>
+              <RevealSection delay={0.2}>
+                <p className="mt-3 text-base text-gray-600 max-w-2xl mx-auto">Modern medical cabins designed for every specialty.</p>
+              </RevealSection>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {specialties.slice(0, 10).map((name, i) => {
+                const Icon = specialtyIconMap[name] || Stethoscope;
+                return (
+                  <RevealSection key={i} delay={i * 0.04}>
+                    <div className="group p-4 rounded-2xl bg-white border border-gray-100 hover:border-blue-300 transition-all duration-500 hover:-translate-y-2 hover:shadow-xl text-center">
+                      <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center text-blue-700 group-hover:scale-110 transition group-hover:rotate-6">
+                        <Icon size={24} />
+                      </div>
+                      <p className="text-xs text-gray-700 mt-3 group-hover:text-blue-700 transition font-medium">{name}</p>
+                    </div>
+                  </RevealSection>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* ─── MODERN CABINS ─── */}
+        <section className="py-20 px-6 bg-white">
+          <div className="max-w-6xl mx-auto">
+            <RevealSection>
+              <div className="grid md:grid-cols-2 gap-12 items-center">
+                <div>
+                  <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-cyan-50 border border-cyan-200 text-cyan-800 text-xs rounded-full mb-4 tracking-widest uppercase font-medium">
+                    <SparklesIcon size={12} /> Modern Medical Cabins
+                  </span>
+                  <h2 className="text-3xl sm:text-4xl font-light text-gray-900 mb-4">
+                    Zero Hassle. <span className="bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent font-bold">Complete Convenience.</span>
+                  </h2>
+                  <p className="text-base text-gray-600 leading-relaxed mb-6">
+                    Experience medical co-working like a premium hotel stay — fully-equipped clinic cabins, ready infrastructure, and complete operational support, without owning or renting property.
+                  </p>
+                  <ul className="space-y-3">
+                    {["Fully-equipped consultation rooms", "State-of-the-art diagnostic tools", "Professional reception and staff", "24/7 security and support"].map((item, i) => (
+                      <li key={i} className="flex items-start gap-3 text-sm">
+                        <CheckCircle size={18} className="text-cyan-600 mt-0.5 flex-shrink-0" />
+                        <span className="text-gray-700">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <img src={medicalImages[0]} alt="Medical Cabin" className="rounded-2xl w-full h-48 object-cover hover:scale-105 transition shadow-xl" />
+                  <img src={medicalImages[1]} alt="Medical Cabin" className="rounded-2xl w-full h-48 object-cover hover:scale-105 transition shadow-xl mt-8" />
+                  <img src={medicalImages[2]} alt="Medical Cabin" className="rounded-2xl w-full h-48 object-cover hover:scale-105 transition shadow-xl -mt-4" />
+                  <img src={medicalImages[3]} alt="Medical Cabin" className="rounded-2xl w-full h-48 object-cover hover:scale-105 transition shadow-xl" />
+                </div>
+              </div>
+            </RevealSection>
           </div>
         </section>
 
         {/* ─── FAQ ─── */}
-        <section id="faq" className={`py-20 px-6 ${isDark ? 'bg-white/5' : 'bg-gray-50'} transition-colors duration-300`}>
+        <section id="faq" className="py-20 px-6 bg-gray-50">
           <div className="max-w-3xl mx-auto">
             <div className="text-center mb-12">
-              <RevealSection delay={0}>
-                <div className={`inline-flex items-center gap-2 px-4 py-1.5 ${isDark ? 'bg-white/5 border-white/10 text-blue-300' : 'bg-gray-100 border-gray-200 text-blue-600'} border text-xs font-light rounded-full mb-4 tracking-widest uppercase`}>
-                  <HelpCircle size={14} />
-                  <span>FAQ</span>
-                </div>
+              <RevealSection>
+                <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-gray-100 border border-gray-200 text-gray-700 text-xs rounded-full mb-4 tracking-widest uppercase font-medium">
+                  <HelpCircle size={12} /> FAQ
+                </span>
               </RevealSection>
               <RevealSection delay={0.1}>
-                <h2 className={`text-3xl font-light ${text}`}>Frequently Asked <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent font-medium">Questions</span></h2>
+                <h2 className="text-3xl font-light text-gray-900">Frequently Asked <span className="bg-gradient-to-r from-blue-900 to-blue-600 bg-clip-text text-transparent font-bold">Questions</span></h2>
               </RevealSection>
               <RevealSection delay={0.2}>
-                <p className={`mt-2 text-base ${isDark ? 'text-gray-400' : 'text-gray-600'} font-light`}>Find answers to common questions.</p>
+                <p className="mt-2 text-base text-gray-600">Find answers about our medical practice cabins.</p>
               </RevealSection>
             </div>
 
             <div className="space-y-3">
-              {faqs.map((faq, index) => (
-                <RevealSection key={index} delay={index * 0.06}>
-                  <div className={`rounded-lg border ${isDark ? 'border-white/5 bg-white/5' : 'border-gray-200 bg-white'} overflow-hidden transition-all duration-500 hover:shadow-lg`}>
-                    <button 
-                      onClick={() => toggleFaq(index)} 
-                      className={`w-full px-6 py-4 flex items-center justify-between text-left hover:${isDark ? 'bg-white/5' : 'bg-gray-50'} transition-all duration-300`}
-                    >
+              {faqs.map((faq, i) => (
+                <RevealSection key={i} delay={i * 0.06}>
+                  <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden transition hover:shadow-lg hover:border-blue-200">
+                    <button onClick={() => toggleFaq(i)} className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition">
                       <div>
-                        <span className={`text-[10px] ${isDark ? 'text-blue-400' : 'text-blue-600'} font-light uppercase tracking-wider`}>{faq.category}</span>
-                        <p className={`text-base font-light ${text} mt-0.5`}>{faq.question}</p>
+                        <span className="text-[10px] text-blue-600 uppercase tracking-wider font-semibold">{faq.category}</span>
+                        <p className="text-base font-light text-gray-900 mt-0.5">{faq.q}</p>
                       </div>
-                      <ChevronDown 
-                        size={18} 
-                        className={`${isDark ? 'text-gray-400' : 'text-gray-500'} transition-all duration-300 ${openFaq === index ? 'rotate-180' : ''}`} 
-                      />
+                      <ChevronDown size={18} className={`text-gray-500 transition-all duration-300 ${openFaq === i ? 'rotate-180' : ''}`} />
                     </button>
-                    <div 
-                      className={`overflow-hidden transition-all duration-500 ${openFaq === index ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}
-                    >
-                      <div className={`px-6 pb-4 text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'} leading-relaxed border-t ${isDark ? 'border-white/5' : 'border-gray-200'} pt-3 font-light`}>
-                        {faq.answer}
-                      </div>
+                    <div className={`overflow-hidden transition-all duration-500 ${openFaq === i ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+                      <div className="px-6 pb-4 text-sm text-gray-600 leading-relaxed border-t border-gray-100 pt-3">{faq.a}</div>
                     </div>
                   </div>
                 </RevealSection>
@@ -940,36 +1859,36 @@ const PromotionalPage = () => {
         </section>
 
         {/* ─── CONTACT ─── */}
-        <section id="contact" className="py-20 px-6 relative overflow-hidden transition-colors duration-300">
-          <div className={`absolute inset-0 ${isDark ? 'bg-gradient-to-r from-blue-600/5 to-cyan-600/5' : 'bg-gradient-to-r from-blue-100/30 to-cyan-100/30'}`} />
+        <section id="contact" className="py-20 px-6 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50" />
           <div className="relative max-w-4xl mx-auto">
             <div className="text-center mb-12">
-              <RevealSection delay={0}>
-                <span className={`inline-block px-4 py-1.5 ${isDark ? 'bg-white/5 border-white/10 text-blue-300' : 'bg-gray-100 border-gray-200 text-blue-600'} border text-xs font-light rounded-full mb-4 tracking-widest uppercase`}>Get in Touch</span>
+              <RevealSection>
+                <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/80 border border-gray-200 text-gray-700 text-xs rounded-full mb-4 tracking-widest uppercase font-medium">Get in Touch</span>
               </RevealSection>
               <RevealSection delay={0.1}>
-                <h2 className={`text-3xl font-light ${text}`}>Let's <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent font-medium">Connect</span></h2>
+                <h2 className="text-3xl font-light text-gray-900">Ready to <span className="bg-gradient-to-r from-blue-900 to-blue-600 bg-clip-text text-transparent font-bold">Start Your Practice?</span></h2>
               </RevealSection>
               <RevealSection delay={0.2}>
-                <p className={`mt-2 text-base ${isDark ? 'text-gray-400' : 'text-gray-600'} font-light`}>Have questions? We'd love to hear from you.</p>
+                <p className="mt-2 text-base text-gray-600">Connect with us and transform your medical practice today.</p>
               </RevealSection>
             </div>
 
             <div className="grid md:grid-cols-5 gap-8">
               <div className="md:col-span-2 space-y-5">
                 {[
-                  { icon: Mail, label: "Email", value: "support@iryax.com", delay: 0 },
-                  { icon: Phone, label: "Phone", value: "+91 9876543210", delay: 0.1 },
-                  { icon: MapPin, label: "Address", value: "Hyderabad, India", delay: 0.2 }
-                ].map((item, index) => (
-                  <RevealSection key={index} delay={item.delay}>
-                    <div className={`flex items-start gap-4 group`}>
-                      <div className={`w-10 h-10 rounded-lg ${isDark ? 'bg-white/5 group-hover:bg-white/10' : 'bg-gray-100 group-hover:bg-gray-200'} flex items-center justify-center text-blue-400 flex-shrink-0 mt-0.5 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6`}>
+                  { icon: Mail, label: "Email", value: "info@ingrainsystem.com" },
+                  { icon: Phone, label: "Phone", value: "+91-9010481048" },
+                  { icon: MapPin, label: "Address", value: "Iryax Global, Flat No: 301, 3rd Floor, Sri Sai Balaji Avenue, H. No: 1-98/9/25/p, VIP Hills, near Bank of Baroda, Arunodaya Colony, Madhapur, Hyderabad, Telangana 500081" }
+                ].map((item, i) => (
+                  <RevealSection key={i} delay={i * 0.1}>
+                    <div className="flex items-start gap-4 group p-4 rounded-xl bg-white/70 backdrop-blur-sm hover:bg-white transition shadow-sm hover:shadow-md">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center text-blue-700 flex-shrink-0 mt-0.5 transition group-hover:scale-110">
                         <item.icon size={18} />
                       </div>
                       <div>
-                        <p className={`text-sm font-medium ${text}`}>{item.label}</p>
-                        <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'} font-light group-hover:text-blue-400 transition-colors duration-300`}>{item.value}</p>
+                        <p className="text-sm font-semibold text-gray-900">{item.label}</p>
+                        <p className={`text-sm text-gray-600 group-hover:text-blue-700 transition ${item.label === "Address" ? 'text-xs leading-relaxed' : ''}`}>{item.value}</p>
                       </div>
                     </div>
                   </RevealSection>
@@ -978,16 +1897,18 @@ const PromotionalPage = () => {
 
               <div className="md:col-span-3">
                 <RevealSection delay={0.3}>
-                  <form onSubmit={handleFormSubmit} className="space-y-4">
-                    <input type="text" placeholder="Your Name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className={`w-full px-4 py-3 rounded-lg ${isDark ? 'bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-blue-500/50' : 'bg-gray-100 border-gray-200 text-gray-900 placeholder-gray-400 focus:border-blue-300'} border text-sm focus:outline-none transition-all duration-300 font-light focus:scale-[1.01]`} required />
-                    <input type="email" placeholder="Your Email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className={`w-full px-4 py-3 rounded-lg ${isDark ? 'bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-blue-500/50' : 'bg-gray-100 border-gray-200 text-gray-900 placeholder-gray-400 focus:border-blue-300'} border text-sm focus:outline-none transition-all duration-300 font-light focus:scale-[1.01]`} required />
-                    <textarea placeholder="Your Message" rows="4" value={formData.message} onChange={(e) => setFormData({ ...formData, message: e.target.value })} className={`w-full px-4 py-3 rounded-lg ${isDark ? 'bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-blue-500/50' : 'bg-gray-100 border-gray-200 text-gray-900 placeholder-gray-400 focus:border-blue-300'} border text-sm focus:outline-none transition-all duration-300 font-light resize-none focus:scale-[1.01]`} required />
-                    <button type="submit" className="w-full px-4 py-3 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg hover:shadow-2xl hover:shadow-blue-500/25 transition-all duration-300 flex items-center justify-center gap-2 hover:scale-105 active:scale-95 group">
-                      {formSubmitted ? (
-                        <>✓ Sent!</>
-                      ) : (
-                        <>Send Message <Send size={16} className="group-hover:translate-x-1 transition-transform duration-300" /></>
-                      )}
+                  <form onSubmit={handleSubmit} className="space-y-4 bg-white/70 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/50">
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <input type="text" placeholder="Your Name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-sm focus:outline-none transition" required />
+                      <input type="email" placeholder="Your Email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-sm focus:outline-none transition" required />
+                    </div>
+                    <select value={formData.specialty} onChange={(e) => setFormData({ ...formData, specialty: e.target.value })} className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-gray-900 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-sm focus:outline-none transition">
+                      <option value="">Select Your Specialty</option>
+                      {specialties.map((s, i) => <option key={i} value={s}>{s}</option>)}
+                    </select>
+                    <textarea placeholder="Your Message" rows="4" value={formData.message} onChange={(e) => setFormData({ ...formData, message: e.target.value })} className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-sm focus:outline-none transition resize-none" required />
+                    <button type="submit" className="w-full px-4 py-3 text-sm font-semibold text-white bg-gradient-to-r from-blue-900 to-blue-700 rounded-xl hover:shadow-lg hover:shadow-blue-900/25 transition hover:scale-105 flex items-center justify-center gap-2 group">
+                      {formSubmitted ? "✓ Sent!" : <>Start Your Practice <Send size={16} className="group-hover:translate-x-1 transition" /></>}
                     </button>
                   </form>
                 </RevealSection>
@@ -997,70 +1918,66 @@ const PromotionalPage = () => {
         </section>
 
         {/* ─── FOOTER ─── */}
-        <footer className={`py-12 px-6 border-t ${isDark ? 'border-white/5 bg-black/50' : 'border-gray-200 bg-gray-50'} transition-colors duration-300`}>
+        <footer className="py-12 px-6 border-t border-gray-200 bg-gray-900 text-white">
           <div className="max-w-6xl mx-auto">
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              <RevealSection delay={0}>
+              <RevealSection>
                 <div>
-                  <button onClick={scrollToTop} className="flex items-center gap-3 no-underline mb-4 cursor-pointer group">
-                    <div className="w-10 h-10 rounded-full overflow-hidden border border-white/20 shadow-lg shadow-blue-500/20 flex-shrink-0 bg-white/10 group-hover:scale-110 transition-transform duration-300">
-                      <img src={logo} alt="IRYAX Space Logo" className="w-full h-full object-contain p-1.5" />
+                  <button onClick={scrollToTop} className="flex items-center gap-3 mb-4 group">
+                    <div className="w-10 h-10 rounded-full overflow-hidden border border-blue-400/30 shadow-lg shadow-blue-500/20 flex-shrink-0 bg-white/10 group-hover:scale-110 transition">
+                      <img src={logo} alt="Logo" className="w-full h-full object-contain p-1.5" />
                     </div>
-                    <span className={`text-base font-semibold ${text} tracking-tight group-hover:text-blue-400 transition-colors duration-300`}>IRYAX Space</span>
+                    <span className="text-base font-semibold text-white group-hover:text-blue-400 transition flex items-center gap-2">
+                      IRYAX SPACE
+                      <StethoscopeIcon size={16} className="text-blue-400" />
+                    </span>
                   </button>
-                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'} font-light`}>Find and book premium spaces across India.</p>
+                  <p className="text-sm text-gray-400">Modern medical cabins for independent practice.</p>
                 </div>
               </RevealSection>
-
               <RevealSection delay={0.1}>
                 <div>
-                  <h4 className={`text-sm font-medium ${text} mb-4`}>Product</h4>
+                  <h4 className="text-sm font-medium text-white mb-4">Practice</h4>
                   <div className="space-y-2">
-                    {["Features", "Spaces", "FAQ"].map((item) => (
-                      <a key={item} href={`#${item.toLowerCase()}`} className={`block text-sm ${isDark ? 'text-gray-400 hover:text-blue-400' : 'text-gray-500 hover:text-blue-600'} transition-all duration-300 font-light hover:translate-x-1`}>{item}</a>
-                    ))}
+                    <button onClick={() => scrollToSection('benefits')} className="block text-sm text-gray-400 hover:text-blue-400 transition hover:translate-x-1 text-left">Benefits</button>
+                    <a href="#cabins" onClick={handleCabinsClick} className="block text-sm text-gray-400 hover:text-blue-400 transition hover:translate-x-1 text-left">Cabins</a>
+                    <button onClick={() => scrollToSection('specialties')} className="block text-sm text-gray-400 hover:text-blue-400 transition hover:translate-x-1 text-left">Specialties</button>
+                    <button onClick={() => scrollToSection('mission-vision')} className="block text-sm text-gray-400 hover:text-blue-400 transition hover:translate-x-1 text-left">About</button>
+                    <button onClick={() => scrollToSection('faq')} className="block text-sm text-gray-400 hover:text-blue-400 transition hover:translate-x-1 text-left">FAQ</button>
                   </div>
                 </div>
               </RevealSection>
-
               <RevealSection delay={0.2}>
                 <div>
-                  <h4 className={`text-sm font-medium ${text} mb-4`}>Company</h4>
+                  <h4 className="text-sm font-medium text-white mb-4">Company</h4>
                   <div className="space-y-2">
-                    <a href="#about" className={`block text-sm ${isDark ? 'text-gray-400 hover:text-blue-400' : 'text-gray-500 hover:text-blue-600'} transition-all duration-300 font-light hover:translate-x-1`}>About Us</a>
-                    <a href="#contact" className={`block text-sm ${isDark ? 'text-gray-400 hover:text-blue-400' : 'text-gray-500 hover:text-blue-600'} transition-all duration-300 font-light hover:translate-x-1`}>Contact</a>
+                    <button className="block text-sm text-gray-400 hover:text-blue-400 transition hover:translate-x-1 text-left">About Us</button>
+                    <button onClick={() => scrollToSection('contact')} className="block text-sm text-gray-400 hover:text-blue-400 transition hover:translate-x-1 text-left">Contact</button>
                   </div>
                 </div>
               </RevealSection>
-
               <RevealSection delay={0.3}>
                 <div>
-                  <h4 className={`text-sm font-medium ${text} mb-4`}>Legal</h4>
+                  <h4 className="text-sm font-medium text-white mb-4">Legal</h4>
                   <div className="space-y-2">
-                    {[
-                      { label: "Privacy Policy", href: "https://iryax.com/privacy-policy" },
-                      { label: "Terms & Conditions", href: "https://iryax.com/terms-and-conditions" },
-                      { label: "Refund Policy", href: "https://iryax.com/refund-policy" },
-                      { label: "Cookie Policy", href: "https://iryax.com/cookie-policy" }
-                    ].map((item) => (
-                      <a 
-                        key={item.label}
-                        href={item.href} 
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`block text-sm ${isDark ? 'text-gray-400 hover:text-blue-400' : 'text-gray-500 hover:text-blue-600'} transition-all duration-300 font-light hover:translate-x-1`}
-                      >
-                        {item.label}
-                      </a>
+                    {["Privacy Policy", "Terms & Conditions", "Refund Policy", "Cookie Policy"].map((item) => (
+                      <button key={item} className="block text-sm text-gray-400 hover:text-blue-400 transition hover:translate-x-1 text-left">{item}</button>
                     ))}
                   </div>
                 </div>
               </RevealSection>
             </div>
-
+            
             <RevealSection delay={0.4}>
-              <div className={`mt-10 pt-6 border-t ${isDark ? 'border-white/5' : 'border-gray-200'} text-center text-sm ${isDark ? 'text-gray-500' : 'text-gray-400'} font-light tracking-wider`}>
-                &copy; 2026 IRYAX Space. All rights reserved.
+              <div className="mt-10 pt-6 border-t border-gray-800 text-center">
+                <div className="flex flex-col items-center gap-3">
+                  <p className="text-sm text-gray-400">
+                    © IRYAX SPACE All Rights Reserved. | Made with 
+                    <span className="footer-heart mx-1">❤️</span> 
+                    by IRYAX
+                  </p>
+                  <p className="text-xs text-gray-500 tracking-wider uppercase">IRYAX SPACE</p>
+                </div>
               </div>
             </RevealSection>
           </div>

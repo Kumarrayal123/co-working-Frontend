@@ -1,4 +1,4 @@
-// MyBookings.jsx - Complete with Price Difference Display
+// MyBookings.jsx - Complete with Price Difference Display (MyCabins Style)
 import axios from "axios";
 import {
   Calendar,
@@ -23,7 +23,10 @@ import {
   X as XIcon,
   ChevronDown,
   TrendingUp,
-  TrendingDown
+  TrendingDown,
+  Filter,
+  XCircle as XCircleIcon,
+  Users
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -41,6 +44,12 @@ const MyBookings = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDate, setFilterDate] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    status: 'all',
+    paymentStatus: 'all',
+    paymentMethod: 'all'
+  });
   const isAdmin = localStorage.getItem("admin") !== null;
   const navigate = useNavigate();
   
@@ -89,6 +98,16 @@ const MyBookings = () => {
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
+    });
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
     });
   };
 
@@ -204,9 +223,7 @@ const MyBookings = () => {
     setShowViewModal(true);
   };
 
-  // ======================
-  // REPLACE BOOKING
-  // ======================
+  // Replace Booking
   const handleReplaceBooking = async () => {
     if (!selectedCabin) {
       toast.error("Please select a cabin to replace");
@@ -239,9 +256,7 @@ const MyBookings = () => {
     }
   };
 
-  // ======================
-  // CANCEL BOOKING
-  // ======================
+  // Cancel Booking
   const handleCancelBooking = async () => {
     setCancelLoading(true);
     try {
@@ -267,9 +282,7 @@ const MyBookings = () => {
     }
   };
 
-  // ======================
-  // UPDATE PAYMENT STATUS
-  // ======================
+  // Update Payment Status
   const handleUpdatePaymentStatus = async () => {
     if (!paymentBooking || !newPaymentStatus) {
       toast.error("Please select a payment status");
@@ -363,6 +376,7 @@ const MyBookings = () => {
     }
   };
 
+  // Filter bookings
   const filteredBookings = bookings.filter((b) => {
     const search = searchTerm.toLowerCase();
     const matchSearch = b.cabinId?.name?.toLowerCase().includes(search) ||
@@ -370,7 +384,10 @@ const MyBookings = () => {
                         b.name?.toLowerCase().includes(search) ||
                         b.mobile?.includes(searchTerm);
     const matchDate = filterDate ? b.startDate === filterDate : true;
-    return matchSearch && matchDate;
+    const matchStatus = filters.status === 'all' || b.status === filters.status;
+    const matchPaymentStatus = filters.paymentStatus === 'all' || b.paymentStatus === filters.paymentStatus;
+    const matchPaymentMethod = filters.paymentMethod === 'all' || b.paymentMethod === filters.paymentMethod;
+    return matchSearch && matchDate && matchStatus && matchPaymentStatus && matchPaymentMethod;
   });
 
   // Calculate price difference
@@ -402,252 +419,485 @@ const MyBookings = () => {
 
   const priceDiff = getPriceDifference();
 
+  // Get counts
+  const totalCount = bookings.length;
+  const activeCount = bookings.filter(b => b.status === 'active' || b.status === 'confirmed').length;
+  const pendingCount = bookings.filter(b => b.status === 'pending').length;
+  const completedCount = bookings.filter(b => b.status === 'completed').length;
+
+  // Clear filters
+  const clearFilters = () => {
+    setFilters({
+      status: 'all',
+      paymentStatus: 'all',
+      paymentMethod: 'all'
+    });
+    setSearchTerm('');
+    setFilterDate('');
+  };
+
   if (loading) {
     return (
-      <div className="admin-dash">
+      <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
         {isAdmin ? <AdminNavbar /> : <UsersNavbar />}
         <div className="flex justify-center items-center h-64">
-          <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+          <div className="w-12 h-12 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="admin-dash">
+    <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
       {isAdmin ? <AdminNavbar /> : <UsersNavbar />}
 
-      <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-16">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+      <div className="pt-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
+        {/* Header - Same as Partners Page */}
+        <div className="admin-dash__header">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">
-              {isAdmin ? 'Admin' : 'My'} <span className="text-indigo-600">Bookings</span>
+            <h1 className="admin-dash__greeting">
+              {isAdmin ? 'Admin' : 'My'} <span>Bookings</span>
             </h1>
-            <p className="text-sm text-slate-500">{filteredBookings.length} bookings found</p>
+            <p className="admin-dash__subtitle">
+              Manage and view all your bookings.
+            </p>
           </div>
-          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-            <div className="relative flex-1 sm:w-48">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-            <input
-              type="date"
-              value={filterDate}
-              onChange={(e) => setFilterDate(e.target.value)}
-              className="px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-            {filteredBookings.length > 0 && (
-              <button
-                onClick={exportToExcel}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition flex items-center gap-2"
-              >
-                <Download size={16} /> Export
-              </button>
-            )}
-            {(searchTerm || filterDate) && (
-              <button
-                onClick={() => { setSearchTerm(""); setFilterDate(""); }}
-                className="p-2 bg-slate-100 text-slate-500 rounded-xl hover:bg-slate-200 transition"
-              >
-                <X size={18} />
-              </button>
-            )}
+          <div className="admin-dash__date-pill">
+            <Calendar size={16} />
+            <span>
+              {new Date().toLocaleDateString("en-US", {
+                weekday: "short",
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              })}
+            </span>
           </div>
         </div>
 
-        {filteredBookings.length === 0 ? (
-          <div className="bg-slate-50 rounded-2xl p-12 text-center border border-slate-200">
-            <Calendar size={48} className="text-slate-300 mx-auto mb-4" />
-            <p className="text-lg font-semibold text-slate-600">No bookings found</p>
-            <p className="text-sm text-slate-400">Try adjusting your search</p>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
+          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
+            <p className="text-xs text-gray-500 font-medium">Total Bookings</p>
+            <p className="text-xl sm:text-2xl font-bold text-indigo-600">{totalCount}</p>
           </div>
-        ) : (
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50 border-b border-slate-200">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">#</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">Cabin</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">Customer</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">Date</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">Hours</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">Status</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">Payment</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">Pmt</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">T</th>
-                    <th className="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase">Amount</th>
-                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredBookings.map((b, idx) => {
-                    const status = getStatusBadge(b.status);
-                    const pmtMethod = getPaymentMethodBadge(b.paymentMethod);
-                    const pmtStatus = getPaymentStatusBadge(b.paymentStatus);
-                    const terms = getTermsBadge(b.termsAccepted);
-                    const isCashPending = (b.paymentMethod === 'cash' || b.paymentMethod === 'counter') && b.paymentStatus === 'pending';
-                    
-                    return (
-                      <tr key={b._id} className="hover:bg-slate-50 transition">
-                        <td className="px-4 py-3 text-slate-400 font-mono text-xs">{idx + 1}</td>
-                        <td className="px-4 py-3">
-                          <div>
-                            <p className="font-semibold text-slate-800">{b.cabinId?.name || 'Unknown'}</p>
-                            <p className="text-xs text-slate-400 flex items-center gap-1">
-                              <MapPin size={12} /> {b.cabinId?.address?.split(',')[0] || 'N/A'}
-                            </p>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <p className="font-medium">{b.name || 'N/A'}</p>
-                          <p className="text-xs text-slate-400">{b.mobile || 'N/A'}</p>
-                        </td>
-                        <td className="px-4 py-3">
-                          <p className="text-xs">{b.startDate}</p>
-                          <p className="text-xs text-slate-400">{b.startTime} - {b.endTime}</p>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="px-2 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-semibold">{b.totalHours}h</span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${status.color}`}>{status.label}</span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${pmtMethod.color}`}>{pmtMethod.label}</span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${pmtStatus.color}`}>{pmtStatus.label}</span>
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${terms.color}`}>{terms.label}</span>
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <span className="font-bold text-indigo-600">₹{b.totalPrice}</span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                            <button onClick={() => handleViewBooking(b)} className="p-1.5 bg-slate-100 rounded-lg hover:bg-slate-200 transition" title="View">
-                              <Eye size={14} className="text-slate-600" />
-                            </button>
-                            
-                            <button onClick={() => downloadInvoice(b)} className="p-1.5 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition" title="Invoice">
-                              <FileDown size={14} className="text-emerald-600" />
-                            </button>
+          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
+            <p className="text-xs text-gray-500 font-medium">Active</p>
+            <p className="text-xl sm:text-2xl font-bold text-emerald-600">{activeCount}</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
+            <p className="text-xs text-gray-500 font-medium">Pending</p>
+            <p className="text-xl sm:text-2xl font-bold text-yellow-600">{pendingCount}</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
+            <p className="text-xs text-gray-500 font-medium">Completed</p>
+            <p className="text-xl sm:text-2xl font-bold text-blue-600">{completedCount}</p>
+          </div>
+        </div>
 
-                            {(b.status === 'confirmed' || b.status === 'active') && (
-                              <button
-                                onClick={() => {
-                                  setReplaceBooking(b);
-                                  setSelectedCabin("");
-                                  setSelectedCabinData(null);
-                                  setShowReplaceModal(true);
-                                }}
-                                className="p-1.5 bg-blue-50 rounded-lg hover:bg-blue-100 transition"
-                                title="Replace Space"
-                              >
-                                <RefreshCw size={14} className="text-blue-600" />
-                              </button>
-                            )}
+        <div className="space-y-6">
+          {/* Bookings Table Section */}
+          <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
+            <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
+              <div className="flex items-center gap-3">
+                <h3 className="admin-dash__card-title">All Bookings</h3>
+                <span className="px-2.5 py-0.5 text-xs font-bold text-indigo-700 bg-indigo-100 rounded-full">
+                  {filteredBookings.length}
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Search Bar */}
+                <div className="relative w-full sm:w-56">
+                  <Search
+                    size={16}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Search bookings..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  />
+                </div>
+                
+                {/* Filter Toggle Button */}
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    showFilters ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  <Filter size={14} />
+                  Filters
+                  {(filters.status !== 'all' || filters.paymentStatus !== 'all' || filters.paymentMethod !== 'all' || filterDate) && (
+                    <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                  )}
+                </button>
 
-                            {(b.status === 'pending' || b.status === 'confirmed') && (
-                              <button
-                                onClick={() => {
-                                  setCancelBooking(b);
-                                  setShowCancelModal(true);
-                                }}
-                                className="p-1.5 bg-red-50 rounded-lg hover:bg-red-100 transition"
-                                title="Cancel Booking"
-                              >
-                                <XIcon size={14} className="text-red-600" />
-                              </button>
-                            )}
+                {filteredBookings.length > 0 && (
+                  <button
+                    onClick={exportToExcel}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200"
+                  >
+                    <Download size={14} />
+                    <span className="hidden xs:inline">Export</span>
+                  </button>
+                )}
 
-                            {isCashPending && (
-                              <button
-                                onClick={() => {
-                                  setPaymentBooking(b);
-                                  setNewPaymentStatus(b.paymentStatus || 'pending');
-                                  setAmountPaid(b.totalPrice || 0);
-                                  setShowPaymentModal(true);
-                                }}
-                                className="p-1.5 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition"
-                                title="Update Payment"
-                              >
-                                <Edit size={14} className="text-yellow-600" />
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                <button
+                  onClick={() => navigate("/my-cabin-payments")}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+                >
+                  <CreditCard size={14} className="text-indigo-600" />
+                  <span className="hidden xs:inline">Payments</span>
+                </button>
+                <button
+                  onClick={() => navigate("/my-cabins")}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors"
+                >
+                  <Building2 size={14} />
+                  <span className="hidden xs:inline">Cabins</span>
+                  <span className="xs:hidden">Cabins</span>
+                </button>
+              </div>
             </div>
+
+            {/* Filter Panel */}
+            {showFilters && (
+              <div className="px-4 pt-4 pb-3 border-b border-gray-100" style={{ backgroundColor: '#fafafa' }}>
+                <div className="flex flex-wrap items-end gap-3">
+                  <div className="min-w-[130px]">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Date</label>
+                    <input
+                      type="date"
+                      value={filterDate}
+                      onChange={(e) => setFilterDate(e.target.value)}
+                      className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    />
+                  </div>
+                  <div className="min-w-[130px]">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</label>
+                    <select
+                      value={filters.status}
+                      onChange={(e) => setFilters({...filters, status: e.target.value})}
+                      className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    >
+                      <option value="all">All</option>
+                      <option value="pending">Pending</option>
+                      <option value="confirmed">Confirmed</option>
+                      <option value="active">Active</option>
+                      <option value="completed">Completed</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
+                  </div>
+                  <div className="min-w-[130px]">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Payment Status</label>
+                    <select
+                      value={filters.paymentStatus}
+                      onChange={(e) => setFilters({...filters, paymentStatus: e.target.value})}
+                      className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    >
+                      <option value="all">All</option>
+                      <option value="pending">Pending</option>
+                      <option value="paid">Paid</option>
+                      <option value="failed">Failed</option>
+                      <option value="refunded">Refunded</option>
+                    </select>
+                  </div>
+                  <div className="min-w-[130px]">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Payment Method</label>
+                    <select
+                      value={filters.paymentMethod}
+                      onChange={(e) => setFilters({...filters, paymentMethod: e.target.value})}
+                      className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    >
+                      <option value="all">All</option>
+                      <option value="online">Online</option>
+                      <option value="cash">Cash</option>
+                      <option value="counter">Counter</option>
+                    </select>
+                  </div>
+                  <button
+                    onClick={clearFilters}
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-red-600 transition-colors"
+                  >
+                    <XCircleIcon size={14} />
+                    Clear
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Table Container - Full Width */}
+            <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
+              {filteredBookings.length === 0 ? (
+                <div className="flex flex-col items-center justify-center gap-3 py-20 text-gray-400">
+                  <Calendar size={48} className="opacity-20" />
+                  <p className="text-lg font-medium">No bookings found</p>
+                  <p className="text-sm">Try adjusting your filters.</p>
+                </div>
+              ) : (
+                <table className="w-full min-w-[1200px] text-left">
+                  <thead>
+                    <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
+                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
+                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
+                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Customer</th>
+                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Date & Time</th>
+                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Hours</th>
+                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
+                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Payment</th>
+                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Pmt Status</th>
+                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Amount</th>
+                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {filteredBookings.map((b, idx) => {
+                      const status = getStatusBadge(b.status);
+                      const pmtMethod = getPaymentMethodBadge(b.paymentMethod);
+                      const pmtStatus = getPaymentStatusBadge(b.paymentStatus);
+                      const terms = getTermsBadge(b.termsAccepted);
+                      const isCashPending = (b.paymentMethod === 'cash' || b.paymentMethod === 'counter') && b.paymentStatus === 'pending';
+                      
+                      return (
+                        <tr key={b._id} className="transition-colors group hover:bg-gray-50/80">
+                          <td className="p-4">
+                            <span className="text-sm font-semibold text-gray-400">#{idx + 1}</span>
+                          </td>
+                          <td className="p-4">
+                            <div>
+                              <p className="font-semibold text-gray-900 text-sm">{b.cabinId?.name || 'Unknown'}</p>
+                              <p className="text-[10px] text-gray-400 flex items-center gap-1">
+                                <MapPin size={10} /> {b.cabinId?.address?.split(',')[0] || 'N/A'}
+                              </p>
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            <p className="font-medium text-gray-800 text-sm">{b.name || 'N/A'}</p>
+                            <p className="text-xs text-gray-400">{b.mobile || 'N/A'}</p>
+                          </td>
+                          <td className="p-4">
+                            <p className="text-sm text-gray-700">{b.startDate}</p>
+                            <p className="text-xs text-gray-400">{b.startTime} - {b.endTime}</p>
+                          </td>
+                          <td className="p-4">
+                            <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-bold">{b.totalHours}h</span>
+                          </td>
+                          <td className="p-4">
+                            <span className={`px-3 py-1 text-xs font-bold rounded-full ${status.color}`}>{status.label}</span>
+                          </td>
+                          <td className="p-4">
+                            <span className={`px-3 py-1 text-xs font-bold rounded-full ${pmtMethod.color}`}>{pmtMethod.label}</span>
+                          </td>
+                          <td className="p-4">
+                            <span className={`px-3 py-1 text-xs font-bold rounded-full ${pmtStatus.color}`}>{pmtStatus.label}</span>
+                          </td>
+                          <td className="p-4">
+                            <span className="text-sm font-bold text-indigo-600">₹{b.totalPrice}</span>
+                          </td>
+                          <td className="p-4">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <button
+                                onClick={() => handleViewBooking(b)}
+                                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors whitespace-nowrap"
+                                title="View"
+                              >
+                                <Eye size={13} /> View
+                              </button>
+                              <button
+                                onClick={() => downloadInvoice(b)}
+                                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors whitespace-nowrap"
+                                title="Invoice"
+                              >
+                                <FileDown size={13} /> Invoice
+                              </button>
+
+                              {(b.status === 'confirmed' || b.status === 'active') && (
+                                <button
+                                  onClick={() => {
+                                    setReplaceBooking(b);
+                                    setSelectedCabin("");
+                                    setSelectedCabinData(null);
+                                    setShowReplaceModal(true);
+                                  }}
+                                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors whitespace-nowrap"
+                                  title="Replace Space"
+                                >
+                                  <RefreshCw size={13} /> Replace
+                                </button>
+                              )}
+
+                              {(b.status === 'pending' || b.status === 'confirmed') && (
+                                <button
+                                  onClick={() => {
+                                    setCancelBooking(b);
+                                    setShowCancelModal(true);
+                                  }}
+                                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-red-50 text-red-700 hover:bg-red-100 transition-colors whitespace-nowrap"
+                                  title="Cancel Booking"
+                                >
+                                  <XIcon size={13} /> Cancel
+                                </button>
+                              )}
+
+                              {isCashPending && (
+                                <button
+                                  onClick={() => {
+                                    setPaymentBooking(b);
+                                    setNewPaymentStatus(b.paymentStatus || 'pending');
+                                    setAmountPaid(b.totalPrice || 0);
+                                    setShowPaymentModal(true);
+                                  }}
+                                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-yellow-50 text-yellow-700 hover:bg-yellow-100 transition-colors whitespace-nowrap"
+                                  title="Update Payment"
+                                >
+                                  <Edit size={13} /> Update
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {/* Footer with stats */}
+            {!loading && filteredBookings.length > 0 && (
+              <div className="px-4 py-3 border-t border-gray-100 rounded-b-2xl flex flex-wrap items-center justify-between gap-2" style={{ backgroundColor: '#fafafa' }}>
+                <span className="text-xs text-gray-500">
+                  Showing <strong>{filteredBookings.length}</strong> of <strong>{bookings.length}</strong> bookings
+                </span>
+                <div className="flex items-center gap-3 text-xs text-gray-500">
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    Active: {activeCount}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
+                    Pending: {pendingCount}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                    Completed: {completedCount}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
-        )}
-      </main>
+        </div>
+      </div>
 
       {/* View Modal */}
       {showViewModal && viewBooking && (
-        <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowViewModal(false)}>
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="sticky top-0 bg-indigo-600 text-white p-4 rounded-t-2xl flex justify-between items-center">
+        <div 
+          className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowViewModal(false);
+            }
+          }}
+        >
+          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="sticky top-0 bg-gradient-to-br from-indigo-600 to-purple-600 text-white p-6 rounded-t-3xl flex justify-between items-center">
               <div>
-                <h3 className="font-bold">Booking Details</h3>
-                <p className="text-sm text-indigo-200">#{viewBooking._id.slice(-6)}</p>
+                <h3 className="text-2xl font-bold">Booking Details</h3>
+                <p className="text-sm text-indigo-200">#{viewBooking._id.slice(-6).toUpperCase()}</p>
               </div>
-              <button onClick={() => setShowViewModal(false)} className="p-1 hover:bg-white/20 rounded-lg">
+              <button onClick={() => setShowViewModal(false)} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors">
                 <X size={20} />
               </button>
             </div>
-            <div className="p-5 space-y-3 text-sm">
-              <div className="grid grid-cols-2 gap-3">
-                <div><p className="text-slate-500 text-xs">Cabin</p><p className="font-semibold">{viewBooking.cabinId?.name || 'N/A'}</p></div>
-                <div><p className="text-slate-500 text-xs">Customer</p><p className="font-semibold">{viewBooking.name || 'N/A'}</p></div>
-                <div><p className="text-slate-500 text-xs">Mobile</p><p className="font-semibold">{viewBooking.mobile || 'N/A'}</p></div>
-                <div><p className="text-slate-500 text-xs">Email</p><p className="font-semibold text-sm">{viewBooking.email || 'N/A'}</p></div>
-              </div>
-              <div className="bg-slate-50 rounded-xl p-3">
-                <p className="text-slate-500 text-xs">Schedule</p>
-                <p className="font-semibold">{viewBooking.startDate} {viewBooking.startTime} - {viewBooking.endDate} {viewBooking.endTime}</p>
-                <p className="text-xs text-slate-500">{viewBooking.totalHours}h • {viewBooking.bookingBasis === 'plan' ? 'Plan' : 'Hourly'}</p>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                <div className="bg-indigo-50 rounded-xl p-2 text-center">
-                  <p className="text-[10px] text-indigo-500 font-bold">Status</p>
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusBadge(viewBooking.status).color}`}>{getStatusBadge(viewBooking.status).label}</span>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Cabin</p>
+                  <p className="mt-1 font-semibold text-gray-800">{viewBooking.cabinId?.name || 'N/A'}</p>
                 </div>
-                <div className="bg-slate-50 rounded-xl p-2 text-center">
-                  <p className="text-[10px] text-slate-500 font-bold">Payment</p>
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getPaymentMethodBadge(viewBooking.paymentMethod).color}`}>{getPaymentMethodBadge(viewBooking.paymentMethod).label}</span>
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Customer</p>
+                  <p className="mt-1 font-semibold text-gray-800">{viewBooking.name || 'N/A'}</p>
                 </div>
-                <div className="bg-slate-50 rounded-xl p-2 text-center">
-                  <p className="text-[10px] text-slate-500 font-bold">Pmt Status</p>
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getPaymentStatusBadge(viewBooking.paymentStatus).color}`}>{getPaymentStatusBadge(viewBooking.paymentStatus).label}</span>
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Mobile</p>
+                  <p className="mt-1 font-semibold text-gray-800">{viewBooking.mobile || 'N/A'}</p>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Email</p>
+                  <p className="mt-1 font-semibold text-gray-800 text-sm break-all">{viewBooking.email || 'N/A'}</p>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div><p className="text-slate-500 text-xs">Terms</p><span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getTermsBadge(viewBooking.termsAccepted).color}`}>{viewBooking.termsAccepted ? 'Accepted' : 'Not Accepted'}</span></div>
-                <div><p className="text-slate-500 text-xs">Created</p><p className="font-semibold text-xs">{formatDateTime(viewBooking.createdAt)}</p></div>
+
+              <div className="p-4 bg-gray-50 rounded-xl">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Schedule</p>
+                <p className="mt-1 font-semibold text-gray-800">{viewBooking.startDate} {viewBooking.startTime} - {viewBooking.endDate} {viewBooking.endTime}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{viewBooking.totalHours}h • {viewBooking.bookingBasis === 'plan' ? 'Plan' : 'Hourly'}</p>
               </div>
-              <div className="border-t pt-3">
-                <div className="flex justify-between"><span className="text-slate-500">Subtotal</span><span>₹{viewBooking.subtotal || 0}</span></div>
-                <div className="flex justify-between"><span className="text-slate-500">GST (18%)</span><span>₹{viewBooking.gstAmount || 0}</span></div>
-                <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2"><span>Total</span><span className="text-indigo-600">₹{viewBooking.totalPrice || 0}</span></div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div className="p-3 bg-indigo-50 rounded-xl text-center">
+                  <p className="text-[10px] text-indigo-500 font-bold uppercase">Status</p>
+                  <span className={`px-3 py-1 text-xs font-bold rounded-full inline-block mt-1 ${getStatusBadge(viewBooking.status).color}`}>
+                    {getStatusBadge(viewBooking.status).label}
+                  </span>
+                </div>
+                <div className="p-3 bg-gray-50 rounded-xl text-center">
+                  <p className="text-[10px] text-gray-500 font-bold uppercase">Payment</p>
+                  <span className={`px-3 py-1 text-xs font-bold rounded-full inline-block mt-1 ${getPaymentMethodBadge(viewBooking.paymentMethod).color}`}>
+                    {getPaymentMethodBadge(viewBooking.paymentMethod).label}
+                  </span>
+                </div>
+                <div className="p-3 bg-gray-50 rounded-xl text-center">
+                  <p className="text-[10px] text-gray-500 font-bold uppercase">Pmt Status</p>
+                  <span className={`px-3 py-1 text-xs font-bold rounded-full inline-block mt-1 ${getPaymentStatusBadge(viewBooking.paymentStatus).color}`}>
+                    {getPaymentStatusBadge(viewBooking.paymentStatus).label}
+                  </span>
+                </div>
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-3 bg-gray-50 rounded-xl">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Terms</p>
+                  <span className={`px-3 py-1 text-xs font-bold rounded-full inline-block mt-1 ${getTermsBadge(viewBooking.termsAccepted).color}`}>
+                    {viewBooking.termsAccepted ? 'Accepted' : 'Not Accepted'}
+                  </span>
+                </div>
+                <div className="p-3 bg-gray-50 rounded-xl">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Created</p>
+                  <p className="mt-1 font-semibold text-gray-800 text-sm">{formatDateTime(viewBooking.createdAt)}</p>
+                </div>
+              </div>
+
+              <div className="border-t border-gray-200 pt-4 space-y-1">
+                <div className="flex justify-between text-sm"><span className="text-gray-500">Subtotal</span><span>₹{viewBooking.subtotal || 0}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-gray-500">GST (18%)</span><span>₹{viewBooking.gstAmount || 0}</span></div>
+                <div className="flex justify-between text-lg font-bold border-t border-gray-200 pt-2 mt-2">
+                  <span>Total</span>
+                  <span className="text-indigo-600">₹{viewBooking.totalPrice || 0}</span>
+                </div>
+              </div>
+
               {viewBooking.transactionId && (
-                <div className="bg-slate-50 rounded-xl p-2"><p className="text-slate-500 text-xs">TXN ID</p><p className="font-mono text-xs">{viewBooking.transactionId}</p></div>
+                <div className="p-3 bg-gray-50 rounded-xl">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Transaction ID</p>
+                  <p className="mt-1 font-mono text-xs text-gray-700 break-all">{viewBooking.transactionId}</p>
+                </div>
               )}
-              <button onClick={() => { setShowViewModal(false); downloadInvoice(viewBooking); }} className="w-full py-2.5 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition">Download Invoice</button>
+
+              <div className="flex flex-wrap gap-3 pt-2 border-t border-gray-200">
+                <button
+                  onClick={() => { setShowViewModal(false); downloadInvoice(viewBooking); }}
+                  className="flex-1 min-w-[120px] py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-sm active:scale-[0.98]"
+                >
+                  <FileDown size={16} className="inline mr-2" />
+                  Download Invoice
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -658,38 +908,38 @@ const MyBookings = () => {
       {/* ====================== */}
       {showReplaceModal && replaceBooking && (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowReplaceModal(false)}>
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
-            <div className="bg-blue-600 text-white p-4 rounded-t-2xl flex justify-between items-center shrink-0">
+          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-gradient-to-br from-blue-600 to-blue-700 text-white p-5 rounded-t-3xl flex justify-between items-center shrink-0">
               <div>
-                <h3 className="font-bold">Replace Space</h3>
+                <h3 className="text-xl font-bold">Replace Space</h3>
                 <p className="text-sm text-blue-200">{replaceBooking.cabinId?.name} → New Space</p>
               </div>
-              <button onClick={() => setShowReplaceModal(false)} className="p-1 hover:bg-white/20 rounded-lg">
+              <button onClick={() => setShowReplaceModal(false)} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors">
                 <X size={20} />
               </button>
             </div>
             <div className="p-5 space-y-4 overflow-y-auto flex-1">
-              <div className="bg-blue-50 rounded-xl p-3 text-sm">
-                <p className="font-medium text-blue-800">Current Booking</p>
-                <p className="text-slate-600">{replaceBooking.cabinId?.name}</p>
+              <div className="bg-blue-50 rounded-xl p-4 text-sm">
+                <p className="font-bold text-blue-800">Current Booking</p>
+                <p className="text-slate-600 mt-1">{replaceBooking.cabinId?.name}</p>
                 <p className="text-xs text-slate-500">{replaceBooking.startDate} {replaceBooking.startTime} - {replaceBooking.endDate} {replaceBooking.endTime}</p>
-                <p className="text-xs text-slate-500 mt-1">Total: ₹{replaceBooking.totalPrice}</p>
+                <p className="text-xs font-bold text-slate-700 mt-1">Total: ₹{replaceBooking.totalPrice}</p>
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-500 uppercase block mb-2">Select New Cabin</label>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Select New Cabin</label>
                 <div className="relative">
                   <select
                     value={selectedCabin}
                     onChange={(e) => setSelectedCabin(e.target.value)}
-                    className="w-full p-3 pr-10 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
+                    className="w-full p-3 pr-10 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
                   >
                     <option value="">Select a cabin...</option>
                     {allCabins
                       .filter(c => c._id !== replaceBooking.cabinId?._id)
                       .map(c => (
                         <option key={c._id} value={c._id}>
-                          {c.name} - ₹{c.price}/hr ({c.address?.split(',')[0] || 'N/A'})
+                          {c.name} - ₹{c.price}/hr
                         </option>
                       ))}
                   </select>
@@ -699,25 +949,25 @@ const MyBookings = () => {
 
               {/* ─── PRICE DIFFERENCE DISPLAY ─── */}
               {selectedCabinData && priceDiff && (
-                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 space-y-2">
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 space-y-3">
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Price Comparison</p>
                   
                   <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div className="bg-blue-50 rounded-lg p-2">
+                    <div className="bg-blue-50 rounded-lg p-3">
                       <p className="text-[10px] text-blue-600 font-medium">Current Cabin</p>
                       <p className="font-bold text-slate-800">₹{replaceBooking.cabinId?.price}/hr</p>
                       <p className="text-xs text-slate-500">{replaceBooking.totalHours}h = ₹{replaceBooking.totalPrice}</p>
                     </div>
-                    <div className="bg-emerald-50 rounded-lg p-2">
+                    <div className="bg-emerald-50 rounded-lg p-3">
                       <p className="text-[10px] text-emerald-600 font-medium">New Cabin</p>
                       <p className="font-bold text-slate-800">₹{selectedCabinData.price}/hr</p>
                       <p className="text-xs text-slate-500">{replaceBooking.totalHours}h = ₹{priceDiff.newTotal}</p>
                     </div>
                   </div>
 
-                  <div className="border-t border-slate-200 pt-2">
+                  <div className="border-t border-gray-200 pt-3">
                     {priceDiff.finalDifference > 0 ? (
-                      <div className="flex items-center justify-between text-amber-600 bg-amber-50 rounded-lg p-2">
+                      <div className="flex items-center justify-between text-amber-600 bg-amber-50 rounded-lg p-3">
                         <div className="flex items-center gap-2">
                           <TrendingUp size={16} />
                           <span className="text-sm font-medium">You need to pay extra</span>
@@ -725,7 +975,7 @@ const MyBookings = () => {
                         <span className="font-bold text-lg">+₹{Math.round(priceDiff.finalDifference)}</span>
                       </div>
                     ) : priceDiff.finalDifference < 0 ? (
-                      <div className="flex items-center justify-between text-emerald-600 bg-emerald-50 rounded-lg p-2">
+                      <div className="flex items-center justify-between text-emerald-600 bg-emerald-50 rounded-lg p-3">
                         <div className="flex items-center gap-2">
                           <TrendingDown size={16} />
                           <span className="text-sm font-medium">You will get refund</span>
@@ -733,16 +983,16 @@ const MyBookings = () => {
                         <span className="font-bold text-lg">-₹{Math.round(Math.abs(priceDiff.finalDifference))}</span>
                       </div>
                     ) : (
-                      <div className="flex items-center justify-between text-slate-600 bg-slate-100 rounded-lg p-2">
+                      <div className="flex items-center justify-between text-slate-600 bg-slate-100 rounded-lg p-3">
                         <span className="text-sm font-medium">No price difference</span>
                         <span className="font-bold text-lg">₹0</span>
                       </div>
                     )}
                   </div>
 
-                  <div className="text-[10px] text-slate-400 flex justify-between">
-                    <span>Current Total (incl. GST): ₹{Math.round(priceDiff.currentWithGst)}</span>
-                    <span>New Total (incl. GST): ₹{Math.round(priceDiff.totalWithGst)}</span>
+                  <div className="text-[10px] text-slate-400 flex justify-between border-t border-gray-200 pt-2">
+                    <span>Current Total: ₹{Math.round(priceDiff.currentWithGst)}</span>
+                    <span>New Total: ₹{Math.round(priceDiff.totalWithGst)}</span>
                   </div>
                 </div>
               )}
@@ -753,11 +1003,11 @@ const MyBookings = () => {
               </div>
             </div>
 
-            <div className="p-4 border-t border-slate-200 shrink-0">
+            <div className="p-4 border-t border-gray-200 shrink-0">
               <button
                 onClick={handleReplaceBooking}
                 disabled={replaceLoading || !selectedCabin}
-                className="w-full py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {replaceLoading ? 'Replacing...' : <><RefreshCw size={16} /> Replace Booking</>}
               </button>
@@ -771,19 +1021,19 @@ const MyBookings = () => {
       {/* ====================== */}
       {showCancelModal && cancelBooking && (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowCancelModal(false)}>
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="bg-red-600 text-white p-4 rounded-t-2xl flex justify-between items-center">
+          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-gradient-to-br from-red-600 to-red-700 text-white p-5 rounded-t-3xl flex justify-between items-center">
               <div>
-                <h3 className="font-bold">Cancel Booking</h3>
+                <h3 className="text-xl font-bold">Cancel Booking</h3>
                 <p className="text-sm text-red-200">{cancelBooking.cabinId?.name}</p>
               </div>
-              <button onClick={() => setShowCancelModal(false)} className="p-1 hover:bg-white/20 rounded-lg">
+              <button onClick={() => setShowCancelModal(false)} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors">
                 <X size={20} />
               </button>
             </div>
             <div className="p-5 space-y-4">
-              <div className="bg-red-50 rounded-xl p-3 text-sm">
-                <p className="font-medium text-red-800">Are you sure you want to cancel this booking?</p>
+              <div className="bg-red-50 rounded-xl p-4 text-sm">
+                <p className="font-bold text-red-800">Are you sure you want to cancel this booking?</p>
                 <div className="mt-2 space-y-1 text-slate-600">
                   <p><span className="text-slate-500">Cabin:</span> {cancelBooking.cabinId?.name}</p>
                   <p><span className="text-slate-500">Date:</span> {cancelBooking.startDate} {cancelBooking.startTime} - {cancelBooking.endDate} {cancelBooking.endTime}</p>
@@ -794,7 +1044,7 @@ const MyBookings = () => {
               <div className="bg-amber-50 rounded-xl p-3 text-xs text-amber-700 flex items-start gap-2">
                 <AlertCircle size={16} className="shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-semibold">Cancellation Policy:</p>
+                  <p className="font-bold">Cancellation Policy:</p>
                   <ul className="list-disc pl-4 mt-1 space-y-0.5">
                     <li>Free cancellation within <span className="font-bold">24 hours</span> of booking</li>
                     <li>50% refund for cancellations after 24 hours</li>
@@ -803,17 +1053,17 @@ const MyBookings = () => {
                 </div>
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <button
                   onClick={handleCancelBooking}
                   disabled={cancelLoading}
-                  className="flex-1 py-2.5 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {cancelLoading ? 'Cancelling...' : <><XIcon size={16} /> Cancel Booking</>}
                 </button>
                 <button
                   onClick={() => setShowCancelModal(false)}
-                  className="px-4 py-2.5 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 transition"
+                  className="px-5 py-3 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition"
                 >
                   Close
                 </button>
@@ -826,39 +1076,68 @@ const MyBookings = () => {
       {/* Payment Modal */}
       {showPaymentModal && paymentBooking && (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowPaymentModal(false)}>
-          <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="bg-yellow-500 text-white p-4 rounded-t-2xl flex justify-between items-center">
-              <div><h3 className="font-bold">Update Payment</h3><p className="text-sm text-yellow-100">₹{paymentBooking.totalPrice}</p></div>
-              <button onClick={() => setShowPaymentModal(false)} className="p-1 hover:bg-white/20 rounded-lg"><X size={20} /></button>
+          <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 text-white p-5 rounded-t-3xl flex justify-between items-center">
+              <div>
+                <h3 className="text-xl font-bold">Update Payment</h3>
+                <p className="text-sm text-yellow-100">₹{paymentBooking.totalPrice}</p>
+              </div>
+              <button onClick={() => setShowPaymentModal(false)} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors">
+                <X size={20} />
+              </button>
             </div>
             <div className="p-5 space-y-4">
-              <div className="bg-slate-50 rounded-xl p-3 text-sm space-y-1">
-                <div className="flex justify-between"><span className="text-slate-500">Current Status</span><span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getPaymentStatusBadge(paymentBooking.paymentStatus).color}`}>{getPaymentStatusBadge(paymentBooking.paymentStatus).label}</span></div>
-                <div className="flex justify-between"><span className="text-slate-500">Method</span><span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getPaymentMethodBadge(paymentBooking.paymentMethod).color}`}>{getPaymentMethodBadge(paymentBooking.paymentMethod).label}</span></div>
-                <div className="flex justify-between"><span className="text-slate-500">Terms</span><span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getTermsBadge(paymentBooking.termsAccepted).color}`}>{paymentBooking.termsAccepted ? 'Accepted' : 'Not Accepted'}</span></div>
+              <div className="bg-gray-50 rounded-xl p-4 text-sm space-y-2">
+                <div className="flex justify-between"><span className="text-slate-500">Current Status</span><span className={`px-3 py-1 text-xs font-bold rounded-full ${getPaymentStatusBadge(paymentBooking.paymentStatus).color}`}>{getPaymentStatusBadge(paymentBooking.paymentStatus).label}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Method</span><span className={`px-3 py-1 text-xs font-bold rounded-full ${getPaymentMethodBadge(paymentBooking.paymentMethod).color}`}>{getPaymentMethodBadge(paymentBooking.paymentMethod).label}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Terms</span><span className={`px-3 py-1 text-xs font-bold rounded-full ${getTermsBadge(paymentBooking.termsAccepted).color}`}>{paymentBooking.termsAccepted ? 'Accepted' : 'Not Accepted'}</span></div>
               </div>
               <div>
-                <label className="text-xs font-bold text-slate-500 uppercase">Amount Paid (₹)</label>
-                <input type="number" value={amountPaid} onChange={(e) => setAmountPaid(Number(e.target.value))} disabled={newPaymentStatus !== 'paid'} className="w-full p-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Enter amount" />
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Amount Paid (₹)</label>
+                <input
+                  type="number"
+                  value={amountPaid}
+                  onChange={(e) => setAmountPaid(Number(e.target.value))}
+                  disabled={newPaymentStatus !== 'paid'}
+                  className="w-full mt-1 p-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="Enter amount"
+                />
               </div>
               <div>
-                <label className="text-xs font-bold text-slate-500 uppercase">New Status</label>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">New Status</label>
                 <div className="grid grid-cols-2 gap-2 mt-1">
                   {['pending','paid','failed','refunded'].map(s => {
                     const badge = getPaymentStatusBadge(s);
                     return (
-                      <button key={s} onClick={() => { setNewPaymentStatus(s); if(s==='paid') setAmountPaid(paymentBooking.totalPrice); else setAmountPaid(0); }} className={`py-2 rounded-xl text-xs font-medium border ${newPaymentStatus===s ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-slate-200 hover:bg-slate-50'}`}>
+                      <button
+                        key={s}
+                        onClick={() => {
+                          setNewPaymentStatus(s);
+                          if(s === 'paid') setAmountPaid(paymentBooking.totalPrice);
+                          else setAmountPaid(0);
+                        }}
+                        className={`py-2.5 rounded-xl text-xs font-bold border transition ${newPaymentStatus === s ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-200 hover:bg-gray-50 text-gray-700'}`}
+                      >
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${badge.color}`}>{badge.label}</span>
                       </button>
                     );
                   })}
                 </div>
               </div>
-              <div className="flex gap-2">
-                <button onClick={handleUpdatePaymentStatus} disabled={updatingPayment || !newPaymentStatus} className="flex-1 py-2.5 bg-yellow-500 text-white rounded-xl font-medium hover:bg-yellow-600 transition disabled:opacity-50">
+              <div className="flex gap-3">
+                <button
+                  onClick={handleUpdatePaymentStatus}
+                  disabled={updatingPayment || !newPaymentStatus}
+                  className="flex-1 py-3 bg-yellow-500 text-white rounded-xl font-bold hover:bg-yellow-600 transition disabled:opacity-50"
+                >
                   {updatingPayment ? 'Updating...' : 'Update'}
                 </button>
-                <button onClick={() => setShowPaymentModal(false)} className="px-4 py-2.5 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 transition">Cancel</button>
+                <button
+                  onClick={() => setShowPaymentModal(false)}
+                  className="px-5 py-3 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition"
+                >
+                  Cancel
+                </button>
               </div>
             </div>
           </div>

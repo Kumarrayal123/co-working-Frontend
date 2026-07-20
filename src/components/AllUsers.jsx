@@ -17,48 +17,62 @@ import {
   IndianRupee,
   TrendingUp,
   CheckCircle,
-  Clock
+  Clock,
+  Filter,
+  XCircle as XCircleIcon,
+  User as UserIcon,
+  Crown,
+  Shield,
+  Download,
+  FileText
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import AdminNavbar from "./AdminNavbar";
 import "./Dashboard.css";
 import { toast } from "react-toastify";
+import * as XLSX from 'xlsx';
 
 const API_URL = "http://62.72.29.27:5003";
 
 const ROLE_COLORS = {
-  user:   { bg: "#eff6ff", color: "#1d4ed8", label: "User" },
-  doctor: { bg: "#fdf4ff", color: "#7c3aed", label: "Doctor" },
+  user:   { bg: "bg-blue-100 text-blue-700", label: "User" },
+  doctor: { bg: "bg-purple-100 text-purple-700", label: "Doctor" },
+  admin:  { bg: "bg-amber-100 text-amber-700", label: "Admin" }
 };
 
 const STATUS_COLORS = {
-  active:   { bg: "#f0fdf4", color: "#15803d", dot: "#16a34a" },
-  pending:  { bg: "#fffbeb", color: "#b45309", dot: "#f59e0b" },
-  approved: { bg: "#f0fdf4", color: "#15803d", dot: "#16a34a" },
-  rejected: { bg: "#fef2f2", color: "#b91c1c", dot: "#ef4444" },
+  active:   { bg: "bg-emerald-100 text-emerald-700", dot: "bg-emerald-500" },
+  pending:  { bg: "bg-yellow-100 text-yellow-700", dot: "bg-yellow-500" },
+  approved: { bg: "bg-emerald-100 text-emerald-700", dot: "bg-emerald-500" },
+  rejected: { bg: "bg-red-100 text-red-700", dot: "bg-red-500" }
 };
 
-const getStatus = (s) => STATUS_COLORS[s] ?? STATUS_COLORS.pending;
-const getRole   = (r) => ROLE_COLORS[r]   ?? ROLE_COLORS.user;
+const getStatus = (s) => STATUS_COLORS[s] || STATUS_COLORS.pending;
+const getRole = (r) => ROLE_COLORS[r] || ROLE_COLORS.user;
 
-const fmt = (dateStr) => {
-  if (!dateStr) return "—";
-  return new Date(dateStr).toLocaleDateString("en-IN", {
-    day: "numeric", month: "short", year: "numeric",
+const formatDate = (dateStr) => {
+  if (!dateStr) return "N/A";
+  return new Date(dateStr).toLocaleDateString("en-US", {
+    year: "numeric", month: "short", day: "numeric"
   });
 };
 
-const fmtCurrency = (amount) => {
+const formatCurrency = (amount) => {
   return `₹${amount?.toLocaleString('en-IN') || 0}`;
 };
 
 export default function AllUsers() {
-  const [users,       setUsers]       = useState([]);
-  const [loading,     setLoading]     = useState(true);
-  const [error,       setError]       = useState(null);
-  const [search,      setSearch]      = useState("");
-  const [roleFilter,  setRoleFilter]  = useState("all");
-  const [viewUser,    setViewUser]    = useState(null);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterName, setFilterName] = useState("");
+  const [filterRole, setFilterRole] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterPhone, setFilterPhone] = useState("");
+  const [filterAddress, setFilterAddress] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const [viewUser, setViewUser] = useState(null);
 
   const handleApprove = async (id) => {
     try {
@@ -115,649 +129,539 @@ export default function AllUsers() {
 
   useEffect(() => { fetchUsers(); }, []);
 
+  const clearFilters = () => {
+    setSearchTerm("");
+    setFilterName("");
+    setFilterRole("all");
+    setFilterStatus("all");
+    setFilterPhone("");
+    setFilterAddress("");
+  };
+
   const filtered = users.filter((u) => {
-    const q = search.toLowerCase();
+    const search = searchTerm.toLowerCase();
     const matchSearch =
-      u.name?.toLowerCase().includes(q) ||
-      u.email?.toLowerCase().includes(q) ||
-      u.mobile?.includes(q);
-    const matchRole = roleFilter === "all" || u.role === roleFilter;
-    return matchSearch && matchRole;
+      u.name?.toLowerCase().includes(search) ||
+      u.email?.toLowerCase().includes(search) ||
+      u.mobile?.includes(search);
+    const matchName = filterName ? u.name?.toLowerCase().includes(filterName.toLowerCase()) : true;
+    const matchRole = filterRole === "all" || u.role === filterRole;
+    const matchStatus = filterStatus === "all" || u.status === filterStatus;
+    const matchPhone = filterPhone ? u.mobile?.includes(filterPhone) : true;
+    const matchAddress = filterAddress ? u.address?.toLowerCase().includes(filterAddress.toLowerCase()) : true;
+    return matchSearch && matchName && matchRole && matchStatus && matchPhone && matchAddress;
   });
 
-  const totalUsers   = users.length;
+  const totalUsers = users.length;
   const totalDoctors = users.filter((u) => u.role === "doctor").length;
-  const totalActive  = users.filter((u) => u.status === "active" || u.status === "approved").length;
+  const totalActive = users.filter((u) => u.status === "active" || u.status === "approved").length;
   const totalPending = users.filter((u) => u.status === "pending").length;
+  const totalRejected = users.filter((u) => u.status === "rejected").length;
+
+  // ======================
+  // EXPORT TO EXCEL
+  // ======================
+  const exportToExcel = () => {
+    try {
+      if (filtered.length === 0) {
+        toast.warning("No users to export");
+        return;
+      }
+
+      const exportData = filtered.map((user, index) => ({
+        'S.No': index + 1,
+        'Name': user.name || 'N/A',
+        'Email': user.email || 'N/A',
+        'Mobile': user.mobile || 'N/A',
+        'Address': user.address || 'N/A',
+        'Role': user.role || 'user',
+        'Status': user.status || 'pending',
+        'Organization': user.organizationName || 'N/A',
+        'Total Cabins': user.cabinStats?.total || 0,
+        'Active Cabins': user.cabinStats?.active || 0,
+        'Inactive Cabins': user.cabinStats?.inactive || 0,
+        'Total Earnings': user.cabinStats?.totalEarnings || 0,
+        'Active Orders': user.cabinStats?.activeOrders || 0,
+        'Joined': formatDate(user.createdAt)
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'All_Users');
+      
+      const date = new Date().toISOString().split('T')[0];
+      XLSX.writeFile(wb, `all_users_${date}.xlsx`);
+      
+      toast.success(`Exported ${filtered.length} users to Excel!`);
+    } catch (error) {
+      console.error("Export error:", error);
+      toast.error("Failed to export users");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
+        <AdminNavbar />
+        <div className="flex justify-center items-center h-64">
+          <div className="w-12 h-12 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin" />
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="admin-dash">
+    <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
       <AdminNavbar />
 
-      <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-16">
-
-        {/* ── Header ── */}
+      <div className="pt-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
+        {/* Header */}
         <div className="admin-dash__header">
           <div>
             <h1 className="admin-dash__greeting">
-              Registered <span>Users</span>
+              All <span>Users</span>
             </h1>
             <p className="admin-dash__subtitle">
               View and manage all registered members on the platform.
             </p>
           </div>
-          <button
-            onClick={fetchUsers}
-            style={{
-              display: "flex", alignItems: "center", gap: 6,
-              padding: "0.55rem 1rem",
-              background: "#fff", border: "1px solid #e4e7ec",
-              borderRadius: 10, fontSize: "0.8rem", fontWeight: 600,
-              color: "#475569", cursor: "pointer",
-              boxShadow: "0 1px 2px rgba(16,24,40,0.05)",
-              transition: "all 150ms",
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = "#f8fafc"}
-            onMouseLeave={e => e.currentTarget.style.background = "#fff"}
-          >
-            <RefreshCw size={15} />
-            Refresh
-          </button>
+          <div className="admin-dash__date-pill">
+            <Calendar size={16} />
+            <span>
+              {new Date().toLocaleDateString("en-US", {
+                weekday: "short",
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              })}
+            </span>
+          </div>
         </div>
 
-        {/* ── Stats ── */}
-        <style>{`
-          .au-stats { display:grid; grid-template-columns:repeat(2,1fr); gap:0.75rem; margin-bottom:1.5rem; }
-          @media(min-width:768px){ .au-stats { grid-template-columns:repeat(4,1fr); } }
-          .au-table-wrap { background:#fff; border:1px solid #e4e7ec; border-radius:16px; overflow:hidden; box-shadow:0 1px 2px rgba(16,24,40,.05); }
-          .au-thead { display:grid; grid-template-columns:2fr 2fr 1.5fr 0.8fr 1fr 1fr 120px; padding:.75rem 1.25rem; background:#f8fafc; border-bottom:1px solid #e4e7ec; gap:.75rem; }
-          .au-trow  { display:grid; grid-template-columns:2fr 2fr 1.5fr 0.8fr 1fr 1fr 120px; padding:.875rem 1.25rem; gap:.75rem; align-items:center; border-bottom:1px solid #f1f5f9; transition:background 120ms; }
-          .au-trow:last-child { border-bottom:none; }
-          .au-trow:hover { background:#fafafa; }
-          .au-mobile-card { display:none; flex-direction:column; gap:0; border-radius:16px; overflow:hidden; border:1px solid #e4e7ec; background:#fff; box-shadow:0 1px 2px rgba(16,24,40,.05); }
-          .au-card-row { padding:1rem; border-bottom:1px solid #f1f5f9; }
-          .au-card-row:last-child { border-bottom:none; }
-          @media(max-width:767px) {
-            .au-thead, .au-table-wrap { display:none; }
-            .au-mobile-card { display:flex; }
-          }
-        `}</style>
-        <div className="au-stats">
-          {[
-            { label: "Total Users",    value: totalUsers,   icon: Users,     cls: "admin-dash__stat-icon--indigo"  },
-            { label: "Doctors",        value: totalDoctors, icon: UserCheck, cls: "admin-dash__stat-icon--violet"  },
-            { label: "Active Members", value: totalActive,  icon: UserCheck, cls: "admin-dash__stat-icon--emerald" },
-            { label: "Pending",        value: totalPending, icon: UserX,     cls: "admin-dash__stat-icon--amber"   },
-          ].map(({ label, value, icon: Icon, cls }) => (
-            <div key={label} className="admin-dash__stat" style={{ cursor: "default" }}>
-              <div className="admin-dash__stat-top">
-                <span className="admin-dash__stat-label">{label}</span>
-                <div className={`admin-dash__stat-icon ${cls}`}>
-                  <Icon size={16} />
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4 mb-6">
+          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Total Users</p>
+            <p className="text-2xl font-bold text-indigo-600 mt-1">{totalUsers}</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-purple-600">Doctors</p>
+            <p className="text-2xl font-bold text-purple-600 mt-1">{totalDoctors}</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Active</p>
+            <p className="text-2xl font-bold text-emerald-600 mt-1">{totalActive}</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-yellow-600">Pending</p>
+            <p className="text-2xl font-bold text-yellow-600 mt-1">{totalPending}</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-red-600">Rejected</p>
+            <p className="text-2xl font-bold text-red-600 mt-1">{totalRejected}</p>
+          </div>
+        </div>
+
+        {/* Table Section */}
+        <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
+          <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
+            <div className="flex items-center gap-3">
+              <h3 className="admin-dash__card-title">All Users</h3>
+              <span className="px-2.5 py-0.5 text-xs font-bold text-indigo-700 bg-indigo-100 rounded-full">
+                {filtered.length}
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Search Bar */}
+              <div className="relative w-full sm:w-48">
+                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search users..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                />
+              </div>
+              
+              {/* Filter Toggle Button */}
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${showFilters ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              >
+                <Filter size={14} />
+                Filters
+                {(filterName || filterRole !== 'all' || filterStatus !== 'all' || filterPhone || filterAddress) && (
+                  <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                )}
+              </button>
+
+              {/* Export Button */}
+              {filtered.length > 0 && (
+                <button
+                  onClick={exportToExcel}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-medium hover:bg-emerald-100 transition-colors border border-emerald-200"
+                >
+                  <Download size={14} />
+                  <span className="hidden xs:inline">Export</span>
+                </button>
+              )}
+
+              <button
+                onClick={fetchUsers}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200"
+              >
+                <RefreshCw size={14} />
+                <span className="hidden xs:inline">Refresh</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Filter Panel */}
+          {showFilters && (
+            <div className="px-4 pt-4 pb-3 border-b border-gray-100" style={{ backgroundColor: '#fafafa' }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div>
+                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Name</label>
+                  <input
+                    type="text"
+                    placeholder="Filter by name..."
+                    value={filterName}
+                    onChange={(e) => setFilterName(e.target.value)}
+                    className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Phone</label>
+                  <input
+                    type="text"
+                    placeholder="Filter by phone..."
+                    value={filterPhone}
+                    onChange={(e) => setFilterPhone(e.target.value)}
+                    className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Address</label>
+                  <input
+                    type="text"
+                    placeholder="Filter by address..."
+                    value={filterAddress}
+                    onChange={(e) => setFilterAddress(e.target.value)}
+                    className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Role</label>
+                  <select
+                    value={filterRole}
+                    onChange={(e) => setFilterRole(e.target.value)}
+                    className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  >
+                    <option value="all">All Roles</option>
+                    <option value="user">User</option>
+                    <option value="doctor">Doctor</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</label>
+                  <select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                </div>
+                <div className="flex items-end">
+                  <button onClick={clearFilters} className="w-full px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-red-600 transition-colors border border-gray-200 rounded-lg hover:border-red-300 flex items-center justify-center gap-1">
+                    <XCircleIcon size={14} /> Clear All
+                  </button>
                 </div>
               </div>
-              <div className="admin-dash__stat-value">{value}</div>
-              <div className="admin-dash__stat-meta">registered members</div>
             </div>
-          ))}
-        </div>
+          )}
 
-        {/* ── Filters ── */}
-        <div style={{
-          display: "flex", gap: "0.75rem", flexWrap: "wrap",
-          marginBottom: "1.25rem", alignItems: "center",
-        }}>
-          <div style={{ position: "relative", flex: "1 1 260px", minWidth: 220 }}>
-            <Search
-              size={16}
-              style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }}
-            />
-            <input
-              type="text"
-              placeholder="Search by name, email or phone..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              style={{
-                width: "100%", paddingLeft: 36, paddingRight: 12,
-                paddingTop: "0.55rem", paddingBottom: "0.55rem",
-                border: "1px solid #e4e7ec", borderRadius: 10,
-                fontSize: "0.85rem", fontFamily: "inherit",
-                color: "#1e293b", outline: "none",
-                background: "#fff", boxSizing: "border-box",
-                transition: "border-color 180ms",
-              }}
-              onFocus={e => e.target.style.borderColor = "#6366f1"}
-              onBlur={e  => e.target.style.borderColor = "#e4e7ec"}
-            />
-          </div>
-
-          {["all", "user", "doctor"].map(r => (
-            <button
-              key={r}
-              onClick={() => setRoleFilter(r)}
-              style={{
-                padding: "0.45rem 1rem",
-                border: `1.5px solid ${roleFilter === r ? "#6366f1" : "#e4e7ec"}`,
-                borderRadius: 999,
-                background: roleFilter === r ? "#eef2ff" : "#fff",
-                color: roleFilter === r ? "#4f46e5" : "#64748b",
-                fontSize: "0.8rem", fontWeight: 600,
-                cursor: "pointer", transition: "all 150ms",
-                textTransform: "capitalize",
-              }}
-            >
-              {r === "all" ? "All Roles" : r}
-            </button>
-          ))}
-
-          <span style={{ marginLeft: "auto", fontSize: "0.78rem", color: "#94a3b8", fontWeight: 500 }}>
-            {filtered.length} of {totalUsers} users
-          </span>
-        </div>
-
-        {/* ── Content ── */}
-        {loading ? (
-          <div className="admin-dash__loading">
-            <div className="admin-dash__spinner" />
-            <p className="admin-dash__loading-text">Loading users...</p>
-          </div>
-        ) : error ? (
-          <div className="admin-dash__error">
-            <UserX size={40} style={{ opacity: 0.4 }} />
-            <p className="admin-dash__error-title">{error}</p>
-            <button
-              onClick={fetchUsers}
-              style={{
-                marginTop: 8, padding: "0.5rem 1.25rem",
-                background: "#6366f1", color: "#fff",
-                border: "none", borderRadius: 8,
-                fontWeight: 600, cursor: "pointer", fontSize: "0.85rem",
-              }}
-            >
-              Try Again
-            </button>
-          </div>
-        ) : filtered.length === 0 ? (
-          <div style={{
-            display: "flex", flexDirection: "column",
-            alignItems: "center", justifyContent: "center",
-            minHeight: 320, gap: "0.75rem",
-            background: "#f8fafc", border: "1px solid #e4e7ec",
-            borderRadius: 16,
-          }}>
-            <Users size={48} style={{ color: "#cbd5e1" }} />
-            <p style={{ fontWeight: 700, color: "#64748b", fontSize: "1rem", margin: 0 }}>No users found</p>
-            <p style={{ color: "#94a3b8", fontSize: "0.82rem", margin: 0 }}>Try adjusting your search or filter</p>
-          </div>
-        ) : (
-          <>
-            {/* Desktop Table */}
-            <div className="au-table-wrap">
-              <div className="au-thead">
-                {["User", "Contact", "Address", "Cabins", "Role", "Status", "Action"].map(h => (
-                  <span key={h} style={{
-                    fontSize: "0.68rem", fontWeight: 700,
-                    color: "#64748b", textTransform: "uppercase",
-                    letterSpacing: "0.06em",
-                  }}>
-                    {h}
-                  </span>
-                ))}
+          {/* Table Container */}
+          <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
+            {error ? (
+              <div className="flex flex-col items-center justify-center gap-3 py-20 text-gray-400">
+                <UserX size={48} className="opacity-20" />
+                <p className="text-lg font-medium text-red-500">{error}</p>
+                <button
+                  onClick={fetchUsers}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors"
+                >
+                  Try Again
+                </button>
               </div>
+            ) : filtered.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-3 py-20 text-gray-400">
+                <Users size={48} className="opacity-20" />
+                <p className="text-lg font-medium">No users found</p>
+                <p className="text-sm">Try adjusting your filters.</p>
+              </div>
+            ) : (
+              <table className="w-full min-w-[1100px] text-left">
+                <thead>
+                  <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">User</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Contact</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Role</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabins</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Joined</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filtered.map((user, idx) => {
+                    const st = getStatus(user.status);
+                    const rl = getRole(user.role);
+                    const cabinCount = user.cabinStats?.total || user.cabins?.length || 0;
+                    
+                    return (
+                      <tr key={user._id} className="transition-colors group hover:bg-gray-50/80">
+                        <td className="p-4">
+                          <span className="text-sm font-semibold text-gray-400">#{idx + 1}</span>
+                        </td>
+                        <td className="p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
+                              {user.name?.charAt(0)?.toUpperCase() || "U"}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-gray-900 text-sm">{user.name || "—"}</p>
+                              <p className="text-[10px] text-gray-400 flex items-center gap-1">
+                                <Mail size={10} className="text-gray-400" />
+                                {user.email || "—"}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <div>
+                            <p className="text-sm text-gray-700 flex items-center gap-1.5">
+                              <Phone size={14} className="text-gray-400" />
+                              {user.mobile || "—"}
+                            </p>
+                            {user.address && (
+                              <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
+                                <MapPin size={10} className="text-gray-400" />
+                                <span className="truncate max-w-[120px]">{user.address}</span>
+                              </p>
+                            )}
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-full ${rl.bg}`}>
+                            {user.role === 'admin' && <Crown size={12} />}
+                            {user.role === 'doctor' && <Shield size={12} />}
+                            {rl.label}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${
+                            cabinCount > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-400'
+                          }`}>
+                            <Home size={12} />
+                            {cabinCount}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-full ${st.bg}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`}></span>
+                            {user.status || "pending"}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <span className="text-sm text-gray-500">{formatDate(user.createdAt)}</span>
+                        </td>
+                        <td className="p-4">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {user.status === "pending" && (
+                              <>
+                                <button
+                                  onClick={() => handleApprove(user._id)}
+                                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors whitespace-nowrap"
+                                  title="Approve"
+                                >
+                                  <UserCheck size={13} /> Approve
+                                </button>
+                                <button
+                                  onClick={() => handleReject(user._id)}
+                                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-red-50 text-red-700 hover:bg-red-100 transition-colors whitespace-nowrap"
+                                  title="Reject"
+                                >
+                                  <UserX size={13} /> Reject
+                                </button>
+                              </>
+                            )}
+                            <button
+                              onClick={() => setViewUser(user)}
+                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors whitespace-nowrap"
+                              title="View Details"
+                            >
+                              <Eye size={13} /> View
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
 
-              {filtered.map((user, idx) => {
-                const st  = getStatus(user.status);
-                const rl  = getRole(user.role);
-                const cabinCount = user.cabinStats?.total || user.cabins?.length || 0;
-                return (
-                  <div
-                    key={user._id}
-                    className="au-trow"
-                    style={{ borderBottom: idx < filtered.length - 1 ? "1px solid #f1f5f9" : "none" }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", minWidth: 0 }}>
-                      <div style={{
-                        width: 38, height: 38, borderRadius: "50%", flexShrink: 0,
-                        background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        color: "#fff", fontWeight: 700, fontSize: "0.8rem",
-                      }}>
-                        {user.name?.substring(0, 2).toUpperCase() || "US"}
-                      </div>
-                      <div style={{ minWidth: 0 }}>
-                        <p style={{ margin: 0, fontWeight: 700, fontSize: "0.85rem", color: "#101828", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                          {user.name || "—"}
-                        </p>
-                        <p style={{ margin: 0, fontSize: "0.7rem", color: "#94a3b8", marginTop: 1 }}>
-                          Joined {fmt(user.createdAt)}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 3 }}>
-                        <Mail size={12} color="#6366f1" />
-                        <span style={{ fontSize: "0.78rem", fontWeight: 600, color: "#334155", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {user.email || "—"}
-                        </span>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                        <Phone size={12} color="#6366f1" />
-                        <span style={{ fontSize: "0.75rem", color: "#64748b" }}>
-                          {user.mobile || "—"}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div style={{ display: "flex", alignItems: "flex-start", gap: 5, minWidth: 0 }}>
-                      <MapPin size={12} color="#94a3b8" style={{ marginTop: 2, flexShrink: 0 }} />
-                      <span style={{ fontSize: "0.75rem", color: "#64748b", overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
-                        {user.address || "—"}
-                      </span>
-                    </div>
-
-                    {/* ─── CABIN COUNT COLUMN ─── */}
-                    <div>
-                      <span style={{
-                        display: "inline-flex", alignItems: "center", gap: 4,
-                        padding: "3px 10px",
-                        borderRadius: 999,
-                        fontSize: "0.68rem", fontWeight: 700,
-                        background: cabinCount > 0 ? "#f0fdf4" : "#f1f5f9",
-                        color: cabinCount > 0 ? "#15803d" : "#94a3b8",
-                      }}>
-                        <Home size={12} />
-                        {cabinCount}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span style={{
-                        display: "inline-block",
-                        padding: "3px 10px",
-                        borderRadius: 999,
-                        fontSize: "0.68rem", fontWeight: 700,
-                        background: rl.bg, color: rl.color,
-                        textTransform: "capitalize",
-                      }}>
-                        {rl.label}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span style={{
-                        display: "inline-flex", alignItems: "center", gap: 5,
-                        padding: "3px 10px",
-                        borderRadius: 999,
-                        fontSize: "0.68rem", fontWeight: 700,
-                        background: st.bg, color: st.color,
-                        textTransform: "capitalize",
-                      }}>
-                        <span style={{ width: 6, height: 6, borderRadius: "50%", background: st.dot, flexShrink: 0 }} />
-                        {user.status || "pending"}
-                      </span>
-                    </div>
-
-                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                      {user.status === "pending" ? (
-                        <>
-                          <button
-                            onClick={() => handleReject(user._id)}
-                            title="Reject User"
-                            style={{
-                              display: "flex", alignItems: "center", justifyContent: "center",
-                              width: 28, height: 28, borderRadius: 6,
-                              background: "#fef2f2", color: "#b91c1c",
-                              border: "1px solid #fee2e2", cursor: "pointer",
-                              transition: "all 140ms",
-                            }}
-                            onMouseEnter={e => { e.currentTarget.style.background = "#ef4444"; e.currentTarget.style.color = "#fff"; }}
-                            onMouseLeave={e => { e.currentTarget.style.background = "#fef2f2"; e.currentTarget.style.color = "#b91c1c"; }}
-                          >
-                            <UserX size={14} />
-                          </button>
-                          <button
-                            onClick={() => handleApprove(user._id)}
-                            title="Approve User"
-                            style={{
-                              display: "flex", alignItems: "center", justifyContent: "center",
-                              width: 28, height: 28, borderRadius: 6,
-                              background: "#f0fdf4", color: "#15803d",
-                              border: "1px solid #dcfce7", cursor: "pointer",
-                              transition: "all 140ms",
-                            }}
-                            onMouseEnter={e => { e.currentTarget.style.background = "#22c55e"; e.currentTarget.style.color = "#fff"; }}
-                            onMouseLeave={e => { e.currentTarget.style.background = "#f0fdf4"; e.currentTarget.style.color = "#15803d"; }}
-                          >
-                            <UserCheck size={14} />
-                          </button>
-                        </>
-                      ) : null}
-                      <button
-                        onClick={() => setViewUser(user)}
-                        style={{
-                          display: "flex", alignItems: "center", gap: 5,
-                          padding: "0.35rem 0.65rem",
-                          background: "#eef2ff", color: "#4f46e5",
-                          border: "1px solid #c7d2fe",
-                          borderRadius: 8, fontSize: "0.75rem", fontWeight: 600,
-                          cursor: "pointer", transition: "all 140ms",
-                        }}
-                        onMouseEnter={e => { e.currentTarget.style.background = "#6366f1"; e.currentTarget.style.color = "#fff"; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = "#eef2ff"; e.currentTarget.style.color = "#4f46e5"; }}
-                      >
-                        <Eye size={13} /> View
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
+          {/* Footer with stats */}
+          {!loading && filtered.length > 0 && (
+            <div className="px-4 py-3 border-t border-gray-100 rounded-b-2xl flex flex-wrap items-center justify-between gap-2" style={{ backgroundColor: '#fafafa' }}>
+              <span className="text-xs text-gray-500">
+                Showing <strong>{filtered.length}</strong> of <strong>{users.length}</strong> users
+              </span>
+              <div className="flex items-center gap-3 text-xs text-gray-500">
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  Active: {totalActive}
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
+                  Pending: {totalPending}
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                  Rejected: {totalRejected}
+                </span>
+              </div>
             </div>
+          )}
+        </div>
+      </div>
 
-            {/* Mobile Cards */}
-            <div className="au-mobile-card">
-              {filtered.map((user) => {
-                const st = getStatus(user.status);
-                const rl = getRole(user.role);
-                const cabinCount = user.cabinStats?.total || user.cabins?.length || 0;
-                return (
-                  <div key={user._id} className="au-card-row">
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", marginBottom: "0.75rem" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.625rem", minWidth: 0 }}>
-                        <div style={{
-                          width: 40, height: 40, borderRadius: "50%", flexShrink: 0,
-                          background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          color: "#fff", fontWeight: 700, fontSize: "0.85rem",
-                        }}>
-                          {user.name?.substring(0, 2).toUpperCase() || "US"}
-                        </div>
-                        <div style={{ minWidth: 0 }}>
-                          <p style={{ margin: 0, fontWeight: 700, fontSize: "0.875rem", color: "#101828", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {user.name || "—"}
-                          </p>
-                          <p style={{ margin: 0, fontSize: "0.7rem", color: "#94a3b8", marginTop: 1 }}>Joined {fmt(user.createdAt)}</p>
-                        </div>
-                      </div>
-                      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
-                        <span style={{ display: "inline-block", padding: "2px 8px", borderRadius: 999, fontSize: "0.65rem", fontWeight: 700, background: rl.bg, color: rl.color, textTransform: "capitalize" }}>{rl.label}</span>
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 999, fontSize: "0.65rem", fontWeight: 700, background: st.bg, color: st.color, textTransform: "capitalize" }}>
-                          <span style={{ width: 5, height: 5, borderRadius: "50%", background: st.dot }} />{user.status || "pending"}
-                        </span>
-                      </div>
-                    </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: "0.78rem", color: "#475569", marginBottom: "0.75rem" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 5 }}><Mail size={12} color="#6366f1" /><span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{user.email || "—"}</span></div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 5 }}><Phone size={12} color="#6366f1" /><span>{user.mobile || "—"}</span></div>
-                      {user.address && <div style={{ display: "flex", alignItems: "flex-start", gap: 5 }}><MapPin size={12} color="#94a3b8" style={{ marginTop: 2, flexShrink: 0 }} /><span>{user.address}</span></div>}
-                      <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                        <Home size={12} color="#6366f1" />
-                        <span style={{ fontWeight: 600, color: "#1e293b" }}>{cabinCount} {cabinCount === 1 ? 'Cabin' : 'Cabins'}</span>
-                      </div>
-                    </div>
-                    <div style={{ display: "flex", gap: "0.5rem" }}>
-                      {user.status === "pending" && (
-                        <>
-                          <button onClick={() => handleReject(user._id)} style={{ flex: 1, padding: "0.45rem", background: "#fef2f2", color: "#b91c1c", border: "1px solid #fee2e2", borderRadius: 8, fontWeight: 700, fontSize: "0.78rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
-                            <UserX size={13} /> Reject
-                          </button>
-                          <button onClick={() => handleApprove(user._id)} style={{ flex: 1, padding: "0.45rem", background: "#f0fdf4", color: "#15803d", border: "1px solid #dcfce7", borderRadius: 8, fontWeight: 700, fontSize: "0.78rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
-                            <UserCheck size={13} /> Approve
-                          </button>
-                        </>
-                      )}
-                      <button onClick={() => setViewUser(user)} style={{ flex: 1, padding: "0.45rem", background: "#eef2ff", color: "#4f46e5", border: "1px solid #c7d2fe", borderRadius: 8, fontWeight: 700, fontSize: "0.78rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
-                        <Eye size={13} /> View
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        )}
-      </main>
-
-      {/* ── User Detail Modal WITH CABIN STATS ── */}
+      {/* ====================== */}
+      {/* USER DETAIL MODAL */}
+      {/* ====================== */}
       {viewUser && (
         <div
-          style={{
-            position: "fixed", inset: 0, zIndex: 1200,
-            background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            padding: "1rem",
-          }}
+          className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
           onClick={() => setViewUser(null)}
         >
           <div
-            onClick={e => e.stopPropagation()}
-            style={{
-              background: "#fff", borderRadius: 20,
-              width: "100%", maxWidth: 560,
-              boxShadow: "0 24px 60px rgba(0,0,0,0.18)",
-              overflow: "hidden",
-              maxHeight: "90vh",
-              display: "flex",
-              flexDirection: "column",
-              animation: "modalIn 200ms cubic-bezier(0.34,1.3,0.64,1) forwards",
-            }}
+            className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
           >
-            <style>{`@keyframes modalIn { from { opacity:0; transform:scale(0.94) translateY(12px); } to { opacity:1; transform:scale(1) translateY(0); } }`}</style>
-
             {/* Modal Header */}
-            <div style={{
-              background: "linear-gradient(135deg,#6366f1 0%,#8b5cf6 60%,#06b6d4 100%)",
-              padding: "1.5rem",
-              position: "relative",
-              flexShrink: 0,
-            }}>
-              <button
-                onClick={() => setViewUser(null)}
-                style={{
-                  position: "absolute", top: 14, right: 14,
-                  width: 32, height: 32, borderRadius: 8,
-                  background: "rgba(255,255,255,0.15)", border: "none",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  cursor: "pointer", color: "#fff",
-                }}
-              >
-                <X size={18} />
-              </button>
-
-              <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-                <div style={{
-                  width: 60, height: 60, borderRadius: "50%",
-                  background: "rgba(255,255,255,0.2)",
-                  border: "3px solid rgba(255,255,255,0.4)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: "1.25rem", fontWeight: 800, color: "#fff",
-                }}>
-                  {viewUser.name?.substring(0, 2).toUpperCase() || "US"}
+            <div className="bg-gradient-to-br from-indigo-600 to-purple-600 p-6 text-white rounded-t-3xl flex justify-between items-center flex-shrink-0">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-2xl font-bold border-2 border-white/30">
+                  {viewUser.name?.charAt(0)?.toUpperCase() || "U"}
                 </div>
                 <div>
-                  <h2 style={{ margin: 0, fontSize: "1.15rem", fontWeight: 800, color: "#fff" }}>
-                    {viewUser.name || "—"}
-                  </h2>
-                  <div style={{ display: "flex", gap: "0.5rem", marginTop: 6, flexWrap: "wrap" }}>
-                    <span style={{
-                      padding: "2px 10px", borderRadius: 999, fontSize: "0.68rem",
-                      fontWeight: 700, background: "rgba(255,255,255,0.2)", color: "#fff",
-                      textTransform: "capitalize",
-                    }}>
-                      {viewUser.role || "user"}
+                  <h2 className="text-2xl font-bold">{viewUser.name || "—"}</h2>
+                  <div className="flex flex-wrap items-center gap-2 mt-1">
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-full ${getRole(viewUser.role).bg}`}>
+                      {getRole(viewUser.role).label}
                     </span>
-                    <span style={{
-                      padding: "2px 10px", borderRadius: 999, fontSize: "0.68rem",
-                      fontWeight: 700,
-                      background: getStatus(viewUser.status).bg,
-                      color: getStatus(viewUser.status).color,
-                      textTransform: "capitalize",
-                    }}>
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-full ${getStatus(viewUser.status).bg}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${getStatus(viewUser.status).dot}`}></span>
                       {viewUser.status || "pending"}
                     </span>
                   </div>
                 </div>
               </div>
+              <button
+                onClick={() => setViewUser(null)}
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+              >
+                <X size={20} />
+              </button>
             </div>
 
-            {/* Modal Body - Scrollable */}
-            <div style={{ padding: "1.5rem", overflowY: "auto", flex: 1 }} className="custom-scrollbar">
-
-              {/* User Details */}
-              <div style={{ marginBottom: "1rem" }}>
-                <h4 style={{ margin: "0 0 0.75rem 0", fontSize: "0.75rem", fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                  User Information
-                </h4>
-                {[
-                  { icon: Mail,      label: "Email",        value: viewUser.email },
-                  { icon: Phone,     label: "Mobile",       value: viewUser.mobile },
-                  { icon: MapPin,    label: "Address",      value: viewUser.address },
-                  { icon: Building2, label: "Organization", value: viewUser.organizationName || "—" },
-                  { icon: Calendar,  label: "Registered",   value: fmt(viewUser.createdAt) },
-                ].map(({ icon: Icon, label, value }) => (
-                  <div key={label} style={{
-                    display: "flex", alignItems: "flex-start", gap: "0.875rem",
-                    padding: "0.6rem 0",
-                    borderBottom: "1px solid #f1f5f9",
-                  }}>
-                    <div style={{
-                      width: 34, height: 34, borderRadius: 10, flexShrink: 0,
-                      background: "#eef2ff",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                    }}>
-                      <Icon size={16} color="#6366f1" />
-                    </div>
-                    <div>
-                      <p style={{ margin: 0, fontSize: "0.68rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                        {label}
-                      </p>
-                      <p style={{ margin: 0, fontSize: "0.875rem", fontWeight: 600, color: "#101828", marginTop: 2 }}>
-                        {value || "—"}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto flex-1 space-y-6">
+              {/* User Information */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Mail size={12} /> Email
+                  </p>
+                  <p className="mt-1 font-medium text-gray-800 text-sm break-all">{viewUser.email || "—"}</p>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Phone size={12} /> Mobile
+                  </p>
+                  <p className="mt-1 font-medium text-gray-800 text-sm">{viewUser.mobile || "—"}</p>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <MapPin size={12} /> Address
+                  </p>
+                  <p className="mt-1 font-medium text-gray-800 text-sm">{viewUser.address || "—"}</p>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Building2 size={12} /> Organization
+                  </p>
+                  <p className="mt-1 font-medium text-gray-800 text-sm">{viewUser.organizationName || "—"}</p>
+                </div>
               </div>
 
-              {/* ─── CABIN STATS ─── */}
+              {/* Cabin Stats */}
               {viewUser.cabinStats && (
-                <div style={{ marginBottom: "1rem" }}>
-                  <h4 style={{ margin: "0 0 0.75rem 0", fontSize: "0.75rem", fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                    <Home size={14} style={{ display: "inline", marginRight: 4 }} /> Cabin Statistics
-                  </h4>
-                  <div style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))",
-                    gap: "0.5rem",
-                  }}>
-                    <div style={{
-                      background: "#f8fafc",
-                      borderRadius: 10,
-                      padding: "0.75rem",
-                      textAlign: "center",
-                      border: "1px solid #e4e7ec",
-                    }}>
-                      <p style={{ margin: 0, fontSize: "0.6rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                        Total Cabins
-                      </p>
-                      <p style={{ margin: 0, fontSize: "1.25rem", fontWeight: 800, color: "#1e293b" }}>
-                        {viewUser.cabinStats.total || 0}
-                      </p>
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Home size={12} /> Cabin Statistics
+                  </p>
+                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 mt-3">
+                    <div className="bg-white rounded-lg p-3 text-center border border-gray-200">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase">Total</p>
+                      <p className="text-xl font-bold text-indigo-600">{viewUser.cabinStats.total || 0}</p>
                     </div>
-                    <div style={{
-                      background: "#f0fdf4",
-                      borderRadius: 10,
-                      padding: "0.75rem",
-                      textAlign: "center",
-                      border: "1px solid #dcfce7",
-                    }}>
-                      <p style={{ margin: 0, fontSize: "0.6rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                        Active
-                      </p>
-                      <p style={{ margin: 0, fontSize: "1.25rem", fontWeight: 800, color: "#15803d" }}>
-                        {viewUser.cabinStats.active || 0}
-                      </p>
+                    <div className="bg-white rounded-lg p-3 text-center border border-emerald-200">
+                      <p className="text-[10px] font-bold text-emerald-500 uppercase">Active</p>
+                      <p className="text-xl font-bold text-emerald-600">{viewUser.cabinStats.active || 0}</p>
                     </div>
-                    <div style={{
-                      background: "#fef2f2",
-                      borderRadius: 10,
-                      padding: "0.75rem",
-                      textAlign: "center",
-                      border: "1px solid #fee2e2",
-                    }}>
-                      <p style={{ margin: 0, fontSize: "0.6rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                        Inactive
-                      </p>
-                      <p style={{ margin: 0, fontSize: "1.25rem", fontWeight: 800, color: "#dc2626" }}>
-                        {viewUser.cabinStats.inactive || 0}
-                      </p>
+                    <div className="bg-white rounded-lg p-3 text-center border border-red-200">
+                      <p className="text-[10px] font-bold text-red-500 uppercase">Inactive</p>
+                      <p className="text-xl font-bold text-red-600">{viewUser.cabinStats.inactive || 0}</p>
                     </div>
-                    <div style={{
-                      background: "#fefce8",
-                      borderRadius: 10,
-                      padding: "0.75rem",
-                      textAlign: "center",
-                      border: "1px solid #fef08a",
-                    }}>
-                      <p style={{ margin: 0, fontSize: "0.6rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                        <IndianRupee size={10} style={{ display: "inline" }} /> Earnings
-                      </p>
-                      <p style={{ margin: 0, fontSize: "1rem", fontWeight: 800, color: "#ca8a04" }}>
-                        {fmtCurrency(viewUser.cabinStats.totalEarnings || 0)}
-                      </p>
+                    <div className="bg-white rounded-lg p-3 text-center border border-amber-200">
+                      <p className="text-[10px] font-bold text-amber-500 uppercase">Earnings</p>
+                      <p className="text-lg font-bold text-amber-600">{formatCurrency(viewUser.cabinStats.totalEarnings || 0)}</p>
                     </div>
-                    <div style={{
-                      background: "#eff6ff",
-                      borderRadius: 10,
-                      padding: "0.75rem",
-                      textAlign: "center",
-                      border: "1px solid #bfdbfe",
-                    }}>
-                      <p style={{ margin: 0, fontSize: "0.6rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                        <ShoppingBag size={10} style={{ display: "inline" }} /> Active Orders
-                      </p>
-                      <p style={{ margin: 0, fontSize: "1.25rem", fontWeight: 800, color: "#2563eb" }}>
-                        {viewUser.cabinStats.activeOrders || 0}
-                      </p>
+                    <div className="bg-white rounded-lg p-3 text-center border border-blue-200">
+                      <p className="text-[10px] font-bold text-blue-500 uppercase">Active Orders</p>
+                      <p className="text-xl font-bold text-blue-600">{viewUser.cabinStats.activeOrders || 0}</p>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* ─── USER'S CABINS ─── */}
+              {/* User's Cabins */}
               {viewUser.cabins && viewUser.cabins.length > 0 && (
-                <div style={{ marginBottom: "1rem" }}>
-                  <h4 style={{ margin: "0 0 0.75rem 0", fontSize: "0.75rem", fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                    <Home size={14} style={{ display: "inline", marginRight: 4 }} /> User's Cabins ({viewUser.cabins.length})
-                  </h4>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Home size={12} /> Cabins ({viewUser.cabins.length})
+                  </p>
+                  <div className="space-y-2 mt-3 max-h-40 overflow-y-auto">
                     {viewUser.cabins.map((cabin) => (
-                      <div key={cabin._id} style={{
-                        display: "flex", alignItems: "center", justifyContent: "space-between",
-                        padding: "0.5rem 0.75rem",
-                        background: "#f8fafc",
-                        border: "1px solid #e2e8f0",
-                        borderRadius: 8,
-                      }}>
-                        <div style={{ minWidth: 0 }}>
-                          <p style={{ margin: 0, fontSize: "0.78rem", fontWeight: 600, color: "#1e293b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {cabin.name || "—"}
-                          </p>
-                          <p style={{ margin: 0, fontSize: "0.65rem", color: "#94a3b8" }}>
-                            {cabin.address || "—"} • ₹{cabin.price}/hr • {cabin.capacity} seats
-                          </p>
+                      <div key={cabin._id} className="flex items-center justify-between bg-white rounded-lg p-3 border border-gray-200">
+                        <div>
+                          <p className="font-medium text-gray-800 text-sm">{cabin.name || "—"}</p>
+                          <p className="text-xs text-gray-400">{cabin.address || "—"} • ₹{cabin.price}/hr • {cabin.capacity} seats</p>
                         </div>
-                        <span style={{
-                          display: "inline-flex", alignItems: "center", gap: 4,
-                          padding: "2px 8px",
-                          borderRadius: 999,
-                          fontSize: "0.6rem",
-                          fontWeight: 700,
-                          background: cabin.isActive ? "#f0fdf4" : "#fef2f2",
-                          color: cabin.isActive ? "#15803d" : "#dc2626",
-                        }}>
-                          {cabin.isActive ? <CheckCircle size={10} /> : <X size={10} />}
-                          {cabin.isActive ? "Active" : "Inactive"}
+                        <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full ${
+                          cabin.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'
+                        }`}>
+                          {cabin.isActive ? 'Active' : 'Inactive'}
                         </span>
                       </div>
                     ))}
@@ -765,82 +669,55 @@ export default function AllUsers() {
                 </div>
               )}
 
-              {/* ─── USER'S ORDERS ─── */}
+              {/* User's Orders */}
               {viewUser.orders && viewUser.orders.length > 0 && (
-                <div style={{ marginBottom: "1rem" }}>
-                  <h4 style={{ margin: "0 0 0.75rem 0", fontSize: "0.75rem", fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                    <ShoppingBag size={14} style={{ display: "inline", marginRight: 4 }} /> Recent Orders ({viewUser.orders.length})
-                  </h4>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <ShoppingBag size={12} /> Recent Orders ({viewUser.orders.length})
+                  </p>
+                  <div className="space-y-2 mt-3 max-h-40 overflow-y-auto">
                     {viewUser.orders.slice(0, 5).map((order) => (
-                      <div key={order._id} style={{
-                        display: "flex", alignItems: "center", justifyContent: "space-between",
-                        padding: "0.5rem 0.75rem",
-                        background: "#f8fafc",
-                        border: "1px solid #e2e8f0",
-                        borderRadius: 8,
-                      }}>
+                      <div key={order._id} className="flex items-center justify-between bg-white rounded-lg p-3 border border-gray-200">
                         <div>
-                          <p style={{ margin: 0, fontSize: "0.75rem", fontWeight: 600, color: "#1e293b" }}>
-                            {fmtCurrency(order.amount)}
-                          </p>
-                          <p style={{ margin: 0, fontSize: "0.6rem", color: "#94a3b8" }}>
-                            {order.startDate ? fmt(order.startDate) : "—"} • {order.expiryDate ? fmt(order.expiryDate) : "—"}
-                          </p>
+                          <p className="font-medium text-gray-800 text-sm">{formatCurrency(order.amount)}</p>
+                          <p className="text-xs text-gray-400">{formatDate(order.startDate)} — {formatDate(order.expiryDate)}</p>
                         </div>
-                        <span style={{
-                          display: "inline-flex", alignItems: "center", gap: 4,
-                          padding: "2px 8px",
-                          borderRadius: 999,
-                          fontSize: "0.6rem",
-                          fontWeight: 700,
-                          background: order.status === "active" ? "#f0fdf4" : order.status === "completed" ? "#eff6ff" : "#fef2f2",
-                          color: order.status === "active" ? "#15803d" : order.status === "completed" ? "#2563eb" : "#dc2626",
-                        }}>
-                          {order.status === "active" ? <Clock size={10} /> : order.status === "completed" ? <CheckCircle size={10} /> : <X size={10} />}
-                          {order.status || "pending"}
+                        <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full ${
+                          order.status === 'active' ? 'bg-emerald-100 text-emerald-700' :
+                          order.status === 'completed' ? 'bg-blue-100 text-blue-700' :
+                          'bg-red-100 text-red-600'
+                        }`}>
+                          {order.status || 'pending'}
                         </span>
                       </div>
                     ))}
                     {viewUser.orders.length > 5 && (
-                      <p style={{ fontSize: "0.65rem", color: "#94a3b8", textAlign: "center" }}>
-                        +{viewUser.orders.length - 5} more orders
-                      </p>
+                      <p className="text-xs text-gray-400 text-center">+{viewUser.orders.length - 5} more orders</p>
                     )}
                   </div>
                 </div>
               )}
 
-              {/* Uploaded Documents */}
-              {(viewUser.role === "doctor" || viewUser.adharCard || viewUser.panCard || viewUser.mbbsCertificate) && (
-                <div style={{ marginTop: "0.5rem" }}>
-                  <h4 style={{ margin: "0 0 0.75rem 0", fontSize: "0.75rem", fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                    Uploaded Documents
-                  </h4>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              {/* Documents */}
+              {(viewUser.role === "doctor" || viewUser.adharCard || viewUser.panCard) && (
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <FileText size={12} /> Documents
+                  </p>
+                  <div className="space-y-2 mt-3">
                     {[
                       { label: "Aadhar Card", file: viewUser.adharCard },
                       { label: "PAN Card", file: viewUser.panCard },
                       { label: "MBBS Certificate", file: viewUser.mbbsCertificate },
                       { label: "PMC Registration", file: viewUser.pmcRegistration },
-                      { label: "NMR ID Card", file: viewUser.nmrId },
+                      { label: "NMR ID", file: viewUser.nmrId },
                     ].map(({ label, file }) => {
                       if (!file) return null;
                       const fileUrl = file.startsWith("http") ? file : `${API_URL}/${file}`;
                       return (
-                        <div key={label} style={{
-                          display: "flex", alignItems: "center", justifyContent: "space-between",
-                          padding: "0.5rem 0.75rem", background: "#f8fafc",
-                          border: "1px solid #e2e8f0", borderRadius: 8,
-                        }}>
-                          <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "#334155" }}>{label}</span>
-                          <a href={fileUrl} target="_blank" rel="noopener noreferrer" style={{
-                            fontSize: "0.7rem", fontWeight: 600, color: "#6366f1",
-                            textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 3,
-                          }}
-                          onMouseEnter={e => e.target.style.textDecoration = "underline"}
-                          onMouseLeave={e => e.target.style.textDecoration = "none"}
-                          >
+                        <div key={label} className="flex items-center justify-between bg-white rounded-lg p-3 border border-gray-200">
+                          <span className="text-sm font-medium text-gray-700">{label}</span>
+                          <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
                             <Eye size={12} /> View
                           </a>
                         </div>
@@ -852,49 +729,26 @@ export default function AllUsers() {
             </div>
 
             {/* Modal Footer */}
-            <div style={{ padding: "1rem 1.5rem", borderTop: "1px solid #f1f5f9", display: "flex", gap: "0.75rem", flexShrink: 0 }}>
+            <div className="p-4 border-t border-gray-200 flex flex-wrap gap-3 flex-shrink-0">
               {viewUser.status === "pending" ? (
                 <>
                   <button
-                    onClick={() => handleReject(viewUser._id)}
-                    style={{
-                      flex: 1, padding: "0.75rem",
-                      background: "#fef2f2", color: "#b91c1c",
-                      border: "1px solid #fee2e2", borderRadius: 10,
-                      fontWeight: 700, fontSize: "0.82rem", cursor: "pointer",
-                      display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
-                      transition: "all 150ms"
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.background = "#fee2e2"}
-                    onMouseLeave={e => e.currentTarget.style.background = "#fef2f2"}
+                    onClick={() => handleApprove(viewUser._id)}
+                    className="flex-1 min-w-[100px] py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition shadow-sm active:scale-[0.98] flex items-center justify-center gap-2"
                   >
-                    <UserX size={15} /> Reject
+                    <UserCheck size={16} /> Approve
                   </button>
                   <button
-                    onClick={() => handleApprove(viewUser._id)}
-                    style={{
-                      flex: 1, padding: "0.75rem",
-                      background: "#f0fdf4", color: "#15803d",
-                      border: "1px solid #dcfce7", borderRadius: 10,
-                      fontWeight: 700, fontSize: "0.82rem", cursor: "pointer",
-                      display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
-                      transition: "all 150ms"
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.background = "#dcfce7"}
-                    onMouseLeave={e => e.currentTarget.style.background = "#f0fdf4"}
+                    onClick={() => handleReject(viewUser._id)}
+                    className="flex-1 min-w-[100px] py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition shadow-sm active:scale-[0.98] flex items-center justify-center gap-2"
                   >
-                    <UserCheck size={15} /> Approve
+                    <UserX size={16} /> Reject
                   </button>
                 </>
               ) : (
                 <button
                   onClick={() => setViewUser(null)}
-                  style={{
-                    width: "100%", padding: "0.75rem",
-                    background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
-                    color: "#fff", border: "none", borderRadius: 10,
-                    fontWeight: 700, fontSize: "0.875rem", cursor: "pointer",
-                  }}
+                  className="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-bold hover:shadow-lg transition active:scale-[0.98]"
                 >
                   Close
                 </button>

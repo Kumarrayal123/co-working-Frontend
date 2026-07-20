@@ -1,4 +1,4 @@
-// MyWallet.jsx
+// MyWallet.jsx - Complete with MyCabins Style Design
 import axios from "axios";
 import {
   Wallet as WalletIcon,
@@ -18,7 +18,10 @@ import {
   Banknote,
   AlertCircle,
   History,
-  RefreshCw
+  RefreshCw,
+  Filter,
+  XCircle as XCircleIcon,
+  Plus
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -53,6 +56,7 @@ const MyWallet = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [filterDate, setFilterDate] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
   
   // Withdraw States
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
@@ -109,7 +113,7 @@ const MyWallet = () => {
   };
 
   // ======================
-  // GET WITHDRAWALS (Auto Called on Page Load)
+  // GET WITHDRAWALS
   // ======================
   const fetchWithdrawals = async () => {
     try {
@@ -120,8 +124,6 @@ const MyWallet = () => {
         `${API_URL}/api/bookings/withdrawals`,
         getAuthHeader()
       );
-
-      console.log("Withdrawals response:", res.data);
 
       if (res.data.success) {
         setWithdrawals(res.data.withdrawals || []);
@@ -296,7 +298,6 @@ const MyWallet = () => {
         setWithdrawBank("");
         setWithdrawIfsc("");
         
-        // Refresh both wallet and withdrawals
         await fetchWallet();
         await fetchWithdrawals();
       }
@@ -317,39 +318,36 @@ const MyWallet = () => {
   // Withdrawal Status Badge
   const getWithdrawStatusBadge = (status) => {
     const statusMap = {
-      pending: { label: 'Pending', color: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
-      completed: { label: 'Completed', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-      failed: { label: 'Failed', color: 'bg-red-50 text-red-700 border-red-200' }
+      pending: { label: 'Pending', color: 'bg-yellow-100 text-yellow-700' },
+      completed: { label: 'Completed', color: 'bg-emerald-100 text-emerald-700' },
+      failed: { label: 'Failed', color: 'bg-red-100 text-red-700' }
     };
     return statusMap[status] || statusMap.pending;
   };
 
-  // Toggle Withdrawals View (Only Hide/Show, No API Call)
   const toggleWithdrawals = () => {
     setShowWithdrawals(!showWithdrawals);
   };
 
-  // Calculate total withdrawn
   const totalWithdrawn = withdrawals.reduce((sum, w) => sum + (w.amount || 0), 0);
 
   if (loading) {
     return (
-      <div className="admin-dash">
+      <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
         {isAdmin ? <AdminNavbar /> : <UsersNavbar />}
-        <div className="admin-dash__loading">
-          <div className="admin-dash__spinner" />
-          <p className="admin-dash__loading-text">Loading wallet...</p>
+        <div className="flex justify-center items-center h-64">
+          <div className="w-12 h-12 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="admin-dash">
+    <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
       {isAdmin ? <AdminNavbar /> : <UsersNavbar />}
 
-      <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-16">
-        {/* Header */}
+      <div className="pt-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
+        {/* Header - Same as Partners Page */}
         <div className="admin-dash__header">
           <div>
             <h1 className="admin-dash__greeting">
@@ -359,530 +357,479 @@ const MyWallet = () => {
               Track your earnings and transaction history.
             </p>
           </div>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
-            {/* Withdraw Button */}
-            {wallet.balance > 0 && (
-              <button
-                onClick={() => setShowWithdrawModal(true)}
-                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors w-full sm:w-auto"
-              >
-                <Banknote size={16} />
-                Withdraw
-              </button>
-            )}
-            {/* Withdrawals History Button - Only Toggle */}
-            {withdrawals.length > 0 && (
-              <button
-                onClick={toggleWithdrawals}
-                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-600 text-white rounded-xl text-sm font-medium hover:bg-purple-700 transition-colors w-full sm:w-auto"
-              >
-                <History size={16} />
-                {showWithdrawals ? 'Hide' : 'Show'} Withdrawals
-              </button>
-            )}
-            {/* Export Button */}
-            {filteredTransactions.length > 0 && (
-              <button
-                onClick={exportToExcel}
-                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors w-full sm:w-auto"
-              >
-                <Download size={16} />
-                Export
-              </button>
-            )}
-            <button
-              onClick={() => navigate(-1)}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors w-full sm:w-auto"
-            >
-              Back
-            </button>
+          <div className="admin-dash__date-pill">
+            <Calendar size={16} />
+            <span>
+              {new Date().toLocaleDateString("en-US", {
+                weekday: "short",
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              })}
+            </span>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-6 text-white shadow-lg shadow-indigo-500/25">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-indigo-200">Available Balance</p>
-                <p className="text-3xl font-bold mt-1">{formatCurrency(wallet.balance)}</p>
-              </div>
-              <div className="bg-white/20 p-3 rounded-xl">
-                <WalletIcon size={24} className="text-white" />
-              </div>
-            </div>
-            <div className="mt-4 pt-4 border-t border-white/20 flex justify-between text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-4 sm:p-5 text-white shadow-lg shadow-indigo-500/25">
+            <p className="text-xs font-medium text-indigo-200">Available Balance</p>
+            <p className="text-2xl sm:text-3xl font-bold mt-1">{formatCurrency(wallet.balance)}</p>
+            <div className="mt-3 pt-3 border-t border-white/20 flex justify-between text-xs">
               <span className="text-indigo-200">Total Earned</span>
               <span className="font-semibold">{formatCurrency(wallet.totalEarned)}</span>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-500">Total Earned</p>
-                <p className="text-2xl font-bold text-indigo-600 mt-1">
+                <p className="text-xs font-medium text-gray-500">Total Earned</p>
+                <p className="text-xl sm:text-2xl font-bold text-indigo-600 mt-1">
                   {formatCurrency(wallet.totalEarned)}
                 </p>
               </div>
               <div className="bg-indigo-100 p-3 rounded-xl">
-                <TrendingUp size={24} className="text-indigo-600" />
+                <TrendingUp size={20} className="text-indigo-600" />
               </div>
             </div>
-            <div className="mt-4 pt-4 border-t border-slate-100 flex justify-between text-sm">
-              <span className="text-slate-500">Total Transactions</span>
-              <span className="font-semibold text-slate-900">{wallet.totalTransactions}</span>
+            <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between text-xs">
+              <span className="text-gray-500">Transactions</span>
+              <span className="font-semibold text-gray-900">{wallet.totalTransactions}</span>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-500">Total Withdrawn</p>
-                <p className="text-2xl font-bold text-purple-600 mt-1">
+                <p className="text-xs font-medium text-gray-500">Total Withdrawn</p>
+                <p className="text-xl sm:text-2xl font-bold text-purple-600 mt-1">
                   {formatCurrency(totalWithdrawn)}
                 </p>
               </div>
               <div className="bg-purple-100 p-3 rounded-xl">
-                <History size={24} className="text-purple-600" />
+                <History size={20} className="text-purple-600" />
               </div>
             </div>
-            <div className="mt-4 pt-4 border-t border-slate-100 flex justify-between text-sm">
-              <span className="text-slate-500">Withdrawal Requests</span>
-              <span className="font-semibold text-slate-900">{withdrawals.length}</span>
+            <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between text-xs">
+              <span className="text-gray-500">Requests</span>
+              <span className="font-semibold text-gray-900">{withdrawals.length}</span>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-gray-500">Pending Requests</p>
+                <p className="text-xl sm:text-2xl font-bold text-yellow-600 mt-1">
+                  {withdrawStats.pending}
+                </p>
+              </div>
+              <div className="bg-yellow-100 p-3 rounded-xl">
+                <Clock size={20} className="text-yellow-600" />
+              </div>
+            </div>
+            <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between text-xs">
+              <span className="text-gray-500">Completed</span>
+              <span className="font-semibold text-gray-900">{withdrawStats.completed}</span>
             </div>
           </div>
         </div>
 
-        {/* ============================================= */}
-        {/* WITHDRAWALS TABLE - Auto Loaded */}
-        {/* ============================================= */}
-        {showWithdrawals && (
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
-            <div className="px-6 py-4 border-b border-slate-200 bg-purple-50 flex justify-between items-center">
-              <h3 className="text-sm font-semibold text-purple-700">Withdrawal History</h3>
-              <div className="flex items-center gap-3 text-xs">
-                <span className="text-purple-500">
-                  {withdrawStats.total} requests · 
-                  {withdrawStats.pending} pending · 
-                  {withdrawStats.completed} completed · 
-                  {withdrawStats.failed} failed
+        <div className="space-y-6">
+          {/* Wallet Transactions Table Section */}
+          <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
+            <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
+              <div className="flex items-center gap-3">
+                <h3 className="admin-dash__card-title">Transaction History</h3>
+                <span className="px-2.5 py-0.5 text-xs font-bold text-indigo-700 bg-indigo-100 rounded-full">
+                  {filteredTransactions.length}
                 </span>
               </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Search Bar */}
+                <div className="relative w-full sm:w-48">
+                  <Search
+                    size={15}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Search..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  />
+                </div>
+                
+                {/* Filter Toggle Button */}
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    showFilters ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  <Filter size={14} />
+                  Filters
+                  {(filterType !== 'all' || filterDate) && (
+                    <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                  )}
+                </button>
+
+                {wallet.balance > 0 && (
+                  <button
+                    onClick={() => setShowWithdrawModal(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors"
+                  >
+                    <Banknote size={14} />
+                    <span className="hidden xs:inline">Withdraw</span>
+                    <span className="xs:hidden">Withdraw</span>
+                  </button>
+                )}
+
+                {withdrawals.length > 0 && (
+                  <button
+                    onClick={toggleWithdrawals}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      showWithdrawals ? 'bg-purple-600 text-white' : 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200'
+                    }`}
+                  >
+                    <History size={14} />
+                    <span className="hidden xs:inline">{showWithdrawals ? 'Hide' : 'Show'} Withdrawals</span>
+                    <span className="xs:hidden">{showWithdrawals ? 'Hide' : 'Show'}</span>
+                  </button>
+                )}
+
+                {filteredTransactions.length > 0 && (
+                  <button
+                    onClick={exportToExcel}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200"
+                  >
+                    <Download size={14} />
+                    <span className="hidden xs:inline">Export</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={() => navigate("/my-cabins")}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+                >
+                  <Building2 size={14} className="text-indigo-600" />
+                  <span className="hidden xs:inline">Cabins</span>
+                </button>
+              </div>
             </div>
 
-            {withdrawals.length === 0 ? (
-              <div className="p-8 text-center">
-                <History size={40} className="text-slate-300 mx-auto mb-3" />
-                <p className="text-slate-600 font-medium">No withdrawals yet</p>
-                <p className="text-sm text-slate-400">Your withdrawal requests will appear here.</p>
+            {/* Filter Panel */}
+            {showFilters && (
+              <div className="px-4 pt-4 pb-3 border-b border-gray-100" style={{ backgroundColor: '#fafafa' }}>
+                <div className="flex flex-wrap items-end gap-3">
+                  <div className="min-w-[150px]">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Transaction Type</label>
+                    <select
+                      value={filterType}
+                      onChange={(e) => setFilterType(e.target.value)}
+                      className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    >
+                      <option value="all">All Types</option>
+                      <option value="credit">Credit</option>
+                      <option value="debit">Debit</option>
+                    </select>
+                  </div>
+                  <div className="min-w-[150px]">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Date</label>
+                    <input
+                      type="date"
+                      value={filterDate}
+                      onChange={(e) => setFilterDate(e.target.value)}
+                      className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    />
+                  </div>
+                  <button
+                    onClick={clearFilters}
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-red-600 transition-colors"
+                  >
+                    <XCircleIcon size={14} />
+                    Clear
+                  </button>
+                </div>
               </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200">
-                      <th className="text-left py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">#</th>
-                      <th className="text-left py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Amount</th>
-                      <th className="text-left py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Bank</th>
-                      <th className="text-left py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Account</th>
-                      <th className="text-left py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">IFSC</th>
-                      <th className="text-left py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Status</th>
-                      <th className="text-left py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Date</th>
-                      <th className="text-center py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {withdrawals.slice().reverse().map((w, idx) => {
-                      const status = getWithdrawStatusBadge(w.status);
-                      return (
-                        <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                          <td className="py-3 px-4">
-                            <span className="text-sm text-slate-500">{idx + 1}</span>
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className="font-bold text-red-600">{formatCurrency(w.amount)}</span>
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className="text-sm text-slate-700">{w.bankName || 'N/A'}</span>
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className="text-sm text-slate-600">••••{w.accountNumber?.slice(-4) || 'N/A'}</span>
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className="text-xs font-mono text-slate-500">{w.ifscCode || 'N/A'}</span>
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${status.color}`}>
-                              {status.label}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className="text-sm text-slate-600">{formatDate(w.createdAt)}</span>
-                          </td>
-                          <td className="py-3 px-4 text-center">
-                            <button
-                              onClick={() => handleViewWithdrawalDetails(w)}
-                              className="p-1.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors"
-                              title="View Details"
-                            >
-                              <Eye size={16} />
-                            </button>
+            )}
+
+            {/* ============================================= */}
+            {/* WITHDRAWALS TABLE */}
+            {/* ============================================= */}
+            {showWithdrawals && (
+              <div className="border-b border-gray-100">
+                <div className="px-4 py-2 bg-purple-50/50 flex justify-between items-center">
+                  <h4 className="text-xs font-bold text-purple-700 uppercase tracking-wider">Withdrawal History</h4>
+                  <div className="flex items-center gap-2 text-[10px] text-purple-600">
+                    <span>Total: {withdrawStats.total}</span>
+                    <span className="w-px h-3 bg-purple-200"></span>
+                    <span className="text-yellow-600">Pending: {withdrawStats.pending}</span>
+                    <span className="w-px h-3 bg-purple-200"></span>
+                    <span className="text-emerald-600">Completed: {withdrawStats.completed}</span>
+                  </div>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[700px]">
+                    <thead>
+                      <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
+                        <th className="p-3 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
+                        <th className="p-3 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Amount</th>
+                        <th className="p-3 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Bank</th>
+                        <th className="p-3 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Account</th>
+                        <th className="p-3 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
+                        <th className="p-3 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Date</th>
+                        <th className="p-3 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {withdrawals.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="p-8 text-center text-gray-400">
+                            <History size={32} className="mx-auto mb-2 opacity-20" />
+                            <p className="text-sm font-medium">No withdrawals yet</p>
                           </td>
                         </tr>
-                      );
-                    })}
+                      ) : (
+                        withdrawals.slice().reverse().map((w, idx) => {
+                          const status = getWithdrawStatusBadge(w.status);
+                          return (
+                            <tr key={idx} className="transition-colors hover:bg-gray-50/80">
+                              <td className="p-3">
+                                <span className="text-sm font-semibold text-gray-400">#{idx + 1}</span>
+                              </td>
+                              <td className="p-3">
+                                <span className="text-sm font-bold text-red-600">{formatCurrency(w.amount)}</span>
+                              </td>
+                              <td className="p-3">
+                                <span className="text-sm text-gray-700">{w.bankName || 'N/A'}</span>
+                              </td>
+                              <td className="p-3">
+                                <span className="text-sm text-gray-600 font-mono">••••{w.accountNumber?.slice(-4) || 'N/A'}</span>
+                              </td>
+                              <td className="p-3">
+                                <span className={`px-3 py-1 text-xs font-bold rounded-full ${status.color}`}>{status.label}</span>
+                              </td>
+                              <td className="p-3">
+                                <span className="text-sm text-gray-500">{formatDate(w.createdAt)}</span>
+                              </td>
+                              <td className="p-3">
+                                <button
+                                  onClick={() => handleViewWithdrawalDetails(w)}
+                                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors whitespace-nowrap"
+                                >
+                                  <Eye size={13} /> View
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* ============================================= */}
+            {/* TRANSACTIONS TABLE */}
+            {/* ============================================= */}
+            <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
+              {filteredTransactions.length === 0 ? (
+                <div className="flex flex-col items-center justify-center gap-3 py-20 text-gray-400">
+                  <WalletIcon size={48} className="opacity-20" />
+                  <p className="text-lg font-medium">No transactions found</p>
+                  <p className="text-sm">Try adjusting your filters.</p>
+                </div>
+              ) : (
+                <table className="w-full min-w-[900px] text-left">
+                  <thead>
+                    <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
+                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
+                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
+                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Customer</th>
+                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Date</th>
+                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Amount</th>
+                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Type</th>
+                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {filteredTransactions.map((transaction, index) => (
+                      <tr key={index} className="transition-colors hover:bg-gray-50/80">
+                        <td className="p-4">
+                          <span className="text-sm font-semibold text-gray-400">#{index + 1}</span>
+                        </td>
+                        <td className="p-4">
+                          <div>
+                            <p className="font-semibold text-gray-900 text-sm">
+                              {transaction.cabinName || "Unknown Cabin"}
+                            </p>
+                            <p className="text-[10px] text-gray-400">
+                              Booking #{transaction.bookingId?._id?.slice(-6) || "N/A"}
+                            </p>
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <p className="font-medium text-gray-800 text-sm">{transaction.customerName || "Unknown"}</p>
+                          <p className="text-xs text-gray-400">{transaction.customerMobile || "N/A"}</p>
+                        </td>
+                        <td className="p-4">
+                          <p className="text-sm text-gray-700">{formatDate(transaction.startDate)}</p>
+                          <p className="text-xs text-gray-400">{transaction.startDate} - {transaction.endDate}</p>
+                        </td>
+                        <td className="p-4">
+                          <span className="text-sm font-bold text-emerald-600">+{formatCurrency(transaction.amount)}</span>
+                        </td>
+                        <td className="p-4">
+                          <span className="px-3 py-1 text-xs font-bold rounded-full bg-emerald-100 text-emerald-700 inline-flex items-center gap-1">
+                            <ArrowUpRight size={12} />
+                            Credit
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <button
+                            onClick={() => handleViewDetails(transaction)}
+                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors whitespace-nowrap"
+                          >
+                            <Eye size={13} /> View
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
+              )}
+            </div>
+
+            {/* Footer with stats */}
+            {!loading && filteredTransactions.length > 0 && (
+              <div className="px-4 py-3 border-t border-gray-100 rounded-b-2xl flex flex-wrap items-center justify-between gap-2" style={{ backgroundColor: '#fafafa' }}>
+                <span className="text-xs text-gray-500">
+                  Showing <strong>{filteredTransactions.length}</strong> of <strong>{transactions.length}</strong> transactions
+                </span>
+                <div className="flex items-center gap-3 text-xs text-gray-500">
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    Credits: {transactions.filter(t => t.type === 'credit').length}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                    Debits: {transactions.filter(t => t.type === 'debit').length}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
+                    Balance: {formatCurrency(wallet.balance)}
+                  </span>
+                </div>
               </div>
             )}
           </div>
-        )}
-
-        {/* ============================================= */}
-        {/* TRANSACTION FILTERS - COMPACT VERSION */}
-        {/* ============================================= */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 mb-6">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative w-48">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-              <input
-                type="text"
-                placeholder="Search..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-
-            <select
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
-              className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value="all">All Types</option>
-              <option value="credit">Credit</option>
-              <option value="debit">Debit</option>
-            </select>
-
-            <input
-              type="date"
-              value={filterDate}
-              onChange={(e) => setFilterDate(e.target.value)}
-              className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-auto"
-            />
-
-            {(searchTerm || filterType !== "all" || filterDate) && (
-              <button
-                onClick={clearFilters}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors"
-              >
-                <X size={14} />
-                Clear
-              </button>
-            )}
-
-            <span className="text-xs text-slate-500 ml-auto">
-              {filteredTransactions.length} transactions
-            </span>
-          </div>
         </div>
-
-        {/* ============================================= */}
-        {/* TRANSACTIONS TABLE */}
-        {/* ============================================= */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
-            <h3 className="text-sm font-semibold text-slate-700">Transaction History</h3>
-            <span className="text-xs text-slate-500">{filteredTransactions.length} transactions</span>
-          </div>
-
-          {filteredTransactions.length === 0 ? (
-            <div className="admin-dash__error" style={{ background: '#f8fafc', borderColor: '#e2e8f0' }}>
-              <WalletIcon size={48} className="text-slate-300 mb-4" />
-              <p className="admin-dash__error-title" style={{ color: '#475569' }}>No transactions found</p>
-              <p className="admin-dash__error-message">Try adjusting your filters.</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200">
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Cabin</th>
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Customer</th>
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Date</th>
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Amount</th>
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Type</th>
-                    <th className="text-center py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredTransactions.map((transaction, index) => (
-                    <tr key={index} className="hover:bg-slate-50 transition-colors">
-                      <td className="py-3 px-4">
-                        <div>
-                          <p className="font-medium text-slate-800 text-sm">
-                            {transaction.cabinName || "Unknown Cabin"}
-                          </p>
-                          <p className="text-xs text-slate-500">
-                            Booking #{transaction.bookingId?._id?.slice(-6) || "N/A"}
-                          </p>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div>
-                          <p className="text-sm text-slate-700">
-                            {transaction.customerName || "Unknown"}
-                          </p>
-                          <p className="text-xs text-slate-500">
-                            {transaction.customerMobile || "N/A"}
-                          </p>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="text-sm text-slate-600">
-                          <div>{formatDate(transaction.startDate)}</div>
-                          <div className="text-xs text-slate-400">
-                            {transaction.startDate} - {transaction.endDate}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="font-bold text-indigo-600 text-sm">
-                          +{formatCurrency(transaction.amount)}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200">
-                          <ArrowUpRight size={12} />
-                          Credit
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <button
-                          onClick={() => handleViewDetails(transaction)}
-                          className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors"
-                          title="View Details"
-                        >
-                          <Eye size={16} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </main>
+      </div>
 
       {/* Withdraw Modal */}
       {showWithdrawModal && (
-        <div className="fixed inset-0 z-[1300] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div style={{
-              background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 60%, #06b6d4 100%)",
-              padding: "1.25rem 1.5rem",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between"
-            }}>
+        <div className="fixed inset-0 z-[1300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-gradient-to-br from-indigo-600 to-purple-600 p-5 text-white rounded-t-3xl flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div style={{
-                  width: 40, height: 40, borderRadius: 10,
-                  background: "rgba(255,255,255,0.2)",
-                  display: "flex", alignItems: "center", justifyContent: "center"
-                }}>
-                  <Banknote size={20} color="#fff" />
+                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                  <Banknote size={20} className="text-white" />
                 </div>
                 <div>
-                  <h3 style={{ margin: 0, color: "#fff", fontSize: "1rem", fontWeight: 700 }}>
-                    Withdraw Funds
-                  </h3>
-                  <p style={{ margin: 0, color: "rgba(255,255,255,0.8)", fontSize: "0.75rem" }}>
-                    Available Balance: {formatCurrency(wallet.balance)}
-                  </p>
+                  <h3 className="text-xl font-bold">Withdraw Funds</h3>
+                  <p className="text-sm text-indigo-200">Available: {formatCurrency(wallet.balance)}</p>
                 </div>
               </div>
               <button
                 onClick={() => setShowWithdrawModal(false)}
-                style={{
-                  width: 32, height: 32, borderRadius: 8,
-                  background: "rgba(255,255,255,0.15)", border: "none",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  cursor: "pointer", color: "#fff"
-                }}
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"
               >
-                <X size={18} />
+                <X size={20} />
               </button>
             </div>
 
-            <div style={{ padding: "1.5rem" }}>
-              <div className="space-y-4">
-                <div>
-                  <label style={{
-                    display: "block",
-                    fontSize: "0.75rem",
-                    fontWeight: 700,
-                    color: "#64748b",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.06em",
-                    marginBottom: "0.5rem"
-                  }}>
-                    Amount to Withdraw (₹)
-                  </label>
-                  <input
-                    type="number"
-                    value={withdrawAmount}
-                    onChange={(e) => setWithdrawAmount(e.target.value)}
-                    placeholder="Enter amount"
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    min="1"
-                    max={wallet.balance}
-                  />
-                  <p className="text-xs text-slate-400 mt-1">
-                    Max: {formatCurrency(wallet.balance)}
-                  </p>
-                </div>
+            <div className="p-5 space-y-4">
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1.5">Amount to Withdraw (₹)</label>
+                <input
+                  type="number"
+                  value={withdrawAmount}
+                  onChange={(e) => setWithdrawAmount(e.target.value)}
+                  placeholder="Enter amount"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  min="1"
+                  max={wallet.balance}
+                />
+                <p className="text-xs text-gray-400 mt-1">Max: {formatCurrency(wallet.balance)}</p>
+              </div>
 
-                <div>
-                  <label style={{
-                    display: "block",
-                    fontSize: "0.75rem",
-                    fontWeight: 700,
-                    color: "#64748b",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.06em",
-                    marginBottom: "0.5rem"
-                  }}>
-                    Account Number
-                  </label>
-                  <input
-                    type="text"
-                    value={withdrawAccount}
-                    onChange={(e) => setWithdrawAccount(e.target.value)}
-                    placeholder="Enter account number"
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1.5">Account Number</label>
+                <input
+                  type="text"
+                  value={withdrawAccount}
+                  onChange={(e) => setWithdrawAccount(e.target.value)}
+                  placeholder="Enter account number"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
 
-                <div>
-                  <label style={{
-                    display: "block",
-                    fontSize: "0.75rem",
-                    fontWeight: 700,
-                    color: "#64748b",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.06em",
-                    marginBottom: "0.5rem"
-                  }}>
-                    Bank Name
-                  </label>
-                  <input
-                    type="text"
-                    value={withdrawBank}
-                    onChange={(e) => setWithdrawBank(e.target.value)}
-                    placeholder="Enter bank name"
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1.5">Bank Name</label>
+                <input
+                  type="text"
+                  value={withdrawBank}
+                  onChange={(e) => setWithdrawBank(e.target.value)}
+                  placeholder="Enter bank name"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
 
-                <div>
-                  <label style={{
-                    display: "block",
-                    fontSize: "0.75rem",
-                    fontWeight: 700,
-                    color: "#64748b",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.06em",
-                    marginBottom: "0.5rem"
-                  }}>
-                    IFSC Code
-                  </label>
-                  <input
-                    type="text"
-                    value={withdrawIfsc}
-                    onChange={(e) => setWithdrawIfsc(e.target.value)}
-                    placeholder="Enter IFSC code"
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1.5">IFSC Code</label>
+                <input
+                  type="text"
+                  value={withdrawIfsc}
+                  onChange={(e) => setWithdrawIfsc(e.target.value)}
+                  placeholder="Enter IFSC code"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
 
-                <div style={{
-                  background: "#fef3c7",
-                  borderRadius: 8,
-                  padding: "0.75rem",
-                  fontSize: "0.75rem",
-                  color: "#92400e",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.5rem"
-                }}>
-                  <AlertCircle size={16} className="shrink-0" />
-                  <span>Withdrawals are processed within 24-48 business hours.</span>
-                </div>
+              <div className="bg-amber-50 rounded-xl p-3 text-xs text-amber-700 flex items-start gap-2 border border-amber-200">
+                <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                <span>Withdrawals are processed within 24-48 business hours.</span>
+              </div>
 
-                <div className="flex flex-col gap-2 pt-2">
-                  <button
-                    onClick={handleWithdraw}
-                    disabled={withdrawing}
-                    style={{
-                      width: "100%",
-                      padding: "0.875rem",
-                      borderRadius: 10,
-                      border: "none",
-                      background: withdrawing
-                        ? "#a5b4fc"
-                        : "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
-                      color: "#fff",
-                      fontFamily: "inherit",
-                      fontSize: "0.875rem",
-                      fontWeight: 700,
-                      cursor: withdrawing ? "not-allowed" : "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: 8,
-                      boxShadow: withdrawing ? "none" : "0 4px 14px rgba(99,102,241,0.35)",
-                      transition: "all 160ms",
-                    }}
-                  >
-                    {withdrawing ? (
-                      <>
-                        <span style={{
-                          width: 16, height: 16, borderRadius: "50%",
-                          border: "2px solid rgba(255,255,255,0.4)",
-                          borderTopColor: "#fff",
-                          animation: "spin 0.7s linear infinite",
-                          display: "inline-block",
-                        }} />
-                        Processing...
-                      </>
-                    ) : (
-                      <>Confirm Withdrawal</>
-                    )}
-                  </button>
-                  <button
-                    onClick={() => setShowWithdrawModal(false)}
-                    style={{
-                      width: "100%",
-                      padding: "0.75rem",
-                      borderRadius: 10,
-                      border: "1.5px solid #e2e8f0",
-                      background: "#fff",
-                      color: "#64748b",
-                      fontFamily: "inherit",
-                      fontSize: "0.875rem",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      transition: "all 160ms",
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "#f8fafc"; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}
-                  >
-                    Cancel
-                  </button>
-                </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={handleWithdraw}
+                  disabled={withdrawing}
+                  className={`flex-1 py-3 rounded-xl text-white font-bold transition shadow-sm active:scale-[0.98] ${
+                    withdrawing 
+                      ? 'bg-gray-400 cursor-not-allowed' 
+                      : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:shadow-lg'
+                  }`}
+                >
+                  {withdrawing ? (
+                    <>
+                      <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></span>
+                      Processing...
+                    </>
+                  ) : (
+                    'Confirm Withdrawal'
+                  )}
+                </button>
+                <button
+                  onClick={() => setShowWithdrawModal(false)}
+                  className="px-5 py-3 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition"
+                >
+                  Cancel
+                </button>
               </div>
             </div>
           </div>
@@ -891,307 +838,204 @@ const MyWallet = () => {
 
       {/* Transaction Detail Modal */}
       {showDetailModal && selectedTransaction && (
-        <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div style={{
-              background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 60%, #06b6d4 100%)",
-              padding: "1.25rem 1.5rem",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between"
-            }}>
+        <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-gradient-to-br from-indigo-600 to-purple-600 p-5 text-white rounded-t-3xl flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div style={{
-                  width: 40, height: 40, borderRadius: 10,
-                  background: "rgba(255,255,255,0.2)",
-                  display: "flex", alignItems: "center", justifyContent: "center"
-                }}>
-                  <WalletIcon size={20} color="#fff" />
+                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                  <WalletIcon size={20} className="text-white" />
                 </div>
                 <div>
-                  <h3 style={{ margin: 0, color: "#fff", fontSize: "1rem", fontWeight: 700 }}>
-                    Transaction Details
-                  </h3>
-                  <p style={{ margin: 0, color: "rgba(255,255,255,0.8)", fontSize: "0.75rem" }}>
-                    Booking #{selectedTransaction.bookingId?._id?.slice(-6) || "N/A"}
-                  </p>
+                  <h3 className="text-xl font-bold">Transaction Details</h3>
+                  <p className="text-sm text-indigo-200">Booking #{selectedTransaction.bookingId?._id?.slice(-6) || "N/A"}</p>
                 </div>
               </div>
               <button
                 onClick={() => setShowDetailModal(false)}
-                style={{
-                  width: 32, height: 32, borderRadius: 8,
-                  background: "rgba(255,255,255,0.15)", border: "none",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  cursor: "pointer", color: "#fff"
-                }}
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"
               >
-                <X size={18} />
+                <X size={20} />
               </button>
             </div>
 
-            <div style={{ padding: "1.5rem" }}>
-              <div className="space-y-4">
-                <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-200 text-center">
-                  <p className="text-xs font-medium text-indigo-600 uppercase tracking-wider">Amount Credited</p>
-                  <p className="text-3xl font-bold text-indigo-600 mt-1">
-                    +{formatCurrency(selectedTransaction.amount)}
-                  </p>
-                </div>
-
-                <div className="bg-slate-50 rounded-xl p-4">
-                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Cabin Details</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Building2 size={16} className="text-indigo-500" />
-                    <p className="font-semibold text-slate-800">
-                      {selectedTransaction.cabinName || "Unknown Cabin"}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-slate-50 rounded-xl p-4">
-                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                      <User size={12} />
-                      Customer
-                    </p>
-                    <p className="font-semibold text-slate-800 mt-1">
-                      {selectedTransaction.customerName || "Unknown"}
-                    </p>
-                  </div>
-                  <div className="bg-slate-50 rounded-xl p-4">
-                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                      <Phone size={12} />
-                      Mobile
-                    </p>
-                    <p className="font-semibold text-slate-800 mt-1">
-                      {selectedTransaction.customerMobile || "N/A"}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-slate-50 rounded-xl p-4">
-                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                      <Calendar size={12} />
-                      Start Date
-                    </p>
-                    <p className="font-semibold text-slate-800 mt-1">
-                      {formatDate(selectedTransaction.startDate)}
-                    </p>
-                  </div>
-                  <div className="bg-slate-50 rounded-xl p-4">
-                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                      <Calendar size={12} />
-                      End Date
-                    </p>
-                    <p className="font-semibold text-slate-800 mt-1">
-                      {formatDate(selectedTransaction.endDate)}
-                    </p>
-                  </div>
-                </div>
-
-                {selectedTransaction.description && (
-                  <div className="bg-slate-50 rounded-xl p-4">
-                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Description</p>
-                    <p className="text-sm text-slate-700 mt-1">
-                      {selectedTransaction.description}
-                    </p>
-                  </div>
-                )}
-
-                <div className="bg-slate-50 rounded-xl p-4">
-                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Transaction Date</p>
-                  <p className="text-sm text-slate-700 mt-1 flex items-center gap-2">
-                    <Clock size={14} className="text-slate-400" />
-                    {formatDate(selectedTransaction.createdAt)} at {formatTime(selectedTransaction.createdAt)}
-                  </p>
-                </div>
-
-                <button
-                  onClick={() => setShowDetailModal(false)}
-                  style={{
-                    width: "100%",
-                    padding: "0.75rem",
-                    borderRadius: 10,
-                    border: "1.5px solid #e2e8f0",
-                    background: "#fff",
-                    color: "#64748b",
-                    fontFamily: "inherit",
-                    fontSize: "0.875rem",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    transition: "all 160ms",
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.background = "#f8fafc"; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}
-                >
-                  Close
-                </button>
+            <div className="p-5 space-y-4">
+              <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-200 text-center">
+                <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider">Amount Credited</p>
+                <p className="text-3xl font-bold text-emerald-600 mt-1">+{formatCurrency(selectedTransaction.amount)}</p>
               </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
+                    <Building2 size={12} />
+                    Cabin
+                  </p>
+                  <p className="mt-1 font-semibold text-gray-800 text-sm">{selectedTransaction.cabinName || "Unknown"}</p>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
+                    <User size={12} />
+                    Customer
+                  </p>
+                  <p className="mt-1 font-semibold text-gray-800 text-sm">{selectedTransaction.customerName || "Unknown"}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
+                    <Calendar size={12} />
+                    Start Date
+                  </p>
+                  <p className="mt-1 font-semibold text-gray-800 text-sm">{formatDate(selectedTransaction.startDate)}</p>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
+                    <Calendar size={12} />
+                    End Date
+                  </p>
+                  <p className="mt-1 font-semibold text-gray-800 text-sm">{formatDate(selectedTransaction.endDate)}</p>
+                </div>
+              </div>
+
+              {selectedTransaction.description && (
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Description</p>
+                  <p className="mt-1 text-sm text-gray-700">{selectedTransaction.description}</p>
+                </div>
+              )}
+
+              <div className="p-4 bg-gray-50 rounded-xl">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
+                  <Clock size={12} />
+                  Transaction Date
+                </p>
+                <p className="mt-1 font-semibold text-gray-800 text-sm">
+                  {formatDateTime(selectedTransaction.createdAt)}
+                </p>
+              </div>
+
+              <button
+                onClick={() => setShowDetailModal(false)}
+                className="w-full py-3 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ============================================= */}
-      {/* WITHDRAWAL DETAIL MODAL */}
-      {/* ============================================= */}
+      {/* Withdrawal Detail Modal */}
       {showWithdrawalDetailModal && selectedWithdrawal && (
-        <div className="fixed inset-0 z-[1400] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div style={{
-              background: "linear-gradient(135deg, #7c3aed 0%, #a855f7 60%, #8b5cf6 100%)",
-              padding: "1.25rem 1.5rem",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between"
-            }}>
+        <div className="fixed inset-0 z-[1400] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-gradient-to-br from-purple-600 to-indigo-600 p-5 text-white rounded-t-3xl flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div style={{
-                  width: 40, height: 40, borderRadius: 10,
-                  background: "rgba(255,255,255,0.2)",
-                  display: "flex", alignItems: "center", justifyContent: "center"
-                }}>
-                  <History size={20} color="#fff" />
+                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                  <History size={20} className="text-white" />
                 </div>
                 <div>
-                  <h3 style={{ margin: 0, color: "#fff", fontSize: "1rem", fontWeight: 700 }}>
-                    Withdrawal Details
-                  </h3>
-                  <p style={{ margin: 0, color: "rgba(255,255,255,0.8)", fontSize: "0.75rem" }}>
-                    Request #{selectedWithdrawal._id?.slice(-6) || "N/A"}
-                  </p>
+                  <h3 className="text-xl font-bold">Withdrawal Details</h3>
+                  <p className="text-sm text-purple-200">#{selectedWithdrawal._id?.slice(-6) || "N/A"}</p>
                 </div>
               </div>
               <button
                 onClick={() => setShowWithdrawalDetailModal(false)}
-                style={{
-                  width: 32, height: 32, borderRadius: 8,
-                  background: "rgba(255,255,255,0.15)", border: "none",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  cursor: "pointer", color: "#fff"
-                }}
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"
               >
-                <X size={18} />
+                <X size={20} />
               </button>
             </div>
 
-            <div style={{ padding: "1.5rem" }}>
-              <div className="space-y-4">
-                {/* Amount */}
-                <div className={`rounded-xl p-4 border text-center ${
-                  selectedWithdrawal.status === 'completed' 
-                    ? 'bg-emerald-50 border-emerald-200' 
+            <div className="p-5 space-y-4">
+              <div className={`rounded-xl p-4 border text-center ${
+                selectedWithdrawal.status === 'completed' 
+                  ? 'bg-emerald-50 border-emerald-200' 
+                  : selectedWithdrawal.status === 'failed'
+                  ? 'bg-red-50 border-red-200'
+                  : 'bg-yellow-50 border-yellow-200'
+              }`}>
+                <p className="text-xs font-bold uppercase tracking-wider" style={{
+                  color: selectedWithdrawal.status === 'completed' 
+                    ? '#047857' 
                     : selectedWithdrawal.status === 'failed'
-                    ? 'bg-red-50 border-red-200'
-                    : 'bg-yellow-50 border-yellow-200'
-                }`}>
-                  <p className="text-xs font-medium uppercase tracking-wider" style={{
-                    color: selectedWithdrawal.status === 'completed' 
-                      ? '#047857' 
-                      : selectedWithdrawal.status === 'failed'
-                      ? '#b91c1c'
-                      : '#92400e'
-                  }}>Withdrawal Amount</p>
-                  <p className="text-3xl font-bold mt-1" style={{
-                    color: selectedWithdrawal.status === 'completed' 
-                      ? '#047857' 
-                      : selectedWithdrawal.status === 'failed'
-                      ? '#b91c1c'
-                      : '#92400e'
-                  }}>
-                    {formatCurrency(selectedWithdrawal.amount)}
-                  </p>
-                </div>
+                    ? '#b91c1c'
+                    : '#92400e'
+                }}>Withdrawal Amount</p>
+                <p className="text-3xl font-bold mt-1" style={{
+                  color: selectedWithdrawal.status === 'completed' 
+                    ? '#047857' 
+                    : selectedWithdrawal.status === 'failed'
+                    ? '#b91c1c'
+                    : '#92400e'
+                }}>
+                  {formatCurrency(selectedWithdrawal.amount)}
+                </p>
+              </div>
 
-                {/* Status */}
-                <div className="bg-slate-50 rounded-xl p-4">
-                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Status</p>
-                  <div className="mt-1">
-                    <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium border ${
-                      getWithdrawStatusBadge(selectedWithdrawal.status).color
-                    }`}>
-                      {getWithdrawStatusBadge(selectedWithdrawal.status).label}
+              <div className="p-4 bg-gray-50 rounded-xl">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Status</p>
+                <div className="mt-1">
+                  <span className={`px-3 py-1 text-xs font-bold rounded-full inline-block ${getWithdrawStatusBadge(selectedWithdrawal.status).color}`}>
+                    {getWithdrawStatusBadge(selectedWithdrawal.status).label}
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-4 bg-gray-50 rounded-xl">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                  <Building2 size={14} />
+                  Bank Details
+                </p>
+                <div className="mt-2 space-y-1.5">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Bank Name</span>
+                    <span className="font-medium text-gray-800">{selectedWithdrawal.bankName || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Account Number</span>
+                    <span className="font-medium text-gray-800 font-mono">
+                      {selectedWithdrawal.accountNumber || 'N/A'}
                     </span>
                   </div>
-                </div>
-
-                {/* Bank Details */}
-                <div className="bg-slate-50 rounded-xl p-4">
-                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wider flex items-center gap-2">
-                    <Building2 size={14} />
-                    Bank Details
-                  </p>
-                  <div className="mt-2 space-y-1.5">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-500">Bank Name</span>
-                      <span className="font-medium text-slate-800">{selectedWithdrawal.bankName || 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-500">Account Number</span>
-                      <span className="font-medium text-slate-800">
-                        {selectedWithdrawal.accountNumber || 'N/A'}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-500">IFSC Code</span>
-                      <span className="font-medium text-slate-800 font-mono">{selectedWithdrawal.ifscCode || 'N/A'}</span>
-                    </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">IFSC Code</span>
+                    <span className="font-medium text-gray-800 font-mono">{selectedWithdrawal.ifscCode || 'N/A'}</span>
                   </div>
                 </div>
-
-                {/* Timestamps */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-slate-50 rounded-xl p-4">
-                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                      <Calendar size={12} />
-                      Requested
-                    </p>
-                    <p className="font-medium text-slate-800 mt-1 text-sm">
-                      {formatDateTime(selectedWithdrawal.createdAt)}
-                    </p>
-                  </div>
-                  <div className="bg-slate-50 rounded-xl p-4">
-                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                      <Clock size={12} />
-                      Updated
-                    </p>
-                    <p className="font-medium text-slate-800 mt-1 text-sm">
-                      {formatDateTime(selectedWithdrawal.updatedAt)}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Description/Note if any */}
-                {selectedWithdrawal.note && (
-                  <div className="bg-slate-50 rounded-xl p-4">
-                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Note</p>
-                    <p className="text-sm text-slate-700 mt-1">{selectedWithdrawal.note}</p>
-                  </div>
-                )}
-
-                <button
-                  onClick={() => setShowWithdrawalDetailModal(false)}
-                  style={{
-                    width: "100%",
-                    padding: "0.75rem",
-                    borderRadius: 10,
-                    border: "1.5px solid #e2e8f0",
-                    background: "#fff",
-                    color: "#64748b",
-                    fontFamily: "inherit",
-                    fontSize: "0.875rem",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    transition: "all 160ms",
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.background = "#f8fafc"; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}
-                >
-                  Close
-                </button>
               </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
+                    <Calendar size={12} />
+                    Requested
+                  </p>
+                  <p className="mt-1 font-semibold text-gray-800 text-sm">{formatDateTime(selectedWithdrawal.createdAt)}</p>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
+                    <Clock size={12} />
+                    Updated
+                  </p>
+                  <p className="mt-1 font-semibold text-gray-800 text-sm">{formatDateTime(selectedWithdrawal.updatedAt)}</p>
+                </div>
+              </div>
+
+              {selectedWithdrawal.note && (
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Note</p>
+                  <p className="mt-1 text-sm text-gray-700">{selectedWithdrawal.note}</p>
+                </div>
+              )}
+
+              <button
+                onClick={() => setShowWithdrawalDetailModal(false)}
+                className="w-full py-3 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

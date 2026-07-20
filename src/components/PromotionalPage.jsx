@@ -1,4 +1,4 @@
-// PromotionalPage.jsx - Complete with CABINS (#cabins) + Doctor Icon (Postfix)
+// PromotionalPage.jsx - Complete with IRYAX SPACE Custom Images
 import React, { useEffect, useState, createContext, useContext, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -37,7 +37,6 @@ import {
   Fan,
   Eye,
   Grid3x3,
-  Stethoscope,
   Heart,
   Activity,
   Brain,
@@ -61,12 +60,74 @@ import {
   Wifi as WifiIcon,
   Users as UsersIcon,
   DollarSign,
-  Stethoscope as StethoscopeIcon,
   Target as TargetIcon,
   Eye as EyeIcon,
-  Flag
+  Flag,
+  Layout,
+  PenTool,
+  Palette,
+  Camera,
+  ShoppingBag,
+  Gift,
+  Globe,
+  Smartphone,
+  Monitor,
+  Code,
+  Layers,
+  Zap as ZapIcon,
+  Lightbulb,
+  Cloud,
+  Database,
+  Server,
+  Cpu,
+  HardDrive,
+  Film,
+  Music,
+  Video,
+  BookOpen,
+  GraduationCap,
+  Briefcase as BriefcaseIcon,
+  Home,
+  Heart as HeartIcon,
+  Mail as MailIcon,
+  Phone as PhoneIcon,
+  MessageCircle,
+  ThumbsUp,
+  Share2,
+  Instagram,
+  Twitter,
+  Linkedin,
+  Youtube,
+  Facebook,
+  Stethoscope,
+  Clipboard,
+  Syringe,
+  Pill,
+  Ambulance,
+  Microscope as MicroscopeIcon,
+  Bone as BoneIcon,
+  Brain as BrainIcon,
+  HeartPulse as HeartPulseIcon
 } from "lucide-react";
 import logo from "../assets/logo.png";
+
+// ─── IRYAX SPACE CUSTOM IMAGES ───
+const IRYAX_HERO_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1920";
+
+const IRYAX_SPACE_IMAGES = [
+  "https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&q=80&w=800&h=600",
+  "https://images.unsplash.com/photo-1497366412874-3415097a27e7?auto=format&fit=crop&q=80&w=800&h=600",
+  "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&q=80&w=800&h=600",
+  "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=800&h=600",
+  "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=800&h=600",
+  "https://images.unsplash.com/photo-1581092795360-fd1ca04f0952?auto=format&fit=crop&q=80&w=800&h=600"
+];
+
+const IRYAX_LOCATION_IMAGES = [
+  "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=800&h=600",
+  "https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&q=80&w=800&h=600",
+  "https://images.unsplash.com/photo-1497366412874-3415097a27e7?auto=format&fit=crop&q=80&w=800&h=600"
+];
 
 // ─── STYLES ───
 const styles = `
@@ -214,7 +275,7 @@ const styles = `
   }
 
   .hero-text-box {
-    max-width: 580px;
+    max-width: 700px;
     margin-left: 0;
     margin-right: auto;
   }
@@ -223,71 +284,75 @@ const styles = `
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 6px 16px;
-    background: rgba(255,255,255,0.85);
-    border: 1px solid rgba(0,0,0,0.1);
+    padding: 8px 20px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 9999px;
-    font-size: 11px;
-    font-weight: 500;
-    color: #1a3a6b;
-    margin-bottom: 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 20px;
     backdrop-filter: blur(4px);
   }
 
   .hero-title {
-    font-size: 2.2rem !important;
+    font-size: 3.2rem !important;
     font-weight: 300 !important;
-    line-height: 1.2 !important;
-    color: #0a1628;
-    margin-bottom: 4px;
+    line-height: 1.15 !important;
+    color: #ffffff !important;
+    margin-bottom: 8px;
+    text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
   }
 
   .hero-title-gradient {
-    background: linear-gradient(135deg, #0a1628, #1a3a6b, #0a1628);
+    background: linear-gradient(135deg, #ffffff, #93c5fd, #ffffff);
     background-size: 200% 200%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    font-weight: 700 !important;
+    font-weight: 800 !important;
     animation: gradient 3s ease infinite;
+    text-shadow: none;
   }
 
   .hero-subtitle {
-    font-size: 1.4rem !important;
+    font-size: 1.8rem !important;
     font-weight: 200 !important;
     line-height: 1.3 !important;
-    color: #1a2a4a;
+    color: #ffffff !important;
+    text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
   }
 
   .hero-desc {
-    font-size: 0.85rem !important;
-    line-height: 1.6 !important;
-    color: #1a2a4a;
-    max-width: 480px;
-    margin-top: 8px;
+    font-size: 1.05rem !important;
+    line-height: 1.7 !important;
+    color: #ffffff !important;
+    max-width: 500px;
+    margin-top: 12px;
     font-weight: 300;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
   }
 
   .hero-buttons {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 12px;
-    margin-top: 20px;
+    gap: 16px;
+    margin-top: 28px;
   }
 
   .btn-primary {
-    padding: 8px 24px !important;
-    font-size: 0.8rem !important;
-    font-weight: 500 !important;
+    padding: 12px 32px !important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
     color: white;
     background: linear-gradient(135deg, #0a1628, #1a3a6b);
-    border-radius: 12px;
+    border-radius: 14px;
     border: none;
     transition: all 0.3s;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     cursor: pointer;
   }
 
@@ -297,38 +362,39 @@ const styles = `
   }
 
   .btn-secondary {
-    padding: 8px 24px !important;
-    font-size: 0.8rem !important;
-    font-weight: 300 !important;
-    color: #0a1628;
-    background: rgba(255,255,255,0.7);
-    border: 1px solid rgba(0,0,0,0.15);
-    border-radius: 12px;
+    padding: 12px 32px !important;
+    font-size: 1rem !important;
+    font-weight: 400 !important;
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 14px;
     backdrop-filter: blur(4px);
     transition: all 0.3s;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     cursor: pointer;
   }
 
   .btn-secondary:hover {
     transform: scale(1.05);
-    background: rgba(255,255,255,0.9);
+    background: rgba(255, 255, 255, 0.25);
   }
 
   .hero-scroll {
-    margin-top: 40px;
+    margin-top: 50px;
     display: flex;
     justify-content: flex-start;
     animation: bounce-slow 2s ease-in-out infinite;
   }
 
   .hero-scroll-text {
-    font-size: 9px;
+    font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: 2px;
-    color: #4a5a7a;
+    letter-spacing: 3px;
+    color: #ffffff;
+    opacity: 0.7;
   }
 
   /* NAVBAR STYLES */
@@ -727,14 +793,12 @@ const styles = `
   }
 
   .modal-content::-webkit-scrollbar {
-    width: 4px;
-  }
-  .modal-content::-webkit-scrollbar-track {
+    width: 0px;
     background: transparent;
   }
-  .modal-content::-webkit-scrollbar-thumb {
-    background: #1a3a6b;
-    border-radius: 10px;
+  .modal-content {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
 
   .modal-close {
@@ -890,20 +954,20 @@ const styles = `
 
   @media (max-width: 640px) {
     .hero-title {
-      font-size: 1.6rem !important;
+      font-size: 2rem !important;
     }
     .hero-subtitle {
-      font-size: 1.1rem !important;
+      font-size: 1.2rem !important;
     }
     .hero-desc {
-      font-size: 0.8rem !important;
+      font-size: 0.85rem !important;
     }
     .hero-text-box {
       max-width: 100%;
     }
     .btn-primary, .btn-secondary {
-      padding: 6px 18px !important;
-      font-size: 0.75rem !important;
+      padding: 10px 20px !important;
+      font-size: 0.85rem !important;
     }
     .navbar-link {
       font-size: 0.75rem !important;
@@ -1094,17 +1158,17 @@ const CabinsModal = ({ isOpen, onClose, cabins, loading, onBookClick }) => {
         <div className="mb-4">
           <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
             <Building2 size={22} className="text-blue-800" />
-            Explore Our Cabins
+            Explore Our Spaces
           </h2>
           <p className="text-xs text-gray-500 mt-1">
-            Discover fully-equipped medical practice cabins available for booking
+            Discover fully-equipped workspaces available for booking
           </p>
         </div>
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-800 rounded-full animate-spin"></div>
-            <p className="text-sm text-gray-500 mt-3">Loading cabins...</p>
+            <p className="text-sm text-gray-500 mt-3">Loading spaces...</p>
           </div>
         ) : activeCabins.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1116,12 +1180,12 @@ const CabinsModal = ({ isOpen, onClose, cabins, loading, onBookClick }) => {
                       src={`http://62.72.29.27:5003/${cabin.images[0]}`} 
                       alt={cabin.name}
                       onError={(e) => {
-                        e.target.src = "https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=300&fit=crop";
+                        e.target.src = IRYAX_SPACE_IMAGES[0];
                       }}
                     />
                   ) : (
                     <img 
-                      src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=300&fit=crop" 
+                      src={IRYAX_SPACE_IMAGES[0]} 
                       alt={cabin.name}
                     />
                   )}
@@ -1156,12 +1220,12 @@ const CabinsModal = ({ isOpen, onClose, cabins, loading, onBookClick }) => {
         ) : (
           <div className="text-center py-12">
             <Building2 size={40} className="mx-auto text-gray-300 mb-3" />
-            <p className="text-gray-500">No cabins available at the moment.</p>
+            <p className="text-gray-500">No spaces available at the moment.</p>
           </div>
         )}
 
         <div className="mt-4 text-center text-xs text-gray-400 border-t border-gray-100 pt-3">
-          Showing {activeCabins.length} active cabins
+          Showing {activeCabins.length} active spaces
         </div>
       </div>
     </div>
@@ -1182,7 +1246,7 @@ const PromotionalPage = () => {
   const [error, setError] = useState(null);
   const [isCabinsModalOpen, setIsCabinsModalOpen] = useState(false);
 
-  const typingWords = ["Medical Chamber", "Clinic Space", "Practice Room", "Consultation Suite"];
+  const typingWords = ["Workspace", "Studio", "Office", "Creative Space"];
 
   // Fetch cabins
   useEffect(() => {
@@ -1242,102 +1306,79 @@ const PromotionalPage = () => {
   };
 
   const stats = [
-    { label: "Doctors Trust Us", value: 120, suffix: "+" },
-    { label: "Clinic Cabins", value: 15, suffix: "+" },
-    { label: "Patient Visits", value: 2500, suffix: "+" },
+    { label: "Professionals Trust Us", value: 120, suffix: "+" },
+    { label: "Workspaces", value: 15, suffix: "+" },
+    { label: "Projects Done", value: 2500, suffix: "+" },
     { label: "Specializations", value: 20, suffix: "+" },
-    { label: "Practice Hours", value: 24, suffix: "/7" }
+    { label: "Support Hours", value: 24, suffix: "/7" }
   ];
 
   const specialties = [
-    "Permanent Makeup Artist", "Consulting Periodontist", "RDI Consultant",
-    "Psychotherapist", "Psychiatric", "Paramedical Camouflage Specialist",
-    "Implantologist", "Hypnotherapist", "Cardiologist", "Neurologist",
-    "Dermatologist", "Orthopedic", "Pediatrician", "Gynecologist",
-    "ENT Specialist", "Ophthalmologist", "General Physician", "Radiologist",
-    "Pathologist", "Dentist"
+    "Medical Practice", "Dental Clinic", "Physiotherapy", "Psychology",
+    "Cardiology", "Neurology", "Dermatology", "Orthopedic",
+    "Pediatrics", "Gynecology", "ENT Specialist", "Ophthalmology",
+    "General Medicine", "Radiology", "Pathology", "Dentistry"
   ];
 
   const specialtyIconMap = {
-    "Permanent Makeup Artist": Briefcase,
-    "Consulting Periodontist": Users,
-    "RDI Consultant": ClipboardCheck,
-    "Psychotherapist": Brain,
-    "Psychiatric": Brain,
-    "Paramedical Camouflage Specialist": EyeOff,
-    "Implantologist": Users,
-    "Hypnotherapist": Brain,
-    "Cardiologist": HeartPulse,
-    "Neurologist": Brain,
-    "Dermatologist": EyeOff,
+    "Medical Practice": Stethoscope,
+    "Dental Clinic": Users,
+    "Physiotherapy": Activity,
+    "Psychology": Brain,
+    "Cardiology": HeartPulse,
+    "Neurology": Brain,
+    "Dermatology": EyeOff,
     "Orthopedic": Bone,
-    "Pediatrician": UsersRound,
-    "Gynecologist": Heart,
+    "Pediatrics": UsersRound,
+    "Gynecology": Heart,
     "ENT Specialist": Stethoscope,
-    "Ophthalmologist": Eye,
-    "General Physician": Stethoscope,
-    "Radiologist": Microscope,
-    "Pathologist": TestTube,
-    "Dentist": Users,
+    "Ophthalmology": Eye,
+    "General Medicine": Stethoscope,
+    "Radiology": Microscope,
+    "Pathology": TestTube,
+    "Dentistry": Users,
   };
 
-  const doctorBenefits = [
-    { icon: Shield, title: "No Long Leases", desc: "Avoid long-term commitments and heavy rental deposits.", glassClass: "glass-blue" },
+  const benefits = [
+    { icon: Shield, title: "No Long Leases", desc: "Avoid long-term commitments and heavy deposits.", glassClass: "glass-blue" },
     { icon: Wallet, title: "Low Operational Costs", desc: "Pay only for what you use. No hidden charges.", glassClass: "glass-teal" },
     { icon: Users, title: "Admin Hassle-Free", desc: "We manage staff, billing, and daily operations for you.", glassClass: "glass-purple" },
-    { icon: SparklesIcon, title: "Modern Infrastructure", desc: "Fully-equipped with state-of-the-art medical tools.", glassClass: "glass-rose" }
+    { icon: SparklesIcon, title: "Modern Infrastructure", desc: "Fully-equipped with state-of-the-art tools.", glassClass: "glass-rose" }
   ];
 
   const features = [
-    { icon: Rocket, title: "Quick Setup", desc: "Get started in 24 hours with fully-equipped cabins", number: "01", color: "bg-blue-500/20 text-blue-300" },
-    { icon: TrendingUp, title: "Grow Your Practice", desc: "Scale your practice without property ownership hassles", number: "02", color: "bg-emerald-500/20 text-emerald-300" },
-    { icon: Award, title: "Premium Quality", desc: "High-end medical infrastructure at affordable rates", number: "03", color: "bg-purple-500/20 text-purple-300" },
-    { icon: Target, title: "Prime Locations", desc: "High-visibility clinics in premium areas", number: "04", color: "bg-rose-500/20 text-rose-300" }
+    { icon: Rocket, title: "Quick Setup", desc: "Get started in 24 hours with fully-equipped spaces", number: "01", color: "bg-blue-500/20 text-blue-300" },
+    { icon: TrendingUp, title: "Grow Your Practice", desc: "Scale your practice without ownership hassles", number: "02", color: "bg-emerald-500/20 text-emerald-300" },
+    { icon: Award, title: "Premium Quality", desc: "High-end infrastructure at affordable rates", number: "03", color: "bg-purple-500/20 text-purple-300" },
+    { icon: Target, title: "Prime Locations", desc: "High-visibility spaces in premium areas", number: "04", color: "bg-rose-500/20 text-rose-300" }
   ];
 
   const locationList = [
     { 
       icon: Building2, 
       title: "High-Visibility Locations", 
-      desc: "Premium clinics in prime areas with high foot traffic. Get maximum patient exposure."
+      desc: "Premium workspaces in prime areas with high foot traffic."
     },
     { 
       icon: Wallet, 
       title: "Easy Start", 
-      desc: "Minimal investment required. Everything is set up for you. Just bring your expertise."
+      desc: "Minimal investment required. Everything is set up for you."
     },
     { 
       icon: ShieldCheck, 
       title: "Zero Operational Stress", 
-      desc: "We handle staff, billing, and daily operations for you. Focus on patient care."
+      desc: "We handle staff, billing, and daily operations for you."
     }
   ];
 
-  const locationImages = [
-    "https://th.bing.com/th/id/OIP.aIwddIt_WCGKYrz2xxTrQAHaDt?w=349&h=174&c=7&r=0&o=7&dpr=1.3&pid=1.7&rm=3",
-    "https://th.bing.com/th/id/OIP.v2AxCJV4t4vmtUwgllub9AHaEJ?w=322&h=180&c=7&r=0&o=7&dpr=1.3&pid=1.7&rm=3",
-    "https://th.bing.com/th/id/OIP.5MLq7lZwAKyxLHiBbv-sfgHaE8?w=236&h=180&c=7&r=0&o=7&dpr=1.3&pid=1.7&rm=3"
-  ];
-
   const faqs = [
-    { category: "Practice Cabins", q: "What types of medical practice cabins are available?", a: "We offer fully-equipped consultation rooms, procedure rooms, and multi-specialty clinic cabins." },
+    { category: "Workspaces", q: "What types of workspaces are available?", a: "We offer fully-equipped private offices, meeting rooms, and collaborative spaces." },
     { category: "Flexibility", q: "Do I need to sign a long-term lease?", a: "No! Our model is completely flexible. You can book by hour, day, or month." },
-    { category: "Facilities", q: "What equipment and facilities are included?", a: "All cabins include medical-grade equipment, comfortable patient areas, high-speed WiFi, and 24/7 security." },
+    { category: "Facilities", q: "What facilities are included?", a: "All spaces include high-speed WiFi, comfortable work areas, and 24/7 security." },
     { category: "Payment", q: "What payment methods are accepted?", a: "We accept credit/debit cards, UPI, net banking, and offer flexible payment plans." },
-    { category: "Support", q: "What administrative support do you provide?", a: "We provide full administrative support including reception services, billing assistance, and patient scheduling." },
-    { category: "Earning", q: "How can I earn from my unused clinic cabin?", a: "List your cabin on our platform and connect with trusted healthcare professionals. We handle the booking and management." }
+    { category: "Support", q: "What administrative support do you provide?", a: "We provide full administrative support including reception services and billing assistance." },
+    { category: "Earning", q: "How can I earn from my unused space?", a: "List your space on our platform and connect with trusted professionals." }
   ];
-
-  const medicalImages = [
-    "https://img.magnific.com/free-photo/indian-patient-with-impairment-cervical-foam-attends-check-up_482257-118444.jpg?t=st=1784267836~exp=1784271436~hmac=1e1dac8ba6f8ca799ef165b50ec53a1939a503912d4089316627660437fb3912&w=1480",
-    "https://th.bing.com/th/id/OIP.aIwddIt_WCGKYrz2xxTrQAHaDt?w=349&h=174&c=7&r=0&o=7&dpr=1.3&pid=1.7&rm=3",
-    "https://th.bing.com/th/id/OIP.v2AxCJV4t4vmtUwgllub9AHaEJ?w=322&h=180&c=7&r=0&o=7&dpr=1.3&pid=1.7&rm=3",
-    "https://th.bing.com/th/id/OIP.5MLq7lZwAKyxLHiBbv-sfgHaE8?w=236&h=180&c=7&r=0&o=7&dpr=1.3&pid=1.7&rm=3",
-    "https://th.bing.com/th/id/OIP.rU0X0v1uviFvvgnyoictpAHaEa?w=275&h=180&c=7&r=0&o=7&dpr=1.3&pid=1.7&rm=3",
-    "https://th.bing.com/th/id/OIP.HdHAd9dl-09CIRK3wyCKUwHaDt?w=338&h=175&c=7&r=0&o=7&dpr=1.3&pid=1.7&rm=3"
-  ];
-
-  const heroBgImage = "https://www.kevinmd.com/wp-content/uploads/shutterstock_255837643-1.jpg";
 
   // ─── HANDLE #cabins LINK ───
   const handleCabinsClick = (e) => {
@@ -1345,22 +1386,22 @@ const PromotionalPage = () => {
     openCabinsModal();
   };
 
-  // ─── BRAND WITH DOCTOR ICON (POSTFIX - Icon after text) ───
+  // ─── BRAND WITH ICON (POSTFIX - Icon after text) ───
   const BrandWithIcon = () => (
     <span className="navbar-brand hidden sm:block group-hover:text-blue-800 transition flex items-center gap-2">
       IRYAX SPACE
       <span className="brand-icon flex items-center justify-center">
-        <StethoscopeIcon size={18} />
+        <Layout size={18} />
       </span>
     </span>
   );
 
-  // ─── MISSION & VISION DATA (Smaller cards) ───
+  // ─── MISSION & VISION DATA ───
   const missionVisionData = [
     {
       title: "Our Mission",
       icon: TargetIcon,
-      description: "To empower healthcare professionals by providing fully-equipped, flexible medical practice spaces that eliminate the barriers of high costs and long-term commitments, enabling them to focus entirely on patient care.",
+      description: "To empower professionals by providing flexible, fully-equipped spaces that eliminate the barriers of high costs and long-term commitments, enabling them to focus entirely on their work.",
       color: "from-blue-600 to-blue-800",
       bgColor: "bg-blue-50",
       borderColor: "border-blue-200"
@@ -1368,7 +1409,7 @@ const PromotionalPage = () => {
     {
       title: "Our Vision",
       icon: EyeIcon,
-      description: "To revolutionize the healthcare landscape by creating a seamless ecosystem where every doctor can access premium clinic infrastructure without ownership burden, fostering innovation and excellence in medical practice.",
+      description: "To revolutionize the workspace landscape by creating a seamless ecosystem where every professional can access premium infrastructure without ownership burden, fostering innovation and excellence.",
       color: "from-purple-600 to-indigo-800",
       bgColor: "bg-purple-50",
       borderColor: "border-purple-200"
@@ -1403,7 +1444,7 @@ const PromotionalPage = () => {
 
             <div className="hidden md:flex items-center gap-1">
               <button onClick={() => scrollToSection('benefits')} className="navbar-link">Benefits</button>
-              <a href="#cabins" onClick={handleCabinsClick} className="navbar-link">Cabins</a>
+              <a href="#cabins" onClick={handleCabinsClick} className="navbar-link">Spaces</a>
               <button onClick={() => scrollToSection('specialties')} className="navbar-link">Specialties</button>
               <button onClick={() => scrollToSection('mission-vision')} className="navbar-link">About</button>
               <button onClick={() => scrollToSection('faq')} className="navbar-link">FAQ</button>
@@ -1415,7 +1456,7 @@ const PromotionalPage = () => {
                 Sign In
               </button>
               <button onClick={() => navigate("/login")} className="navbar-btn font-medium text-white bg-gradient-to-r from-blue-900 to-blue-700 rounded-full hover:shadow-lg hover:shadow-blue-900/25 transition hover:scale-105 flex items-center gap-2">
-                <Stethoscope size={14} /> Start Practice
+                <Layout size={14} /> Start Now
               </button>
               <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden p-2 rounded-full hover:bg-gray-100/50 transition">
                 {mobileOpen ? <X size={22} /> : <Menu size={22} />}
@@ -1428,14 +1469,14 @@ const PromotionalPage = () => {
         <div className={`fixed inset-0 z-40 bg-white pt-20 px-6 transition-all duration-500 ${mobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
           <div className="flex flex-col gap-2 max-w-sm mx-auto">
             <button onClick={() => { setMobileOpen(false); scrollToSection('benefits'); }} className="px-4 py-3 text-base text-gray-700 hover:text-blue-800 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-medium text-left">Benefits</button>
-            <a href="#cabins" onClick={(e) => { e.preventDefault(); setMobileOpen(false); openCabinsModal(); }} className="px-4 py-3 text-base text-gray-700 hover:text-blue-800 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-medium text-left block">Cabins</a>
+            <a href="#cabins" onClick={(e) => { e.preventDefault(); setMobileOpen(false); openCabinsModal(); }} className="px-4 py-3 text-base text-gray-700 hover:text-blue-800 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-medium text-left block">Spaces</a>
             <button onClick={() => { setMobileOpen(false); scrollToSection('specialties'); }} className="px-4 py-3 text-base text-gray-700 hover:text-blue-800 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-medium text-left">Specialties</button>
             <button onClick={() => { setMobileOpen(false); scrollToSection('mission-vision'); }} className="px-4 py-3 text-base text-gray-700 hover:text-blue-800 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-medium text-left">About</button>
             <button onClick={() => { setMobileOpen(false); scrollToSection('faq'); }} className="px-4 py-3 text-base text-gray-700 hover:text-blue-800 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-medium text-left">FAQ</button>
             <button onClick={() => { setMobileOpen(false); scrollToSection('contact'); }} className="px-4 py-3 text-base text-gray-700 hover:text-blue-800 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-medium text-left">Contact</button>
             <div className="h-px bg-gray-200 my-1" />
             <button onClick={() => { navigate("/login"); setMobileOpen(false); }} className="px-4 py-3 text-base text-center text-white bg-gradient-to-r from-blue-900 to-blue-700 rounded-lg font-semibold">
-              Start Practice
+              Start Now
             </button>
           </div>
         </div>
@@ -1443,51 +1484,49 @@ const PromotionalPage = () => {
         {/* ─── HERO ─── */}
         <section className="hero-section">
           <div className="hero-bg">
-            <img src={heroBgImage} alt="Medical Practice" />
+            <img src={IRYAX_HERO_IMAGE} alt="IRYAX SPACE Workspace" />
           </div>
 
           <div className="hero-content">
             <div className="hero-text-box">
               <RevealSection>
                 <div className="hero-badge">
-                  <HeartPulse size={12} className="animate-heartbeat" />
-                  <span>India's Premier Medical Co-Working Platform</span>
+                  <Layout size={14} className="animate-heartbeat" />
+                  <span>India's Premier Workspace Platform</span>
                 </div>
               </RevealSection>
 
               <RevealSection delay={0.1}>
                 <h1 className="hero-title">
-                  Modern Medical Cabins
+                  Modern Workspaces
                   <br />
                   <span className="hero-title-gradient">
                     <TypingText words={typingWords} />
                   </span>
                   <br />
-                  <span className="hero-subtitle">for Independent Practice</span>
+                  <span className="hero-subtitle">for Every Professional</span>
                 </h1>
               </RevealSection>
 
               <RevealSection delay={0.2}>
                 <p className="hero-desc">
-                  Fully-equipped clinic cabins. Flexible hours. Zero admin stress.
-                  Join 120+ doctors who've transformed their practice.
+                  Fully-equipped spaces. Flexible hours. Zero admin stress.
+                  Join 120+ professionals who've transformed their work.
                 </p>
               </RevealSection>
 
               <RevealSection delay={0.3}>
                 <div className="hero-buttons">
                   <button onClick={() => navigate("/login")} className="btn-primary">
-                    <Stethoscope size={14} />
-                    Start Your Practice
-                    <ArrowRight size={14} className="group-hover:translate-x-1 transition" />
+                    <Layout size={16} />
+                    Start Your Journey
+                    <ArrowRight size={16} className="group-hover:translate-x-1 transition" />
                   </button>
                   <a href="#cabins" onClick={handleCabinsClick} className="btn-secondary" style={{ textDecoration: 'none' }}>
-                    <Eye size={14} /> Explore Cabins
+                    <Eye size={16} /> Explore Spaces
                   </a>
                 </div>
               </RevealSection>
-
-             
             </div>
           </div>
         </section>
@@ -1508,7 +1547,7 @@ const PromotionalPage = () => {
           </div>
         </section>
 
-        {/* ─── MISSION & VISION SECTION (Smaller) ─── */}
+        {/* ─── MISSION & VISION SECTION ─── */}
         <section id="mission-vision" className="py-16 px-6 bg-gradient-to-br from-blue-50 via-white to-purple-50">
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-10">
@@ -1524,7 +1563,7 @@ const PromotionalPage = () => {
               </RevealSection>
               <RevealSection delay={0.2}>
                 <p className="mt-2 text-sm text-gray-600 max-w-2xl mx-auto">
-                  Driving healthcare innovation by creating accessible, flexible, and premium medical practice spaces for every doctor.
+                  Driving innovation by creating accessible, flexible, and premium workspaces for every professional.
                 </p>
               </RevealSection>
             </div>
@@ -1559,7 +1598,7 @@ const PromotionalPage = () => {
               })}
             </div>
 
-            {/* Core Values - Smaller */}
+            {/* Core Values */}
             <RevealSection delay={0.3}>
               <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-3">
                 {[
@@ -1584,21 +1623,21 @@ const PromotionalPage = () => {
             <div className="text-center mb-14">
               <RevealSection>
                 <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/60 backdrop-blur-sm border border-white/30 text-blue-800 text-xs rounded-full mb-4 tracking-widest uppercase font-medium shadow-sm">
-                  <StarIcon size={12} className="fill-blue-800 text-blue-800" /> Doctor Benefits
+                  <StarIcon size={12} className="fill-blue-800 text-blue-800" /> Benefits
                 </span>
               </RevealSection>
               <RevealSection delay={0.1}>
                 <h2 className="text-3xl sm:text-4xl font-light text-gray-900">
-                  Helping Doctors <span className="bg-gradient-to-r from-blue-900 to-blue-600 bg-clip-text text-transparent font-bold">Avoid Long Leases</span> & High Costs
+                  Helping Professionals <span className="bg-gradient-to-r from-blue-900 to-blue-600 bg-clip-text text-transparent font-bold">Avoid Long Leases</span> & High Costs
                 </h2>
               </RevealSection>
               <RevealSection delay={0.2}>
-                <p className="mt-3 text-base text-gray-600 max-w-2xl mx-auto">Focus on patient care while we handle everything else.</p>
+                <p className="mt-3 text-base text-gray-600 max-w-2xl mx-auto">Focus on your work while we handle everything else.</p>
               </RevealSection>
             </div>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {doctorBenefits.map((benefit, i) => (
+              {benefits.map((benefit, i) => (
                 <RevealSection key={i} delay={i * 0.1}>
                   <div className={`glass-card ${benefit.glassClass}`}>
                     <div className="icon-wrapper">
@@ -1624,11 +1663,11 @@ const PromotionalPage = () => {
               </RevealSection>
               <RevealSection delay={0.1}>
                 <h2 className="text-3xl sm:text-4xl font-light">
-                  Built for <span className="font-bold bg-gradient-to-r from-blue-200 to-cyan-200 bg-clip-text text-transparent">Modern Healthcare</span>
+                  Built for <span className="font-bold bg-gradient-to-r from-blue-200 to-cyan-200 bg-clip-text text-transparent">Modern Professionals</span>
                 </h2>
               </RevealSection>
               <RevealSection delay={0.2}>
-                <p className="mt-3 text-base text-blue-200 max-w-2xl mx-auto">Everything you need to start and grow your practice.</p>
+                <p className="mt-3 text-base text-blue-200 max-w-2xl mx-auto">Everything you need to start and grow your work.</p>
               </RevealSection>
             </div>
 
@@ -1660,11 +1699,11 @@ const PromotionalPage = () => {
               </RevealSection>
               <RevealSection delay={0.1}>
                 <h2 className="text-3xl sm:text-4xl font-light text-gray-900">
-                  Accessible, High-Visibility <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent font-bold">Clinics</span>
+                  Accessible, High-Visibility <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent font-bold">Workspaces</span>
                 </h2>
               </RevealSection>
               <RevealSection delay={0.2}>
-                <p className="mt-3 text-base text-gray-600 max-w-2xl mx-auto">Minimal investment. No operational stress. Just focus on your practice.</p>
+                <p className="mt-3 text-base text-gray-600 max-w-2xl mx-auto">Minimal investment. No operational stress. Just focus on your work.</p>
               </RevealSection>
             </div>
 
@@ -1688,13 +1727,13 @@ const PromotionalPage = () => {
               <RevealSection delay={0.2}>
                 <div className="location-grid-images">
                   <div className="img-main">
-                    <img src={locationImages[0]} alt="Location 1" />
+                    <img src={IRYAX_LOCATION_IMAGES[0]} alt="IRYAX Location" />
                   </div>
                   <div className="img-side">
-                    <img src={locationImages[1]} alt="Location 2" />
+                    <img src={IRYAX_LOCATION_IMAGES[1]} alt="IRYAX Location" />
                   </div>
                   <div className="img-side">
-                    <img src={locationImages[2]} alt="Location 3" />
+                    <img src={IRYAX_LOCATION_IMAGES[2]} alt="IRYAX Location" />
                   </div>
                 </div>
               </RevealSection>
@@ -1712,13 +1751,13 @@ const PromotionalPage = () => {
                     <Wallet size={12} /> Earn Passive Income
                   </span>
                   <h2 className="text-3xl sm:text-4xl font-light text-gray-900 mb-4">
-                    Earn From <span className="bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent font-bold">Your Clinic</span>
+                    Earn From <span className="bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent font-bold">Your Space</span>
                   </h2>
                   <p className="text-base text-gray-600 leading-relaxed mb-6">
-                    Monetize your unused clinic cabin and connect with trusted healthcare professionals. No added operational stress — we handle everything.
+                    Monetize your unused workspace and connect with trusted professionals. No added operational stress — we handle everything.
                   </p>
                   <ul className="space-y-3 mb-6">
-                    {["List your cabin on our platform", "Connect with verified healthcare professionals", "We handle booking and management", "You earn passive income"].map((item, i) => (
+                    {["List your space on our platform", "Connect with verified professionals", "We handle booking and management", "You earn passive income"].map((item, i) => (
                       <li key={i} className="flex items-start gap-3 text-sm">
                         <CheckCircle size={18} className="text-amber-600 mt-0.5 flex-shrink-0" />
                         <span className="text-gray-700">{item}</span>
@@ -1726,7 +1765,7 @@ const PromotionalPage = () => {
                     ))}
                   </ul>
                   <button className="px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-amber-600 to-orange-600 rounded-xl hover:shadow-lg hover:shadow-amber-500/25 transition hover:scale-105 flex items-center gap-2 group">
-                    <Building2 size={16} /> List Your Cabin <ArrowRight size={14} className="group-hover:translate-x-1 transition" />
+                    <Building2 size={16} /> List Your Space <ArrowRight size={14} className="group-hover:translate-x-1 transition" />
                   </button>
                 </div>
               </RevealSection>
@@ -1734,12 +1773,12 @@ const PromotionalPage = () => {
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-r from-amber-500/20 to-orange-500/20 rounded-2xl blur-2xl animate-pulse" />
                   <div className="relative rounded-2xl overflow-hidden bg-white border border-gray-200 p-6 shadow-xl">
-                    <img src={medicalImages[4]} alt="Medical Practice" className="w-full h-64 object-cover rounded-xl" />
+                    <img src={IRYAX_SPACE_IMAGES[4]} alt="IRYAX Workspace" className="w-full h-64 object-cover rounded-xl" />
                     <div className="mt-4 flex items-center gap-3">
                       <div className="flex -space-x-2">
-                        {[1,2,3].map((i) => <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-amber-600/20 flex items-center justify-center text-xs text-amber-600 font-bold">D</div>)}
+                        {[1,2,3].map((i) => <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-amber-600/20 flex items-center justify-center text-xs text-amber-600 font-bold">P</div>)}
                       </div>
-                      <span className="text-sm text-gray-500">Trusted by 50+ healthcare professionals</span>
+                      <span className="text-sm text-gray-500">Trusted by 50+ professionals</span>
                     </div>
                   </div>
                 </div>
@@ -1748,30 +1787,30 @@ const PromotionalPage = () => {
           </div>
         </section>
 
-        {/* ─── SPECIALTIES ─── */}
+        {/* ─── SPECIALTIES/SERVICES ─── */}
         <section id="specialties" className="py-20 px-6 bg-gray-50">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-14">
               <RevealSection>
                 <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-blue-50 border border-blue-200 text-blue-800 text-xs rounded-full mb-4 tracking-widest uppercase font-medium">
-                  <UsersRound size={12} /> Our Specialists
+                  <UsersRound size={12} /> Our Specialties
                 </span>
               </RevealSection>
               <RevealSection delay={0.1}>
                 <h2 className="text-3xl sm:text-4xl font-light text-gray-900">
-                  We Serve Across <span className="specialties-gradient-heading">Multiple Specializations</span>
+                  We Serve Across <span className="specialties-gradient-heading">Multiple Domains</span>
                 </h2>
               </RevealSection>
               <RevealSection delay={0.2}>
-                <p className="mt-3 text-base text-gray-600 max-w-2xl mx-auto">Modern medical cabins designed for every specialty.</p>
+                <p className="mt-3 text-base text-gray-600 max-w-2xl mx-auto">Modern workspaces designed for every profession.</p>
               </RevealSection>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {specialties.slice(0, 10).map((name, i) => {
-                const Icon = specialtyIconMap[name] || Stethoscope;
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4">
+              {specialties.map((name, i) => {
+                const Icon = specialtyIconMap[name] || Layout;
                 return (
-                  <RevealSection key={i} delay={i * 0.04}>
+                  <RevealSection key={i} delay={i * 0.05}>
                     <div className="group p-4 rounded-2xl bg-white border border-gray-100 hover:border-blue-300 transition-all duration-500 hover:-translate-y-2 hover:shadow-xl text-center">
                       <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center text-blue-700 group-hover:scale-110 transition group-hover:rotate-6">
                         <Icon size={24} />
@@ -1785,23 +1824,23 @@ const PromotionalPage = () => {
           </div>
         </section>
 
-        {/* ─── MODERN CABINS ─── */}
+        {/* ─── MODERN SPACES ─── */}
         <section className="py-20 px-6 bg-white">
           <div className="max-w-6xl mx-auto">
             <RevealSection>
               <div className="grid md:grid-cols-2 gap-12 items-center">
                 <div>
                   <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-cyan-50 border border-cyan-200 text-cyan-800 text-xs rounded-full mb-4 tracking-widest uppercase font-medium">
-                    <SparklesIcon size={12} /> Modern Medical Cabins
+                    <SparklesIcon size={12} /> Modern Workspaces
                   </span>
                   <h2 className="text-3xl sm:text-4xl font-light text-gray-900 mb-4">
                     Zero Hassle. <span className="bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent font-bold">Complete Convenience.</span>
                   </h2>
                   <p className="text-base text-gray-600 leading-relaxed mb-6">
-                    Experience medical co-working like a premium hotel stay — fully-equipped clinic cabins, ready infrastructure, and complete operational support, without owning or renting property.
+                    Experience co-working like a premium hotel stay — fully-equipped spaces, ready infrastructure, and complete operational support, without owning or renting property.
                   </p>
                   <ul className="space-y-3">
-                    {["Fully-equipped consultation rooms", "State-of-the-art diagnostic tools", "Professional reception and staff", "24/7 security and support"].map((item, i) => (
+                    {["Fully-equipped workspaces", "State-of-the-art tools", "Professional reception and staff", "24/7 security and support"].map((item, i) => (
                       <li key={i} className="flex items-start gap-3 text-sm">
                         <CheckCircle size={18} className="text-cyan-600 mt-0.5 flex-shrink-0" />
                         <span className="text-gray-700">{item}</span>
@@ -1810,10 +1849,10 @@ const PromotionalPage = () => {
                   </ul>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <img src={medicalImages[0]} alt="Medical Cabin" className="rounded-2xl w-full h-48 object-cover hover:scale-105 transition shadow-xl" />
-                  <img src={medicalImages[1]} alt="Medical Cabin" className="rounded-2xl w-full h-48 object-cover hover:scale-105 transition shadow-xl mt-8" />
-                  <img src={medicalImages[2]} alt="Medical Cabin" className="rounded-2xl w-full h-48 object-cover hover:scale-105 transition shadow-xl -mt-4" />
-                  <img src={medicalImages[3]} alt="Medical Cabin" className="rounded-2xl w-full h-48 object-cover hover:scale-105 transition shadow-xl" />
+                  <img src={IRYAX_SPACE_IMAGES[0]} alt="IRYAX Workspace" className="rounded-2xl w-full h-48 object-cover hover:scale-105 transition shadow-xl" />
+                  <img src={IRYAX_SPACE_IMAGES[1]} alt="IRYAX Workspace" className="rounded-2xl w-full h-48 object-cover hover:scale-105 transition shadow-xl mt-8" />
+                  <img src={IRYAX_SPACE_IMAGES[2]} alt="IRYAX Workspace" className="rounded-2xl w-full h-48 object-cover hover:scale-105 transition shadow-xl -mt-4" />
+                  <img src={IRYAX_SPACE_IMAGES[3]} alt="IRYAX Workspace" className="rounded-2xl w-full h-48 object-cover hover:scale-105 transition shadow-xl" />
                 </div>
               </div>
             </RevealSection>
@@ -1833,7 +1872,7 @@ const PromotionalPage = () => {
                 <h2 className="text-3xl font-light text-gray-900">Frequently Asked <span className="bg-gradient-to-r from-blue-900 to-blue-600 bg-clip-text text-transparent font-bold">Questions</span></h2>
               </RevealSection>
               <RevealSection delay={0.2}>
-                <p className="mt-2 text-base text-gray-600">Find answers about our medical practice cabins.</p>
+                <p className="mt-2 text-base text-gray-600">Find answers about our workspaces.</p>
               </RevealSection>
             </div>
 
@@ -1867,17 +1906,17 @@ const PromotionalPage = () => {
                 <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/80 border border-gray-200 text-gray-700 text-xs rounded-full mb-4 tracking-widest uppercase font-medium">Get in Touch</span>
               </RevealSection>
               <RevealSection delay={0.1}>
-                <h2 className="text-3xl font-light text-gray-900">Ready to <span className="bg-gradient-to-r from-blue-900 to-blue-600 bg-clip-text text-transparent font-bold">Start Your Practice?</span></h2>
+                <h2 className="text-3xl font-light text-gray-900">Ready to <span className="bg-gradient-to-r from-blue-900 to-blue-600 bg-clip-text text-transparent font-bold">Start Your Journey?</span></h2>
               </RevealSection>
               <RevealSection delay={0.2}>
-                <p className="mt-2 text-base text-gray-600">Connect with us and transform your medical practice today.</p>
+                <p className="mt-2 text-base text-gray-600">Connect with us and transform your work experience today.</p>
               </RevealSection>
             </div>
 
             <div className="grid md:grid-cols-5 gap-8">
               <div className="md:col-span-2 space-y-5">
                 {[
-                  { icon: Mail, label: "Email", value: "info@ingrainsystem.com" },
+                  { icon: Mail, label: "Email", value: "info@iriax.com" },
                   { icon: Phone, label: "Phone", value: "+91-9010481048" },
                   { icon: MapPin, label: "Address", value: "Iryax Global, Flat No: 301, 3rd Floor, Sri Sai Balaji Avenue, H. No: 1-98/9/25/p, VIP Hills, near Bank of Baroda, Arunodaya Colony, Madhapur, Hyderabad, Telangana 500081" }
                 ].map((item, i) => (
@@ -1903,12 +1942,12 @@ const PromotionalPage = () => {
                       <input type="email" placeholder="Your Email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-sm focus:outline-none transition" required />
                     </div>
                     <select value={formData.specialty} onChange={(e) => setFormData({ ...formData, specialty: e.target.value })} className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-gray-900 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-sm focus:outline-none transition">
-                      <option value="">Select Your Specialty</option>
+                      <option value="">Select Your Profession</option>
                       {specialties.map((s, i) => <option key={i} value={s}>{s}</option>)}
                     </select>
                     <textarea placeholder="Your Message" rows="4" value={formData.message} onChange={(e) => setFormData({ ...formData, message: e.target.value })} className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-sm focus:outline-none transition resize-none" required />
                     <button type="submit" className="w-full px-4 py-3 text-sm font-semibold text-white bg-gradient-to-r from-blue-900 to-blue-700 rounded-xl hover:shadow-lg hover:shadow-blue-900/25 transition hover:scale-105 flex items-center justify-center gap-2 group">
-                      {formSubmitted ? "✓ Sent!" : <>Start Your Practice <Send size={16} className="group-hover:translate-x-1 transition" /></>}
+                      {formSubmitted ? "✓ Sent!" : <>Start Your Journey <Send size={16} className="group-hover:translate-x-1 transition" /></>}
                     </button>
                   </form>
                 </RevealSection>
@@ -1929,18 +1968,18 @@ const PromotionalPage = () => {
                     </div>
                     <span className="text-base font-semibold text-white group-hover:text-blue-400 transition flex items-center gap-2">
                       IRYAX SPACE
-                      <StethoscopeIcon size={16} className="text-blue-400" />
+                      <Layout size={16} className="text-blue-400" />
                     </span>
                   </button>
-                  <p className="text-sm text-gray-400">Modern medical cabins for independent practice.</p>
+                  <p className="text-sm text-gray-400">Modern workspaces for every professional.</p>
                 </div>
               </RevealSection>
               <RevealSection delay={0.1}>
                 <div>
-                  <h4 className="text-sm font-medium text-white mb-4">Practice</h4>
+                  <h4 className="text-sm font-medium text-white mb-4">Explore</h4>
                   <div className="space-y-2">
                     <button onClick={() => scrollToSection('benefits')} className="block text-sm text-gray-400 hover:text-blue-400 transition hover:translate-x-1 text-left">Benefits</button>
-                    <a href="#cabins" onClick={handleCabinsClick} className="block text-sm text-gray-400 hover:text-blue-400 transition hover:translate-x-1 text-left">Cabins</a>
+                    <a href="#cabins" onClick={handleCabinsClick} className="block text-sm text-gray-400 hover:text-blue-400 transition hover:translate-x-1 text-left">Spaces</a>
                     <button onClick={() => scrollToSection('specialties')} className="block text-sm text-gray-400 hover:text-blue-400 transition hover:translate-x-1 text-left">Specialties</button>
                     <button onClick={() => scrollToSection('mission-vision')} className="block text-sm text-gray-400 hover:text-blue-400 transition hover:translate-x-1 text-left">About</button>
                     <button onClick={() => scrollToSection('faq')} className="block text-sm text-gray-400 hover:text-blue-400 transition hover:translate-x-1 text-left">FAQ</button>

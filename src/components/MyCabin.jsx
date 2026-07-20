@@ -41,7 +41,8 @@ import {
   ArrowLeft,
   Eye,
   Filter,
-  XCircle
+  XCircle,
+  Timer
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -109,6 +110,7 @@ const MyCabin = () => {
     status: 'all'
   });
   const [showFilters, setShowFilters] = useState(false);
+  const [countdowns, setCountdowns] = useState({});
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -161,6 +163,25 @@ const MyCabin = () => {
     });
   }, []);
 
+  // Countdown timer effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCountdowns(prev => {
+        const updated = { ...prev };
+        let hasChanges = false;
+        Object.keys(updated).forEach(key => {
+          if (updated[key] > 0) {
+            updated[key] = updated[key] - 1;
+            hasChanges = true;
+          }
+        });
+        return hasChanges ? updated : prev;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   const getImageUrl = (img) => {
     if (!img) return PLACEHOLDER_IMAGE;
     if (img.startsWith("http")) return img;
@@ -188,6 +209,18 @@ const MyCabin = () => {
       const cabinList = Array.isArray(data) ? data : [];
       setCabins(cabinList);
       setCabinCount(cabinList.length);
+      
+      // Initialize countdowns for cabins with expiry date
+      const initialCountdowns = {};
+      cabinList.forEach(cabin => {
+        if (cabin.expiryDate) {
+          const expiry = new Date(cabin.expiryDate);
+          const now = new Date();
+          const diff = Math.max(0, Math.floor((expiry - now) / 1000));
+          initialCountdowns[cabin._id] = diff;
+        }
+      });
+      setCountdowns(initialCountdowns);
       
     } catch (err) {
       console.error("Error fetching cabins:", err);
@@ -487,6 +520,27 @@ const MyCabin = () => {
     });
   };
 
+  // Format countdown
+  const formatCountdown = (seconds) => {
+    if (!seconds || seconds <= 0) return 'Expired';
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    
+    if (days > 0) {
+      return `${days}d ${hours}h`;
+    }
+    return `${hours}h ${minutes}m`;
+  };
+
+  const getCountdownColor = (seconds) => {
+    if (!seconds || seconds <= 0) return 'text-red-600';
+    if (seconds < 86400) return 'text-orange-500';
+    if (seconds < 172800) return 'text-yellow-500';
+    return 'text-emerald-600';
+  };
+
   // Clear all filters
   const clearFilters = () => {
     setFilters({
@@ -592,27 +646,31 @@ const MyCabin = () => {
                   )}
                 </button>
 
+                {/* Payments Button with Label */}
                 <button
                   onClick={() => navigate("/my-cabin-payments")}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200"
                 >
                   <CreditCard size={14} />
-                  <span className="hidden xs:inline">Payments</span>
+                  <span>Payments</span>
                 </button>
+
+                {/* Bookings Button with Label */}
                 <button
                   onClick={() => navigate("/cabin-bookings")}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
                 >
                   <FileText size={14} className="text-indigo-600" />
-                  <span className="hidden xs:inline">Bookings</span>
+                  <span>Bookings</span>
                 </button>
+
+                {/* Add Cabin Button with Label */}
                 <button
                   onClick={() => setIsModalOpen(true)}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors"
                 >
                   <Plus size={14} />
-                  <span className="hidden xs:inline">Add Cabin</span>
-                  <span className="xs:hidden">Add</span>
+                  <span>Add Cabin</span>
                 </button>
               </div>
             </div>
@@ -692,7 +750,7 @@ const MyCabin = () => {
                   <p className="text-gray-500">Loading cabins...</p>
                 </div>
               ) : (
-                <table className="w-full min-w-[1100px] text-left">
+                <table className="w-full min-w-[1200px] text-left">
                   <thead>
                     <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
@@ -702,6 +760,7 @@ const MyCabin = () => {
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Price</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Capacity</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
+                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Expiry</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Joined</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Actions</th>
                     </tr>
@@ -711,6 +770,9 @@ const MyCabin = () => {
                       filteredCabins.map((cabin, index) => {
                         const cabinStatus = getCabinStatus(cabin);
                         const isExclusive = cabin.cabinType === 'exclusive';
+                        const countdown = countdowns[cabin._id] || 0;
+                        const hasExpiry = cabin.expiryDate ? true : false;
+                        const isExpired = cabin.expiryDate && new Date(cabin.expiryDate) < new Date();
                         
                         return (
                           <tr key={cabin._id} className="transition-colors group hover:bg-gray-50/80">
@@ -775,6 +837,26 @@ const MyCabin = () => {
                               </span>
                             </td>
                             <td className="p-4">
+                              {hasExpiry ? (
+                                <div className="flex flex-col gap-0.5">
+                                  <span className="text-sm text-gray-600">
+                                    {formatDate(cabin.expiryDate)}
+                                  </span>
+                                  {countdown > 0 && (
+                                    <span className={`text-[10px] font-mono font-medium flex items-center gap-1 ${getCountdownColor(countdown)}`}>
+                                      <Timer size={10} />
+                                      {formatCountdown(countdown)}
+                                    </span>
+                                  )}
+                                  {isExpired && (
+                                    <span className="text-[10px] text-red-500 font-medium">🔴 Expired</span>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-sm text-gray-400">No expiry</span>
+                              )}
+                            </td>
+                            <td className="p-4">
                               <span className="text-sm text-gray-500">{formatDate(cabin.createdAt)}</span>
                             </td>
                             <td className="p-4">
@@ -804,7 +886,7 @@ const MyCabin = () => {
                       })
                     ) : (
                       <tr>
-                        <td colSpan={9} className="p-12 text-center">
+                        <td colSpan={10} className="p-12 text-center">
                           <div className="flex flex-col items-center justify-center gap-3 text-gray-400">
                             <BuildingIcon size={48} className="opacity-20" />
                             <p className="text-lg font-medium">No cabins found</p>
@@ -836,6 +918,10 @@ const MyCabin = () => {
                   <span className="flex items-center gap-1">
                     <span className="w-2 h-2 rounded-full bg-amber-500"></span>
                     Exclusive: {exclusiveCount}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                    With Expiry: {cabins.filter(c => c.expiryDate).length}
                   </span>
                 </div>
               </div>
@@ -933,6 +1019,26 @@ const MyCabin = () => {
                     </span>
                   </p>
                 </div>
+              </div>
+
+              {/* ✅ Expiry Date Display */}
+              <div className="p-4 bg-gray-50 rounded-xl">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Expiry Date</p>
+                <p className="mt-1 font-medium text-gray-700 flex items-center gap-2">
+                  <Calendar size={16} className="text-gray-400" />
+                  {selectedCabin.expiryDate ? (
+                    <span>
+                      {formatDate(selectedCabin.expiryDate)}
+                      {new Date(selectedCabin.expiryDate) < new Date() ? (
+                        <span className="ml-2 px-2 py-0.5 text-[10px] font-bold bg-red-100 text-red-700 rounded-full">Expired</span>
+                      ) : (
+                        <span className="ml-2 px-2 py-0.5 text-[10px] font-bold bg-emerald-100 text-emerald-700 rounded-full">Valid</span>
+                      )}
+                    </span>
+                  ) : (
+                    <span className="text-gray-400">No expiry date set</span>
+                  )}
+                </p>
               </div>
 
               {selectedCabin.description && (

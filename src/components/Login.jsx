@@ -60,7 +60,7 @@ function Login() {
       }
 
       // If not admin, try user login with backend API
-      const res = await axios.post("http://62.72.29.27:5003/api/auth/login", {
+      const res = await axios.post("https://spaceapi.iryax.com/api/auth/login", {
         email,
         password
       });

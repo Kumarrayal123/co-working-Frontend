@@ -32,7 +32,7 @@ import "./Dashboard.css";
 import { toast } from "react-toastify";
 import * as XLSX from 'xlsx';
 
-const API_URL = "http://62.72.29.27:5003";
+const API_URL = "https://spaceapi.iryax.com";
 
 const ROLE_COLORS = {
   user:   { bg: "bg-blue-100 text-blue-700", label: "User" },

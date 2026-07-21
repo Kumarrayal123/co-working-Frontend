@@ -19,7 +19,7 @@ import UsersNavbar from "./UsersNavbar";
 import AdminNavbar from "./AdminNavbar";
 import "./Dashboard.css";
 
-const API_URL = "http://62.72.29.27:5003";
+const API_URL = "https://spaceapi.iryax.com";
 const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
 
 export default function CabinDetails() {
@@ -60,7 +60,7 @@ export default function CabinDetails() {
           setRelatedCabins([]);
         }
 
-        // Fetch booked slots - AGAR FAIL HO TO BHI CHALEGA
+        // Fetch booked slots
         try {
           const slotsRes = await axios.get(`${API_URL}/api/bookings/cabin/${id}`);
           setBookedSlots(slotsRes.data.bookedSlots || []);
@@ -71,7 +71,6 @@ export default function CabinDetails() {
 
       } catch (err) {
         console.error("Error fetching cabin:", err);
-        // Agar cabin fetch fail ho toh bhi loading hatao
         setCabin(null);
       } finally {
         setLoading(false);
@@ -115,7 +114,6 @@ export default function CabinDetails() {
     );
   }
 
-  // Agar cabin nahi mila toh error dikhao
   if (!cabin) {
     return (
       <div className="admin-dash">
@@ -137,7 +135,6 @@ export default function CabinDetails() {
     );
   }
 
-  /* AMENITIES WITH ICONS */
   const amenityMap = {
     wifi: { label: "High Speed Wi-Fi", icon: Wifi },
     parking: { label: "Parking", icon: Car },
@@ -182,6 +179,13 @@ export default function CabinDetails() {
               <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest text-indigo-700 shadow-sm">
                 Premium Workspace
               </div>
+              {/* Seat count badge */}
+              {cabin.seats && cabin.seats.length > 0 && (
+                <div className="absolute top-4 right-4 bg-indigo-600/95 backdrop-blur-sm px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest text-white shadow-sm flex items-center gap-1.5">
+                  <Armchair size={12} />
+                  {cabin.seats.length} Seats
+                </div>
+              )}
             </div>
 
             {cabin.images?.length > 1 && (
@@ -229,6 +233,39 @@ export default function CabinDetails() {
               <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tighter">₹{cabin.price}</span>
               <span className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-2">/ Hour</span>
             </div>
+
+            {/* ---- SEATS DISPLAY SECTION (ONLY SHOW, NO SELECT) ---- */}
+            {cabin.seats && cabin.seats.length > 0 && (
+              <div className="pt-4 border-t border-slate-100">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                    <Armchair size={14} className="text-indigo-600" />
+                    Available Seats ({cabin.seats.length})
+                  </h3>
+                </div>
+
+                {/* Seat Grid - Only Display */}
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                  {cabin.seats.map((seat) => (
+                    <div
+                      key={seat._id}
+                      className="p-2 rounded-xl border-2 border-slate-200 text-center bg-slate-50/50"
+                    >
+                      <Armchair 
+                        size={16} 
+                        className="mx-auto mb-1 text-slate-400"
+                      />
+                      <div className="text-[10px] font-bold text-slate-700 truncate">
+                        {seat.name}
+                      </div>
+                      <div className="text-[8px] text-slate-400 font-medium">
+                        #{seat.number}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Workspace Features */}
             <div className="pt-4 border-t border-slate-100">
@@ -289,6 +326,11 @@ export default function CabinDetails() {
                 <div className="flex items-center gap-2">
                   <ShieldCheck size={14} className="text-indigo-500" /> Secured Space
                 </div>
+                {cabin.seats && (
+                  <div className="flex items-center gap-2">
+                    <Armchair size={14} className="text-indigo-500" /> {cabin.seats.length} Available
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-4">
@@ -318,7 +360,6 @@ export default function CabinDetails() {
           padding: "1.5rem",
           marginTop: "1.5rem",
         }}>
-          {/* Section Header */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
               <div style={{
@@ -375,14 +416,12 @@ export default function CabinDetails() {
                   borderRadius: 12,
                   flexWrap: "wrap",
                 }}>
-                  {/* Red bullet */}
                   <div style={{
                     width: 10, height: 10, borderRadius: "50%",
                     background: "#dc2626", flexShrink: 0,
                     boxShadow: "0 0 0 3px rgba(220,38,38,0.2)",
                   }} />
 
-                  {/* Date */}
                   <div style={{ minWidth: 120 }}>
                     <div style={{ fontSize: "0.65rem", fontWeight: 700, color: "#ef4444", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>
                       Date
@@ -395,7 +434,6 @@ export default function CabinDetails() {
                     </div>
                   </div>
 
-                  {/* Time */}
                   <div style={{
                     display: "inline-flex", alignItems: "center", gap: "0.4rem",
                     padding: "0.3rem 0.875rem",
@@ -409,7 +447,6 @@ export default function CabinDetails() {
                     {formatTime(slot.endTime)}
                   </div>
 
-                  {/* Booked By */}
                   {(slot.name || slot.email) && (
                     <div style={{ marginLeft: "auto", textAlign: "right" }}>
                       <div style={{ fontSize: "0.65rem", fontWeight: 700, color: "#ef4444", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>
@@ -455,6 +492,12 @@ export default function CabinDetails() {
                     <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest text-indigo-700 shadow-sm">
                       Available
                     </div>
+                    {rc.seats && rc.seats.length > 0 && (
+                      <div className="absolute top-3 right-3 bg-indigo-600/95 backdrop-blur-sm px-2 py-1 rounded-full text-[10px] font-bold text-white shadow-sm flex items-center gap-1">
+                        <Armchair size={10} />
+                        {rc.seats.length}
+                      </div>
+                    )}
                   </div>
                   <div className="p-5 space-y-2">
                     <h4 className="font-bold uppercase text-slate-900 text-base truncate">

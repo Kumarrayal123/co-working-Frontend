@@ -1,4 +1,4 @@
-// AllBookings.jsx - Redesigned with Consistent UI
+// AllBookings.jsx - Redesigned with Consistent UI (Updated with new response structure)
 import axios from "axios";
 import {
   Calendar,
@@ -38,12 +38,13 @@ import {
   XCircle as XCircleIcon
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import AdminNavbar from "./AdminNavbar";
 import * as XLSX from 'xlsx';
 import "./Dashboard.css";
 
-const API_URL = "http://62.72.29.27:5003";
+const API_URL = "https://spaceapi.iryax.com";
 const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
 
 const AllBookings = () => {
@@ -54,6 +55,7 @@ const AllBookings = () => {
   const [filterType, setFilterType] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
+  const navigate = useNavigate();
 
   const [stats, setStats] = useState({
     total: 0,
@@ -316,20 +318,25 @@ const AllBookings = () => {
         const statusBadge = getStatusBadge(booking.status);
         const paymentMethod = getPaymentMethodBadge(booking.paymentMethod);
         const paymentStatus = getPaymentStatusBadge(booking.paymentStatus);
+        const seatNames = booking.selectedSeats?.map(s => s.name).join(', ') || 'N/A';
+        
         return {
           'S.No': index + 1,
           'Booking Type': booking.bookingBasis === 'plan' ? 'Plan Booking' : 'Hourly Booking',
-          'Cabin Name': booking.cabinId?.name || 'Unknown Cabin',
-          'Address': booking.cabinId?.address || 'No Address',
-          'Owner Name': booking.cabinId?.owner?.name || 'N/A',
-          'Customer Name': booking.name || booking.userId?.name || 'Unknown Guest',
-          'Mobile': booking.mobile || booking.userId?.mobile || 'N/A',
-          'Email': booking.email || booking.userId?.email || 'N/A',
+          'Cabin Name': booking.cabin?.name || 'Unknown Cabin',
+          'Address': booking.cabin?.address || 'No Address',
+          'Owner Name': booking.cabin?.owner?.name || 'N/A',
+          'Customer Name': booking.name || booking.user?.name || 'Unknown Guest',
+          'Mobile': booking.mobile || booking.user?.mobile || 'N/A',
+          'Email': booking.email || booking.user?.email || 'N/A',
           'Start Date': booking.startDate || 'N/A',
           'Start Time': booking.startTime || 'N/A',
           'End Date': booking.endDate || 'N/A',
           'End Time': booking.endTime || 'N/A',
           'Duration (Hours)': booking.totalHours || 0,
+          'Seats': booking.seatCount || 0,
+          'Seat Names': seatNames,
+          'Extra Charge': booking.extraCharge || 0,
           'Subtotal (₹)': booking.subtotal || 0,
           'GST (18%)': booking.gstAmount || 0,
           'Total (₹)': booking.totalPrice || 0,
@@ -357,7 +364,7 @@ const AllBookings = () => {
 
   const downloadInvoice = (booking) => {
     try {
-      const cabin = booking.cabinId || {};
+      const cabin = booking.cabin || {};
       const owner = cabin.owner || {};
       const cabinName = cabin.name || 'Unknown Cabin';
       const cabinAddress = cabin.address || 'N/A';
@@ -368,6 +375,9 @@ const AllBookings = () => {
       const amount = booking.totalPrice || 0;
       const subtotal = booking.subtotal || 0;
       const gstAmount = booking.gstAmount || 0;
+      const extraCharge = booking.extraCharge || 0;
+      const seatCount = booking.seatCount || 0;
+      const selectedSeats = booking.selectedSeats || [];
       const orderId = booking._id.slice(-8).toUpperCase();
       const startDate = booking.startDate || 'N/A';
       const startTime = booking.startTime || 'N/A';
@@ -377,9 +387,9 @@ const AllBookings = () => {
       const paymentStatus = booking.paymentStatus === 'paid' ? 'Paid' : 'Pending';
       const paymentMethod = booking.paymentMethod === 'cash' || booking.paymentMethod === 'counter' ? 'Cash' : 'Online';
       const totalHours = booking.totalHours || 0;
-      const customerName = booking.name || booking.userId?.name || 'Customer';
-      const customerMobile = booking.mobile || booking.userId?.mobile || 'N/A';
-      const customerEmail = booking.email || booking.userId?.email || 'N/A';
+      const customerName = booking.name || booking.user?.name || 'Customer';
+      const customerMobile = booking.mobile || booking.user?.mobile || 'N/A';
+      const customerEmail = booking.email || booking.user?.email || 'N/A';
       const transactionId = booking.transactionId || 'N/A';
       const termsAccepted = booking.termsAccepted ? 'Yes' : 'No';
       const today = new Date().toLocaleDateString('en-IN', {
@@ -387,6 +397,14 @@ const AllBookings = () => {
         month: 'short',
         year: 'numeric'
       });
+
+      // Generate seat list HTML
+      let seatListHtml = '';
+      if (selectedSeats && selectedSeats.length > 0) {
+        seatListHtml = selectedSeats.map(s => 
+          `<span style="display:inline-block;background:#f0fdf4;padding:1px 10px;border-radius:12px;margin:2px;font-size:11px;border:1px solid #86efac;">${s.name} (#${s.number})</span>`
+        ).join('');
+      }
 
       const win = window.open('', '_blank', 'width=900,height=700');
       if (win) {
@@ -413,6 +431,9 @@ const AllBookings = () => {
               .info-group .value { font-size: 14px; font-weight: 600; color: #000000; line-height: 1.6; }
               .info-group .value-small { font-size: 12px; font-weight: 400; color: #333333; }
               .info-group .address-line { font-size: 12px; color: #333333; margin-top: 2px; }
+              .seat-section { margin: 15px 0; padding: 12px; background: #f8fafc; border-radius: 6px; border: 1px solid #e2e8f0; }
+              .seat-section .title { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #666666; }
+              .seat-section .seats { margin-top: 5px; display: flex; flex-wrap: wrap; gap: 3px; }
               .invoice-table { width: 100%; border-collapse: collapse; margin: 20px 0 25px; }
               .invoice-table thead { border-top: 2px solid #000000; border-bottom: 2px solid #000000; }
               .invoice-table thead th { padding: 10px 12px; text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #000000; }
@@ -446,10 +467,20 @@ const AllBookings = () => {
                 <div><div class="title">Bill To</div><div class="value">${customerName}</div><div class="value-small">${customerMobile}</div><div class="value-small">${customerEmail}</div></div>
                 <div><div class="title">Cabin Details</div><div class="value">${cabinName}</div><div class="address-line">${cabinAddress}</div><div class="value-small" style="margin-top:4px;">${totalHours} Hours • ${booking.bookingBasis === 'plan' ? 'Plan Booking' : 'Hourly'}</div></div>
               </div>
+              ${selectedSeats.length > 0 ? `
+                <div class="seat-section">
+                  <div class="title">Selected Seats (${seatCount})</div>
+                  <div class="seats">${seatListHtml}</div>
+                  <div style="margin-top:6px;font-size:11px;color:#666666;">Extra Charge: ₹${extraCharge}</div>
+                </div>
+              ` : ''}
               <table class="invoice-table"><thead><tr><th>Description</th><th>Details</th><th>Amount</th></tr></thead>
-                <tbody><tr><td><strong>Cabin Booking</strong></td><td>${cabinName}<br><span style="font-size:11px;color:#666666;">${startDate} · ${startTime} to ${endDate} · ${endTime}</span>${booking.bookingBasis === 'plan' && booking.selectedPlan ? `<br><span style="font-size:11px;color:#666666;">Plan: ${booking.selectedPlan.label || 'Subscription'}</span>` : ''}${transactionId !== 'N/A' ? `<br><span style="font-size:10px;color:#888888;font-family:monospace;">TXN: ${transactionId}</span>` : ''}<br><span style="font-size:10px;color:#888888;">Terms Accepted: ${termsAccepted}</span></td><td>₹${subtotal.toFixed(2)}</td></tr></tbody></table>
+                <tbody>
+                  <tr><td><strong>Cabin Booking</strong></td><td>${cabinName}<br><span style="font-size:11px;color:#666666;">${startDate} · ${startTime} to ${endDate} · ${endTime}</span>${booking.bookingBasis === 'plan' && booking.selectedPlan ? `<br><span style="font-size:11px;color:#666666;">Plan: ${booking.selectedPlan.label || 'Subscription'}</span>` : ''}${transactionId !== 'N/A' ? `<br><span style="font-size:10px;color:#888888;font-family:monospace;">TXN: ${transactionId}</span>` : ''}<br><span style="font-size:10px;color:#888888;">Terms Accepted: ${termsAccepted}</span></td><td>₹${subtotal.toFixed(2)}</td></tr>
+                  ${extraCharge > 0 ? `<tr><td><strong>Seat Charges</strong></td><td>${seatCount} seats × ₹100</td><td>₹${extraCharge.toFixed(2)}</td></tr>` : ''}
+                </tbody></table>
               <div class="status-row"><div class="item"><div class="label">Payment Method</div><div class="value">${paymentMethod}</div></div><div class="item"><div class="label">Payment Status</div><div class="value">${paymentStatus}</div></div><div class="item"><div class="label">Booking Status</div><div class="value">${status}</div></div>${transactionId !== 'N/A' ? `<div class="item"><div class="label">Transaction ID</div><div class="value" style="font-family:monospace;font-size:11px;">${transactionId}</div></div>` : ''}</div>
-              <div class="totals"><div class="totals-box"><div class="totals-row"><span>Subtotal</span><span>₹${subtotal.toFixed(2)}</span></div><div class="totals-row"><span>GST (18%)</span><span>₹${gstAmount.toFixed(2)}</span></div><div class="totals-row total"><span>Total Amount</span><span>₹${amount.toFixed(2)}</span></div></div></div>
+              <div class="totals"><div class="totals-box"><div class="totals-row"><span>Subtotal</span><span>₹${subtotal.toFixed(2)}</span></div>${extraCharge > 0 ? `<div class="totals-row"><span>Seat Charges</span><span>₹${extraCharge.toFixed(2)}</span></div>` : ''}<div class="totals-row"><span>GST (18%)</span><span>₹${gstAmount.toFixed(2)}</span></div><div class="totals-row total"><span>Total Amount</span><span>₹${amount.toFixed(2)}</span></div></div></div>
               <div class="footer"><div class="powered">POWERED BY <span>IRYAX SPACE</span></div><div class="sub">Thank you for choosing ${ownerOrganization}</div><div class="sub" style="margin-top:2px;">This is a system generated invoice</div></div>
             </div>
             <button class="print-btn" onclick="window.print()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M18 9H6"/><path d="M18 13v6H6v-6"/><rect x="8" y="2" width="8" height="4" rx="1"/><rect x="8" y="13" width="8" height="4" rx="1"/></svg>Print / Save PDF</button>
@@ -468,10 +499,10 @@ const AllBookings = () => {
   };
 
   const filteredBookings = bookings.filter((b) => {
-    const userName = b.userId?.name || b.name || "";
-    const userMobile = b.userId?.mobile || b.mobile || "";
-    const cabinName = b.cabinId?.name || "";
-    const ownerName = b.cabinId?.owner?.name || "";
+    const userName = b.user?.name || b.name || "";
+    const userMobile = b.user?.mobile || b.mobile || "";
+    const cabinName = b.cabin?.name || "";
+    const ownerName = b.cabin?.owner?.name || "";
     
     const matchesSearch =
       userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -567,7 +598,7 @@ const AllBookings = () => {
           </div>
         </div>
 
-        {/* Secondary Stats - No emojis */}
+        {/* Secondary Stats */}
         <div className="grid grid-cols-3 gap-3 mb-6">
           <div className="bg-blue-50 rounded-xl border border-blue-200 p-3 text-center">
             <p className="text-[8px] font-bold uppercase tracking-wider text-blue-600">Bookings</p>
@@ -675,7 +706,7 @@ const AllBookings = () => {
                 <p className="text-sm">Try adjusting your filters.</p>
               </div>
             ) : (
-              <table className="w-full min-w-[1200px] text-left">
+              <table className="w-full min-w-[1300px] text-left">
                 <thead>
                   <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
@@ -684,6 +715,7 @@ const AllBookings = () => {
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Owner</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Customer</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Period</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Seats</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Payment</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Amount</th>
@@ -695,8 +727,10 @@ const AllBookings = () => {
                     const statusBadge = getStatusBadge(booking.status);
                     const paymentMethodBadge = getPaymentMethodBadge(booking.paymentMethod);
                     const paymentStatusBadge = getPaymentStatusBadge(booking.paymentStatus);
-                    const ownerName = booking.cabinId?.owner?.name || "N/A";
+                    const ownerName = booking.cabin?.owner?.name || "N/A";
                     const isCashPending = (booking.paymentMethod === 'cash' || booking.paymentMethod === 'counter') && booking.paymentStatus === 'pending';
+                    const seatCount = booking.seatCount || 0;
+                    const seatNames = booking.selectedSeats?.map(s => s.name).join(', ') || 'N/A';
                     
                     return (
                       <tr key={booking._id} className="transition-colors group hover:bg-gray-50/80">
@@ -722,10 +756,10 @@ const AllBookings = () => {
                               <Building2 size={18} className="text-indigo-600" />
                             </div>
                             <div>
-                              <p className="font-semibold text-gray-900 text-sm">{booking.cabinId?.name || "Unknown"}</p>
+                              <p className="font-semibold text-gray-900 text-sm">{booking.cabin?.name || "Unknown"}</p>
                               <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-1">
                                 <MapPin size={12} className="text-indigo-500" />
-                                {booking.cabinId?.address?.split(",")[0] || "No Address"}
+                                {booking.cabin?.address?.split(",")[0] || "No Address"}
                               </div>
                             </div>
                           </div>
@@ -733,7 +767,7 @@ const AllBookings = () => {
                         <td className="p-4">
                           <div>
                             <p className="font-medium text-gray-800 text-sm">{ownerName}</p>
-                            <p className="text-xs text-gray-400">{booking.cabinId?.owner?.mobile || "N/A"}</p>
+                            <p className="text-xs text-gray-400">{booking.cabin?.owner?.mobile || "N/A"}</p>
                           </div>
                         </td>
                         <td className="p-4">
@@ -742,7 +776,7 @@ const AllBookings = () => {
                               <User size={18} className="text-gray-600" />
                             </div>
                             <div>
-                              <p className="font-medium text-gray-800 text-sm">{booking.name || booking.userId?.name || "Unknown"}</p>
+                              <p className="font-medium text-gray-800 text-sm">{booking.name || booking.user?.name || "Unknown"}</p>
                               <p className="text-xs text-gray-400">{booking.mobile || "N/A"}</p>
                             </div>
                           </div>
@@ -751,6 +785,19 @@ const AllBookings = () => {
                           <div className="space-y-1">
                             <p className="text-sm text-gray-900 font-medium">{booking.startDate} · {booking.startTime}</p>
                             <p className="text-sm text-gray-500">{booking.endDate} · {booking.endTime}</p>
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <div>
+                            <span className="flex items-center gap-1 text-sm font-medium text-gray-700">
+                              <Armchair size={14} className="text-indigo-500" />
+                              {seatCount}
+                            </span>
+                            {seatCount > 0 && (
+                              <p className="text-[10px] text-gray-400 truncate max-w-[120px]" title={seatNames}>
+                                {seatNames}
+                              </p>
+                            )}
                           </div>
                         </td>
                         <td className="p-4">
@@ -769,9 +816,14 @@ const AllBookings = () => {
                           </div>
                         </td>
                         <td className="p-4">
-                          <div className="flex items-center gap-0.5 text-indigo-600 font-bold text-sm">
-                            <IndianRupee size={14} />
-                            {booking.totalPrice?.toLocaleString("en-IN") || "0"}
+                          <div>
+                            <span className="flex items-center gap-0.5 text-indigo-600 font-bold text-sm">
+                              <IndianRupee size={14} />
+                              {booking.totalPrice?.toLocaleString("en-IN") || "0"}
+                            </span>
+                            {booking.extraCharge > 0 && (
+                              <p className="text-[9px] text-amber-500">+₹{booking.extraCharge} seat</p>
+                            )}
                           </div>
                         </td>
                         <td className="p-4">
@@ -844,19 +896,19 @@ const AllBookings = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 bg-gray-50 rounded-xl">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Cabin</p>
-                  <p className="mt-1 font-semibold text-gray-800">{viewBooking.cabinId?.name || 'N/A'}</p>
+                  <p className="mt-1 font-semibold text-gray-800">{viewBooking.cabin?.name || 'N/A'}</p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-xl">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Customer</p>
-                  <p className="mt-1 font-semibold text-gray-800">{viewBooking.name || viewBooking.userId?.name || 'N/A'}</p>
+                  <p className="mt-1 font-semibold text-gray-800">{viewBooking.name || viewBooking.user?.name || 'N/A'}</p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-xl">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Mobile</p>
-                  <p className="mt-1 font-semibold text-gray-800">{viewBooking.mobile || viewBooking.userId?.mobile || 'N/A'}</p>
+                  <p className="mt-1 font-semibold text-gray-800">{viewBooking.mobile || viewBooking.user?.mobile || 'N/A'}</p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-xl">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Email</p>
-                  <p className="mt-1 font-semibold text-gray-800 text-sm break-all">{viewBooking.email || viewBooking.userId?.email || 'N/A'}</p>
+                  <p className="mt-1 font-semibold text-gray-800 text-sm break-all">{viewBooking.email || viewBooking.user?.email || 'N/A'}</p>
                 </div>
               </div>
 
@@ -865,6 +917,26 @@ const AllBookings = () => {
                 <p className="mt-1 font-semibold text-gray-800">{viewBooking.startDate} {viewBooking.startTime} - {viewBooking.endDate} {viewBooking.endTime}</p>
                 <p className="text-xs text-gray-500 mt-0.5">{viewBooking.totalHours}h • {viewBooking.bookingBasis === 'plan' ? 'Plan' : 'Hourly'}</p>
               </div>
+
+              {/* Seats Section */}
+              {viewBooking.selectedSeats && viewBooking.selectedSeats.length > 0 && (
+                <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-200">
+                  <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider flex items-center gap-2">
+                    <Armchair size={14} />
+                    Selected Seats ({viewBooking.seatCount})
+                  </p>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {viewBooking.selectedSeats.map((seat) => (
+                      <span key={seat._id} className="px-3 py-1.5 bg-white rounded-lg border border-indigo-200 text-sm font-medium text-gray-700">
+                        {seat.name} <span className="text-gray-400 text-xs">#{seat.number}</span>
+                      </span>
+                    ))}
+                  </div>
+                  {viewBooking.extraCharge > 0 && (
+                    <p className="text-xs text-amber-600 mt-2">Extra Charge: ₹{viewBooking.extraCharge}</p>
+                  )}
+                </div>
+              )}
 
               <div className="grid grid-cols-3 gap-3">
                 <div className="p-3 bg-indigo-50 rounded-xl text-center">
@@ -962,7 +1034,7 @@ const AllBookings = () => {
             <div className="bg-gradient-to-br from-indigo-600 to-purple-600 p-5 text-white rounded-t-3xl flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center"><Edit size={20} className="text-white" /></div>
-                <div><h3 className="text-xl font-bold">Update Status</h3><p className="text-sm text-indigo-200">{selectedBooking.cabinId?.name}</p></div>
+                <div><h3 className="text-xl font-bold">Update Status</h3><p className="text-sm text-indigo-200">{selectedBooking.cabin?.name}</p></div>
               </div>
               <button onClick={() => { setShowStatusModal(false); setSelectedBooking(null); setNewStatus(""); }} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"><X size={20} /></button>
             </div>
@@ -1059,7 +1131,7 @@ const AllBookings = () => {
             <div className="bg-gradient-to-br from-red-500 to-red-600 p-5 text-white rounded-t-3xl flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center"><Trash2 size={20} className="text-white" /></div>
-                <div><h3 className="text-xl font-bold">Delete Booking</h3><p className="text-sm text-red-200">{deleteBooking.cabinId?.name}</p></div>
+                <div><h3 className="text-xl font-bold">Delete Booking</h3><p className="text-sm text-red-200">{deleteBooking.cabin?.name}</p></div>
               </div>
               <button onClick={() => { setShowDeleteModal(false); setDeleteBooking(null); }} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"><X size={20} /></button>
             </div>
@@ -1067,8 +1139,8 @@ const AllBookings = () => {
               <div className="bg-red-50 rounded-xl p-4 space-y-2 text-sm">
                 <p className="font-bold text-red-800">Are you sure you want to delete this booking?</p>
                 <div className="space-y-1 text-gray-600">
-                  <p><span className="text-gray-500">Cabin:</span> {deleteBooking.cabinId?.name || 'N/A'}</p>
-                  <p><span className="text-gray-500">Customer:</span> {deleteBooking.name || deleteBooking.userId?.name || 'N/A'}</p>
+                  <p><span className="text-gray-500">Cabin:</span> {deleteBooking.cabin?.name || 'N/A'}</p>
+                  <p><span className="text-gray-500">Customer:</span> {deleteBooking.name || deleteBooking.user?.name || 'N/A'}</p>
                   <p><span className="text-gray-500">Date:</span> {deleteBooking.startDate} · {deleteBooking.startTime}</p>
                   <p><span className="text-gray-500">Amount:</span> ₹{deleteBooking.totalPrice}</p>
                 </div>

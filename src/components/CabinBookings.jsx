@@ -1,5 +1,6 @@
-// CabinBookings.jsx - Complete with Visiting Timings (Redesigned)
+// CabinBookings.jsx - Complete with THERMAL PDF Download (NO EXTERNAL LIBRARY)
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import UsersNavbar from "./UsersNavbar";
 import AdminNavbar from "./AdminNavbar";
@@ -37,13 +38,21 @@ import {
   History,
   Filter,
   XCircle as XCircleIcon,
-  ArrowUpRight
+  ArrowUpRight,
+  Image,
+  Upload,
+  QrCode,
+  Smartphone,
+  Printer,
+  Armchair
 } from "lucide-react";
 import { toast } from "react-toastify";
 import * as XLSX from 'xlsx';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import "./Dashboard.css";
 
-const API_URL = "http://62.72.29.27:5003";
+const API_URL = "https://spaceapi.iryax.com";
 
 const CabinBookings = () => {
   const [bookings, setBookings] = useState([]);
@@ -57,6 +66,7 @@ const CabinBookings = () => {
     paymentMethod: 'all'
   });
   const isAdmin = localStorage.getItem("admin") !== null;
+  const navigate = useNavigate();
 
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
@@ -68,6 +78,22 @@ const CabinBookings = () => {
   const [newPaymentStatus, setNewPaymentStatus] = useState("");
   const [amountPaid, setAmountPaid] = useState(0);
   const [updatingPayment, setUpdatingPayment] = useState(false);
+
+  const [paymentDetails, setPaymentDetails] = useState({
+    paymentMode: 'cash',
+    cardNumber: '',
+    cardHolderName: '',
+    cardExpiry: '',
+    cardCVV: '',
+    upiId: '',
+    upiApp: '',
+    transactionId: '',
+    paymentDate: '',
+    notes: ''
+  });
+  const [paymentScreenshot, setPaymentScreenshot] = useState(null);
+  const [paymentScreenshotPreview, setPaymentScreenshotPreview] = useState(null);
+  const [uploadingScreenshot, setUploadingScreenshot] = useState(false);
 
   const [showViewModal, setShowViewModal] = useState(false);
   const [viewBooking, setViewBooking] = useState(null);
@@ -133,6 +159,12 @@ const CabinBookings = () => {
     if (method === 'cash' || method === 'counter') {
       return { label: 'Cash', color: 'bg-orange-100 text-orange-700', icon: <Store size={12} className="text-orange-500" /> };
     }
+    if (method === 'upi') {
+      return { label: 'UPI', color: 'bg-purple-100 text-purple-700', icon: <Smartphone size={12} className="text-purple-500" /> };
+    }
+    if (method === 'card') {
+      return { label: 'Card', color: 'bg-blue-100 text-blue-700', icon: <CreditCard size={12} className="text-blue-500" /> };
+    }
     return { label: 'Online', color: 'bg-blue-100 text-blue-700', icon: <CreditCard size={12} className="text-blue-500" /> };
   };
 
@@ -150,7 +182,7 @@ const CabinBookings = () => {
     const completed = bookingsData.filter(b => b.status === 'completed').length;
     const cancelled = bookingsData.filter(b => b.status === 'cancelled').length;
     const pending = bookingsData.filter(b => b.status === 'pending').length;
-    
+
     const totalRevenue = bookingsData.reduce((sum, b) => sum + (b.totalPrice || 0), 0);
     const confirmedRevenue = bookingsData.filter(b => b.status === 'confirmed').reduce((sum, b) => sum + (b.totalPrice || 0), 0);
     const completedRevenue = bookingsData.filter(b => b.status === 'completed').reduce((sum, b) => sum + (b.totalPrice || 0), 0);
@@ -209,15 +241,117 @@ const CabinBookings = () => {
     } finally { setUpdating(false); }
   };
 
+  const handlePaymentScreenshotChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setPaymentScreenshot(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPaymentScreenshotPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleUpdatePaymentStatus = async () => {
     if (!paymentBooking || !newPaymentStatus) { toast.error("Please select a payment status"); return; }
     if (newPaymentStatus === 'paid' && (!amountPaid || amountPaid <= 0)) { toast.error("Please enter amount paid"); return; }
+
+    if (paymentDetails.paymentMode === 'card') {
+      if (!paymentDetails.cardNumber || paymentDetails.cardNumber.replace(/\s/g, '').length < 16) {
+        toast.error("Please enter valid card number");
+        return;
+      }
+      if (!paymentDetails.cardHolderName) {
+        toast.error("Please enter card holder name");
+        return;
+      }
+      if (!paymentDetails.cardExpiry) {
+        toast.error("Please enter card expiry date");
+        return;
+      }
+      if (!paymentDetails.cardCVV || paymentDetails.cardCVV.length < 3) {
+        toast.error("Please enter valid CVV");
+        return;
+      }
+    }
+
+    if (paymentDetails.paymentMode === 'upi') {
+      if (!paymentDetails.upiId) {
+        toast.error("Please enter UPI ID");
+        return;
+      }
+      if (!paymentDetails.upiApp) {
+        toast.error("Please enter UPI app name");
+        return;
+      }
+    }
+
+    if (!paymentDetails.transactionId) {
+      toast.error("Please enter transaction ID");
+      return;
+    }
+
     setUpdatingPayment(true);
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.put(`${API_URL}/api/bookings/bookingpayment-status/${paymentBooking._id}`, { paymentStatus: newPaymentStatus, amountPaid: amountPaid || paymentBooking.totalPrice }, { headers: { Authorization: `Bearer ${token}` } });
+
+      const formData = new FormData();
+      formData.append('paymentStatus', newPaymentStatus);
+      formData.append('amountPaid', amountPaid || paymentBooking.totalPrice);
+      formData.append('paymentMode', paymentDetails.paymentMode);
+      formData.append('transactionId', paymentDetails.transactionId);
+      formData.append('paymentDate', paymentDetails.paymentDate || new Date().toISOString().split('T')[0]);
+      formData.append('notes', paymentDetails.notes || '');
+
+      if (paymentDetails.paymentMode === 'card') {
+        formData.append('cardNumber', paymentDetails.cardNumber);
+        formData.append('cardHolderName', paymentDetails.cardHolderName);
+        formData.append('cardExpiry', paymentDetails.cardExpiry);
+        formData.append('cardCVV', paymentDetails.cardCVV);
+      }
+
+      if (paymentDetails.paymentMode === 'upi') {
+        formData.append('upiId', paymentDetails.upiId);
+        formData.append('upiApp', paymentDetails.upiApp);
+      }
+
+      if (paymentScreenshot) {
+        formData.append('screenshot', paymentScreenshot);
+      }
+
+      const response = await axios.put(
+        `${API_URL}/api/bookings/bookingpayment-status/${paymentBooking._id}`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
+
       if (response.data.success) {
-        const updatedBookings = bookings.map(b => b._id === paymentBooking._id ? { ...b, paymentStatus: newPaymentStatus } : b);
+        const updatedBookings = bookings.map(b =>
+          b._id === paymentBooking._id ? {
+            ...b,
+            paymentStatus: newPaymentStatus,
+            paymentDetails: {
+              mode: paymentDetails.paymentMode,
+              transactionId: paymentDetails.transactionId,
+              paymentDate: paymentDetails.paymentDate,
+              ...(paymentDetails.paymentMode === 'card' && {
+                cardNumber: paymentDetails.cardNumber,
+                cardHolderName: paymentDetails.cardHolderName
+              }),
+              ...(paymentDetails.paymentMode === 'upi' && {
+                upiId: paymentDetails.upiId,
+                upiApp: paymentDetails.upiApp
+              }),
+              screenshot: response.data.screenshotUrl || null
+            }
+          } : b
+        );
         setBookings(updatedBookings);
         calculateStats(updatedBookings);
         toast.success(`Payment status updated to ${newPaymentStatus}`);
@@ -225,12 +359,47 @@ const CabinBookings = () => {
         setPaymentBooking(null);
         setNewPaymentStatus("");
         setAmountPaid(0);
+        setPaymentDetails({
+          paymentMode: 'cash',
+          cardNumber: '',
+          cardHolderName: '',
+          cardExpiry: '',
+          cardCVV: '',
+          upiId: '',
+          upiApp: '',
+          transactionId: '',
+          paymentDate: '',
+          notes: ''
+        });
+        setPaymentScreenshot(null);
+        setPaymentScreenshotPreview(null);
       } else {
         toast.error(response.data.error || "Failed to update payment status");
       }
     } catch (error) {
       toast.error(error.response?.data?.error || "Failed to update payment status");
     } finally { setUpdatingPayment(false); }
+  };
+
+  const resetPaymentModal = () => {
+    setShowPaymentModal(false);
+    setPaymentBooking(null);
+    setNewPaymentStatus("");
+    setAmountPaid(0);
+    setPaymentDetails({
+      paymentMode: 'cash',
+      cardNumber: '',
+      cardHolderName: '',
+      cardExpiry: '',
+      cardCVV: '',
+      upiId: '',
+      upiApp: '',
+      transactionId: '',
+      paymentDate: '',
+      notes: ''
+    });
+    setPaymentScreenshot(null);
+    setPaymentScreenshotPreview(null);
   };
 
   const handleAddTiming = async () => {
@@ -290,12 +459,13 @@ const CabinBookings = () => {
         const paymentStatus = getPaymentStatusBadge(booking.paymentStatus);
         return {
           'S.No': index + 1, 'Booking Type': booking.bookingBasis === 'plan' ? 'Plan Booking' : 'Hourly Booking',
-          'Cabin Name': booking.cabinId?.name || 'Unknown Cabin', 'Address': booking.cabinId?.address || 'No Address',
-          'Customer Name': booking.name || booking.userId?.name || 'Unknown Guest', 'Mobile': booking.mobile || booking.userId?.mobile || 'N/A',
-          'Email': booking.email || booking.userId?.email || 'N/A', 'Start Date': booking.startDate || 'N/A',
+          'Cabin Name': booking.cabin?.name || 'Unknown Cabin', 'Address': booking.cabin?.address || 'No Address',
+          'Customer Name': booking.name || booking.user?.name || 'Unknown Guest', 'Mobile': booking.mobile || booking.user?.mobile || 'N/A',
+          'Email': booking.email || booking.user?.email || 'N/A', 'Start Date': booking.startDate || 'N/A',
           'Start Time': booking.startTime || 'N/A', 'End Date': booking.endDate || 'N/A', 'End Time': booking.endTime || 'N/A',
           'Duration (Hours)': booking.totalHours || 0, 'Subtotal (₹)': booking.subtotal || 0,
           'GST (18%)': booking.gstAmount || 0, 'Total (₹)': booking.totalPrice || 0,
+          'Seats': booking.seatCount || 0, 'Extra Charge': booking.extraCharge || 0,
           'Status': statusBadge.label, 'Payment Method': paymentMethod.label,
           'Payment Status': paymentStatus.label, 'Transaction ID': booking.transactionId || 'N/A',
           'Visiting Days': booking.visitingTimings?.length || 0
@@ -313,104 +483,304 @@ const CabinBookings = () => {
     }
   };
 
-  const downloadInvoice = (booking) => {
-    try {
-      const cabin = booking.cabinId || {};
-      const cabinName = cabin.name || 'Unknown Cabin';
-      const cabinAddress = cabin.address || 'N/A';
-      const amount = booking.totalPrice || 0;
-      const subtotal = booking.subtotal || 0;
-      const gstAmount = booking.gstAmount || 0;
-      const orderId = booking._id.slice(-8).toUpperCase();
-      const startDate = booking.startDate || 'N/A';
-      const startTime = booking.startTime || 'N/A';
-      const endDate = booking.endDate || 'N/A';
-      const endTime = booking.endTime || 'N/A';
-      const status = booking.status?.charAt(0).toUpperCase() + booking.status?.slice(1) || 'N/A';
-      const paymentStatus = booking.paymentStatus === 'paid' ? 'Paid' : 'Pending';
-      const paymentMethod = booking.paymentMethod === 'cash' || booking.paymentMethod === 'counter' ? 'Cash' : 'Online';
-      const totalHours = booking.totalHours || 0;
-      const customerName = booking.name || booking.userId?.name || 'Customer';
-      const customerMobile = booking.mobile || booking.userId?.mobile || 'N/A';
-      const customerEmail = booking.email || booking.userId?.email || 'N/A';
-      const transactionId = booking.transactionId || 'N/A';
-      const today = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-      const visitingTimings = booking.visitingTimings || [];
+  // ============================================================
+  // GENERATE THERMAL RECEIPT HTML
+  // ============================================================
+  const generateReceiptHTML = (booking) => {
+    const cabin = booking.cabin || {};
+    const cabinName = cabin.name || 'Unknown Cabin';
+    const cabinAddress = cabin.address || 'N/A';
+    const amount = booking.totalPrice || 0;
+    const subtotal = booking.subtotal || 0;
+    const gstAmount = booking.gstAmount || 0;
+    const extraCharge = booking.extraCharge || 0;
+    const seatCount = booking.seatCount || 0;
+    const selectedSeats = booking.selectedSeats || [];
+    const orderId = booking._id.slice(-8).toUpperCase();
+    const startDate = booking.startDate || 'N/A';
+    const startTime = booking.startTime || 'N/A';
+    const endDate = booking.endDate || 'N/A';
+    const endTime = booking.endTime || 'N/A';
+    const status = booking.status?.charAt(0).toUpperCase() + booking.status?.slice(1) || 'N/A';
+    const paymentStatus = booking.paymentStatus === 'paid' ? 'PAID' : 'PENDING';
+    const paymentMethod = booking.paymentMethod === 'cash' || booking.paymentMethod === 'counter' ? 'CASH' :
+                         booking.paymentMethod === 'upi' ? 'UPI' :
+                         booking.paymentMethod === 'card' ? 'CARD' : 'ONLINE';
+    const totalHours = booking.totalHours || 0;
+    const customerName = booking.name || booking.user?.name || 'Customer';
+    const customerMobile = booking.mobile || booking.user?.mobile || 'N/A';
+    const customerEmail = booking.email || booking.user?.email || 'N/A';
+    const transactionId = booking.transactionId || 'N/A';
+    const today = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    const visitingTimings = booking.visitingTimings || [];
+    const currentTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 
-      const win = window.open('', '_blank', 'width=900,height=700');
+    const pmtDetails = booking.paymentDetails || {};
+    const upiId = pmtDetails.upiId || 'N/A';
+    const upiApp = pmtDetails.upiApp || 'N/A';
+    const cardNumber = pmtDetails.cardNumber || 'N/A';
+    const cardHolder = pmtDetails.cardHolderName || 'N/A';
+
+    const formatDateFn = (dateStr) => {
+      if (!dateStr) return "N/A";
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    };
+
+    // Generate seat list HTML
+    let seatListHtml = '';
+    if (selectedSeats && selectedSeats.length > 0) {
+      seatListHtml = selectedSeats.map(s => 
+        `<span style="display:inline-block;background:#f0fdf4;padding:1px 8px;border-radius:10px;margin:1px;font-size:8px;border:1px solid #86efac;">${s.name} (#${s.number})</span>`
+      ).join('');
+    }
+
+    return `
+      <div id="receipt-content" style="font-family:'Courier New',Courier,monospace;max-width:280px;margin:0 auto;padding:8px 6px;background:#fff;color:#000;font-size:11px;line-height:1.5;">
+        <div style="text-align:center;border-bottom:1px dashed #000;padding-bottom:6px;margin-bottom:6px;">
+          <h1 style="font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#000;margin:0;">${cabinName.toUpperCase()}</h1>
+          <div style="font-size:9px;color:#444;margin-top:2px;">${cabinAddress}</div>
+          <div style="font-size:9px;color:#666;margin-top:2px;">GST: 18%</div>
+        </div>
+
+        <div style="text-align:center;font-size:13px;font-weight:700;margin:3px 0;">#${orderId}</div>
+        <div style="text-align:center;font-size:9px;color:#666;margin-bottom:4px;">${today}</div>
+
+        <div style="border-top:1px dashed #000;margin:4px 0;"></div>
+
+        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-top:4px;margin-bottom:2px;color:#000;border-bottom:1px solid #000;padding-bottom:2px;">Customer Details</div>
+        <div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">Name</span><span style="font-weight:600;">${customerName}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">Mobile</span><span style="font-weight:600;">${customerMobile}</span></div>
+        ${customerEmail !== 'N/A' ? `<div style="display:flex;justify-content:space-between;padding:1px 0;font-size:9px;"><span style="color:#555;">Email</span><span style="font-weight:600;font-size:8px;">${customerEmail}</span></div>` : ''}
+
+        <div style="border-top:1px dashed #000;margin:4px 0;"></div>
+
+        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-top:4px;margin-bottom:2px;color:#000;border-bottom:1px solid #000;padding-bottom:2px;">Booking Details</div>
+        <div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">Date</span><span style="font-weight:600;">${startDate}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">Time</span><span style="font-weight:600;">${startTime} - ${endTime}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">Duration</span><span style="font-weight:600;">${totalHours} Hrs</span></div>
+        <div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">Type</span><span style="font-weight:600;">${booking.bookingBasis === 'plan' ? 'PLAN' : 'HOURLY'}</span></div>
+        ${booking.bookingBasis === 'plan' && booking.selectedPlan ? `<div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">Plan</span><span style="font-weight:600;">${booking.selectedPlan.label || 'Subscription'}</span></div>` : ''}
+        ${seatCount > 0 ? `<div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">Seats</span><span style="font-weight:600;">${seatCount}</span></div>` : ''}
+
+        ${selectedSeats.length > 0 ? `
+          <div style="margin:3px 0;padding:3px;background:#f8fafc;border-radius:4px;border:1px solid #e2e8f0;">
+            <div style="font-size:8px;color:#555;margin-bottom:2px;">Selected Seats:</div>
+            <div style="display:flex;flex-wrap:wrap;gap:2px;">${seatListHtml}</div>
+          </div>
+        ` : ''}
+
+        <div style="border-top:1px dashed #000;margin:4px 0;"></div>
+
+        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-top:4px;margin-bottom:2px;color:#000;border-bottom:1px solid #000;padding-bottom:2px;">Price Breakdown</div>
+        <div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">Subtotal (${totalHours}h)</span><span style="font-weight:600;">₹${subtotal.toFixed(2)}</span></div>
+        ${extraCharge > 0 ? `<div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">Seat Charges</span><span style="font-weight:600;">₹${extraCharge.toFixed(2)}</span></div>` : ''}
+        <div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">GST (18%)</span><span style="font-weight:600;">₹${gstAmount.toFixed(2)}</span></div>
+        <div style="border-top:2px solid #000;margin:4px 0;"></div>
+
+        <div style="background:#ffffff;padding:6px;margin:4px 0;border:1.5px solid #000;text-align:center;">
+          <div style="font-size:8px;text-transform:uppercase;color:#000;font-weight:700;">Total Amount</div>
+          <div style="font-size:18px;font-weight:700;color:#000;">₹${amount.toFixed(2)}</div>
+        </div>
+
+        <div style="border-top:1px dashed #000;margin:4px 0;"></div>
+        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-top:4px;margin-bottom:2px;color:#000;border-bottom:1px solid #000;padding-bottom:2px;">Payment Details</div>
+        <div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">Method</span><span style="font-weight:600;">${paymentMethod}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">Status</span><span style="font-weight:600;">${paymentStatus}</span></div>
+        ${paymentMethod === 'UPI' && upiId !== 'N/A' ? `<div style="display:flex;justify-content:space-between;padding:1px 0;font-size:9px;"><span style="color:#555;">UPI ID</span><span style="font-weight:600;font-size:8px;">${upiId}</span></div>` : ''}
+        ${paymentMethod === 'UPI' && upiApp !== 'N/A' ? `<div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">UPI App</span><span style="font-weight:600;">${upiApp}</span></div>` : ''}
+        ${paymentMethod === 'CARD' && cardNumber !== 'N/A' ? `<div style="display:flex;justify-content:space-between;padding:1px 0;font-size:9px;"><span style="color:#555;">Card</span><span style="font-weight:600;font-size:8px;">${cardNumber}</span></div>` : ''}
+        ${paymentMethod === 'CARD' && cardHolder !== 'N/A' ? `<div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">Card Holder</span><span style="font-weight:600;">${cardHolder}</span></div>` : ''}
+        ${transactionId !== 'N/A' ? `<div style="display:flex;justify-content:space-between;padding:1px 0;font-size:9px;"><span style="color:#555;">TXN ID</span><span style="font-weight:600;font-size:8px;">${transactionId}</span></div>` : ''}
+
+        <div style="padding:3px 6px;text-align:center;font-weight:700;font-size:10px;letter-spacing:0.5px;margin:3px 0;background:#ffffff;color:#000;border:1.5px solid #000;">
+          ${paymentStatus === 'PAID' ? '✓ PAID' : 'PENDING PAYMENT'}
+        </div>
+
+        ${visitingTimings.length > 0 ? `
+          <div style="border-top:1px dashed #000;margin:4px 0;"></div>
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-top:4px;margin-bottom:2px;color:#000;border-bottom:1px solid #000;padding-bottom:2px;">Visit Log</div>
+          ${visitingTimings.map((t, i) => `
+            <div style="display:flex;justify-content:space-between;padding:1px 0;font-size:8px;">
+              <span>Day ${i+1}: ${formatDateFn(t.date)}</span>
+              <span>${t.checkIn} - ${t.checkOut}</span>
+            </div>
+          `).join('')}
+        ` : ''}
+
+        <div style="text-align:center;font-size:8px;color:#666;border-top:1px dashed #000;padding-top:6px;margin-top:6px;">
+          <div style="font-size:10px;font-weight:700;color:#000;letter-spacing:0.5px;">IRYAX SPACE</div>
+          <div>Thank you for choosing ${cabinName}</div>
+          <div>System Generated Receipt</div>
+          <div>${today} ${currentTime}</div>
+        </div>
+      </div>
+    `;
+  };
+
+  // ============================================================
+  // Shared print/PDF <style> block
+  // ============================================================
+  const getReceiptPageStyles = () => `
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      color-adjust: exact !important;
+    }
+    html, body {
+      background: #ffffff;
+      padding: 4px;
+      margin: 0 auto;
+      max-width: 280px;
+    }
+    @page {
+      size: 80mm auto;
+      margin: 0;
+    }
+    @media print {
+      html, body { padding: 2px; width: 80mm; }
+      .no-print { display: none !important; }
+    }
+    .action-btn {
+      display: block;
+      width: 100%;
+      max-width: 280px;
+      padding: 10px;
+      margin: 8px auto;
+      border: none;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'Courier New', monospace;
+      color: #fff;
+    }
+    .btn-print { background: #1a56db; }
+    .btn-print:hover { background: #1e40af; }
+    .btn-pdf { background: #059669; }
+    .btn-pdf:hover { background: #047857; }
+    .btn-close { background: #6b7280; }
+    .btn-close:hover { background: #4b5563; }
+    .hint {
+      text-align: center;
+      font-size: 10px;
+      color: #6b7280;
+      margin: 4px auto 0;
+      max-width: 280px;
+      font-family: 'Courier New', monospace;
+    }
+  `;
+
+  // ============================================================
+  // THERMAL PRINTER RECEIPT - Print Direct
+  // ============================================================
+  const printReceipt = (booking) => {
+    try {
+      const html = generateReceiptHTML(booking);
+      const win = window.open('', '_blank', 'width=300,height=600');
       if (win) {
         win.document.write(`
           <!DOCTYPE html>
-          <html><head><meta charset="UTF-8"><title>Invoice #${orderId}</title>
-          <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { font-family: 'Times New Roman', 'Georgia', serif; background: #ffffff; padding: 40px; display: flex; justify-content: center; min-height: 100vh; color: #000000; }
-            .invoice-container { max-width: 800px; width: 100%; background: #ffffff; border: 2px solid #000000; padding: 40px 45px; }
-            .invoice-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px double #000000; padding-bottom: 20px; margin-bottom: 25px; }
-            .brand h1 { font-size: 28px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #1a56db; }
-            .brand .gst { font-size: 11px; color: #666666; margin-top: 2px; }
-            .brand .address-line { font-size: 11px; color: #666666; margin-top: 2px; }
-            .invoice-number { text-align: right; }
-            .invoice-number .label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #666666; }
-            .invoice-number .number { font-size: 22px; font-weight: 700; color: #000000; margin-top: 2px; }
-            .invoice-number .date { font-size: 12px; color: #333333; margin-top: 4px; }
-            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid #cccccc; }
-            .info-group .title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #666666; margin-bottom: 6px; }
-            .info-group .value { font-size: 14px; font-weight: 600; color: #000000; line-height: 1.6; }
-            .info-group .value-small { font-size: 12px; font-weight: 400; color: #333333; }
-            .info-group .address-line { font-size: 12px; color: #333333; margin-top: 2px; }
-            .invoice-table { width: 100%; border-collapse: collapse; margin: 20px 0 25px; }
-            .invoice-table thead { border-top: 2px solid #000000; border-bottom: 2px solid #000000; }
-            .invoice-table thead th { padding: 10px 12px; text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #000000; }
-            .invoice-table thead th:last-child { text-align: right; }
-            .invoice-table tbody td { padding: 10px 12px; font-size: 13px; color: #000000; border-bottom: 1px solid #eeeeee; }
-            .invoice-table tbody td:last-child { text-align: right; font-weight: 600; }
-            .totals { margin-top: 20px; padding-top: 20px; border-top: 2px solid #000000; display: flex; justify-content: flex-end; }
-            .totals-box { width: 320px; }
-            .totals-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; color: #333333; }
-            .totals-row.total { font-size: 20px; font-weight: 700; color: #000000; border-top: 2px solid #000000; padding-top: 12px; margin-top: 6px; }
-            .status-row { display: flex; gap: 30px; margin-top: 15px; padding-top: 15px; border-top: 1px solid #cccccc; flex-wrap: wrap; }
-            .status-row .item { font-size: 12px; }
-            .status-row .item .label { color: #666666; text-transform: uppercase; font-weight: 700; font-size: 9px; letter-spacing: 0.5px; }
-            .status-row .item .value { font-weight: 600; color: #000000; margin-top: 2px; }
-            .footer { text-align: center; padding-top: 25px; margin-top: 25px; border-top: 2px solid #000000; }
-            .footer .powered { font-size: 14px; font-weight: 700; letter-spacing: 2px; color: #1a56db; }
-            .footer .sub { font-size: 10px; color: #666666; margin-top: 4px; }
-            .print-btn { position: fixed; bottom: 30px; right: 30px; padding: 14px 28px; background: #000000; color: #ffffff; border: none; border-radius: 4px; font-weight: 600; font-size: 13px; cursor: pointer; box-shadow: 0 4px 20px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 10px; font-family: 'Segoe UI', Arial, sans-serif; letter-spacing: 0.5px; }
-            .print-btn:hover { background: #222222; }
-            @media print { body { background: white; padding: 20px; } .invoice-container { border: 1px solid #000000; padding: 30px; } .print-btn { display: none !important; } }
-            @media (max-width: 640px) { body { padding: 20px; } .invoice-container { padding: 25px; } .invoice-header { flex-direction: column; text-align: center; gap: 15px; } .invoice-number { text-align: center; } .info-grid { grid-template-columns: 1fr; gap: 15px; } .totals { justify-content: center; } .totals-box { width: 100%; } .status-row { flex-direction: column; gap: 8px; } }
-          </style>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Receipt</title>
+            <style>${getReceiptPageStyles()}</style>
           </head>
           <body>
-            <div class="invoice-container">
-              <div class="invoice-header">
-                <div class="brand"><h1>${cabinName.toUpperCase()}</h1><div class="gst">GST: 18%</div><div class="address-line">${cabinAddress}</div></div>
-                <div class="invoice-number"><div class="label">Invoice</div><div class="number">#${orderId}</div><div class="date">${today}</div></div>
-              </div>
-              <div class="info-grid">
-                <div><div class="title">Bill To</div><div class="value">${customerName}</div><div class="value-small">${customerMobile}</div><div class="value-small">${customerEmail}</div></div>
-                <div><div class="title">Cabin Details</div><div class="value">${cabinName}</div><div class="address-line">${cabinAddress}</div><div class="value-small" style="margin-top:4px;">${totalHours} Hours • ${booking.bookingBasis === 'plan' ? 'Plan Booking' : 'Hourly'}</div></div>
-              </div>
-              <table class="invoice-table"><thead><tr><th>Description</th><th>Details</th><th>Amount</th></tr></thead>
-                <tbody><tr><td><strong>Cabin Booking</strong></td><td>${cabinName}<br><span style="font-size:11px;color:#666666;">${startDate} · ${startTime} to ${endDate} · ${endTime}</span>${booking.bookingBasis === 'plan' && booking.selectedPlan ? `<br><span style="font-size:11px;color:#666666;">Plan: ${booking.selectedPlan.label || 'Subscription'}</span>` : ''}${transactionId !== 'N/A' ? `<br><span style="font-size:10px;color:#888888;font-family:monospace;">TXN: ${transactionId}</span>` : ''}${visitingTimings.length > 0 ? `<br><span style="font-size:10px;color:#059669;font-weight:600;">📍 ${visitingTimings.length} Visit${visitingTimings.length > 1 ? 's' : ''} Logged</span>` : ''}</td><td>₹${subtotal.toFixed(2)}</td></tr></tbody></table>
-              ${visitingTimings.length > 0 ? `<div style="margin:15px 0;padding:10px;border:1px solid #cccccc;border-radius:4px;"><p style="font-size:10px;font-weight:700;text-transform:uppercase;color:#666666;margin-bottom:6px;">📋 Visit Log</p>${visitingTimings.map((t, i) => `<div style="font-size:11px;color:#333333;padding:4px 0;border-bottom:1px solid #eeeeee;"><strong>Day ${i+1}:</strong> ${formatDate(t.date)} · ${t.checkIn} - ${t.checkOut}</div>`).join('')}</div>` : ''}
-              <div class="status-row"><div class="item"><div class="label">Payment Method</div><div class="value">${paymentMethod}</div></div><div class="item"><div class="label">Payment Status</div><div class="value">${paymentStatus}</div></div><div class="item"><div class="label">Booking Status</div><div class="value">${status}</div></div>${transactionId !== 'N/A' ? `<div class="item"><div class="label">Transaction ID</div><div class="value" style="font-family:monospace;font-size:11px;">${transactionId}</div></div>` : ''}</div>
-              <div class="totals"><div class="totals-box"><div class="totals-row"><span>Subtotal</span><span>₹${subtotal.toFixed(2)}</span></div><div class="totals-row"><span>GST (18%)</span><span>₹${gstAmount.toFixed(2)}</span></div><div class="totals-row total"><span>Total Amount</span><span>₹${amount.toFixed(2)}</span></div></div></div>
-              <div class="footer"><div class="powered">POWERED BY <span>IRYAX SPACE</span></div><div class="sub">Thank you for choosing ${cabinName}</div><div class="sub" style="margin-top:2px;">This is a system generated invoice</div></div>
-            </div>
-            <button class="print-btn" onclick="window.print()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M18 9H6"/><path d="M18 13v6H6v-6"/><rect x="8" y="2" width="8" height="4" rx="1"/><rect x="8" y="13" width="8" height="4" rx="1"/></svg>Print / Save PDF</button>
-          </body></html>
+            ${html}
+            <button class="action-btn btn-print no-print" onclick="window.print()">🖨️ PRINT RECEIPT</button>
+            <button class="action-btn btn-close no-print" onclick="window.close()">✕ CLOSE</button>
+            <p class="hint no-print">Print dialog me "Background graphics" ON rakhein, warna colors nahi aayenge.</p>
+          </body>
+          </html>
         `);
         win.document.close();
         win.focus();
-        toast.success('Invoice opened! Click Print to save as PDF.');
+        toast.success('Receipt ready! Click Print.');
       } else {
-        toast.error('Please allow popups to download invoice');
+        toast.error('Please allow popups');
       }
     } catch (error) {
-      console.error('Invoice download error:', error);
-      toast.error('Failed to generate invoice');
+      console.error('Receipt error:', error);
+      toast.error('Failed to generate receipt');
+    }
+  };
+
+  // ============================================================
+  // DOWNLOAD AS PDF - DIRECT SILENT DOWNLOAD
+  // ============================================================
+  const downloadPDF = async (booking) => {
+    const toastId = toast.loading('Generating PDF...');
+    let iframe = null;
+    try {
+      const html = generateReceiptHTML(booking);
+
+      iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.top = '0';
+      iframe.style.left = '-99999px';
+      iframe.style.width = '320px';
+      iframe.style.height = '900px';
+      iframe.style.border = 'none';
+      document.body.appendChild(iframe);
+
+      const idoc = iframe.contentDocument || iframe.contentWindow.document;
+      idoc.open();
+      idoc.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            html, body { background: #ffffff; }
+          </style>
+        </head>
+        <body>${html}</body>
+        </html>
+      `);
+      idoc.close();
+
+      await new Promise((resolve) => setTimeout(resolve, 120));
+
+      const target = idoc.querySelector('#receipt-content') || idoc.body;
+
+      const canvas = await html2canvas(target, {
+        scale: 3,
+        backgroundColor: '#ffffff',
+        useCORS: true,
+        logging: false
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+
+      const pageWidthMM = 80;
+      const pageHeightMM = (canvas.height * pageWidthMM) / canvas.width;
+
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: [pageWidthMM, pageHeightMM]
+      });
+
+      pdf.addImage(imgData, 'PNG', 0, 0, pageWidthMM, pageHeightMM);
+
+      const orderId = booking._id.slice(-8).toUpperCase();
+      pdf.save(`receipt_${orderId}.pdf`);
+
+      toast.update(toastId, { render: 'Receipt downloaded as PDF!', type: 'success', isLoading: false, autoClose: 2500 });
+    } catch (error) {
+      console.error('PDF download error:', error);
+      toast.update(toastId, { render: 'Failed to download PDF', type: 'error', isLoading: false, autoClose: 3000 });
+    } finally {
+      if (iframe && iframe.parentNode) {
+        iframe.parentNode.removeChild(iframe);
+      }
     }
   };
 
@@ -421,12 +791,12 @@ const CabinBookings = () => {
   };
 
   const filteredBookings = bookings.filter((b) => {
-    const matchesSearch = b.cabinId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      b.cabinId?.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch = b.cabin?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      b.cabin?.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       b.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      b.userId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      b.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       b.mobile?.includes(searchTerm) ||
-      b.userId?.mobile?.includes(searchTerm);
+      b.user?.mobile?.includes(searchTerm);
     const matchesDate = filterDate ? b.startDate === filterDate : true;
     const matchesStatus = filters.status === 'all' || b.status === filters.status;
     const matchesPaymentStatus = filters.paymentStatus === 'all' || b.paymentStatus === filters.paymentStatus;
@@ -450,7 +820,6 @@ const CabinBookings = () => {
       {isAdmin ? <AdminNavbar /> : <UsersNavbar />}
 
       <div className="pt-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
-        {/* Header */}
         <div className="admin-dash__header">
           <div>
             <h1 className="admin-dash__greeting">
@@ -473,7 +842,6 @@ const CabinBookings = () => {
           </div>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
           <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-4 sm:p-5 text-white shadow-lg shadow-indigo-500/25">
             <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-200">Total Bookings</p>
@@ -533,7 +901,6 @@ const CabinBookings = () => {
           </div>
         </div>
 
-        {/* Secondary Stats */}
         <div className="grid grid-cols-3 gap-3 mb-6">
           <div className="bg-yellow-50 rounded-xl border border-yellow-200 p-3 text-center">
             <p className="text-[10px] font-bold uppercase tracking-wider text-yellow-600">Pending</p>
@@ -549,7 +916,6 @@ const CabinBookings = () => {
           </div>
         </div>
 
-        {/* Table Section */}
         <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
           <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
             <div className="flex items-center gap-3">
@@ -559,7 +925,6 @@ const CabinBookings = () => {
               </span>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              {/* Search Bar */}
               <div className="relative w-full sm:w-56">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
@@ -570,8 +935,7 @@ const CabinBookings = () => {
                   className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                 />
               </div>
-              
-              {/* Filter Toggle Button */}
+
               <button
                 onClick={() => setShowFilters(!showFilters)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${showFilters ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
@@ -601,7 +965,6 @@ const CabinBookings = () => {
             </div>
           </div>
 
-          {/* Filter Panel */}
           {showFilters && (
             <div className="px-4 pt-4 pb-3 border-b border-gray-100" style={{ backgroundColor: '#fafafa' }}>
               <div className="flex flex-wrap items-end gap-3">
@@ -637,6 +1000,8 @@ const CabinBookings = () => {
                     <option value="online">Online</option>
                     <option value="cash">Cash</option>
                     <option value="counter">Counter</option>
+                    <option value="upi">UPI</option>
+                    <option value="card">Card</option>
                   </select>
                 </div>
                 <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-red-600 transition-colors">
@@ -646,7 +1011,6 @@ const CabinBookings = () => {
             </div>
           )}
 
-          {/* Table Container */}
           <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
             {filteredBookings.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-3 py-20 text-gray-400">
@@ -655,7 +1019,7 @@ const CabinBookings = () => {
                 <p className="text-sm">Try adjusting your filters.</p>
               </div>
             ) : (
-              <table className="w-full min-w-[1200px] text-left">
+              <table className="w-full min-w-[1300px] text-left">
                 <thead>
                   <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
@@ -663,6 +1027,7 @@ const CabinBookings = () => {
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Customer</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Period</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Hours</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Seats</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Payment</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Pmt Status</th>
@@ -678,7 +1043,9 @@ const CabinBookings = () => {
                     const paymentStatusBadge = getPaymentStatusBadge(booking.paymentStatus);
                     const visitCount = booking.visitingTimings?.length || 0;
                     const isCashPending = (booking.paymentMethod === 'cash' || booking.paymentMethod === 'counter') && booking.paymentStatus === 'pending';
-                    
+                    const seatCount = booking.seatCount || 0;
+                    const seatNames = booking.selectedSeats?.map(s => s.name).join(', ') || 'N/A';
+
                     return (
                       <tr key={booking._id} className="transition-colors group hover:bg-gray-50/80">
                         <td className="p-4"><span className="text-sm font-semibold text-gray-400">#{idx + 1}</span></td>
@@ -688,10 +1055,10 @@ const CabinBookings = () => {
                               <Building2 size={18} className="text-indigo-600" />
                             </div>
                             <div>
-                              <p className="font-semibold text-gray-900 text-sm">{booking.cabinId?.name || "Unknown"}</p>
+                              <p className="font-semibold text-gray-900 text-sm">{booking.cabin?.name || "Unknown"}</p>
                               <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-1">
                                 <MapPin size={12} className="text-indigo-500" />
-                                {booking.cabinId?.address?.split(",")[0] || "No Address"}
+                                {booking.cabin?.address?.split(",")[0] || "No Address"}
                               </div>
                             </div>
                           </div>
@@ -702,8 +1069,8 @@ const CabinBookings = () => {
                               <User size={18} className="text-gray-600" />
                             </div>
                             <div>
-                              <p className="font-medium text-gray-800 text-sm">{booking.name || booking.userId?.name || "Unknown"}</p>
-                              <p className="text-xs text-gray-400">{booking.mobile || booking.userId?.mobile || "N/A"}</p>
+                              <p className="font-medium text-gray-800 text-sm">{booking.name || booking.user?.name || "Unknown"}</p>
+                              <p className="text-xs text-gray-400">{booking.mobile || booking.user?.mobile || "N/A"}</p>
                             </div>
                           </div>
                         </td>
@@ -715,6 +1082,19 @@ const CabinBookings = () => {
                         </td>
                         <td className="p-4">
                           <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-bold">{booking.totalHours}h</span>
+                        </td>
+                        <td className="p-4">
+                          <div>
+                            <span className="flex items-center gap-1 text-sm font-medium text-gray-700">
+                              <Armchair size={14} className="text-indigo-500" />
+                              {seatCount}
+                            </span>
+                            {seatCount > 0 && (
+                              <p className="text-[10px] text-gray-400 truncate max-w-[120px]" title={seatNames}>
+                                {seatNames}
+                              </p>
+                            )}
+                          </div>
                         </td>
                         <td className="p-4">
                           <span className={`px-3 py-1 text-xs font-bold rounded-full inline-flex items-center gap-1.5 ${statusBadge.color}`}>
@@ -738,9 +1118,14 @@ const CabinBookings = () => {
                           </div>
                         </td>
                         <td className="p-4">
-                          <div className="flex items-center gap-1 text-indigo-600 font-bold text-sm">
-                            <IndianRupee size={14} />
-                            {booking.totalPrice?.toLocaleString("en-IN") || "0"}
+                          <div>
+                            <span className="flex items-center gap-1 text-indigo-600 font-bold text-sm">
+                              <IndianRupee size={14} />
+                              {booking.totalPrice?.toLocaleString("en-IN") || "0"}
+                            </span>
+                            {booking.extraCharge > 0 && (
+                              <p className="text-[9px] text-amber-500">+₹{booking.extraCharge} seat</p>
+                            )}
                           </div>
                         </td>
                         <td className="p-4">
@@ -748,8 +1133,11 @@ const CabinBookings = () => {
                             <button onClick={() => handleViewBooking(booking)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors whitespace-nowrap">
                               <Eye size={13} /> View
                             </button>
-                            <button onClick={() => downloadInvoice(booking)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors whitespace-nowrap">
-                              <FileDown size={13} /> Invoice
+                            <button onClick={() => printReceipt(booking)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors whitespace-nowrap">
+                              <Printer size={13} /> Print
+                            </button>
+                            <button onClick={() => downloadPDF(booking)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors whitespace-nowrap">
+                              <FileDown size={13} /> PDF
                             </button>
                             <button onClick={() => { setTimingBooking(booking); setNewTiming({ date: "", checkIn: "", checkOut: "" }); setShowTimingModal(true); }} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors whitespace-nowrap">
                               <Plus size={13} /> Timing
@@ -758,7 +1146,26 @@ const CabinBookings = () => {
                               <Edit size={13} /> Status
                             </button>
                             {isCashPending && (
-                              <button onClick={() => { setPaymentBooking(booking); setNewPaymentStatus(booking.paymentStatus || 'pending'); setAmountPaid(booking.totalPrice || 0); setShowPaymentModal(true); }} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-yellow-50 text-yellow-700 hover:bg-yellow-100 transition-colors whitespace-nowrap">
+                              <button onClick={() => {
+                                setPaymentBooking(booking);
+                                setNewPaymentStatus(booking.paymentStatus || 'pending');
+                                setAmountPaid(booking.totalPrice || 0);
+                                setPaymentDetails({
+                                  paymentMode: 'cash',
+                                  cardNumber: '',
+                                  cardHolderName: '',
+                                  cardExpiry: '',
+                                  cardCVV: '',
+                                  upiId: '',
+                                  upiApp: '',
+                                  transactionId: '',
+                                  paymentDate: new Date().toISOString().split('T')[0],
+                                  notes: ''
+                                });
+                                setPaymentScreenshot(null);
+                                setPaymentScreenshotPreview(null);
+                                setShowPaymentModal(true);
+                              }} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-yellow-50 text-yellow-700 hover:bg-yellow-100 transition-colors whitespace-nowrap">
                                 <CreditCard size={13} /> Payment
                               </button>
                             )}
@@ -772,7 +1179,6 @@ const CabinBookings = () => {
             )}
           </div>
 
-          {/* Footer with stats */}
           {!loading && filteredBookings.length > 0 && (
             <div className="px-4 py-3 border-t border-gray-100 rounded-b-2xl flex flex-wrap items-center justify-between gap-2" style={{ backgroundColor: '#fafafa' }}>
               <span className="text-xs text-gray-500">
@@ -789,9 +1195,7 @@ const CabinBookings = () => {
         </div>
       </div>
 
-      {/* ====================== */}
       {/* VIEW BOOKING MODAL */}
-      {/* ====================== */}
       {showViewModal && viewBooking && (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setShowViewModal(false); }}>
           <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
@@ -808,19 +1212,19 @@ const CabinBookings = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 bg-gray-50 rounded-xl">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Cabin</p>
-                  <p className="mt-1 font-semibold text-gray-800">{viewBooking.cabinId?.name || 'N/A'}</p>
+                  <p className="mt-1 font-semibold text-gray-800">{viewBooking.cabin?.name || 'N/A'}</p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-xl">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Customer</p>
-                  <p className="mt-1 font-semibold text-gray-800">{viewBooking.name || viewBooking.userId?.name || 'N/A'}</p>
+                  <p className="mt-1 font-semibold text-gray-800">{viewBooking.name || viewBooking.user?.name || 'N/A'}</p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-xl">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Mobile</p>
-                  <p className="mt-1 font-semibold text-gray-800">{viewBooking.mobile || viewBooking.userId?.mobile || 'N/A'}</p>
+                  <p className="mt-1 font-semibold text-gray-800">{viewBooking.mobile || viewBooking.user?.mobile || 'N/A'}</p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-xl">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Email</p>
-                  <p className="mt-1 font-semibold text-gray-800 text-sm break-all">{viewBooking.email || viewBooking.userId?.email || 'N/A'}</p>
+                  <p className="mt-1 font-semibold text-gray-800 text-sm break-all">{viewBooking.email || viewBooking.user?.email || 'N/A'}</p>
                 </div>
               </div>
 
@@ -829,6 +1233,26 @@ const CabinBookings = () => {
                 <p className="mt-1 font-semibold text-gray-800">{viewBooking.startDate} {viewBooking.startTime} - {viewBooking.endDate} {viewBooking.endTime}</p>
                 <p className="text-xs text-gray-500 mt-0.5">{viewBooking.totalHours}h • {viewBooking.bookingBasis === 'plan' ? 'Plan' : 'Hourly'}</p>
               </div>
+
+              {/* Seats Section */}
+              {viewBooking.selectedSeats && viewBooking.selectedSeats.length > 0 && (
+                <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-200">
+                  <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider flex items-center gap-2">
+                    <Armchair size={14} />
+                    Selected Seats ({viewBooking.seatCount})
+                  </p>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {viewBooking.selectedSeats.map((seat) => (
+                      <span key={seat._id} className="px-3 py-1.5 bg-white rounded-lg border border-indigo-200 text-sm font-medium text-gray-700">
+                        {seat.name} <span className="text-gray-400 text-xs">#{seat.number}</span>
+                      </span>
+                    ))}
+                  </div>
+                  {viewBooking.extraCharge > 0 && (
+                    <p className="text-xs text-amber-600 mt-2">Extra Charge: ₹{viewBooking.extraCharge}</p>
+                  )}
+                </div>
+              )}
 
               <div className="grid grid-cols-3 gap-3">
                 <div className="p-3 bg-indigo-50 rounded-xl text-center">
@@ -902,24 +1326,34 @@ const CabinBookings = () => {
                 </div>
               )}
 
-              <button onClick={() => { setShowViewModal(false); downloadInvoice(viewBooking); }} className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-sm active:scale-[0.98] flex items-center justify-center gap-2">
-                <FileDown size={16} /> Download Invoice
-              </button>
+              {viewBooking.paymentDetails?.screenshot && (
+                <div className="p-3 bg-gray-50 rounded-xl">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Payment Screenshot</p>
+                  <img src={`${API_URL}${viewBooking.paymentDetails.screenshot}`} alt="Payment Screenshot" className="mt-2 max-h-48 rounded-lg border border-gray-200" />
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <button onClick={() => { setShowViewModal(false); printReceipt(viewBooking); }} className="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition shadow-sm active:scale-[0.98] flex items-center justify-center gap-2">
+                  <Printer size={16} /> Print
+                </button>
+                <button onClick={() => { setShowViewModal(false); downloadPDF(viewBooking); }} className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition shadow-sm active:scale-[0.98] flex items-center justify-center gap-2">
+                  <FileDown size={16} /> PDF
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* ====================== */}
       {/* STATUS UPDATE MODAL */}
-      {/* ====================== */}
       {showStatusModal && selectedBooking && (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) { setShowStatusModal(false); setSelectedBooking(null); setNewStatus(""); } }}>
           <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden">
             <div className="bg-gradient-to-br from-indigo-600 to-purple-600 p-5 text-white rounded-t-3xl flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center"><Edit size={20} className="text-white" /></div>
-                <div><h3 className="text-xl font-bold">Update Status</h3><p className="text-sm text-indigo-200">{selectedBooking.cabinId?.name}</p></div>
+                <div><h3 className="text-xl font-bold">Update Status</h3><p className="text-sm text-indigo-200">{selectedBooking.cabin?.name}</p></div>
               </div>
               <button onClick={() => { setShowStatusModal(false); setSelectedBooking(null); setNewStatus(""); }} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"><X size={20} /></button>
             </div>
@@ -959,68 +1393,180 @@ const CabinBookings = () => {
         </div>
       )}
 
-      {/* ====================== */}
       {/* PAYMENT STATUS UPDATE MODAL */}
-      {/* ====================== */}
       {showPaymentModal && paymentBooking && (
-        <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) { setShowPaymentModal(false); setPaymentBooking(null); setNewPaymentStatus(""); setAmountPaid(0); } }}>
-          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden">
-            <div className="bg-gradient-to-br from-amber-500 to-amber-600 p-5 text-white rounded-t-3xl flex justify-between items-center">
+        <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) resetPaymentModal(); }}>
+          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-y-auto max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+            <div className="sticky top-0 bg-gradient-to-br from-amber-500 to-amber-600 p-5 text-white rounded-t-3xl flex justify-between items-center z-10">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center"><CreditCard size={20} className="text-white" /></div>
                 <div><h3 className="text-xl font-bold">Update Payment</h3><p className="text-sm text-amber-100">₹{paymentBooking.totalPrice}</p></div>
               </div>
-              <button onClick={() => { setShowPaymentModal(false); setPaymentBooking(null); setNewPaymentStatus(""); setAmountPaid(0); }} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"><X size={20} /></button>
+              <button onClick={resetPaymentModal} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"><X size={20} /></button>
             </div>
             <div className="p-5 space-y-4">
-              <div className="bg-gray-50 rounded-xl p-4 space-y-2">
+              <div className="bg-gray-50 rounded-xl p-4 space-y-2 text-sm">
+                <div className="flex justify-between"><span className="text-gray-500">Customer</span><span className="font-semibold">{paymentBooking.name || 'N/A'}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Cabin</span><span className="font-semibold">{paymentBooking.cabin?.name || 'N/A'}</span></div>
                 <div className="flex justify-between"><span className="text-gray-500">Current Status</span><span className={`px-3 py-1 text-xs font-bold rounded-full ${getPaymentStatusBadge(paymentBooking.paymentStatus).color}`}>{getPaymentStatusBadge(paymentBooking.paymentStatus).label}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Method</span><span className={`px-3 py-1 text-xs font-bold rounded-full ${getPaymentMethodBadge(paymentBooking.paymentMethod).color}`}>{getPaymentMethodBadge(paymentBooking.paymentMethod).label}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Total</span><span className="font-bold text-gray-800">₹{paymentBooking.totalPrice}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Total Amount</span><span className="font-bold text-gray-800">₹{paymentBooking.totalPrice}</span></div>
               </div>
+
               <div>
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1.5">Amount Paid (₹)</label>
-                <input type="number" value={amountPaid} onChange={(e) => setAmountPaid(Number(e.target.value))} disabled={newPaymentStatus !== 'paid'} placeholder="Enter amount" className="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-              </div>
-              <div>
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1.5">New Status</label>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1.5">New Payment Status</label>
                 <div className="grid grid-cols-2 gap-2">
                   {['pending','paid','failed','refunded'].map(s => {
                     const badge = getPaymentStatusBadge(s);
                     const isSelected = newPaymentStatus === s;
                     return (
-                      <button key={s} onClick={() => { setNewPaymentStatus(s); if(s === 'paid') setAmountPaid(paymentBooking.totalPrice); else setAmountPaid(0); }} className={`py-2.5 rounded-xl text-xs font-bold border transition ${isSelected ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-200 hover:bg-gray-50 text-gray-700'}`}>
+                      <button key={s} onClick={() => { setNewPaymentStatus(s); if(s === 'paid') setAmountPaid(paymentBooking.totalPrice); else setAmountPaid(0); }} className={`py-2.5 rounded-xl text-xs font-bold border transition ${isSelected ? 'border-amber-500 bg-amber-50 text-amber-700' : 'border-gray-200 hover:bg-gray-50 text-gray-700'}`}>
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${badge.color}`}>{badge.label}</span>
                       </button>
                     );
                   })}
                 </div>
               </div>
+
+              {newPaymentStatus === 'paid' && (
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1.5">Amount Paid (₹)</label>
+                  <input type="number" value={amountPaid} onChange={(e) => setAmountPaid(Number(e.target.value))} placeholder="Enter amount" className="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
+                </div>
+              )}
+
+              {newPaymentStatus === 'paid' && (
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1.5">Payment Mode</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button onClick={() => setPaymentDetails({...paymentDetails, paymentMode: 'cash'})} className={`py-2.5 rounded-xl text-xs font-bold border transition ${paymentDetails.paymentMode === 'cash' ? 'border-orange-500 bg-orange-50 text-orange-700' : 'border-gray-200 hover:bg-gray-50 text-gray-700'}`}>
+                      <Store size={16} className="mx-auto mb-1" /> Cash
+                    </button>
+                    <button onClick={() => setPaymentDetails({...paymentDetails, paymentMode: 'upi'})} className={`py-2.5 rounded-xl text-xs font-bold border transition ${paymentDetails.paymentMode === 'upi' ? 'border-purple-500 bg-purple-50 text-purple-700' : 'border-gray-200 hover:bg-gray-50 text-gray-700'}`}>
+                      <Smartphone size={16} className="mx-auto mb-1" /> UPI
+                    </button>
+                    <button onClick={() => setPaymentDetails({...paymentDetails, paymentMode: 'card'})} className={`py-2.5 rounded-xl text-xs font-bold border transition ${paymentDetails.paymentMode === 'card' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 hover:bg-gray-50 text-gray-700'}`}>
+                      <CreditCard size={16} className="mx-auto mb-1" /> Card
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {paymentDetails.paymentMode === 'card' && newPaymentStatus === 'paid' && (
+                <div className="space-y-3 bg-gray-50 p-4 rounded-xl border border-blue-200">
+                  <p className="text-xs font-bold text-blue-600 uppercase tracking-wider flex items-center gap-2">
+                    <CreditCard size={14} /> Card Details
+                  </p>
+                  <div>
+                    <label className="text-xs font-medium text-gray-600 block mb-1">Card Number</label>
+                    <input type="text" placeholder="1234 5678 9012 3456" value={paymentDetails.cardNumber} onChange={(e) => setPaymentDetails({...paymentDetails, cardNumber: e.target.value})} className="w-full p-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-600 block mb-1">Card Holder Name</label>
+                    <input type="text" placeholder="John Doe" value={paymentDetails.cardHolderName} onChange={(e) => setPaymentDetails({...paymentDetails, cardHolderName: e.target.value})} className="w-full p-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-medium text-gray-600 block mb-1">Expiry Date</label>
+                      <input type="text" placeholder="MM/YY" value={paymentDetails.cardExpiry} onChange={(e) => setPaymentDetails({...paymentDetails, cardExpiry: e.target.value})} className="w-full p-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-600 block mb-1">CVV</label>
+                      <input type="password" placeholder="***" maxLength="4" value={paymentDetails.cardCVV} onChange={(e) => setPaymentDetails({...paymentDetails, cardCVV: e.target.value})} className="w-full p-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {paymentDetails.paymentMode === 'upi' && newPaymentStatus === 'paid' && (
+                <div className="space-y-3 bg-purple-50 p-4 rounded-xl border border-purple-200">
+                  <p className="text-xs font-bold text-purple-600 uppercase tracking-wider flex items-center gap-2">
+                    <Smartphone size={14} /> UPI Details
+                  </p>
+                  <div>
+                    <label className="text-xs font-medium text-gray-600 block mb-1">UPI ID</label>
+                    <input type="text" placeholder="example@upi" value={paymentDetails.upiId} onChange={(e) => setPaymentDetails({...paymentDetails, upiId: e.target.value})} className="w-full p-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-600 block mb-1">UPI App</label>
+                    <select value={paymentDetails.upiApp} onChange={(e) => setPaymentDetails({...paymentDetails, upiApp: e.target.value})} className="w-full p-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                      <option value="">Select UPI App</option>
+                      <option value="Google Pay">Google Pay</option>
+                      <option value="PhonePe">PhonePe</option>
+                      <option value="Paytm">Paytm</option>
+                      <option value="Amazon Pay">Amazon Pay</option>
+                      <option value="BHIM">BHIM</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {newPaymentStatus === 'paid' && (
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1.5">Transaction ID</label>
+                    <input type="text" placeholder="TXN123456789" value={paymentDetails.transactionId} onChange={(e) => setPaymentDetails({...paymentDetails, transactionId: e.target.value})} className="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1.5">Payment Date</label>
+                    <input type="date" value={paymentDetails.paymentDate} onChange={(e) => setPaymentDetails({...paymentDetails, paymentDate: e.target.value})} className="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
+                  </div>
+                </div>
+              )}
+
+              {newPaymentStatus === 'paid' && paymentDetails.paymentMode !== 'cash' && (
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1.5">Payment Screenshot</label>
+                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-4 text-center hover:border-amber-400 transition cursor-pointer relative" onClick={() => document.getElementById('screenshotUpload').click()}>
+                    <input id="screenshotUpload" type="file" accept="image/*" className="hidden" onChange={handlePaymentScreenshotChange} />
+                    {paymentScreenshotPreview ? (
+                      <div className="relative">
+                        <img src={paymentScreenshotPreview} alt="Screenshot Preview" className="max-h-48 mx-auto rounded-lg" />
+                        <button onClick={(e) => { e.stopPropagation(); setPaymentScreenshot(null); setPaymentScreenshotPreview(null); }} className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition">
+                          <X size={16} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="py-4">
+                        <Upload size={32} className="mx-auto text-gray-400 mb-2" />
+                        <p className="text-sm text-gray-500">Click to upload screenshot</p>
+                        <p className="text-xs text-gray-400">PNG, JPG up to 5MB</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {newPaymentStatus === 'paid' && (
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1.5">Notes (Optional)</label>
+                  <textarea rows="2" placeholder="Any additional notes about this payment..." value={paymentDetails.notes} onChange={(e) => setPaymentDetails({...paymentDetails, notes: e.target.value})} className="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none" />
+                </div>
+              )}
+
               <div className="bg-amber-50 rounded-xl p-3 text-xs text-amber-700 flex items-start gap-2 border border-amber-200">
                 <AlertCircle size={16} className="shrink-0 mt-0.5" />
-                <span>Marking as paid will add the amount to the owner's wallet.</span>
+                <span>Marking as paid will add the amount to the owner's wallet. All payment details will be securely stored.</span>
               </div>
               <div className="flex gap-3">
                 <button onClick={handleUpdatePaymentStatus} disabled={updatingPayment || !newPaymentStatus || (newPaymentStatus === 'paid' && (!amountPaid || amountPaid <= 0))} className={`flex-1 py-3 rounded-xl text-white font-bold transition ${(updatingPayment || !newPaymentStatus || (newPaymentStatus === 'paid' && (!amountPaid || amountPaid <= 0))) ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:shadow-lg'}`}>
                   {updatingPayment ? 'Updating...' : 'Update Payment'}
                 </button>
-                <button onClick={() => { setShowPaymentModal(false); setPaymentBooking(null); setNewPaymentStatus(""); setAmountPaid(0); }} className="px-5 py-3 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition">Cancel</button>
+                <button onClick={resetPaymentModal} className="px-5 py-3 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition">Cancel</button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* ====================== */}
       {/* VISITING TIMINGS MODAL */}
-      {/* ====================== */}
       {showTimingModal && timingBooking && (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) { setShowTimingModal(false); setTimingBooking(null); setNewTiming({ date: "", checkIn: "", checkOut: "" }); } }}>
           <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden">
             <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-5 text-white rounded-t-3xl flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center"><Plus size={20} className="text-white" /></div>
-                <div><h3 className="text-xl font-bold">Add Visit Timing</h3><p className="text-sm text-blue-200">{timingBooking.cabinId?.name}</p></div>
+                <div><h3 className="text-xl font-bold">Add Visit Timing</h3><p className="text-sm text-blue-200">{timingBooking.cabin?.name}</p></div>
               </div>
               <button onClick={() => { setShowTimingModal(false); setTimingBooking(null); setNewTiming({ date: "", checkIn: "", checkOut: "" }); }} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"><X size={20} /></button>
             </div>

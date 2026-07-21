@@ -1,4 +1,4 @@
-// PromotionalPage.jsx - Complete with IRYAX SPACE Custom Images
+// PromotionalPage.jsx - Complete with IRYAX SPACE Custom Images + Send Query API Integration
 import React, { useEffect, useState, createContext, useContext, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -110,9 +110,10 @@ import {
   HeartPulse as HeartPulseIcon
 } from "lucide-react";
 import logo from "../assets/logo.png";
+import iryaxHero from "../assets/iryaxspace.png";
 
 // ─── IRYAX SPACE CUSTOM IMAGES ───
-const IRYAX_HERO_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1920";
+const IRYAX_HERO_IMAGE = iryaxHero;
 
 const IRYAX_SPACE_IMAGES = [
   "https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&q=80&w=800&h=600",
@@ -266,6 +267,16 @@ const styles = `
     object-position: center;
   }
 
+  /* Hero Overlay - Gray thin layer for better text visibility */
+  .hero-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+
   .hero-content {
     position: relative;
     z-index: 10;
@@ -301,7 +312,7 @@ const styles = `
     line-height: 1.15 !important;
     color: #ffffff !important;
     margin-bottom: 8px;
-    text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+    text-shadow: 0 2px 20px rgba(0, 0, 0, 0.4);
   }
 
   .hero-title-gradient {
@@ -320,7 +331,7 @@ const styles = `
     font-weight: 200 !important;
     line-height: 1.3 !important;
     color: #ffffff !important;
-    text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+    text-shadow: 0 2px 20px rgba(0, 0, 0, 0.4);
   }
 
   .hero-desc {
@@ -330,7 +341,7 @@ const styles = `
     max-width: 500px;
     margin-top: 12px;
     font-weight: 300;
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
   }
 
   .hero-buttons {
@@ -397,76 +408,339 @@ const styles = `
     opacity: 0.7;
   }
 
-  /* NAVBAR STYLES */
-  .navbar-link {
+  /* ─── NAVBAR STYLES ─── */
+  .navbar-custom {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 50 !important;
+    height: 72px !important;
+    padding: 0 24px !important;
+    background: transparent !important;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  .navbar-custom .navbar-inner {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 72px;
+  }
+
+  .navbar-custom .navbar-link {
     font-size: 0.9rem !important;
-    font-weight: 500 !important;
+    font-weight: 700 !important;
     padding: 8px 16px !important;
-    color: #1a2a4a !important;
+    color: #ffffff !important;
     cursor: pointer;
     transition: all 0.3s;
     border-radius: 9999px;
     background: none;
     border: none;
     font-family: inherit;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    letter-spacing: 0.3px;
   }
 
-  .navbar-link:hover {
-    color: #0a1628 !important;
-    background: rgba(255,255,255,0.2) !important;
+  .navbar-custom .navbar-link:hover {
+    color: #93c5fd !important;
+    background: rgba(255, 255, 255, 0.15) !important;
   }
 
-  .navbar-brand {
+  .navbar-custom .navbar-brand {
     font-size: 1.2rem !important;
     font-weight: 700 !important;
-    color: #0a1628 !important;
+    color: #ffffff !important;
     display: flex;
     align-items: center;
     gap: 10px;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   }
 
-  .navbar-brand .brand-icon {
+  .navbar-custom .navbar-brand .brand-icon {
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #0a1628, #1a3a6b);
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(8px);
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
     flex-shrink: 0;
+    border: 1px solid rgba(255, 255, 255, 0.2);
   }
 
-  .navbar-btn {
+  .navbar-custom .navbar-btn {
     font-size: 0.85rem !important;
-    font-weight: 600 !important;
+    font-weight: 700 !important;
     padding: 8px 20px !important;
+    background: rgba(255, 255, 255, 0.15) !important;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff !important;
+    border-radius: 9999px;
+    transition: all 0.3s;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
 
-  .navbar-signin {
+  .navbar-custom .navbar-btn:hover {
+    background: rgba(255, 255, 255, 0.25) !important;
+    transform: scale(1.05);
+  }
+
+  .navbar-custom .navbar-signin {
     font-size: 0.85rem !important;
-    font-weight: 500 !important;
-    color: #1a2a4a !important;
+    font-weight: 700 !important;
+    color: #ffffff !important;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    background: none;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: all 0.3s;
   }
 
-  .navbar-signin:hover {
-    color: #0a1628 !important;
+  .navbar-custom .navbar-signin:hover {
+    color: #93c5fd !important;
+    background: rgba(255, 255, 255, 0.1);
   }
 
-  .navbar-logo {
+  .navbar-custom .navbar-logo {
     width: 48px !important;
     height: 48px !important;
-    border-width: 3px !important;
+    border: 2px solid rgba(255, 255, 255, 0.3) !important;
+    border-radius: 50% !important;
     padding: 4px !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    overflow: hidden !important;
+    flex-shrink: 0 !important;
+    transition: all 0.3s !important;
   }
 
-  .navbar-logo img {
+  .navbar-custom .navbar-logo img {
     width: 100% !important;
     height: 100% !important;
     object-fit: contain !important;
   }
 
-  /* ─── EQUAL SIZE GLASSMORPHISM CARDS ─── */
+  .navbar-custom .navbar-logo:hover {
+    transform: scale(1.1);
+    border-color: rgba(255, 255, 255, 0.5) !important;
+  }
+
+  .navbar-custom .navbar-menu-btn {
+    color: #ffffff !important;
+    padding: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .navbar-custom .navbar-menu-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  /* Scrolled state */
+  .navbar-scrolled {
+    background: rgba(10, 22, 40, 0.92) !important;
+    backdrop-filter: blur(16px) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.15) !important;
+    height: 72px !important;
+  }
+
+  .navbar-scrolled .navbar-link {
+    color: #e2e8f0 !important;
+    text-shadow: none !important;
+  }
+
+  .navbar-scrolled .navbar-link:hover {
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+  }
+
+  .navbar-scrolled .navbar-brand {
+    color: #ffffff !important;
+    text-shadow: none !important;
+  }
+
+  .navbar-scrolled .navbar-brand .brand-icon {
+    background: linear-gradient(135deg, #1a3a6b, #0a1628);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .navbar-scrolled .navbar-btn {
+    background: linear-gradient(135deg, #1a3a6b, #0a1628) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #ffffff !important;
+  }
+
+  .navbar-scrolled .navbar-btn:hover {
+    background: linear-gradient(135deg, #2a4a7b, #1a2a4a) !important;
+  }
+
+  .navbar-scrolled .navbar-signin {
+    color: #cbd5e1 !important;
+    text-shadow: none !important;
+  }
+
+  .navbar-scrolled .navbar-signin:hover {
+    color: #ffffff !important;
+  }
+
+  .navbar-scrolled .navbar-logo {
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+  }
+
+  .navbar-scrolled .navbar-menu-btn {
+    color: #e2e8f0 !important;
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.05);
+  }
+
+  .navbar-scrolled .navbar-menu-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff !important;
+  }
+
+  /* Hide Start Now button on mobile */
+  .navbar-btn-mobile-hide {
+    display: flex !important;
+  }
+
+  @media (max-width: 640px) {
+    .navbar-btn-mobile-hide {
+      display: none !important;
+    }
+    .navbar-custom {
+      padding: 0 16px !important;
+      height: 64px !important;
+    }
+    .navbar-custom .navbar-inner {
+      height: 64px !important;
+    }
+    .navbar-scrolled {
+      height: 64px !important;
+    }
+    .hero-title {
+      font-size: 2rem !important;
+    }
+    .hero-subtitle {
+      font-size: 1.2rem !important;
+    }
+    .hero-desc {
+      font-size: 0.85rem !important;
+    }
+    .hero-text-box {
+      max-width: 100%;
+    }
+    .btn-primary, .btn-secondary {
+      padding: 10px 20px !important;
+      font-size: 0.85rem !important;
+    }
+    .navbar-custom .navbar-link {
+      font-size: 0.75rem !important;
+      padding: 6px 12px !important;
+    }
+    .navbar-custom .navbar-brand {
+      font-size: 0.9rem !important;
+    }
+    .navbar-custom .navbar-brand .brand-icon {
+      width: 28px;
+      height: 28px;
+    }
+    .navbar-custom .navbar-brand .brand-icon svg {
+      width: 14px !important;
+      height: 14px !important;
+    }
+    .navbar-custom .navbar-btn {
+      font-size: 0.7rem !important;
+      padding: 6px 14px !important;
+    }
+    .navbar-custom .navbar-signin {
+      font-size: 0.7rem !important;
+    }
+    .navbar-custom .navbar-logo {
+      width: 38px !important;
+      height: 38px !important;
+    }
+    .glass-card {
+      padding: 20px 16px;
+      border-radius: 20px !important;
+      min-height: 200px;
+    }
+    .glass-card .icon-wrapper {
+      width: 48px;
+      height: 48px;
+    }
+    .glass-card h3 {
+      font-size: 1rem;
+    }
+    .glass-card p {
+      font-size: 0.8rem;
+    }
+    .feature-card {
+      padding: 24px 20px;
+    }
+    .location-grid-images .img-main {
+      height: 180px;
+    }
+    .location-grid-images .img-side {
+      height: 86px;
+    }
+    .location-list-item {
+      padding: 12px 16px;
+    }
+    .modal-content {
+      padding: 16px;
+      border-radius: 20px;
+      max-height: 95vh;
+    }
+    .modal-close {
+      width: 32px;
+      height: 32px;
+    }
+    .cabin-card-modal .cabin-image {
+      height: 120px;
+    }
+    .modal-content {
+      max-width: 100%;
+    }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(40px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .animate-fadeIn {
+    animation: fadeIn 0.3s ease-out;
+  }
+  .animate-slideUp {
+    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Glass Cards */
   .glass-card {
     border-radius: 28px !important;
     padding: 32px 28px;
@@ -658,7 +932,6 @@ const styles = `
     flex-shrink: 0;
   }
 
-  /* Specialties Gradient */
   .specialties-gradient-heading {
     background: linear-gradient(135deg, #0a1628, #1a3a6b, #0a1628);
     background-size: 200% 200%;
@@ -759,7 +1032,7 @@ const styles = `
     transform: scale(1.05);
   }
 
-  /* ─── CABINS MODAL STYLES ─── */
+  /* Modal Styles */
   .modal-overlay {
     position: fixed;
     inset: 0;
@@ -772,11 +1045,6 @@ const styles = `
     justify-content: center;
     padding: 20px;
     animation: fadeIn 0.3s ease;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
   }
 
   .modal-content {
@@ -951,89 +1219,6 @@ const styles = `
     transform: scale(1.05);
     box-shadow: 0 4px 20px rgba(26, 58, 107, 0.3);
   }
-
-  @media (max-width: 640px) {
-    .hero-title {
-      font-size: 2rem !important;
-    }
-    .hero-subtitle {
-      font-size: 1.2rem !important;
-    }
-    .hero-desc {
-      font-size: 0.85rem !important;
-    }
-    .hero-text-box {
-      max-width: 100%;
-    }
-    .btn-primary, .btn-secondary {
-      padding: 10px 20px !important;
-      font-size: 0.85rem !important;
-    }
-    .navbar-link {
-      font-size: 0.75rem !important;
-      padding: 6px 12px !important;
-    }
-    .navbar-brand {
-      font-size: 1rem !important;
-    }
-    .navbar-brand .brand-icon {
-      width: 28px;
-      height: 28px;
-    }
-    .navbar-btn {
-      font-size: 0.7rem !important;
-      padding: 6px 14px !important;
-    }
-    .navbar-signin {
-      font-size: 0.7rem !important;
-    }
-    .navbar-logo {
-      width: 38px !important;
-      height: 38px !important;
-    }
-    .glass-card {
-      padding: 20px 16px;
-      border-radius: 20px !important;
-      min-height: 200px;
-    }
-    .glass-card .icon-wrapper {
-      width: 48px;
-      height: 48px;
-    }
-    .glass-card h3 {
-      font-size: 1rem;
-    }
-    .glass-card p {
-      font-size: 0.8rem;
-    }
-    .feature-card {
-      padding: 24px 20px;
-    }
-    .location-grid-images .img-main {
-      height: 180px;
-    }
-    .location-grid-images .img-side {
-      height: 86px;
-    }
-    .location-list-item {
-      padding: 12px 16px;
-    }
-    .modal-content {
-      padding: 16px;
-      border-radius: 20px;
-      max-height: 95vh;
-    }
-    .modal-close {
-      width: 32px;
-      height: 32px;
-    }
-    .cabin-card-modal .cabin-image {
-      height: 120px;
-    }
-    .modal-content {
-      max-width: 100%;
-    }
-  }
 `;
 
 // ─── HOOKS ───
@@ -1177,7 +1362,7 @@ const CabinsModal = ({ isOpen, onClose, cabins, loading, onBookClick }) => {
                 <div className="cabin-image">
                   {cabin.images && cabin.images.length > 0 ? (
                     <img 
-                      src={`http://62.72.29.27:5003/${cabin.images[0]}`} 
+                      src={`http://localhost:5003/${cabin.images[0]}`} 
                       alt={cabin.name}
                       onError={(e) => {
                         e.target.src = IRYAX_SPACE_IMAGES[0];
@@ -1239,8 +1424,11 @@ const PromotionalPage = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [openFaq, setOpenFaq] = useState(null);
-  const [formData, setFormData] = useState({ name: "", email: "", message: "", specialty: "" });
+  const [formData, setFormData] = useState({ name: "", email: "", phone: "", address: "", message: "" });
   const [formSubmitted, setFormSubmitted] = useState(false);
+  const [showThankYouPopup, setShowThankYouPopup] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
   const [cabins, setCabins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -1253,7 +1441,7 @@ const PromotionalPage = () => {
     const fetchCabins = async () => {
       try {
         setLoading(true);
-        const response = await fetch("http://62.72.29.27:5003/api/cabins");
+        const response = await fetch("http://localhost:5003/api/cabins");
         if (!response.ok) throw new Error("Failed to fetch");
         const data = await response.json();
         setCabins(Array.isArray(data) ? data : []);
@@ -1275,16 +1463,54 @@ const PromotionalPage = () => {
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
   const toggleFaq = (index) => setOpenFaq(openFaq === index ? null : index);
 
-  const handleSubmit = (e) => {
+  // ─── HANDLE SEND QUERY ───
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (formData.name && formData.email && formData.message) {
-      setFormSubmitted(true);
-      setTimeout(() => setFormSubmitted(false), 3000);
-      setFormData({ name: "", email: "", message: "", specialty: "" });
+    setSubmitError(null);
+    
+    if (!formData.name || !formData.email || !formData.phone || !formData.message) {
+      setSubmitError("Please fill in all required fields");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("http://localhost:5003/api/cabins/sendquery", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          address: formData.address || "",
+          message: formData.message
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setFormSubmitted(true);
+        setShowThankYouPopup(true);
+        setFormData({ name: "", email: "", phone: "", address: "", message: "" });
+        setTimeout(() => {
+          setShowThankYouPopup(false);
+          setFormSubmitted(false);
+        }, 5000);
+      } else {
+        setSubmitError(data.message || "Failed to submit query. Please try again.");
+      }
+    } catch (err) {
+      console.error("Submit query error:", err);
+      setSubmitError("Network error. Please check your connection and try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  // ─── MODAL FUNCTIONS ───
   const openCabinsModal = () => {
     setIsCabinsModalOpen(true);
   };
@@ -1297,7 +1523,6 @@ const PromotionalPage = () => {
     navigate("/login");
   };
 
-  // ─── SCROLL TO SECTION ───
   const scrollToSection = (id) => {
     const element = document.getElementById(id);
     if (element) {
@@ -1380,15 +1605,13 @@ const PromotionalPage = () => {
     { category: "Earning", q: "How can I earn from my unused space?", a: "List your space on our platform and connect with trusted professionals." }
   ];
 
-  // ─── HANDLE #cabins LINK ───
   const handleCabinsClick = (e) => {
     e.preventDefault();
     openCabinsModal();
   };
 
-  // ─── BRAND WITH ICON (POSTFIX - Icon after text) ───
   const BrandWithIcon = () => (
-    <span className="navbar-brand hidden sm:block group-hover:text-blue-800 transition flex items-center gap-2">
+    <span className="navbar-brand hidden sm:block transition flex items-center gap-2">
       IRYAX SPACE
       <span className="brand-icon flex items-center justify-center">
         <Layout size={18} />
@@ -1396,7 +1619,6 @@ const PromotionalPage = () => {
     </span>
   );
 
-  // ─── MISSION & VISION DATA ───
   const missionVisionData = [
     {
       title: "Our Mission",
@@ -1430,14 +1652,40 @@ const PromotionalPage = () => {
           onBookClick={handleBookClick}
         />
 
+        {/* ─── THANK YOU POPUP ─── */}
+        {showThankYouPopup && (
+          <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+            <div className="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl border border-gray-100 animate-slideUp relative">
+              <button
+                onClick={() => setShowThankYouPopup(false)}
+                className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors group"
+              >
+                <X size={20} className="text-gray-400 group-hover:text-gray-600" />
+              </button>
+              <div className="text-center">
+                <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle size={40} className="text-green-600" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Thank You! 🎉</h3>
+                <p className="text-gray-600 mb-2">Thanks for your interest!</p>
+                <p className="text-gray-500 text-sm">We will contact you soon.</p>
+                <button
+                  onClick={() => setShowThankYouPopup(false)}
+                  className="mt-6 px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:shadow-lg transition"
+                >
+                  Got it
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ─── NAVBAR ─── */}
-        <nav className={`fixed top-0 left-0 right-0 z-50 px-6 transition-all duration-300 ${
-          scrolled ? 'backdrop-blur-xl bg-white/95 border-b border-gray-200 shadow-sm' : 'bg-transparent'
-        }`}>
-          <div className="max-w-6xl mx-auto flex items-center justify-between h-[72px]">
+        <nav className={`navbar-custom ${scrolled ? 'navbar-scrolled' : ''}`}>
+          <div className="navbar-inner">
             <button onClick={scrollToTop} className="flex items-center gap-3 group">
-              <div className="navbar-logo rounded-full overflow-hidden border-2 border-blue-800/30 shadow-lg shadow-blue-900/20 flex-shrink-0 bg-white/10 group-hover:scale-110 transition">
-                <img src={logo} alt="Logo" className="w-full h-full object-contain" />
+              <div className="navbar-logo">
+                <img src={logo} alt="Logo" />
               </div>
               <BrandWithIcon />
             </button>
@@ -1452,13 +1700,17 @@ const PromotionalPage = () => {
             </div>
 
             <div className="flex items-center gap-3">
-              <button onClick={() => navigate("/login")} className="navbar-signin hidden sm:block hover:text-blue-800 transition px-4 py-2 rounded-full hover:bg-gray-100/50">
+              <button onClick={() => navigate("/login")} className="navbar-signin hidden sm:block">
                 Sign In
               </button>
-              <button onClick={() => navigate("/login")} className="navbar-btn font-medium text-white bg-gradient-to-r from-blue-900 to-blue-700 rounded-full hover:shadow-lg hover:shadow-blue-900/25 transition hover:scale-105 flex items-center gap-2">
+              {/* Start Now button - hidden on mobile */}
+              <button onClick={() => navigate("/login")} className="navbar-btn navbar-btn-mobile-hide">
                 <Layout size={14} /> Start Now
               </button>
-              <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden p-2 rounded-full hover:bg-gray-100/50 transition">
+              <button 
+                onClick={() => setMobileOpen(!mobileOpen)} 
+                className="navbar-menu-btn md:hidden"
+              >
                 {mobileOpen ? <X size={22} /> : <Menu size={22} />}
               </button>
             </div>
@@ -1486,7 +1738,8 @@ const PromotionalPage = () => {
           <div className="hero-bg">
             <img src={IRYAX_HERO_IMAGE} alt="IRYAX SPACE Workspace" />
           </div>
-
+          {/* ─── GRAY OVERLAY ─── */}
+          <div className="hero-overlay"></div>
           <div className="hero-content">
             <div className="hero-text-box">
               <RevealSection>
@@ -1547,7 +1800,7 @@ const PromotionalPage = () => {
           </div>
         </section>
 
-        {/* ─── MISSION & VISION SECTION ─── */}
+        {/* ─── MISSION & VISION ─── */}
         <section id="mission-vision" className="py-16 px-6 bg-gradient-to-br from-blue-50 via-white to-purple-50">
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-10">
@@ -1575,17 +1828,14 @@ const PromotionalPage = () => {
                   <RevealSection key={index} delay={index * 0.15}>
                     <div className={`relative p-6 rounded-2xl ${item.bgColor} border ${item.borderColor} transition-all duration-500 hover:shadow-xl hover:-translate-y-1 group overflow-hidden`}>
                       <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${item.color} rounded-full blur-2xl opacity-10 group-hover:opacity-20 transition`} />
-                      
                       <div className="relative z-10">
                         <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center text-white shadow-md mb-3 group-hover:scale-110 transition group-hover:rotate-6`}>
                           <Icon size={22} />
                         </div>
-                        
                         <h3 className={`text-lg font-bold text-gray-900 mb-2`}>{item.title}</h3>
                         <p className="text-gray-700 leading-relaxed text-sm">
                           {item.description}
                         </p>
-                        
                         <div className="mt-3 flex items-center gap-2 text-[10px] font-medium text-gray-400">
                           <span className="w-6 h-0.5 bg-gray-300"></span>
                           <span>IRYAX SPACE</span>
@@ -1598,7 +1848,6 @@ const PromotionalPage = () => {
               })}
             </div>
 
-            {/* Core Values */}
             <RevealSection delay={0.3}>
               <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-3">
                 {[
@@ -1652,7 +1901,7 @@ const PromotionalPage = () => {
           </div>
         </section>
 
-        {/* ─── FEATURES SECTION ─── */}
+        {/* ─── FEATURES ─── */}
         <section className="py-20 px-6 bg-gradient-to-b from-blue-900 via-blue-800 to-blue-900 text-white">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-14">
@@ -1688,7 +1937,7 @@ const PromotionalPage = () => {
           </div>
         </section>
 
-        {/* ─── PRIME LOCATIONS ─── */}
+        {/* ─── LOCATIONS ─── */}
         <section className="py-20 px-6 bg-gray-50">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-14">
@@ -1741,7 +1990,7 @@ const PromotionalPage = () => {
           </div>
         </section>
 
-        {/* ─── EARN SECTION ─── */}
+        {/* ─── EARN ─── */}
         <section className="py-20 px-6 bg-white">
           <div className="max-w-6xl mx-auto">
             <div className="grid md:grid-cols-2 gap-12 items-center">
@@ -1787,7 +2036,7 @@ const PromotionalPage = () => {
           </div>
         </section>
 
-        {/* ─── SPECIALTIES/SERVICES ─── */}
+        {/* ─── SPECIALTIES ─── */}
         <section id="specialties" className="py-20 px-6 bg-gray-50">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-14">
@@ -1938,16 +2187,69 @@ const PromotionalPage = () => {
                 <RevealSection delay={0.3}>
                   <form onSubmit={handleSubmit} className="space-y-4 bg-white/70 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/50">
                     <div className="grid sm:grid-cols-2 gap-4">
-                      <input type="text" placeholder="Your Name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-sm focus:outline-none transition" required />
-                      <input type="email" placeholder="Your Email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-sm focus:outline-none transition" required />
+                      <input 
+                        type="text" 
+                        placeholder="Your Name" 
+                        value={formData.name} 
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })} 
+                        className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-sm focus:outline-none transition" 
+                        required 
+                      />
+                      <input 
+                        type="email" 
+                        placeholder="Your Email" 
+                        value={formData.email} 
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })} 
+                        className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-sm focus:outline-none transition" 
+                        required 
+                      />
                     </div>
-                    <select value={formData.specialty} onChange={(e) => setFormData({ ...formData, specialty: e.target.value })} className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-gray-900 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-sm focus:outline-none transition">
-                      <option value="">Select Your Profession</option>
-                      {specialties.map((s, i) => <option key={i} value={s}>{s}</option>)}
-                    </select>
-                    <textarea placeholder="Your Message" rows="4" value={formData.message} onChange={(e) => setFormData({ ...formData, message: e.target.value })} className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-sm focus:outline-none transition resize-none" required />
-                    <button type="submit" className="w-full px-4 py-3 text-sm font-semibold text-white bg-gradient-to-r from-blue-900 to-blue-700 rounded-xl hover:shadow-lg hover:shadow-blue-900/25 transition hover:scale-105 flex items-center justify-center gap-2 group">
-                      {formSubmitted ? "✓ Sent!" : <>Start Your Journey <Send size={16} className="group-hover:translate-x-1 transition" /></>}
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <input 
+                        type="tel" 
+                        placeholder="Phone Number" 
+                        value={formData.phone} 
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })} 
+                        className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-sm focus:outline-none transition" 
+                        required 
+                      />
+                      <input 
+                        type="text" 
+                        placeholder="Address" 
+                        value={formData.address} 
+                        onChange={(e) => setFormData({ ...formData, address: e.target.value })} 
+                        className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-sm focus:outline-none transition" 
+                      />
+                    </div>
+                    <textarea 
+                      placeholder="Your Message" 
+                      rows="4" 
+                      value={formData.message} 
+                      onChange={(e) => setFormData({ ...formData, message: e.target.value })} 
+                      className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-sm focus:outline-none transition resize-none" 
+                      required 
+                    />
+                    {submitError && (
+                      <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-sm">
+                        {submitError}
+                      </div>
+                    )}
+                    <button 
+                      type="submit" 
+                      disabled={isSubmitting}
+                      className="w-full px-4 py-3 text-sm font-semibold text-white bg-gradient-to-r from-blue-900 to-blue-700 rounded-xl hover:shadow-lg hover:shadow-blue-900/25 transition hover:scale-105 flex items-center justify-center gap-2 group disabled:opacity-70 disabled:cursor-not-allowed"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Submitting...
+                        </>
+                      ) : (
+                        <>Start Your Journey <Send size={16} className="group-hover:translate-x-1 transition" /></>
+                      )}
                     </button>
                   </form>
                 </RevealSection>

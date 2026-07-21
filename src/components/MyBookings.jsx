@@ -1,4 +1,4 @@
-// MyBookings.jsx - Complete with Price Difference Display (MyCabins Style)
+// MyBookings.jsx - Complete with Seat Details Display
 import axios from "axios";
 import {
   Calendar,
@@ -26,7 +26,8 @@ import {
   TrendingDown,
   Filter,
   XCircle as XCircleIcon,
-  Users
+  Users,
+  Armchair
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -36,7 +37,7 @@ import AdminNavbar from "./AdminNavbar";
 import * as XLSX from 'xlsx';
 import "./Dashboard.css";
 
-const API_URL = "http://62.72.29.27:5003";
+const API_URL = "https://spaceapi.iryax.com";
 
 const MyBookings = () => {
   const [bookings, setBookings] = useState([]);
@@ -114,18 +115,94 @@ const MyBookings = () => {
   const fetchBookings = async () => {
     try {
       const token = localStorage.getItem("token");
+      console.log("Token:", token);
+      
       if (!token) {
+        console.log("No token found, redirecting to login...");
+        toast.error("Please login to view your bookings");
         navigate("/login");
         return;
       }
+
+      // ✅ Check if user is admin or normal user
+      const isAdminUser = localStorage.getItem("admin") !== null;
+      
+      let url;
+      if (isAdminUser) {
+        // ✅ ADMIN: Fetch ALL bookings (admin can see everything)
+        url = `${API_URL}/api/bookings`;
+      } else {
+        // ✅ NORMAL USER: Fetch only user's bookings
+        url = `${API_URL}/api/bookings/user`;
+      }
+      
+      console.log("Fetching from URL:", url);
+      console.log("Is Admin:", isAdminUser);
+      
       const res = await axios.get(
-        `${API_URL}/api/bookings/user`,
+        url,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setBookings(res.data.bookings || []);
+      
+      console.log("Response data:", res.data);
+      
+      // Response mein 'bookings' array hai with 'cabin' object
+      let bookingsData = res.data.bookings || [];
+      
+      // ✅ If admin, filter bookings to show only admin's bookings + guest bookings (user: null)
+      if (isAdminUser) {
+        const adminId = currentUser?._id || currentUser?.id;
+        console.log("Admin ID:", adminId);
+        
+        bookingsData = bookingsData.filter(b => {
+          // Show if: 
+          // 1. user is null (guest booking by admin)
+          // 2. user._id matches admin's ID (admin booked for themselves)
+          // 3. userId matches admin's ID (admin booked for themselves - old format)
+          const userId = b.user?._id || b.userId?.toString() || b.userId;
+          
+          // If user is null or undefined, it's a guest booking (admin created it)
+          if (!userId) {
+            console.log("Guest booking found:", b._id, b.name);
+            return true;
+          }
+          
+          // If user ID matches admin ID
+          if (userId === adminId) {
+            console.log("Admin's own booking found:", b._id, b.name);
+            return true;
+          }
+          
+          console.log("Filtered out booking:", b._id, "user:", userId);
+          return false;
+        });
+        
+        console.log("Filtered bookings for admin:", bookingsData.length);
+      }
+      
+      setBookings(bookingsData);
+      
+      if (bookingsData.length === 0) {
+        console.log("No bookings found");
+        if (isAdminUser) {
+          toast.info("No bookings found for admin");
+        } else {
+          toast.info("You have no bookings yet");
+        }
+      }
+      
     } catch (error) {
-      console.error(error);
-      toast.error("Failed to fetch bookings");
+      console.error("Error fetching bookings:", error);
+      
+      if (error.response?.status === 401) {
+        toast.error("Session expired. Please login again.");
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        localStorage.removeItem("admin");
+        navigate("/login");
+      } else {
+        toast.error("Failed to fetch bookings: " + (error.response?.data?.error || error.message));
+      }
     } finally {
       setLoading(false);
     }
@@ -133,7 +210,14 @@ const MyBookings = () => {
 
   const fetchCabins = async () => {
     try {
-      const res = await axios.get(`${API_URL}/api/cabins`);
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.log("No token for cabins fetch");
+        return;
+      }
+      const res = await axios.get(`${API_URL}/api/cabins`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       const activeCabins = res.data.filter(c => c.isActive === true);
       setAllCabins(activeCabins);
     } catch (error) {
@@ -194,12 +278,14 @@ const MyBookings = () => {
       }
       const data = filteredBookings.map((b, i) => ({
         'S.No': i + 1,
-        'Cabin': b.cabinId?.name || 'Unknown',
+        'Cabin': b.cabin?.name || 'Unknown',
         'Customer': b.name || 'N/A',
         'Mobile': b.mobile || 'N/A',
         'Start': `${b.startDate} ${b.startTime}`,
         'End': `${b.endDate} ${b.endTime}`,
         'Hours': b.totalHours || 0,
+        'Seats': b.seatCount || 0,
+        'Extra Charge': b.extraCharge || 0,
         'Total (₹)': b.totalPrice || 0,
         'Status': getStatusBadge(b.status).label,
         'Payment': getPaymentMethodBadge(b.paymentMethod).label,
@@ -320,13 +406,22 @@ const MyBookings = () => {
 
   const downloadInvoice = (booking) => {
     try {
-      const cabin = booking.cabinId || {};
+      const cabin = booking.cabin || {};
       const owner = cabin.owner || {};
       const win = window.open('', '_blank', 'width=800,height=600');
       if (!win) {
         toast.error('Please allow popups');
         return;
       }
+      
+      // Generate seat list HTML
+      let seatListHtml = '';
+      if (booking.selectedSeats && booking.selectedSeats.length > 0) {
+        seatListHtml = booking.selectedSeats.map(s => 
+          `<span style="display:inline-block;background:#f0fdf4;padding:2px 10px;border-radius:12px;margin:2px;font-size:11px;border:1px solid #86efac;">${s.name} (#${s.number})</span>`
+        ).join('');
+      }
+
       win.document.write(`
         <html><head><title>Invoice</title>
         <style>
@@ -340,6 +435,7 @@ const MyBookings = () => {
           .total { font-size: 20px; font-weight: 700; text-align: right; margin-top: 20px; border-top: 2px solid #000; padding-top: 15px; }
           .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #000; color: #666; font-size: 12px; }
           .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+          .seat-section { margin: 10px 0; padding: 10px; background: #f8fafc; border-radius: 8px; }
         </style>
         </head><body>
           <div class="header">
@@ -352,11 +448,23 @@ const MyBookings = () => {
             <div><strong>Bill To:</strong><br>${booking.name || 'Customer'}<br>${booking.mobile || 'N/A'}<br>${booking.email || 'N/A'}</div>
             <div><strong>Cabin:</strong><br>${cabin.name || 'Unknown'}<br>${cabin.address || 'N/A'}</div>
           </div>
+          ${booking.selectedSeats && booking.selectedSeats.length > 0 ? `
+            <div class="seat-section">
+              <strong>Selected Seats:</strong>
+              <div style="margin-top:5px;">${seatListHtml}</div>
+              <div style="margin-top:5px;font-size:12px;color:#666;">Total: ${booking.seatCount} seats • Extra Charge: ₹${booking.extraCharge || 0}</div>
+            </div>
+          ` : ''}
           <table>
             <tr><th>Description</th><th>Details</th><th>Amount</th></tr>
             <tr><td><strong>${cabin.name || 'Cabin Booking'}</strong></td>
             <td>${booking.startDate} ${booking.startTime} - ${booking.endDate} ${booking.endTime}<br>${booking.totalHours}h • ${booking.bookingBasis === 'plan' ? 'Plan' : 'Hourly'}</td>
             <td>₹${(booking.subtotal || 0).toFixed(2)}</td></tr>
+            ${booking.extraCharge > 0 ? `
+            <tr><td><strong>Seat Charges</strong></td>
+            <td>${booking.seatCount} seats × ₹${booking.seatExtraChargePerSeat || 100}</td>
+            <td>₹${(booking.extraCharge || 0).toFixed(2)}</td></tr>
+            ` : ''}
           </table>
           <div style="display:flex;gap:20px;margin:10px 0;flex-wrap:wrap;">
             <span><strong>Payment:</strong> <span class="badge ${getPaymentMethodBadge(booking.paymentMethod).color.replace('bg-','bg-')}">${getPaymentMethodBadge(booking.paymentMethod).label}</span></span>
@@ -364,7 +472,7 @@ const MyBookings = () => {
             <span><strong>Pmt Status:</strong> <span class="badge ${getPaymentStatusBadge(booking.paymentStatus).color}">${getPaymentStatusBadge(booking.paymentStatus).label}</span></span>
             <span><strong>Terms:</strong> <span class="badge ${getTermsBadge(booking.termsAccepted).color}">${booking.termsAccepted ? 'Accepted' : 'Not Accepted'}</span></span>
           </div>
-          <div class="total">Subtotal: ₹${(booking.subtotal || 0).toFixed(2)}<br>GST (18%): ₹${(booking.gstAmount || 0).toFixed(2)}<br>Total: ₹${(booking.totalPrice || 0).toFixed(2)}</div>
+          <div class="total">Subtotal: ₹${(booking.subtotal || 0).toFixed(2)}<br>${booking.extraCharge > 0 ? `Seat Charges: ₹${(booking.extraCharge || 0).toFixed(2)}<br>` : ''}GST (18%): ₹${(booking.gstAmount || 0).toFixed(2)}<br>Total: ₹${(booking.totalPrice || 0).toFixed(2)}</div>
           <div class="footer">Powered by IRYAX SPACE<br>${formatDateTime(booking.createdAt)}</div>
         </body></html>
       `);
@@ -379,8 +487,8 @@ const MyBookings = () => {
   // Filter bookings
   const filteredBookings = bookings.filter((b) => {
     const search = searchTerm.toLowerCase();
-    const matchSearch = b.cabinId?.name?.toLowerCase().includes(search) ||
-                        b.cabinId?.address?.toLowerCase().includes(search) ||
+    const matchSearch = b.cabin?.name?.toLowerCase().includes(search) ||
+                        b.cabin?.address?.toLowerCase().includes(search) ||
                         b.name?.toLowerCase().includes(search) ||
                         b.mobile?.includes(searchTerm);
     const matchDate = filterDate ? b.startDate === filterDate : true;
@@ -452,14 +560,14 @@ const MyBookings = () => {
       {isAdmin ? <AdminNavbar /> : <UsersNavbar />}
 
       <div className="pt-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
-        {/* Header - Same as Partners Page */}
+        {/* Header */}
         <div className="admin-dash__header">
           <div>
             <h1 className="admin-dash__greeting">
               {isAdmin ? 'Admin' : 'My'} <span>Bookings</span>
             </h1>
             <p className="admin-dash__subtitle">
-              Manage and view all your bookings.
+              {isAdmin ? 'Manage and view bookings created by you.' : 'Manage and view all your bookings.'}
             </p>
           </div>
           <div className="admin-dash__date-pill">
@@ -629,7 +737,7 @@ const MyBookings = () => {
               </div>
             )}
 
-            {/* Table Container - Full Width */}
+            {/* Table Container */}
             <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
               {filteredBookings.length === 0 ? (
                 <div className="flex flex-col items-center justify-center gap-3 py-20 text-gray-400">
@@ -638,7 +746,7 @@ const MyBookings = () => {
                   <p className="text-sm">Try adjusting your filters.</p>
                 </div>
               ) : (
-                <table className="w-full min-w-[1200px] text-left">
+                <table className="w-full min-w-[1300px] text-left">
                   <thead>
                     <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
@@ -646,6 +754,7 @@ const MyBookings = () => {
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Customer</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Date & Time</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Hours</th>
+                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Seats</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Payment</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Pmt Status</th>
@@ -660,6 +769,8 @@ const MyBookings = () => {
                       const pmtStatus = getPaymentStatusBadge(b.paymentStatus);
                       const terms = getTermsBadge(b.termsAccepted);
                       const isCashPending = (b.paymentMethod === 'cash' || b.paymentMethod === 'counter') && b.paymentStatus === 'pending';
+                      const seatCount = b.seatCount || 0;
+                      const seatNames = b.selectedSeats?.map(s => s.name).join(', ') || 'N/A';
                       
                       return (
                         <tr key={b._id} className="transition-colors group hover:bg-gray-50/80">
@@ -668,9 +779,9 @@ const MyBookings = () => {
                           </td>
                           <td className="p-4">
                             <div>
-                              <p className="font-semibold text-gray-900 text-sm">{b.cabinId?.name || 'Unknown'}</p>
+                              <p className="font-semibold text-gray-900 text-sm">{b.cabin?.name || 'Unknown'}</p>
                               <p className="text-[10px] text-gray-400 flex items-center gap-1">
-                                <MapPin size={10} /> {b.cabinId?.address?.split(',')[0] || 'N/A'}
+                                <MapPin size={10} /> {b.cabin?.address?.split(',')[0] || 'N/A'}
                               </p>
                             </div>
                           </td>
@@ -686,6 +797,19 @@ const MyBookings = () => {
                             <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-bold">{b.totalHours}h</span>
                           </td>
                           <td className="p-4">
+                            <div>
+                              <span className="flex items-center gap-1 text-sm font-medium text-gray-700">
+                                <Armchair size={14} className="text-indigo-500" />
+                                {seatCount}
+                              </span>
+                              {seatCount > 0 && (
+                                <p className="text-[10px] text-gray-400 truncate max-w-[120px]" title={seatNames}>
+                                  {seatNames}
+                                </p>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-4">
                             <span className={`px-3 py-1 text-xs font-bold rounded-full ${status.color}`}>{status.label}</span>
                           </td>
                           <td className="p-4">
@@ -695,7 +819,12 @@ const MyBookings = () => {
                             <span className={`px-3 py-1 text-xs font-bold rounded-full ${pmtStatus.color}`}>{pmtStatus.label}</span>
                           </td>
                           <td className="p-4">
-                            <span className="text-sm font-bold text-indigo-600">₹{b.totalPrice}</span>
+                            <div>
+                              <span className="text-sm font-bold text-indigo-600">₹{b.totalPrice}</span>
+                              {b.extraCharge > 0 && (
+                                <p className="text-[9px] text-amber-500">+₹{b.extraCharge} seat</p>
+                              )}
+                            </div>
                           </td>
                           <td className="p-4">
                             <div className="flex items-center gap-1.5 flex-wrap">
@@ -766,7 +895,7 @@ const MyBookings = () => {
               )}
             </div>
 
-            {/* Footer with stats */}
+            {/* Footer */}
             {!loading && filteredBookings.length > 0 && (
               <div className="px-4 py-3 border-t border-gray-100 rounded-b-2xl flex flex-wrap items-center justify-between gap-2" style={{ backgroundColor: '#fafafa' }}>
                 <span className="text-xs text-gray-500">
@@ -817,7 +946,8 @@ const MyBookings = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 bg-gray-50 rounded-xl">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Cabin</p>
-                  <p className="mt-1 font-semibold text-gray-800">{viewBooking.cabinId?.name || 'N/A'}</p>
+                  <p className="mt-1 font-semibold text-gray-800">{viewBooking.cabin?.name || 'N/A'}</p>
+                  <p className="text-xs text-gray-400">{viewBooking.cabin?.address || 'N/A'}</p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-xl">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Customer</p>
@@ -838,6 +968,26 @@ const MyBookings = () => {
                 <p className="mt-1 font-semibold text-gray-800">{viewBooking.startDate} {viewBooking.startTime} - {viewBooking.endDate} {viewBooking.endTime}</p>
                 <p className="text-xs text-gray-500 mt-0.5">{viewBooking.totalHours}h • {viewBooking.bookingBasis === 'plan' ? 'Plan' : 'Hourly'}</p>
               </div>
+
+              {/* Seats Section */}
+              {viewBooking.selectedSeats && viewBooking.selectedSeats.length > 0 && (
+                <div className="p-4 bg-indigo-50 rounded-xl">
+                  <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider flex items-center gap-2">
+                    <Armchair size={14} />
+                    Selected Seats ({viewBooking.seatCount})
+                  </p>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {viewBooking.selectedSeats.map((seat) => (
+                      <span key={seat._id} className="px-3 py-1.5 bg-white rounded-lg border border-indigo-200 text-sm font-medium text-gray-700">
+                        {seat.name} <span className="text-gray-400 text-xs">#{seat.number}</span>
+                      </span>
+                    ))}
+                  </div>
+                  {viewBooking.extraCharge > 0 && (
+                    <p className="text-xs text-amber-600 mt-2">Extra Charge: ₹{viewBooking.extraCharge}</p>
+                  )}
+                </div>
+              )}
 
               <div className="grid grid-cols-3 gap-3">
                 <div className="p-3 bg-indigo-50 rounded-xl text-center">
@@ -875,6 +1025,9 @@ const MyBookings = () => {
 
               <div className="border-t border-gray-200 pt-4 space-y-1">
                 <div className="flex justify-between text-sm"><span className="text-gray-500">Subtotal</span><span>₹{viewBooking.subtotal || 0}</span></div>
+                {viewBooking.extraCharge > 0 && (
+                  <div className="flex justify-between text-sm"><span className="text-gray-500">Seat Charges</span><span>₹{viewBooking.extraCharge}</span></div>
+                )}
                 <div className="flex justify-between text-sm"><span className="text-gray-500">GST (18%)</span><span>₹{viewBooking.gstAmount || 0}</span></div>
                 <div className="flex justify-between text-lg font-bold border-t border-gray-200 pt-2 mt-2">
                   <span>Total</span>
@@ -903,16 +1056,14 @@ const MyBookings = () => {
         </div>
       )}
 
-      {/* ====================== */}
-      {/* REPLACE BOOKING MODAL WITH PRICE DIFFERENCE */}
-      {/* ====================== */}
+      {/* Replace Modal */}
       {showReplaceModal && replaceBooking && (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowReplaceModal(false)}>
           <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
             <div className="bg-gradient-to-br from-blue-600 to-blue-700 text-white p-5 rounded-t-3xl flex justify-between items-center shrink-0">
               <div>
                 <h3 className="text-xl font-bold">Replace Space</h3>
-                <p className="text-sm text-blue-200">{replaceBooking.cabinId?.name} → New Space</p>
+                <p className="text-sm text-blue-200">{replaceBooking.cabin?.name} → New Space</p>
               </div>
               <button onClick={() => setShowReplaceModal(false)} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors">
                 <X size={20} />
@@ -921,7 +1072,7 @@ const MyBookings = () => {
             <div className="p-5 space-y-4 overflow-y-auto flex-1">
               <div className="bg-blue-50 rounded-xl p-4 text-sm">
                 <p className="font-bold text-blue-800">Current Booking</p>
-                <p className="text-slate-600 mt-1">{replaceBooking.cabinId?.name}</p>
+                <p className="text-slate-600 mt-1">{replaceBooking.cabin?.name}</p>
                 <p className="text-xs text-slate-500">{replaceBooking.startDate} {replaceBooking.startTime} - {replaceBooking.endDate} {replaceBooking.endTime}</p>
                 <p className="text-xs font-bold text-slate-700 mt-1">Total: ₹{replaceBooking.totalPrice}</p>
               </div>
@@ -936,7 +1087,7 @@ const MyBookings = () => {
                   >
                     <option value="">Select a cabin...</option>
                     {allCabins
-                      .filter(c => c._id !== replaceBooking.cabinId?._id)
+                      .filter(c => c._id !== replaceBooking.cabin?._id)
                       .map(c => (
                         <option key={c._id} value={c._id}>
                           {c.name} - ₹{c.price}/hr
@@ -947,7 +1098,7 @@ const MyBookings = () => {
                 </div>
               </div>
 
-              {/* ─── PRICE DIFFERENCE DISPLAY ─── */}
+              {/* Price Difference */}
               {selectedCabinData && priceDiff && (
                 <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 space-y-3">
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Price Comparison</p>
@@ -955,7 +1106,7 @@ const MyBookings = () => {
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div className="bg-blue-50 rounded-lg p-3">
                       <p className="text-[10px] text-blue-600 font-medium">Current Cabin</p>
-                      <p className="font-bold text-slate-800">₹{replaceBooking.cabinId?.price}/hr</p>
+                      <p className="font-bold text-slate-800">₹{replaceBooking.cabin?.price}/hr</p>
                       <p className="text-xs text-slate-500">{replaceBooking.totalHours}h = ₹{replaceBooking.totalPrice}</p>
                     </div>
                     <div className="bg-emerald-50 rounded-lg p-3">
@@ -989,11 +1140,6 @@ const MyBookings = () => {
                       </div>
                     )}
                   </div>
-
-                  <div className="text-[10px] text-slate-400 flex justify-between border-t border-gray-200 pt-2">
-                    <span>Current Total: ₹{Math.round(priceDiff.currentWithGst)}</span>
-                    <span>New Total: ₹{Math.round(priceDiff.totalWithGst)}</span>
-                  </div>
                 </div>
               )}
 
@@ -1016,16 +1162,14 @@ const MyBookings = () => {
         </div>
       )}
 
-      {/* ====================== */}
-      {/* CANCEL BOOKING MODAL */}
-      {/* ====================== */}
+      {/* Cancel Modal */}
       {showCancelModal && cancelBooking && (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowCancelModal(false)}>
           <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="bg-gradient-to-br from-red-600 to-red-700 text-white p-5 rounded-t-3xl flex justify-between items-center">
               <div>
                 <h3 className="text-xl font-bold">Cancel Booking</h3>
-                <p className="text-sm text-red-200">{cancelBooking.cabinId?.name}</p>
+                <p className="text-sm text-red-200">{cancelBooking.cabin?.name}</p>
               </div>
               <button onClick={() => setShowCancelModal(false)} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors">
                 <X size={20} />
@@ -1035,7 +1179,7 @@ const MyBookings = () => {
               <div className="bg-red-50 rounded-xl p-4 text-sm">
                 <p className="font-bold text-red-800">Are you sure you want to cancel this booking?</p>
                 <div className="mt-2 space-y-1 text-slate-600">
-                  <p><span className="text-slate-500">Cabin:</span> {cancelBooking.cabinId?.name}</p>
+                  <p><span className="text-slate-500">Cabin:</span> {cancelBooking.cabin?.name}</p>
                   <p><span className="text-slate-500">Date:</span> {cancelBooking.startDate} {cancelBooking.startTime} - {cancelBooking.endDate} {cancelBooking.endTime}</p>
                   <p><span className="text-slate-500">Total:</span> ₹{cancelBooking.totalPrice}</p>
                 </div>

@@ -42,7 +42,9 @@ import {
   Eye,
   Filter,
   XCircle,
-  Timer
+  Timer,
+  List as ListIcon,
+  Grid as GridIcon
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -61,7 +63,7 @@ const loadRazorpayScript = () => {
   });
 };
 
-const API_URL = "http://62.72.29.27:5003";
+const API_URL = "https://spaceapi.iryax.com";
 const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
 const GST_RATE = 0.18;
 
@@ -112,6 +114,16 @@ const MyCabin = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [countdowns, setCountdowns] = useState({});
   const navigate = useNavigate();
+
+  // Seat management state
+  const [seats, setSeats] = useState([]);
+  const [seatInput, setSeatInput] = useState({ name: '', number: '' });
+  const [showSeatModal, setShowSeatModal] = useState(false);
+  const [editingSeatIndex, setEditingSeatIndex] = useState(null);
+  const [seatGenerationMode, setSeatGenerationMode] = useState(false);
+  const [seatGenerationCount, setSeatGenerationCount] = useState(0);
+  const [seatBatchMode, setSeatBatchMode] = useState(false);
+  const [batchSeatNumber, setBatchSeatNumber] = useState(1);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -250,7 +262,8 @@ const MyCabin = () => {
   };
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
   };
 
   const handleCabinTypeChange = (type) => {
@@ -274,6 +287,138 @@ const MyCabin = () => {
 
   const removeImage = (index) => {
     setImages(images.filter((_, i) => i !== index));
+  };
+
+  // Open seat modal with batch mode
+  const openSeatModal = () => {
+    setSeatInput({ name: '', number: '' });
+    setEditingSeatIndex(null);
+    setSeatBatchMode(false);
+    setShowSeatModal(true);
+  };
+
+  // Open seat modal in batch mode with starting number
+  const openBatchSeatModal = () => {
+    const capacity = parseInt(formData.capacity);
+    if (!capacity || capacity < 1) {
+      toast.error("Please enter number of seats first");
+      return;
+    }
+    
+    // Check if we already have seats
+    if (seats.length >= capacity) {
+      toast.error(`Already added ${seats.length} seats. Capacity is ${capacity}`);
+      return;
+    }
+    
+    // Set batch mode with next seat number
+    const nextNumber = seats.length + 1;
+    setBatchSeatNumber(nextNumber);
+    setSeatBatchMode(true);
+    setSeatInput({ name: `Seat ${nextNumber}`, number: nextNumber.toString() });
+    setEditingSeatIndex(null);
+    setShowSeatModal(true);
+  };
+
+  // Seat Management Functions
+  const addSeat = () => {
+    if (!seatInput.name.trim()) {
+      toast.error("Please enter a seat name");
+      return;
+    }
+    if (!seatInput.number || seatInput.number < 1) {
+      toast.error("Please enter a valid seat number");
+      return;
+    }
+
+    const seatNumber = parseInt(seatInput.number);
+    
+    // Check for duplicate seat number
+    if (seats.some(s => s.number === seatNumber)) {
+      toast.error(`Seat #${seatNumber} already exists`);
+      return;
+    }
+
+    // Check capacity
+    const capacity = parseInt(formData.capacity);
+    if (capacity && seats.length >= capacity) {
+      toast.error(`Cannot add more than ${capacity} seats`);
+      return;
+    }
+
+    if (editingSeatIndex !== null) {
+      // Update existing seat
+      const updatedSeats = [...seats];
+      updatedSeats[editingSeatIndex] = {
+        name: seatInput.name.trim(),
+        number: seatNumber
+      };
+      setSeats(updatedSeats);
+      setEditingSeatIndex(null);
+      toast.success("Seat updated successfully");
+    } else {
+      // Add new seat
+      setSeats([...seats, {
+        name: seatInput.name.trim(),
+        number: seatNumber
+      }]);
+      toast.success(`Seat #${seatNumber} added successfully`);
+    }
+
+    setSeatInput({ name: '', number: '' });
+    setShowSeatModal(false);
+    setSeatBatchMode(false);
+    
+    // Check if all seats are added
+    if (capacity && seats.length + 1 >= capacity) {
+      toast.success(`✅ All ${capacity} seats added!`);
+    }
+  };
+
+  const editSeat = (index) => {
+    setSeatInput({
+      name: seats[index].name,
+      number: seats[index].number.toString()
+    });
+    setEditingSeatIndex(index);
+    setSeatBatchMode(false);
+    setShowSeatModal(true);
+  };
+
+  const removeSeat = (index) => {
+    if (window.confirm(`Remove seat "${seats[index].name}"?`)) {
+      setSeats(seats.filter((_, i) => i !== index));
+      if (editingSeatIndex === index) {
+        setEditingSeatIndex(null);
+        setSeatInput({ name: '', number: '' });
+      }
+      toast.success("Seat removed");
+    }
+  };
+
+  // Auto-generate all seats based on capacity
+  const generateAllSeats = () => {
+    const capacity = parseInt(formData.capacity);
+    if (!capacity || capacity < 1) {
+      toast.error("Please enter a valid number of seats");
+      return;
+    }
+
+    if (seats.length > 0) {
+      if (!window.confirm(`This will replace all ${seats.length} existing seats. Continue?`)) {
+        return;
+      }
+    }
+
+    const newSeats = [];
+    for (let i = 1; i <= capacity; i++) {
+      newSeats.push({
+        name: `Seat ${i}`,
+        number: i
+      });
+    }
+    setSeats(newSeats);
+    toast.success(`✅ Generated ${capacity} seats`);
   };
 
   const calculateGST = (amount) => {
@@ -363,6 +508,8 @@ const MyCabin = () => {
               });
               setImages([]);
               setPricingPlans([]);
+              setSeats([]);
+              setSeatBatchMode(false);
               await fetchCabins();
             } else {
               toast.error('Payment verification failed');
@@ -411,6 +558,7 @@ const MyCabin = () => {
     data.append("cabinType", formData.cabinType);
     data.append("pricingPlans", JSON.stringify(pricingPlans));
     data.append("amenities", JSON.stringify(formData.amenities));
+    data.append("seats", JSON.stringify(seats));
     images.forEach((img) => data.append("images", img));
 
     try {
@@ -454,29 +602,35 @@ const MyCabin = () => {
       toast.error("Please fill all required fields");
       return;
     }
+
+    // Validate seats
+    if (seats.length === 0) {
+      toast.error("Please add at least one seat to the cabin");
+      return;
+    }
+
+    // Validate seat count matches capacity
+    if (seats.length !== parseInt(formData.capacity)) {
+      toast.error(`Number of seats (${seats.length}) does not match capacity (${formData.capacity})`);
+      return;
+    }
     
     setShowConfirmModal(true);
   };
 
   // Filter cabins based on all filters
   const filteredCabins = cabins.filter(cabin => {
-    // Search term filter (name or address)
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch = cabin.name?.toLowerCase().includes(searchLower) ||
                          cabin.address?.toLowerCase().includes(searchLower);
     
-    // Name filter
     const matchesName = cabin.name?.toLowerCase().includes(filters.name.toLowerCase());
-    
-    // Address filter
     const matchesAddress = cabin.address?.toLowerCase().includes(filters.address.toLowerCase());
     
-    // Price range filter
     const price = cabin.price || 0;
     const matchesPriceMin = filters.priceMin === '' || price >= Number(filters.priceMin);
     const matchesPriceMax = filters.priceMax === '' || price <= Number(filters.priceMax);
     
-    // Status filter
     const isActive = cabin.isActive === true;
     const matchesStatus = filters.status === 'all' || 
                          (filters.status === 'active' && isActive) ||
@@ -486,7 +640,6 @@ const MyCabin = () => {
            matchesPriceMin && matchesPriceMax && matchesStatus;
   });
 
-  // Get cabin status from isActive
   const getCabinStatus = (cabin) => {
     if (cabin.isActive === true) {
       return { status: 'Active', color: 'green' };
@@ -498,7 +651,6 @@ const MyCabin = () => {
   const currentAmenities = getAmenitiesForType(formData.cabinType);
   const { baseFee, gstAmount, totalWithGST } = getFeeWithGST();
 
-  // View Cabin Modal
   const handleViewCabin = (cabin) => {
     setSelectedCabin(cabin);
     setShowViewModal(true);
@@ -509,7 +661,6 @@ const MyCabin = () => {
     setSelectedCabin(null);
   };
 
-  // Format date
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     const date = new Date(dateString);
@@ -520,7 +671,6 @@ const MyCabin = () => {
     });
   };
 
-  // Format countdown
   const formatCountdown = (seconds) => {
     if (!seconds || seconds <= 0) return 'Expired';
     const days = Math.floor(seconds / 86400);
@@ -541,7 +691,6 @@ const MyCabin = () => {
     return 'text-emerald-600';
   };
 
-  // Clear all filters
   const clearFilters = () => {
     setFilters({
       name: '',
@@ -553,7 +702,6 @@ const MyCabin = () => {
     setSearchTerm('');
   };
 
-  // Get status counts
   const activeCount = cabins.filter(c => c.isActive === true).length;
   const inactiveCount = cabins.filter(c => c.isActive !== true).length;
   const exclusiveCount = cabins.filter(c => c.cabinType === 'exclusive').length;
@@ -563,7 +711,7 @@ const MyCabin = () => {
       <UsersNavbar />
 
       <div className="pt-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
-        {/* Header - Same as Partners Page */}
+        {/* Header */}
         <div className="admin-dash__header">
           <div>
             <h1 className="admin-dash__greeting">
@@ -617,7 +765,6 @@ const MyCabin = () => {
                 </span>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                {/* Search Bar */}
                 <div className="relative w-full sm:w-56">
                   <Search
                     size={16}
@@ -632,7 +779,6 @@ const MyCabin = () => {
                   />
                 </div>
                 
-                {/* Filter Toggle Button */}
                 <button
                   onClick={() => setShowFilters(!showFilters)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
@@ -641,12 +787,8 @@ const MyCabin = () => {
                 >
                   <Filter size={14} />
                   Filters
-                  {(filters.name || filters.address || filters.priceMin || filters.priceMax || filters.status !== 'all') && (
-                    <span className="w-2 h-2 rounded-full bg-red-500"></span>
-                  )}
                 </button>
 
-                {/* Payments Button with Label */}
                 <button
                   onClick={() => navigate("/my-cabin-payments")}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200"
@@ -655,7 +797,6 @@ const MyCabin = () => {
                   <span>Payments</span>
                 </button>
 
-                {/* Bookings Button with Label */}
                 <button
                   onClick={() => navigate("/cabin-bookings")}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
@@ -664,9 +805,12 @@ const MyCabin = () => {
                   <span>Bookings</span>
                 </button>
 
-                {/* Add Cabin Button with Label */}
                 <button
-                  onClick={() => setIsModalOpen(true)}
+                  onClick={() => {
+                    setIsModalOpen(true);
+                    setSeats([]);
+                    setSeatBatchMode(false);
+                  }}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors"
                 >
                   <Plus size={14} />
@@ -742,7 +886,7 @@ const MyCabin = () => {
               </div>
             )}
 
-            {/* Table Container - Full Width */}
+            {/* Table Container */}
             <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
               {loading ? (
                 <div className="flex flex-col items-center justify-center gap-3 py-20">
@@ -758,7 +902,7 @@ const MyCabin = () => {
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Address</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Type</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Price</th>
-                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Capacity</th>
+                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Seats</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Expiry</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Joined</th>
@@ -773,6 +917,7 @@ const MyCabin = () => {
                         const countdown = countdowns[cabin._id] || 0;
                         const hasExpiry = cabin.expiryDate ? true : false;
                         const isExpired = cabin.expiryDate && new Date(cabin.expiryDate) < new Date();
+                        const seatCount = cabin.seats?.length || 0;
                         
                         return (
                           <tr key={cabin._id} className="transition-colors group hover:bg-gray-50/80">
@@ -803,35 +948,25 @@ const MyCabin = () => {
                             </td>
                             <td className="p-4">
                               <span className={`px-3 py-1 text-xs font-bold rounded-full inline-flex items-center gap-1.5 ${
-                                isExclusive 
-                                  ? 'bg-amber-100 text-amber-700' 
-                                  : 'bg-blue-100 text-blue-700'
+                                isExclusive ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
                               }`}>
-                                {isExclusive ? (
-                                  <>
-                                    <Crown size={12} />
-                                    Exclusive
-                                  </>
-                                ) : 'Normal'}
+                                {isExclusive ? <><Crown size={12} /> Exclusive</> : 'Normal'}
                               </span>
                             </td>
                             <td className="p-4">
-                              <span className="text-sm font-bold text-gray-900">
-                                ₹{cabin.price || 0}
-                              </span>
+                              <span className="text-sm font-bold text-gray-900">₹{cabin.price || 0}</span>
                               <span className="text-xs text-gray-400 ml-0.5">/hr</span>
                             </td>
                             <td className="p-4">
-                              <span className="text-sm text-gray-700 flex items-center gap-1.5">
-                                <Users size={14} className="text-gray-400" />
-                                {cabin.capacity || 0}
-                              </span>
+                              <div className="flex items-center gap-1.5">
+                                <Armchair size={14} className="text-gray-400" />
+                                <span className="text-sm font-medium text-gray-700">{seatCount}</span>
+                                <span className="text-xs text-gray-400">seats</span>
+                              </div>
                             </td>
                             <td className="p-4">
                               <span className={`px-3 py-1 text-xs font-bold rounded-full ${
-                                cabinStatus.color === 'green' 
-                                  ? 'bg-emerald-100 text-emerald-700' 
-                                  : 'bg-gray-100 text-gray-600'
+                                cabinStatus.color === 'green' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'
                               }`}>
                                 {cabinStatus.status}
                               </span>
@@ -839,18 +974,14 @@ const MyCabin = () => {
                             <td className="p-4">
                               {hasExpiry ? (
                                 <div className="flex flex-col gap-0.5">
-                                  <span className="text-sm text-gray-600">
-                                    {formatDate(cabin.expiryDate)}
-                                  </span>
+                                  <span className="text-sm text-gray-600">{formatDate(cabin.expiryDate)}</span>
                                   {countdown > 0 && (
                                     <span className={`text-[10px] font-mono font-medium flex items-center gap-1 ${getCountdownColor(countdown)}`}>
                                       <Timer size={10} />
                                       {formatCountdown(countdown)}
                                     </span>
                                   )}
-                                  {isExpired && (
-                                    <span className="text-[10px] text-red-500 font-medium">🔴 Expired</span>
-                                  )}
+                                  {isExpired && <span className="text-[10px] text-red-500 font-medium">🔴 Expired</span>}
                                 </div>
                               ) : (
                                 <span className="text-sm text-gray-400">No expiry</span>
@@ -900,7 +1031,7 @@ const MyCabin = () => {
               )}
             </div>
 
-            {/* Footer with stats */}
+            {/* Footer */}
             {!loading && filteredCabins.length > 0 && (
               <div className="px-4 py-3 border-t border-gray-100 rounded-b-2xl flex flex-wrap items-center justify-between gap-2" style={{ backgroundColor: '#fafafa' }}>
                 <span className="text-xs text-gray-500">
@@ -919,10 +1050,6 @@ const MyCabin = () => {
                     <span className="w-2 h-2 rounded-full bg-amber-500"></span>
                     Exclusive: {exclusiveCount}
                   </span>
-                  <span className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                    With Expiry: {cabins.filter(c => c.expiryDate).length}
-                  </span>
                 </div>
               </div>
             )}
@@ -930,7 +1057,7 @@ const MyCabin = () => {
         </div>
       </div>
 
-      {/* View Cabin Modal - Same style as Partners View Modal */}
+      {/* View Cabin Modal */}
       {showViewModal && selectedCabin && (
         <div 
           className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
@@ -944,7 +1071,6 @@ const MyCabin = () => {
             className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
             <div className={`p-6 ${
               selectedCabin.cabinType === 'exclusive' 
                 ? 'bg-gradient-to-br from-amber-500 to-amber-600' 
@@ -980,7 +1106,6 @@ const MyCabin = () => {
               </div>
             </div>
 
-            {/* Body */}
             <div className="p-6 space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 bg-gray-50 rounded-xl">
@@ -988,9 +1113,7 @@ const MyCabin = () => {
                   <p className="mt-1 font-medium text-gray-700 flex items-center gap-2">
                     {selectedCabin.cabinType === 'exclusive' ? (
                       <><Crown size={16} className="text-amber-500" /> Exclusive</>
-                    ) : (
-                      'Normal'
-                    )}
+                    ) : 'Normal'}
                   </p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-xl">
@@ -1001,10 +1124,10 @@ const MyCabin = () => {
                   </p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Capacity</p>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Seats</p>
                   <p className="mt-1 font-medium text-gray-700 flex items-center gap-2">
-                    <Users size={16} className="text-gray-400" />
-                    {selectedCabin.capacity || 0} seats
+                    <Armchair size={16} className="text-gray-400" />
+                    {selectedCabin.seats?.length || 0} seats
                   </p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-xl">
@@ -1021,7 +1144,22 @@ const MyCabin = () => {
                 </div>
               </div>
 
-              {/* ✅ Expiry Date Display */}
+              {/* Seats List */}
+              {selectedCabin.seats && selectedCabin.seats.length > 0 && (
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Seats</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mt-2">
+                    {selectedCabin.seats.map((seat, idx) => (
+                      <div key={idx} className="bg-white p-2 rounded-lg border border-gray-200 text-center">
+                        <Armchair size={14} className="mx-auto text-indigo-500 mb-1" />
+                        <p className="text-xs font-medium text-gray-700">{seat.name}</p>
+                        <p className="text-[10px] text-gray-400">#{seat.number}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="p-4 bg-gray-50 rounded-xl">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Expiry Date</p>
                 <p className="mt-1 font-medium text-gray-700 flex items-center gap-2">
@@ -1048,7 +1186,6 @@ const MyCabin = () => {
                 </div>
               )}
 
-              {/* Amenities */}
               {selectedCabin.amenities && Object.values(selectedCabin.amenities).some(v => v) && (
                 <div className="p-4 bg-gray-50 rounded-xl">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Amenities</p>
@@ -1070,7 +1207,6 @@ const MyCabin = () => {
                 </div>
               )}
 
-              {/* Pricing Plans */}
               {selectedCabin.pricingPlans && selectedCabin.pricingPlans.length > 0 && (
                 <div className="p-4 bg-gray-50 rounded-xl">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Pricing Plans</p>
@@ -1086,7 +1222,6 @@ const MyCabin = () => {
                 </div>
               )}
 
-              {/* Action Buttons */}
               <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-200">
                 <button
                   onClick={() => {
@@ -1114,14 +1249,13 @@ const MyCabin = () => {
         </div>
       )}
 
-      {/* Add Cabin Modal - Same as before */}
+      {/* Add Cabin Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[1100] flex items-end sm:items-center justify-center p-2 sm:p-4 bg-slate-900/50 backdrop-blur-sm">
           <div
             className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200"
             style={{ maxHeight: "95vh" }}
           >
-            {/* Modal Header */}
             <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 sm:p-5 flex items-center justify-between flex-shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-white/20 flex items-center justify-center">
@@ -1144,10 +1278,8 @@ const MyCabin = () => {
               </button>
             </div>
 
-            {/* Modal Body - Scrollable */}
             <div className="overflow-y-auto p-4 sm:p-6 flex-1">
               <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
-                {/* Basic Info - Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Building Name *</label>
@@ -1173,7 +1305,6 @@ const MyCabin = () => {
                   </div>
                 </div>
 
-                {/* Cabin Details - Grid */}
                 <div className="grid grid-cols-1 xs:grid-cols-3 gap-3 sm:gap-4">
                   <div>
                     <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Cabin Spec *</label>
@@ -1182,17 +1313,6 @@ const MyCabin = () => {
                       type="text" name="cabin"
                       placeholder="e.g. Office B"
                       value={formData.cabin}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Capacity *</label>
-                    <input
-                      className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
-                      type="number" name="capacity" min="1"
-                      placeholder="10"
-                      value={formData.capacity}
                       onChange={handleChange}
                       required
                     />
@@ -1208,9 +1328,109 @@ const MyCabin = () => {
                       required
                     />
                   </div>
+                  <div>
+                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Number of Seats *</label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <input
+                        className="flex-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                        type="number" name="capacity" min="1"
+                        placeholder="e.g. 5"
+                        value={formData.capacity}
+                        onChange={handleChange}
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={openBatchSeatModal}
+                        disabled={!formData.capacity || parseInt(formData.capacity) < 1}
+                        className={`px-3 py-2.5 sm:py-3 rounded-xl text-xs font-bold transition-colors whitespace-nowrap ${
+                          !formData.capacity || parseInt(formData.capacity) < 1
+                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                            : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                        }`}
+                      >
+                        <Plus size={14} className="inline mr-1" /> Add
+                      </button>
+                    </div>
+                    {formData.capacity && parseInt(formData.capacity) > 0 && (
+                      <p className="text-[10px] text-slate-400 mt-0.5">
+                        {seats.length} of {formData.capacity} seats added
+                        {seats.length > 0 && seats.length === parseInt(formData.capacity) && (
+                          <span className="text-emerald-600 font-bold ml-1">✅ Complete!</span>
+                        )}
+                        {seats.length > 0 && seats.length < parseInt(formData.capacity) && (
+                          <span className="text-amber-600 ml-1">⚠️ {parseInt(formData.capacity) - seats.length} more needed</span>
+                        )}
+                      </p>
+                    )}
+                  </div>
                 </div>
 
-                {/* Cabin Type */}
+                {/* Seat Management Section */}
+                <div>
+                  <div className="flex justify-between items-center mb-1.5">
+                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      Seat List ({seats.length} / {formData.capacity || '0'})
+                    </label>
+                    <div className="flex gap-1.5">
+                      {formData.capacity && parseInt(formData.capacity) > 0 && seats.length === 0 && (
+                        <button
+                          type="button"
+                          onClick={generateAllSeats}
+                          className="text-[10px] sm:text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 sm:px-3 py-1 rounded-lg hover:bg-emerald-100 transition-colors flex items-center gap-1"
+                        >
+                          <GridIcon size={12} /> Generate All
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={openSeatModal}
+                        className="text-[10px] sm:text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 sm:px-3 py-1 rounded-lg hover:bg-indigo-100 transition-colors flex items-center gap-1"
+                      >
+                        <Plus size={12} /> Add Manual
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {seats.length > 0 ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                      {seats.map((seat, idx) => (
+                        <div key={idx} className="bg-slate-50 rounded-lg border border-slate-200 p-2 text-center relative group">
+                          <Armchair size={14} className="mx-auto text-indigo-500 mb-1" />
+                          <p className="text-xs font-medium text-gray-700 truncate">{seat.name}</p>
+                          <p className="text-[10px] text-gray-400">#{seat.number}</p>
+                          <div className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              type="button"
+                              onClick={() => editSeat(idx)}
+                              className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-[8px] hover:bg-indigo-200 transition-colors"
+                            >
+                              ✎
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removeSeat(idx)}
+                              className="w-5 h-5 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-[8px] hover:bg-red-200 transition-colors"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center">
+                      <p className="text-xs text-slate-400">
+                        {formData.capacity && parseInt(formData.capacity) > 0 ? (
+                          <>Click <strong>"Add"</strong> next to seats field to add seats one by one, or <strong>"Generate All"</strong> to create all at once.</>
+                        ) : (
+                          <>Enter number of seats first, then click <strong>"Add"</strong> to add seats.</>
+                        )}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
                 <div>
                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Cabin Type</label>
                   <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-1">
@@ -1241,11 +1461,8 @@ const MyCabin = () => {
                   </div>
                 </div>
 
-                {/* Amenities */}
                 <div>
-                  <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    Amenities
-                  </label>
+                  <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Amenities</label>
                   <div className="grid grid-cols-2 xs:grid-cols-3 gap-1.5 sm:gap-2 mt-1">
                     {currentAmenities.map(item => {
                       const Icon = item.icon;
@@ -1272,7 +1489,6 @@ const MyCabin = () => {
                   </div>
                 </div>
 
-                {/* Pricing Plans */}
                 <div>
                   <div className="flex justify-between items-center mb-1.5">
                     <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Pricing Plans</label>
@@ -1319,7 +1535,6 @@ const MyCabin = () => {
                   )}
                 </div>
 
-                {/* Description */}
                 <div>
                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Description</label>
                   <textarea
@@ -1332,7 +1547,6 @@ const MyCabin = () => {
                   />
                 </div>
 
-                {/* Images */}
                 <div>
                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Photos</label>
                   <div className="mt-1 border-2 border-dashed border-indigo-200 rounded-xl p-4 sm:p-6 text-center hover:border-indigo-400 transition-colors relative">
@@ -1363,7 +1577,6 @@ const MyCabin = () => {
                   )}
                 </div>
 
-                {/* Fee Summary */}
                 <div className={`p-3 sm:p-4 rounded-xl ${
                   formData.cabinType === 'exclusive' ? 'bg-amber-50 border border-amber-200' : 'bg-emerald-50 border border-emerald-200'
                 }`}>
@@ -1384,7 +1597,6 @@ const MyCabin = () => {
                   </div>
                 </div>
 
-                {/* Actions */}
                 <div className="grid grid-cols-2 gap-2 sm:gap-3 pt-2">
                   <button
                     type="button"
@@ -1415,7 +1627,83 @@ const MyCabin = () => {
         </div>
       )}
 
-      {/* Confirm Modal - Same as before */}
+      {/* Seat Add/Edit Modal */}
+      {showSeatModal && (
+        <div className="fixed inset-0 z-[1150] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-slate-900">
+                  {editingSeatIndex !== null ? 'Edit Seat' : seatBatchMode ? `Add Seat ${batchSeatNumber}` : 'Add Seat'}
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowSeatModal(false);
+                    setSeatInput({ name: '', number: '' });
+                    setEditingSeatIndex(null);
+                    setSeatBatchMode(false);
+                  }}
+                  className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors flex items-center justify-center text-slate-600"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Seat Name *</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Seat A1, Desk 1, CEO Chair"
+                    value={seatInput.name}
+                    onChange={(e) => setSeatInput({ ...seatInput, name: e.target.value })}
+                    className="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                    autoFocus
+                  />
+                  {seatBatchMode && (
+                    <p className="text-[10px] text-indigo-500 mt-0.5">💡 Seat {batchSeatNumber} of {formData.capacity}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Seat Number *</label>
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder="e.g. 1"
+                    value={seatInput.number}
+                    onChange={(e) => setSeatInput({ ...seatInput, number: e.target.value })}
+                    className="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-0.5">Each seat must have a unique number</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <button
+                    onClick={() => {
+                      setShowSeatModal(false);
+                      setSeatInput({ name: '', number: '' });
+                      setEditingSeatIndex(null);
+                      setSeatBatchMode(false);
+                    }}
+                    className="py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold text-sm hover:bg-slate-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={addSeat}
+                    className="py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition-colors"
+                  >
+                    {editingSeatIndex !== null ? 'Update' : seatBatchMode ? 'Add & Next' : 'Add'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Modal */}
       {showConfirmModal && (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm">
           <div className="bg-white w-full max-w-sm sm:max-w-md rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
@@ -1446,6 +1734,12 @@ const MyCabin = () => {
                   <span className={`font-semibold ${formData.cabinType === 'exclusive' ? 'text-amber-600' : 'text-indigo-600'}`}>
                     {formData.cabinType === 'exclusive' ? '⭐ Exclusive' : 'Normal'}
                   </span>
+                </div>
+                <div className="flex justify-between"><span className="text-slate-500">Capacity</span>
+                  <span className="font-semibold">{formData.capacity} seats</span>
+                </div>
+                <div className="flex justify-between"><span className="text-slate-500">Seats Added</span>
+                  <span className="font-semibold">{seats.length} seats</span>
                 </div>
                 <div className="flex justify-between"><span className="text-slate-500">Amenities</span>
                   <span className="font-semibold">{Object.values(formData.amenities).filter(v => v).length} / {currentAmenities.length}</span>

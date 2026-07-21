@@ -1,4 +1,4 @@
-// MyWallet.jsx - Complete with MyCabins Style Design
+// MyWallet.jsx - Complete with Fixed View Popup Overflow
 import axios from "axios";
 import {
   Wallet as WalletIcon,
@@ -21,7 +21,12 @@ import {
   RefreshCw,
   Filter,
   XCircle as XCircleIcon,
-  Plus
+  Plus,
+  Smartphone,
+  Store,
+  QrCode,
+  FileText,
+  Image
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -31,7 +36,7 @@ import AdminNavbar from "./AdminNavbar";
 import * as XLSX from 'xlsx';
 import "./Dashboard.css";
 
-const API_URL = "http://62.72.29.27:5003";
+const API_URL = "https://spaceapi.iryax.com";
 
 const MyWallet = () => {
   const [wallet, setWallet] = useState({
@@ -154,7 +159,8 @@ const MyWallet = () => {
       filtered = filtered.filter(t =>
         t.cabinName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         t.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        t.description?.toLowerCase().includes(searchTerm.toLowerCase())
+        t.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        t.transactionId?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -170,7 +176,7 @@ const MyWallet = () => {
   }, [searchTerm, filterType, filterDate, transactions]);
 
   const formatCurrency = (amount) => {
-    return `₹${amount.toLocaleString('en-IN')}`;
+    return `₹${amount?.toLocaleString('en-IN') || 0}`;
   };
 
   const formatDate = (dateStr) => {
@@ -204,6 +210,33 @@ const MyWallet = () => {
     });
   };
 
+  const getPaymentModeIcon = (mode) => {
+    const modes = {
+      cash: <Store size={16} className="text-orange-500" />,
+      upi: <Smartphone size={16} className="text-purple-500" />,
+      card: <CreditCard size={16} className="text-blue-500" />
+    };
+    return modes[mode] || <CreditCard size={16} className="text-gray-500" />;
+  };
+
+  const getPaymentModeLabel = (mode) => {
+    const labels = {
+      cash: 'Cash',
+      upi: 'UPI',
+      card: 'Card'
+    };
+    return labels[mode] || mode || 'N/A';
+  };
+
+  const getPaymentModeBadge = (mode) => {
+    const modes = {
+      cash: { label: 'Cash', color: 'bg-orange-100 text-orange-700' },
+      upi: { label: 'UPI', color: 'bg-purple-100 text-purple-700' },
+      card: { label: 'Card', color: 'bg-blue-100 text-blue-700' }
+    };
+    return modes[mode] || { label: mode || 'N/A', color: 'bg-gray-100 text-gray-700' };
+  };
+
   const handleViewDetails = (transaction) => {
     setSelectedTransaction(transaction);
     setShowDetailModal(true);
@@ -232,6 +265,8 @@ const MyWallet = () => {
         'Amount': t.amount || 0,
         'Type': t.type || 'credit',
         'Description': t.description || '',
+        'Payment Mode': getPaymentModeLabel(t.paymentMode),
+        'Transaction ID': t.transactionId || 'N/A',
         'Start Date': t.startDate || 'N/A',
         'End Date': t.endDate || 'N/A',
         'Transaction Date': t.createdAt ? formatDate(t.createdAt) : 'N/A'
@@ -240,8 +275,8 @@ const MyWallet = () => {
       const ws = XLSX.utils.json_to_sheet(exportData);
       ws['!cols'] = [
         { wch: 6 }, { wch: 25 }, { wch: 20 }, { wch: 15 },
-        { wch: 12 }, { wch: 10 }, { wch: 30 }, { wch: 15 },
-        { wch: 15 }, { wch: 15 }
+        { wch: 12 }, { wch: 10 }, { wch: 30 }, { wch: 12 },
+        { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 15 }
       ];
 
       const wb = XLSX.utils.book_new();
@@ -347,7 +382,7 @@ const MyWallet = () => {
       {isAdmin ? <AdminNavbar /> : <UsersNavbar />}
 
       <div className="pt-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
-        {/* Header - Same as Partners Page */}
+        {/* Header */}
         <div className="admin-dash__header">
           <div>
             <h1 className="admin-dash__greeting">
@@ -644,7 +679,7 @@ const MyWallet = () => {
                   <p className="text-sm">Try adjusting your filters.</p>
                 </div>
               ) : (
-                <table className="w-full min-w-[900px] text-left">
+                <table className="w-full min-w-[1000px] text-left">
                   <thead>
                     <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
@@ -652,53 +687,56 @@ const MyWallet = () => {
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Customer</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Date</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Amount</th>
-                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Type</th>
+                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Payment</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {filteredTransactions.map((transaction, index) => (
-                      <tr key={index} className="transition-colors hover:bg-gray-50/80">
-                        <td className="p-4">
-                          <span className="text-sm font-semibold text-gray-400">#{index + 1}</span>
-                        </td>
-                        <td className="p-4">
-                          <div>
-                            <p className="font-semibold text-gray-900 text-sm">
-                              {transaction.cabinName || "Unknown Cabin"}
-                            </p>
-                            <p className="text-[10px] text-gray-400">
-                              Booking #{transaction.bookingId?._id?.slice(-6) || "N/A"}
-                            </p>
-                          </div>
-                        </td>
-                        <td className="p-4">
-                          <p className="font-medium text-gray-800 text-sm">{transaction.customerName || "Unknown"}</p>
-                          <p className="text-xs text-gray-400">{transaction.customerMobile || "N/A"}</p>
-                        </td>
-                        <td className="p-4">
-                          <p className="text-sm text-gray-700">{formatDate(transaction.startDate)}</p>
-                          <p className="text-xs text-gray-400">{transaction.startDate} - {transaction.endDate}</p>
-                        </td>
-                        <td className="p-4">
-                          <span className="text-sm font-bold text-emerald-600">+{formatCurrency(transaction.amount)}</span>
-                        </td>
-                        <td className="p-4">
-                          <span className="px-3 py-1 text-xs font-bold rounded-full bg-emerald-100 text-emerald-700 inline-flex items-center gap-1">
-                            <ArrowUpRight size={12} />
-                            Credit
-                          </span>
-                        </td>
-                        <td className="p-4">
-                          <button
-                            onClick={() => handleViewDetails(transaction)}
-                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors whitespace-nowrap"
-                          >
-                            <Eye size={13} /> View
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                    {filteredTransactions.map((transaction, index) => {
+                      const paymentBadge = getPaymentModeBadge(transaction.paymentMode);
+                      return (
+                        <tr key={index} className="transition-colors hover:bg-gray-50/80">
+                          <td className="p-4">
+                            <span className="text-sm font-semibold text-gray-400">#{index + 1}</span>
+                          </td>
+                          <td className="p-4">
+                            <div>
+                              <p className="font-semibold text-gray-900 text-sm">
+                                {transaction.cabinName || "Unknown Cabin"}
+                              </p>
+                              <p className="text-[10px] text-gray-400">
+                                Booking #{transaction.bookingId?._id?.slice(-6) || transaction.bookingId?.slice?.(-6) || "N/A"}
+                              </p>
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            <p className="font-medium text-gray-800 text-sm">{transaction.customerName || "Unknown"}</p>
+                            <p className="text-xs text-gray-400">{transaction.customerMobile || "N/A"}</p>
+                          </td>
+                          <td className="p-4">
+                            <p className="text-sm text-gray-700">{formatDate(transaction.startDate)}</p>
+                            <p className="text-xs text-gray-400">{transaction.startDate} - {transaction.endDate}</p>
+                          </td>
+                          <td className="p-4">
+                            <span className="text-sm font-bold text-emerald-600">+{formatCurrency(transaction.amount)}</span>
+                          </td>
+                          <td className="p-4">
+                            <span className={`px-3 py-1 text-xs font-bold rounded-full inline-flex items-center gap-1.5 ${paymentBadge.color}`}>
+                              {getPaymentModeIcon(transaction.paymentMode)}
+                              {paymentBadge.label}
+                            </span>
+                          </td>
+                          <td className="p-4">
+                            <button
+                              onClick={() => handleViewDetails(transaction)}
+                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors whitespace-nowrap"
+                            >
+                              <Eye size={13} /> View
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               )}
@@ -716,10 +754,6 @@ const MyWallet = () => {
                     Credits: {transactions.filter(t => t.type === 'credit').length}
                   </span>
                   <span className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-red-500"></span>
-                    Debits: {transactions.filter(t => t.type === 'debit').length}
-                  </span>
-                  <span className="flex items-center gap-1">
                     <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
                     Balance: {formatCurrency(wallet.balance)}
                   </span>
@@ -733,8 +767,8 @@ const MyWallet = () => {
       {/* Withdraw Modal */}
       {showWithdrawModal && (
         <div className="fixed inset-0 z-[1300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="bg-gradient-to-br from-indigo-600 to-purple-600 p-5 text-white rounded-t-3xl flex items-center justify-between">
+          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
+            <div className="bg-gradient-to-br from-indigo-600 to-purple-600 p-5 text-white rounded-t-3xl flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
                   <Banknote size={20} className="text-white" />
@@ -752,7 +786,7 @@ const MyWallet = () => {
               </button>
             </div>
 
-            <div className="p-5 space-y-4">
+            <div className="p-5 space-y-4 overflow-y-auto flex-1">
               <div>
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1.5">Amount to Withdraw (₹)</label>
                 <input
@@ -836,51 +870,79 @@ const MyWallet = () => {
         </div>
       )}
 
-      {/* Transaction Detail Modal */}
+      {/* ============================================= */}
+      {/* ENHANCED TRANSACTION DETAIL MODAL - FIXED OVERFLOW */}
+      {/* ============================================= */}
       {showDetailModal && selectedTransaction && (
-        <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="bg-gradient-to-br from-indigo-600 to-purple-600 p-5 text-white rounded-t-3xl flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+        <div 
+          className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowDetailModal(false);
+            }
+          }}
+        >
+          <div 
+            className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Fixed Header */}
+            <div className="bg-gradient-to-br from-indigo-600 to-purple-600 p-5 text-white rounded-t-3xl flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
                   <WalletIcon size={20} className="text-white" />
                 </div>
-                <div>
-                  <h3 className="text-xl font-bold">Transaction Details</h3>
-                  <p className="text-sm text-indigo-200">Booking #{selectedTransaction.bookingId?._id?.slice(-6) || "N/A"}</p>
+                <div className="min-w-0">
+                  <h3 className="text-xl font-bold truncate">Transaction Details</h3>
+                  <p className="text-sm text-indigo-200 truncate">
+                    Booking #{selectedTransaction.bookingId?._id?.slice(-6) || selectedTransaction.bookingId?.slice?.(-6) || "N/A"}
+                  </p>
                 </div>
               </div>
               <button
                 onClick={() => setShowDetailModal(false)}
-                className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors shrink-0"
               >
                 <X size={20} />
               </button>
             </div>
 
-            <div className="p-5 space-y-4">
+            {/* Scrollable Content */}
+            <div className="p-5 space-y-4 overflow-y-auto flex-1">
+              {/* Amount */}
               <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-200 text-center">
                 <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider">Amount Credited</p>
                 <p className="text-3xl font-bold text-emerald-600 mt-1">+{formatCurrency(selectedTransaction.amount)}</p>
               </div>
 
+              {/* Payment Mode Badge */}
+              <div className="flex items-center justify-center gap-2">
+                <span className={`px-4 py-1.5 text-xs font-bold rounded-full inline-flex items-center gap-2 ${getPaymentModeBadge(selectedTransaction.paymentMode).color}`}>
+                  {getPaymentModeIcon(selectedTransaction.paymentMode)}
+                  {getPaymentModeLabel(selectedTransaction.paymentMode)}
+                </span>
+              </div>
+
+              {/* Cabin & Customer */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-4 bg-gray-50 rounded-xl">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
                     <Building2 size={12} />
                     Cabin
                   </p>
-                  <p className="mt-1 font-semibold text-gray-800 text-sm">{selectedTransaction.cabinName || "Unknown"}</p>
+                  <p className="mt-1 font-semibold text-gray-800 text-sm break-words">{selectedTransaction.cabinName || "Unknown"}</p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-xl">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
                     <User size={12} />
                     Customer
                   </p>
-                  <p className="mt-1 font-semibold text-gray-800 text-sm">{selectedTransaction.customerName || "Unknown"}</p>
+                  <p className="mt-1 font-semibold text-gray-800 text-sm break-words">{selectedTransaction.customerName || "Unknown"}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{selectedTransaction.customerMobile || "N/A"}</p>
                 </div>
               </div>
 
+              {/* Dates */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-4 bg-gray-50 rounded-xl">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
@@ -898,13 +960,96 @@ const MyWallet = () => {
                 </div>
               </div>
 
-              {selectedTransaction.description && (
-                <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Description</p>
-                  <p className="mt-1 text-sm text-gray-700">{selectedTransaction.description}</p>
+              {/* Transaction Details - UPI */}
+              {selectedTransaction.paymentMode === 'upi' && selectedTransaction.paymentDetails && (
+                <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
+                  <p className="text-xs font-bold text-purple-700 uppercase tracking-wider flex items-center gap-2 mb-2">
+                    <Smartphone size={14} /> UPI Payment Details
+                  </p>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between items-center gap-2">
+                      <span className="text-gray-600 shrink-0">UPI ID</span>
+                      <span className="font-medium text-gray-800 break-all text-right">{selectedTransaction.paymentDetails.upiId || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between items-center gap-2">
+                      <span className="text-gray-600 shrink-0">UPI App</span>
+                      <span className="font-medium text-gray-800 break-all text-right">{selectedTransaction.paymentDetails.upiApp || 'N/A'}</span>
+                    </div>
+                  </div>
                 </div>
               )}
 
+              {/* Transaction Details - Card */}
+              {selectedTransaction.paymentMode === 'card' && selectedTransaction.paymentDetails && (
+                <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                  <p className="text-xs font-bold text-blue-700 uppercase tracking-wider flex items-center gap-2 mb-2">
+                    <CreditCard size={14} /> Card Payment Details
+                  </p>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between items-center gap-2">
+                      <span className="text-gray-600 shrink-0">Card Number</span>
+                      <span className="font-medium text-gray-800 font-mono break-all text-right">{selectedTransaction.paymentDetails.cardNumber || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between items-center gap-2">
+                      <span className="text-gray-600 shrink-0">Card Holder</span>
+                      <span className="font-medium text-gray-800 break-all text-right">{selectedTransaction.paymentDetails.cardHolderName || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between items-center gap-2">
+                      <span className="text-gray-600 shrink-0">Expiry</span>
+                      <span className="font-medium text-gray-800 break-all text-right">{selectedTransaction.paymentDetails.cardExpiry || 'N/A'}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Transaction Details - Cash */}
+              {selectedTransaction.paymentMode === 'cash' && (
+                <div className="bg-orange-50 rounded-xl p-4 border border-orange-200">
+                  <p className="text-xs font-bold text-orange-700 uppercase tracking-wider flex items-center gap-2">
+                    <Store size={14} /> Cash Payment
+                  </p>
+                  <p className="text-sm text-gray-600 mt-2">Payment made in cash at the counter</p>
+                </div>
+              )}
+
+              {/* Screenshot */}
+              {selectedTransaction.paymentDetails?.screenshot && (
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2 mb-2">
+                    <Image size={14} /> Payment Screenshot
+                  </p>
+                  <div className="flex justify-center">
+                    <img 
+                      src={`${API_URL}${selectedTransaction.paymentDetails.screenshot}`} 
+                      alt="Payment Screenshot" 
+                      className="max-h-48 rounded-lg border border-gray-200 cursor-pointer hover:opacity-90 transition object-contain"
+                      onClick={() => window.open(`${API_URL}${selectedTransaction.paymentDetails.screenshot}`, '_blank')}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1 text-center">Click to view full size</p>
+                </div>
+              )}
+
+              {/* Transaction ID */}
+              <div className="p-4 bg-gray-50 rounded-xl">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
+                  <FileText size={12} />
+                  Transaction ID
+                </p>
+                <p className="mt-1 font-mono text-xs text-gray-700 break-all">
+                  {selectedTransaction.transactionId || selectedTransaction.paymentDetails?.transactionId || 'N/A'}
+                </p>
+              </div>
+
+              {/* Description */}
+              {selectedTransaction.description && (
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Description</p>
+                  <p className="mt-1 text-sm text-gray-700 break-words">{selectedTransaction.description}</p>
+                </div>
+              )}
+
+              {/* Timestamp */}
               <div className="p-4 bg-gray-50 rounded-xl">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
                   <Clock size={12} />
@@ -926,29 +1071,41 @@ const MyWallet = () => {
         </div>
       )}
 
-      {/* Withdrawal Detail Modal */}
+      {/* ============================================= */}
+      {/* WITHDRAWAL DETAIL MODAL - FIXED OVERFLOW */}
+      {/* ============================================= */}
       {showWithdrawalDetailModal && selectedWithdrawal && (
-        <div className="fixed inset-0 z-[1400] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="bg-gradient-to-br from-purple-600 to-indigo-600 p-5 text-white rounded-t-3xl flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+        <div 
+          className="fixed inset-0 z-[1400] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowWithdrawalDetailModal(false);
+            }
+          }}
+        >
+          <div 
+            className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="bg-gradient-to-br from-purple-600 to-indigo-600 p-5 text-white rounded-t-3xl flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
                   <History size={20} className="text-white" />
                 </div>
-                <div>
-                  <h3 className="text-xl font-bold">Withdrawal Details</h3>
-                  <p className="text-sm text-purple-200">#{selectedWithdrawal._id?.slice(-6) || "N/A"}</p>
+                <div className="min-w-0">
+                  <h3 className="text-xl font-bold truncate">Withdrawal Details</h3>
+                  <p className="text-sm text-purple-200 truncate">#{selectedWithdrawal._id?.slice(-6) || "N/A"}</p>
                 </div>
               </div>
               <button
                 onClick={() => setShowWithdrawalDetailModal(false)}
-                className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors shrink-0"
               >
                 <X size={20} />
               </button>
             </div>
 
-            <div className="p-5 space-y-4">
+            <div className="p-5 space-y-4 overflow-y-auto flex-1">
               <div className={`rounded-xl p-4 border text-center ${
                 selectedWithdrawal.status === 'completed' 
                   ? 'bg-emerald-50 border-emerald-200' 
@@ -990,18 +1147,18 @@ const MyWallet = () => {
                 </p>
                 <div className="mt-2 space-y-1.5">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Bank Name</span>
-                    <span className="font-medium text-gray-800">{selectedWithdrawal.bankName || 'N/A'}</span>
+                    <span className="text-gray-500 shrink-0">Bank Name</span>
+                    <span className="font-medium text-gray-800 break-all text-right">{selectedWithdrawal.bankName || 'N/A'}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Account Number</span>
-                    <span className="font-medium text-gray-800 font-mono">
+                    <span className="text-gray-500 shrink-0">Account Number</span>
+                    <span className="font-medium text-gray-800 font-mono break-all text-right">
                       {selectedWithdrawal.accountNumber || 'N/A'}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">IFSC Code</span>
-                    <span className="font-medium text-gray-800 font-mono">{selectedWithdrawal.ifscCode || 'N/A'}</span>
+                    <span className="text-gray-500 shrink-0">IFSC Code</span>
+                    <span className="font-medium text-gray-800 font-mono break-all text-right">{selectedWithdrawal.ifscCode || 'N/A'}</span>
                   </div>
                 </div>
               </div>
@@ -1026,7 +1183,7 @@ const MyWallet = () => {
               {selectedWithdrawal.note && (
                 <div className="p-4 bg-gray-50 rounded-xl">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Note</p>
-                  <p className="mt-1 text-sm text-gray-700">{selectedWithdrawal.note}</p>
+                  <p className="mt-1 text-sm text-gray-700 break-words">{selectedWithdrawal.note}</p>
                 </div>
               )}
 

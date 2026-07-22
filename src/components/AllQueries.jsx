@@ -1,8 +1,7 @@
-// AllQueries.jsx - Complete Component
+// AllQueries.jsx - Complete Component with Always Visible Filters, No Date
 import axios from "axios";
 import {
   Calendar,
-  Search,
   User,
   Mail,
   Phone,
@@ -11,7 +10,6 @@ import {
   Eye,
   Edit,
   Trash2,
-  Filter,
   XCircle as XCircleIcon,
   CheckCircle,
   Clock,
@@ -34,9 +32,10 @@ const API_URL = "https://spaceapi.iryax.com";
 const AllQueries = () => {
   const [queries, setQueries] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
-  const [showFilters, setShowFilters] = useState(false);
+  const [filterName, setFilterName] = useState("");
+  const [filterEmail, setFilterEmail] = useState("");
+  const [filterPhone, setFilterPhone] = useState("");
   const [selectedQuery, setSelectedQuery] = useState(null);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
@@ -171,24 +170,23 @@ const AllQueries = () => {
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      day: 'numeric'
     });
   };
 
   const clearFilters = () => {
-    setSearchTerm("");
     setFilterStatus("all");
+    setFilterName("");
+    setFilterEmail("");
+    setFilterPhone("");
   };
 
   const filteredQueries = queries.filter(q => {
-    const matchSearch = q.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        q.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        q.phone?.includes(searchTerm) ||
-                        q.message?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchName = q.name?.toLowerCase().includes(filterName.toLowerCase()) || filterName === "";
+    const matchEmail = q.email?.toLowerCase().includes(filterEmail.toLowerCase()) || filterEmail === "";
+    const matchPhone = q.phone?.includes(filterPhone) || filterPhone === "";
     const matchStatus = filterStatus === 'all' || q.status === filterStatus;
-    return matchSearch && matchStatus;
+    return matchName && matchEmail && matchPhone && matchStatus;
   });
 
   if (loading) {
@@ -213,20 +211,15 @@ const AllQueries = () => {
             <h1 className="admin-dash__greeting">
               All <span>Queries</span>
             </h1>
-            <p className="admin-dash__subtitle">
-              Manage and track all user inquiries and support requests.
-            </p>
           </div>
-          <div className="admin-dash__date-pill">
-            <Calendar size={16} />
-            <span>
-              {new Date().toLocaleDateString("en-US", {
-                weekday: "short",
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-              })}
-            </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={fetchQueries}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200"
+            >
+              <RefreshCw size={14} />
+              <span className="hidden xs:inline">Refresh</span>
+            </button>
           </div>
         </div>
 
@@ -263,63 +256,62 @@ const AllQueries = () => {
                 {filteredQueries.length}
               </span>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="relative w-full sm:w-48">
-                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          </div>
+
+          {/* ─── FILTERS - ALWAYS VISIBLE ─── */}
+          <div className="px-4 pt-4 pb-3 border-b border-gray-100" style={{ backgroundColor: '#fafafa' }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div>
+                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Name</label>
                 <input
                   type="text"
-                  placeholder="Search queries..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  placeholder="Filter by name..."
+                  value={filterName}
+                  onChange={(e) => setFilterName(e.target.value)}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                 />
               </div>
-
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${showFilters ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-              >
-                <Filter size={14} />
-                Filters
-                {filterStatus !== 'all' && (
-                  <span className="w-2 h-2 rounded-full bg-red-500"></span>
-                )}
-              </button>
-
-              <button
-                onClick={fetchQueries}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200"
-              >
-                <RefreshCw size={14} />
-                <span className="hidden xs:inline">Refresh</span>
+              <div>
+                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Email</label>
+                <input
+                  type="text"
+                  placeholder="Filter by email..."
+                  value={filterEmail}
+                  onChange={(e) => setFilterEmail(e.target.value)}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Phone</label>
+                <input
+                  type="text"
+                  placeholder="Filter by phone..."
+                  value={filterPhone}
+                  onChange={(e) => setFilterPhone(e.target.value)}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</label>
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                >
+                  <option value="all">All Status</option>
+                  <option value="pending">Pending</option>
+                  <option value="read">Read</option>
+                  <option value="replied">Replied</option>
+                  <option value="closed">Closed</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex justify-end mt-3">
+              <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-red-600 transition-colors">
+                <XCircleIcon size={14} /> Clear All Filters
               </button>
             </div>
           </div>
-
-          {/* Filter Panel */}
-          {showFilters && (
-            <div className="px-4 pt-4 pb-3 border-b border-gray-100" style={{ backgroundColor: '#fafafa' }}>
-              <div className="flex flex-wrap items-end gap-3">
-                <div className="min-w-[140px]">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</label>
-                  <select
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
-                    className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  >
-                    <option value="all">All Status</option>
-                    <option value="pending">Pending</option>
-                    <option value="read">Read</option>
-                    <option value="replied">Replied</option>
-                    <option value="closed">Closed</option>
-                  </select>
-                </div>
-                <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-red-600 transition-colors">
-                  <XCircleIcon size={14} /> Clear
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* Table Container */}
           <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>

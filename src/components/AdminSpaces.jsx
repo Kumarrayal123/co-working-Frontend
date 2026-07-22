@@ -2,16 +2,29 @@ import axios from "axios";
 import { 
   ArrowRight, 
   MapPin, 
-  Search, 
   Users, 
   Building2, 
-  Edit, 
   Trash2,
   Calendar,
-  Filter,
   XCircle,
   Crown,
-  Sparkles
+  Sparkles,
+  Wifi,
+  Car,
+  Lock,
+  Armchair,
+  Bath,
+  Shield,
+  Coffee,
+  Dumbbell,
+  Tv,
+  Printer,
+  Phone,
+  Wind,
+  X,
+  Eye,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -25,11 +38,12 @@ const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526
 const AdminSpaces = () => {
   const [cabins, setCabins] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
   const [filterLocation, setFilterLocation] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
-  const [showFilters, setShowFilters] = useState(false);
+  const [selectedCabin, setSelectedCabin] = useState(null);
+  const [showPopup, setShowPopup] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -63,6 +77,28 @@ const AdminSpaces = () => {
     }
   };
 
+  const handleViewDetails = (cabin) => {
+    setSelectedCabin(cabin);
+    setCurrentImageIndex(0);
+    setShowPopup(true);
+  };
+
+  const nextImage = () => {
+    if (selectedCabin && selectedCabin.images) {
+      setCurrentImageIndex((prev) => 
+        prev === selectedCabin.images.length - 1 ? 0 : prev + 1
+      );
+    }
+  };
+
+  const prevImage = () => {
+    if (selectedCabin && selectedCabin.images) {
+      setCurrentImageIndex((prev) => 
+        prev === 0 ? selectedCabin.images.length - 1 : prev - 1
+      );
+    }
+  };
+
   const getLocations = () => {
     const locations = cabins
       .filter(c => c.address)
@@ -74,21 +110,18 @@ const AdminSpaces = () => {
   const locations = getLocations();
 
   const clearFilters = () => {
-    setSearchTerm("");
     setFilterLocation("");
     setFilterType("all");
     setFilterStatus("all");
   };
 
   const filteredCabins = cabins.filter(cabin => {
-    const matchSearch = cabin.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        cabin.address?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchLocation = filterLocation ? cabin.address?.toLowerCase().includes(filterLocation.toLowerCase()) : true;
     const matchType = filterType === 'all' || cabin.cabinType === filterType;
     const matchStatus = filterStatus === 'all' || 
                        (filterStatus === 'active' && cabin.isActive === true) ||
                        (filterStatus === 'inactive' && cabin.isActive === false);
-    return matchSearch && matchLocation && matchType && matchStatus;
+    return matchLocation && matchType && matchStatus;
   });
 
   const getImageUrl = (img) => {
@@ -96,6 +129,30 @@ const AdminSpaces = () => {
     if (img.startsWith("http")) return img;
     const cleanPath = img.replace(/\\/g, "/").replace(/^\/+/, "");
     return `${API_URL}/${cleanPath}`;
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "N/A";
+    return new Date(dateStr).toLocaleDateString("en-US", {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const amenityIcons = {
+    wifi: { icon: Wifi, label: "WiFi" },
+    parking: { icon: Car, label: "Parking" },
+    lockers: { icon: Lock, label: "Lockers" },
+    comfortSeating: { icon: Armchair, label: "Comfort Seating" },
+    privateWashroom: { icon: Bath, label: "Private Washroom" },
+    secureAccess: { icon: Shield, label: "Secure Access" },
+    coffee: { icon: Coffee, label: "Coffee" },
+    gym: { icon: Dumbbell, label: "Gym" },
+    ac: { icon: Wind, label: "AC" },
+    tv: { icon: Tv, label: "TV" },
+    printer: { icon: Printer, label: "Printer" },
+    phone: { icon: Phone, label: "Phone" }
   };
 
   if (loading) {
@@ -116,149 +173,107 @@ const AdminSpaces = () => {
 
       <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         {/* Header */}
-        <div className="admin-dash__header">
+        <div className="admin-dash__header mb-4">
           <div>
             <h1 className="admin-dash__greeting">
               All <span>Spaces</span>
             </h1>
-            <p className="admin-dash__subtitle">
-              Manage all coworking spaces and cabins in the platform.
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            {/* Search */}
-            <div className="relative group">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-              <input
-                type="text"
-                placeholder="Search spaces..."
-                className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all w-64"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            
-            {/* Filter Toggle Button */}
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                showFilters ? 'bg-indigo-600 text-white' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
-              }`}
-            >
-              <Filter size={18} />
-              Filters
-              {(filterLocation || filterType !== 'all' || filterStatus !== 'all') && (
-                <span className="w-2 h-2 rounded-full bg-red-500"></span>
-              )}
-            </button>
-
-            {/* Clear Filters Button */}
-            {(searchTerm || filterLocation || filterType !== 'all' || filterStatus !== 'all') && (
-              <button
-                onClick={clearFilters}
-                className="flex items-center gap-1 px-4 py-2.5 bg-red-50 text-red-600 rounded-xl text-sm font-medium hover:bg-red-100 transition-colors"
-              >
-                <XCircle size={18} />
-                Clear
-              </button>
-            )}
           </div>
         </div>
 
         {/* Filters Panel */}
-        {showFilters && (
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 mb-6 shadow-sm animate-in slide-in-from-top duration-200">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
-                  Location
-                </label>
-                <select
-                  value={filterLocation}
-                  onChange={(e) => setFilterLocation(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                >
-                  <option value="">All Locations</option>
-                  {locations.map((loc, idx) => (
-                    <option key={idx} value={loc}>{loc}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
-                  Type
-                </label>
-                <select
-                  value={filterType}
-                  onChange={(e) => setFilterType(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                >
-                  <option value="all">All Types</option>
-                  <option value="normal">Normal</option>
-                  <option value="exclusive">Exclusive</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
-                  Status
-                </label>
-                <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                >
-                  <option value="all">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              </div>
-
-              <div className="flex items-end">
-                <button
-                  onClick={clearFilters}
-                  className="w-full px-3 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors"
-                >
-                  Clear All Filters
-                </button>
-              </div>
+        <div className="bg-white rounded-2xl border border-slate-200 p-5 mb-6 shadow-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
+                Location
+              </label>
+              <select
+                value={filterLocation}
+                onChange={(e) => setFilterLocation(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+              >
+                <option value="">All Locations</option>
+                {locations.map((loc, idx) => (
+                  <option key={idx} value={loc}>{loc}</option>
+                ))}
+              </select>
             </div>
 
-            {/* Active Filters Display */}
-            {(filterLocation || filterType !== 'all' || filterStatus !== 'all') && (
-              <div className="flex flex-wrap gap-1.5 mt-4 pt-4 border-t border-slate-100">
-                {filterLocation && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-full text-[10px] font-medium">
-                    Location: {filterLocation}
-                    <button onClick={() => setFilterLocation("")} className="hover:text-indigo-900">
-                      <XCircle size={10} />
-                    </button>
-                  </span>
-                )}
-                {filterType !== 'all' && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-full text-[10px] font-medium">
-                    Type: {filterType.charAt(0).toUpperCase() + filterType.slice(1)}
-                    <button onClick={() => setFilterType("all")} className="hover:text-indigo-900">
-                      <XCircle size={10} />
-                    </button>
-                  </span>
-                )}
-                {filterStatus !== 'all' && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-full text-[10px] font-medium">
-                    Status: {filterStatus.charAt(0).toUpperCase() + filterStatus.slice(1)}
-                    <button onClick={() => setFilterStatus("all")} className="hover:text-indigo-900">
-                      <XCircle size={10} />
-                    </button>
-                  </span>
-                )}
-              </div>
-            )}
+            <div>
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
+                Type
+              </label>
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+              >
+                <option value="all">All Types</option>
+                <option value="normal">Normal</option>
+                <option value="exclusive">Exclusive</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
+                Status
+              </label>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+              >
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
+
+            <div className="flex items-end gap-2">
+              <button
+                onClick={clearFilters}
+                className="flex-1 px-3 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors flex items-center justify-center gap-1.5"
+              >
+                <XCircle size={16} />
+                Clear All
+              </button>
+            </div>
           </div>
-        )}
+
+          {/* Active Filters Display */}
+          {(filterLocation || filterType !== 'all' || filterStatus !== 'all') && (
+            <div className="flex flex-wrap gap-1.5 mt-4 pt-4 border-t border-slate-100">
+              {filterLocation && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-full text-[10px] font-medium">
+                  Location: {filterLocation}
+                  <button onClick={() => setFilterLocation("")} className="hover:text-indigo-900">
+                    <XCircle size={10} />
+                  </button>
+                </span>
+              )}
+              {filterType !== 'all' && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-full text-[10px] font-medium">
+                  Type: {filterType.charAt(0).toUpperCase() + filterType.slice(1)}
+                  <button onClick={() => setFilterType("all")} className="hover:text-indigo-900">
+                    <XCircle size={10} />
+                  </button>
+                </span>
+              )}
+              {filterStatus !== 'all' && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-full text-[10px] font-medium">
+                  Status: {filterStatus.charAt(0).toUpperCase() + filterStatus.slice(1)}
+                  <button onClick={() => setFilterStatus("all")} className="hover:text-indigo-900">
+                    <XCircle size={10} />
+                  </button>
+                </span>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Results Count */}
-        {(searchTerm || filterLocation || filterType !== 'all' || filterStatus !== 'all') && (
+        {(filterLocation || filterType !== 'all' || filterStatus !== 'all') && (
           <div className="flex items-center justify-between mb-4 px-1">
             <p className="text-sm text-slate-500">
               Showing <strong className="text-slate-900">{filteredCabins.length}</strong> results
@@ -286,7 +301,8 @@ const AdminSpaces = () => {
               return (
                 <div
                   key={cabin._id}
-                  className="admin-dash__card group flex flex-col h-full hover:shadow-lg transition-all duration-300"
+                  className="admin-dash__card group flex flex-col h-full hover:shadow-lg transition-all duration-300 cursor-pointer"
+                  onClick={() => handleViewDetails(cabin)}
                 >
                   {/* Image Section */}
                   <div className="relative h-48 overflow-hidden rounded-t-2xl">
@@ -361,13 +377,13 @@ const AdminSpaces = () => {
                         </div>
                       </div>
 
-                      <div className="flex gap-2">
+                      <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                         <button
-                          onClick={() => navigate(`/cabin/${cabin._id}`)}
+                          onClick={() => handleViewDetails(cabin)}
                           className="h-10 w-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center hover:bg-indigo-600 hover:text-white transition-colors"
                           title="View Details"
                         >
-                          <ArrowRight size={16} />
+                          <Eye size={16} />
                         </button>
                         <button
                           onClick={() => handleDelete(cabin._id)}
@@ -385,6 +401,203 @@ const AdminSpaces = () => {
           </div>
         )}
       </main>
+
+      {/* Detail Popup */}
+      {showPopup && selectedCabin && (
+        <div 
+          className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowPopup(false);
+          }}
+        >
+          <div className="bg-white rounded-2xl max-w-3xl w-full mt-16 mb-8 shadow-2xl animate-in slide-in-from-bottom duration-300 relative overflow-y-auto max-h-[85vh]">
+            {/* Close Button */}
+            <button
+              onClick={() => setShowPopup(false)}
+              className="sticky top-4 right-4 z-10 float-right p-2 bg-white/90 backdrop-blur-sm rounded-full hover:bg-white transition-colors shadow-lg border border-slate-200"
+            >
+              <X size={20} className="text-slate-600" />
+            </button>
+
+            {/* Main Image with Navigation */}
+            <div className="relative h-80 md:h-96 overflow-hidden -mt-12 bg-slate-900">
+              <div className="flex h-full">
+                <img
+                  src={selectedCabin.images && selectedCabin.images.length > 0 
+                    ? getImageUrl(selectedCabin.images[currentImageIndex]) 
+                    : PLACEHOLDER_IMAGE}
+                  alt={`${selectedCabin.name}`}
+                  className="w-full h-full object-contain"
+                  onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
+                />
+              </div>
+              
+              {/* Navigation Arrows */}
+              {selectedCabin.images && selectedCabin.images.length > 1 && (
+                <>
+                  <button
+                    onClick={prevImage}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-black/50 hover:bg-black/70 rounded-full text-white transition-colors"
+                  >
+                    <ChevronLeft size={24} />
+                  </button>
+                  <button
+                    onClick={nextImage}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-black/50 hover:bg-black/70 rounded-full text-white transition-colors"
+                  >
+                    <ChevronRight size={24} />
+                  </button>
+                </>
+              )}
+
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent pointer-events-none" />
+              
+              {/* Status Badge */}
+              <div className="absolute bottom-4 left-4 flex gap-2 pointer-events-none">
+                <span className={`px-3 py-1 rounded-full text-xs font-bold shadow-lg flex items-center gap-1.5 ${
+                  selectedCabin.isActive ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'
+                }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${selectedCabin.isActive ? 'bg-white animate-pulse' : 'bg-white/70'}`}></span>
+                  {selectedCabin.isActive ? 'Active' : 'Inactive'}
+                </span>
+                {selectedCabin.cabinType === 'exclusive' && (
+                  <span className="bg-gradient-to-r from-amber-500 to-yellow-500 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-lg">
+                    <Crown size={14} />
+                    Premium
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Thumbnail Images */}
+            {selectedCabin.images && selectedCabin.images.length > 1 && (
+              <div className="px-6 pt-4 pb-2">
+                <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+                  {selectedCabin.images.map((img, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setCurrentImageIndex(idx)}
+                      className={`flex-shrink-0 w-20 h-16 rounded-lg overflow-hidden border-2 transition-all ${
+                        idx === currentImageIndex 
+                          ? 'border-indigo-600 ring-2 ring-indigo-200' 
+                          : 'border-transparent hover:border-slate-300'
+                      }`}
+                    >
+                      <img
+                        src={getImageUrl(img)}
+                        alt={`Thumbnail ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Content */}
+            <div className="p-6 md:p-8 pt-4">
+              <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
+                <div>
+                  <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest mb-1">
+                    {selectedCabin.cabinType === 'exclusive' ? 'Premium Space' : 'Coworking Space'}
+                  </p>
+                  <h2 className="text-2xl font-bold text-slate-900">{selectedCabin.name}</h2>
+                </div>
+                <div className="text-right bg-indigo-50 px-4 py-2 rounded-xl">
+                  <div className="flex items-baseline gap-0.5">
+                    <span className="text-2xl font-bold text-indigo-600">₹{selectedCabin.price || '0'}</span>
+                    <span className="text-xs text-slate-400 font-bold uppercase">/ Hour</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-xs font-medium text-slate-500 mt-0.5 justify-end">
+                    <Users size={12} />
+                    {selectedCabin.capacity} Seats
+                  </div>
+                </div>
+              </div>
+
+              {/* Address */}
+              <div className="flex items-start gap-2 mb-4 p-3 bg-slate-50 rounded-xl">
+                <MapPin size={16} className="text-indigo-600 mt-0.5 shrink-0" />
+                <p className="text-sm text-slate-600">{selectedCabin.address}</p>
+              </div>
+
+              {/* Description */}
+              {selectedCabin.description && (
+                <div className="mb-4">
+                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Description</h4>
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                    {selectedCabin.description}
+                  </p>
+                </div>
+              )}
+
+              {/* Amenities */}
+              {selectedCabin.amenities && Object.values(selectedCabin.amenities).some(v => v === true) && (
+                <div className="mb-4">
+                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Amenities</h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {Object.entries(selectedCabin.amenities).map(([key, value]) => {
+                      const amenity = amenityIcons[key];
+                      if (!amenity || !value) return null;
+                      const Icon = amenity.icon;
+                      return (
+                        <span key={key} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 rounded-full text-xs font-medium text-slate-700 border border-slate-100">
+                          <Icon size={14} className="text-indigo-500" />
+                          {amenity.label}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Details Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+                <div className="p-3 bg-slate-50 rounded-xl">
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Type</p>
+                  <p className="text-sm font-semibold text-slate-900 capitalize">{selectedCabin.cabinType || 'Normal'}</p>
+                </div>
+                <div className="p-3 bg-slate-50 rounded-xl">
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Capacity</p>
+                  <p className="text-sm font-semibold text-slate-900">{selectedCabin.capacity} Seats</p>
+                </div>
+                <div className="p-3 bg-slate-50 rounded-xl">
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Created</p>
+                  <p className="text-sm font-semibold text-slate-900">{formatDate(selectedCabin.createdAt)}</p>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap gap-3 pt-4 border-t border-slate-100">
+                <button
+                  onClick={() => navigate(`/cabin/${selectedCabin._id}`)}
+                  className="flex-1 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
+                >
+                  <Eye size={16} />
+                  View Full Details
+                </button>
+                <button
+                  onClick={() => {
+                    setShowPopup(false);
+                    handleDelete(selectedCabin._id);
+                  }}
+                  className="px-4 py-2.5 bg-red-50 text-red-600 rounded-xl text-sm font-medium hover:bg-red-100 transition-colors flex items-center gap-2"
+                >
+                  <Trash2 size={16} />
+                  Delete
+                </button>
+                <button
+                  onClick={() => setShowPopup(false)}
+                  className="px-4 py-2.5 bg-slate-100 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-200 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

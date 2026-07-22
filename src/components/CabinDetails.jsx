@@ -11,9 +11,11 @@ import {
   ShieldCheck,
   Users,
   Wifi,
-  Building2 as BuildingIcon
+  Building2 as BuildingIcon,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import UsersNavbar from "./UsersNavbar";
 import AdminNavbar from "./AdminNavbar";
@@ -32,12 +34,38 @@ export default function CabinDetails() {
   const [activeImage, setActiveImage] = useState(0);
   const [loading, setLoading] = useState(true);
   const [bookedSlots, setBookedSlots] = useState([]);
+  const [images, setImages] = useState([]);
+  const autoSlideRef = useRef(null);
 
   const getImageUrl = (img) => {
     if (!img) return PLACEHOLDER_IMAGE;
     if (img.startsWith("http")) return img;
     const cleanPath = img.replace(/\\/g, "/").replace(/^\/+/, "");
     return `${API_URL}/${cleanPath}`;
+  };
+
+  // Auto-slide effect
+  useEffect(() => {
+    if (images.length <= 1) return;
+
+    autoSlideRef.current = setInterval(() => {
+      setActiveImage((prev) => (prev + 1) % images.length);
+    }, 4000);
+
+    return () => {
+      if (autoSlideRef.current) clearInterval(autoSlideRef.current);
+    };
+  }, [images.length]);
+
+  // Reset timer on manual change
+  const handleImageChange = (index) => {
+    setActiveImage(index);
+    if (autoSlideRef.current) {
+      clearInterval(autoSlideRef.current);
+      autoSlideRef.current = setInterval(() => {
+        setActiveImage((prev) => (prev + 1) % images.length);
+      }, 4000);
+    }
   };
 
   useEffect(() => {
@@ -48,6 +76,13 @@ export default function CabinDetails() {
         // Fetch cabin details
         const cabinRes = await axios.get(`${API_URL}/api/cabins/${id}`);
         setCabin(cabinRes.data);
+        
+        // Set images
+        if (cabinRes.data.images && cabinRes.data.images.length > 0) {
+          setImages(cabinRes.data.images.map(img => getImageUrl(img)));
+        } else {
+          setImages([PLACEHOLDER_IMAGE]);
+        }
 
         // Fetch all cabins for related
         try {
@@ -100,6 +135,16 @@ export default function CabinDetails() {
     const ampm = hour >= 12 ? "PM" : "AM";
     const displayHour = hour % 12 === 0 ? 12 : hour % 12;
     return `${displayHour}:${m} ${ampm}`;
+  };
+
+  const nextImage = () => {
+    if (images.length <= 1) return;
+    handleImageChange((activeImage + 1) % images.length);
+  };
+
+  const prevImage = () => {
+    if (images.length <= 1) return;
+    handleImageChange((activeImage - 1 + images.length) % images.length);
   };
 
   if (loading) {
@@ -164,37 +209,82 @@ export default function CabinDetails() {
         {/* Main Section */}
         <div className="admin-dash__card grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 p-6 lg:p-8">
 
-          {/* Left Images */}
+          {/* Left Images with Slider */}
           <div className="flex flex-col gap-4">
+            {/* Main Image Slider */}
             <div className="relative overflow-hidden rounded-2xl h-[300px] sm:h-[340px] lg:h-[420px] shadow-lg shadow-slate-200/50 group">
               <img
-                src={getImageUrl(cabin.images?.[activeImage])}
+                src={images[activeImage] || PLACEHOLDER_IMAGE}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
                 alt={cabin.name}
                 onError={(e) => {
                   e.target.src = PLACEHOLDER_IMAGE;
                 }}
               />
+              
+              {/* Gradient Overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 via-transparent to-transparent opacity-60" />
-              <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest text-indigo-700 shadow-sm">
+              
+              {/* Badges */}
+              <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest text-indigo-700 shadow-sm z-10">
                 Premium Workspace
               </div>
-              {/* Seat count badge */}
               {cabin.seats && cabin.seats.length > 0 && (
-                <div className="absolute top-4 right-4 bg-indigo-600/95 backdrop-blur-sm px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest text-white shadow-sm flex items-center gap-1.5">
+                <div className="absolute top-4 right-4 bg-indigo-600/95 backdrop-blur-sm px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest text-white shadow-sm flex items-center gap-1.5 z-10">
                   <Armchair size={12} />
                   {cabin.seats.length} Seats
                 </div>
               )}
+
+              {/* Image Counter */}
+              {images.length > 1 && (
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-bold text-white z-10">
+                  {activeImage + 1} / {images.length}
+                </div>
+              )}
+
+              {/* Navigation Arrows */}
+              {images.length > 1 && (
+                <>
+                  <button
+                    onClick={prevImage}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/70 transition-all z-10 opacity-0 group-hover:opacity-100"
+                  >
+                    <ChevronLeft size={20} />
+                  </button>
+                  <button
+                    onClick={nextImage}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/70 transition-all z-10 opacity-0 group-hover:opacity-100"
+                  >
+                    <ChevronRight size={20} />
+                  </button>
+
+                  {/* Dots */}
+                  <div className="absolute bottom-14 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+                    {images.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleImageChange(index)}
+                        className={`w-2 h-2 rounded-full transition-all ${
+                          index === activeImage 
+                            ? 'bg-white w-6' 
+                            : 'bg-white/40 hover:bg-white/60'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
 
-            {cabin.images?.length > 1 && (
+            {/* Thumbnails */}
+            {images.length > 1 && (
               <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                {cabin.images.map((img, index) => (
+                {images.map((img, index) => (
                   <img
                     key={index}
-                    src={getImageUrl(img)}
-                    onClick={() => setActiveImage(index)}
+                    src={img}
+                    onClick={() => handleImageChange(index)}
                     className={`w-20 h-16 object-cover rounded-lg cursor-pointer flex-shrink-0 transition-all
                       ${activeImage === index
                         ? "ring-2 ring-indigo-600 opacity-100"
@@ -234,7 +324,7 @@ export default function CabinDetails() {
               <span className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-2">/ Hour</span>
             </div>
 
-            {/* ---- SEATS DISPLAY SECTION (ONLY SHOW, NO SELECT) ---- */}
+            {/* Seats Display */}
             {cabin.seats && cabin.seats.length > 0 && (
               <div className="pt-4 border-t border-slate-100">
                 <div className="flex items-center justify-between mb-3">
@@ -244,7 +334,6 @@ export default function CabinDetails() {
                   </h3>
                 </div>
 
-                {/* Seat Grid - Only Display */}
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
                   {cabin.seats.map((seat) => (
                     <div
@@ -267,7 +356,7 @@ export default function CabinDetails() {
               </div>
             )}
 
-            {/* Workspace Features */}
+            {/* Amenities */}
             <div className="pt-4 border-t border-slate-100">
               <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest mb-4">
                 Amenities
@@ -351,7 +440,7 @@ export default function CabinDetails() {
           </div>
         </div>
 
-        {/* ── Booked Slots Section ── */}
+        {/* Booked Slots Section */}
         <div style={{
           background: "#fff",
           border: "1px solid #e4e7ec",

@@ -107,7 +107,14 @@ import {
   Microscope as MicroscopeIcon,
   Bone as BoneIcon,
   Brain as BrainIcon,
-  HeartPulse as HeartPulseIcon
+  HeartPulse as HeartPulseIcon,
+  Bed,
+  Pill as PillIcon,
+  Ambulance as AmbulanceIcon,
+  ChevronLeft,
+  ChevronRight,
+  Maximize2,
+  Minimize2
 } from "lucide-react";
 import logo from "../assets/logo.png";
 import iryaxHero from "../assets/iryaxspace.png";
@@ -267,7 +274,6 @@ const styles = `
     object-position: center;
   }
 
-  /* Hero Overlay - Gray thin layer for better text visibility */
   .hero-overlay {
     position: absolute;
     inset: 0;
@@ -433,10 +439,18 @@ const styles = `
     height: 72px;
   }
 
+  .navbar-custom .nav-links {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    flex-wrap: nowrap !important;
+    white-space: nowrap !important;
+  }
+
   .navbar-custom .navbar-link {
-    font-size: 0.9rem !important;
+    font-size: 0.88rem !important;
     font-weight: 700 !important;
-    padding: 8px 16px !important;
+    padding: 8px 14px !important;
     color: #ffffff !important;
     cursor: pointer;
     transition: all 0.3s;
@@ -446,6 +460,7 @@ const styles = `
     font-family: inherit;
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     letter-spacing: 0.3px;
+    white-space: nowrap !important;
   }
 
   .navbar-custom .navbar-link:hover {
@@ -461,6 +476,7 @@ const styles = `
     align-items: center;
     gap: 10px;
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    white-space: nowrap !important;
   }
 
   .navbar-custom .navbar-brand .brand-icon {
@@ -478,9 +494,9 @@ const styles = `
   }
 
   .navbar-custom .navbar-btn {
-    font-size: 0.85rem !important;
+    font-size: 0.82rem !important;
     font-weight: 700 !important;
-    padding: 8px 20px !important;
+    padding: 8px 18px !important;
     background: rgba(255, 255, 255, 0.15) !important;
     backdrop-filter: blur(8px);
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -490,7 +506,8 @@ const styles = `
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+    white-space: nowrap !important;
   }
 
   .navbar-custom .navbar-btn:hover {
@@ -505,10 +522,11 @@ const styles = `
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     background: none;
     border: none;
-    padding: 8px 16px;
+    padding: 8px 14px;
     border-radius: 9999px;
     cursor: pointer;
     transition: all 0.3s;
+    white-space: nowrap !important;
   }
 
   .navbar-custom .navbar-signin:hover {
@@ -517,11 +535,11 @@ const styles = `
   }
 
   .navbar-custom .navbar-logo {
-    width: 48px !important;
-    height: 48px !important;
+    width: 44px !important;
+    height: 44px !important;
     border: 2px solid rgba(255, 255, 255, 0.3) !important;
     border-radius: 50% !important;
-    padding: 4px !important;
+    padding: 3px !important;
     background: rgba(255, 255, 255, 0.05) !important;
     overflow: hidden !important;
     flex-shrink: 0 !important;
@@ -539,7 +557,8 @@ const styles = `
     border-color: rgba(255, 255, 255, 0.5) !important;
   }
 
-  .navbar-custom .navbar-menu-btn {
+  .navbar-menu-btn {
+    display: none !important;
     color: #ffffff !important;
     padding: 8px;
     border-radius: 50%;
@@ -547,16 +566,14 @@ const styles = `
     border: 1px solid rgba(255, 255, 255, 0.1);
     cursor: pointer;
     transition: all 0.3s;
-    display: flex;
     align-items: center;
     justify-content: center;
   }
 
-  .navbar-custom .navbar-menu-btn:hover {
+  .navbar-menu-btn:hover {
     background: rgba(255, 255, 255, 0.1);
   }
 
-  /* Scrolled state */
   .navbar-scrolled {
     background: rgba(10, 22, 40, 0.92) !important;
     backdrop-filter: blur(16px) !important;
@@ -620,7 +637,15 @@ const styles = `
     color: #ffffff !important;
   }
 
-  /* Hide Start Now button on mobile */
+  @media (max-width: 992px) {
+    .navbar-custom .nav-links {
+      display: none !important;
+    }
+    .navbar-menu-btn {
+      display: flex !important;
+    }
+  }
+
   .navbar-btn-mobile-hide {
     display: flex !important;
   }
@@ -738,6 +763,26 @@ const styles = `
   }
   .animate-slideUp {
     animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .mobile-menu-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    padding: 8px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mobile-menu-close:hover {
+    background: #e2e8f0;
+    transform: rotate(90deg);
   }
 
   /* Glass Cards */
@@ -902,7 +947,6 @@ const styles = `
     color: #dc2626 !important;
   }
 
-  /* Feature Cards */
   .feature-card {
     border-radius: 24px !important;
     padding: 32px 28px;
@@ -942,7 +986,6 @@ const styles = `
     animation: gradient 3s ease infinite;
   }
 
-  /* Location List Item */
   .location-list-item {
     display: flex;
     align-items: flex-start;
@@ -1050,11 +1093,11 @@ const styles = `
   .modal-content {
     background: white;
     border-radius: 32px;
-    max-width: 900px;
+    max-width: 950px;
     width: 100%;
-    max-height: 85vh;
+    max-height: 90vh;
     overflow-y: auto;
-    padding: 24px;
+    padding: 0;
     position: relative;
     animation: modal-in 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     box-shadow: 0 40px 120px rgba(0, 0, 0, 0.3);
@@ -1071,20 +1114,23 @@ const styles = `
 
   .modal-close {
     position: sticky;
-    top: 0;
+    top: 12px;
     float: right;
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: #f1f5f9;
+    background: rgba(255, 255, 255, 0.9);
     border: none;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: all 0.3s;
-    z-index: 10;
-    margin-bottom: 8px;
+    z-index: 20;
+    margin-right: 12px;
+    margin-top: 12px;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
 
   .modal-close:hover {
@@ -1096,128 +1142,444 @@ const styles = `
     color: #1a2a4a;
   }
 
-  .cabin-card-modal {
+  /* Space Detail Modal - Full Width Layout */
+  .space-detail-modal {
     background: white;
-    border-radius: 16px;
+    border-radius: 32px;
     overflow: hidden;
-    border: 1px solid #e2e8f0;
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    height: 100%;
+    width: 100%;
     display: flex;
     flex-direction: column;
   }
 
-  .cabin-card-modal:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 40px rgba(26, 58, 107, 0.1);
-    border-color: #1a3a6b;
+  .space-detail-modal .modal-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    min-height: 500px;
   }
 
-  .cabin-card-modal .cabin-image {
-    height: 140px;
-    overflow: hidden;
+  /* Left side - Image Slider */
+  .space-detail-modal .modal-image-section {
     position: relative;
-    background: #f1f5f9;
+    background: #f0f4f8;
+    min-height: 400px;
+    overflow: hidden;
+    border-radius: 0;
   }
 
-  .cabin-card-modal .cabin-image img {
+  .space-detail-modal .modal-image-section .image-slider {
+    width: 100%;
+    height: 100%;
+    position: relative;
+  }
+
+  .space-detail-modal .modal-image-section .image-slider .slider-image {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.5s;
+    min-height: 400px;
   }
 
-  .cabin-card-modal:hover .cabin-image img {
-    transform: scale(1.05);
-  }
-
-  .cabin-card-modal .cabin-image .cabin-badge {
+  .space-detail-modal .modal-image-section .slider-btn {
     position: absolute;
-    top: 8px;
-    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    z-index: 5;
+  }
+
+  .space-detail-modal .modal-image-section .slider-btn:hover {
+    background: rgba(0, 0, 0, 0.8);
+    transform: translateY(-50%) scale(1.1);
+  }
+
+  .space-detail-modal .modal-image-section .slider-btn.prev {
+    left: 12px;
+  }
+
+  .space-detail-modal .modal-image-section .slider-btn.next {
+    right: 12px;
+  }
+
+  .space-detail-modal .modal-image-section .image-dots {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    z-index: 5;
+  }
+
+  .space-detail-modal .modal-image-section .image-dots .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    transition: all 0.3s;
+    border: none;
+    padding: 0;
+  }
+
+  .space-detail-modal .modal-image-section .image-dots .dot.active {
+    background: white;
+    transform: scale(1.3);
+  }
+
+  .space-detail-modal .modal-image-section .image-counter {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    color: white;
+    padding: 4px 14px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 500;
+    z-index: 5;
+  }
+
+  .space-detail-modal .modal-image-section .space-type-badge {
+    position: absolute;
+    top: 16px;
+    left: 16px;
     background: rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(8px);
     color: white;
-    padding: 3px 10px;
+    padding: 6px 18px;
     border-radius: 9999px;
-    font-size: 9px;
+    font-size: 12px;
     font-weight: 600;
     letter-spacing: 0.5px;
+    z-index: 5;
   }
 
-  .cabin-card-modal .cabin-body {
-    padding: 14px 16px 16px;
-    flex: 1;
+  /* Right side - Content */
+  .space-detail-modal .modal-content-section {
+    padding: 32px 28px;
     display: flex;
     flex-direction: column;
+    overflow-y: auto;
+    background: white;
   }
 
-  .cabin-card-modal .cabin-body h4 {
-    font-size: 0.9rem;
+  .space-detail-modal .modal-content-section .space-title {
+    font-size: 1.6rem;
     font-weight: 700;
     color: #0a1628;
-    margin-bottom: 2px;
+    margin-bottom: 4px;
+    line-height: 1.2;
   }
 
-  .cabin-card-modal .cabin-body .cabin-location {
-    font-size: 0.7rem;
+  .space-detail-modal .modal-content-section .space-location {
+    font-size: 0.9rem;
     color: #64748b;
     display: flex;
-    align-items: center;
-    gap: 4px;
-    margin-bottom: 6px;
-  }
-
-  .cabin-card-modal .cabin-body .cabin-desc {
-    font-size: 0.75rem;
-    color: #64748b;
+    align-items: flex-start;
+    gap: 6px;
+    margin-bottom: 14px;
     line-height: 1.4;
-    flex: 1;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
   }
 
-  .cabin-card-modal .cabin-body .cabin-footer {
+  .space-detail-modal .modal-content-section .space-location svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .space-detail-modal .modal-content-section .space-description {
+    font-size: 0.92rem;
+    color: #475569;
+    line-height: 1.7;
+    margin-bottom: 16px;
+    flex: 1;
+  }
+
+  .space-detail-modal .modal-content-section .space-features {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+
+  .space-detail-modal .modal-content-section .space-features .feature-item {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid #f1f5f9;
+    gap: 8px;
+    font-size: 0.82rem;
+    color: #334155;
+    padding: 6px 10px;
+    background: #f8fafc;
+    border-radius: 8px;
   }
 
-  .cabin-card-modal .cabin-body .cabin-price {
-    font-size: 0.95rem;
+  .space-detail-modal .modal-content-section .space-features .feature-item svg {
+    color: #1a3a6b;
+    flex-shrink: 0;
+  }
+
+  .space-detail-modal .modal-content-section .space-price {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding-top: 14px;
+    border-top: 1px solid #e2e8f0;
+    margin-bottom: 16px;
+  }
+
+  .space-detail-modal .modal-content-section .space-price .amount {
+    font-size: 1.8rem;
     font-weight: 800;
     color: #0a1628;
   }
 
-  .cabin-card-modal .cabin-body .cabin-price span {
-    font-size: 0.65rem;
-    font-weight: 400;
+  .space-detail-modal .modal-content-section .space-price .period {
+    font-size: 0.9rem;
     color: #94a3b8;
   }
 
-  .btn-book-now {
-    padding: 5px 14px;
+  .space-detail-modal .modal-content-section .btn-book-now-modal {
+    width: 100%;
+    padding: 14px;
     background: linear-gradient(135deg, #0a1628, #1a3a6b);
     color: white;
     border: none;
-    border-radius: 9999px;
-    font-size: 0.7rem;
+    border-radius: 12px;
+    font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s;
     display: flex;
     align-items: center;
-    gap: 4px;
+    justify-content: center;
+    gap: 8px;
+    margin-top: auto;
   }
 
-  .btn-book-now:hover {
+  .space-detail-modal .modal-content-section .btn-book-now-modal:hover {
+    transform: scale(1.02);
+    box-shadow: 0 8px 30px rgba(26, 58, 107, 0.3);
+  }
+
+  /* Thumbnail strip below slider */
+  .space-detail-modal .modal-image-section .thumbnail-strip {
+    position: absolute;
+    bottom: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 6px;
+    z-index: 5;
+    max-width: 80%;
+    overflow-x: auto;
+    padding: 4px;
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(8px);
+    border-radius: 12px;
+  }
+
+  .space-detail-modal .modal-image-section .thumbnail-strip .thumb {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.3s;
+    flex-shrink: 0;
+  }
+
+  .space-detail-modal .modal-image-section .thumbnail-strip .thumb.active {
+    border-color: white;
     transform: scale(1.05);
-    box-shadow: 0 4px 20px rgba(26, 58, 107, 0.3);
+  }
+
+  .space-detail-modal .modal-image-section .thumbnail-strip .thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .space-detail-modal .modal-image-section .thumbnail-strip .thumb:hover {
+    transform: scale(1.05);
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+
+  /* Responsive for modal */
+  @media (max-width: 768px) {
+    .space-detail-modal .modal-body {
+      grid-template-columns: 1fr;
+    }
+    
+    .space-detail-modal .modal-image-section {
+      min-height: 280px;
+    }
+    
+    .space-detail-modal .modal-image-section .image-slider .slider-image {
+      min-height: 280px;
+    }
+    
+    .space-detail-modal .modal-content-section {
+      padding: 20px 16px;
+    }
+    
+    .space-detail-modal .modal-content-section .space-title {
+      font-size: 1.3rem;
+    }
+    
+    .space-detail-modal .modal-content-section .space-features {
+      grid-template-columns: 1fr 1fr;
+    }
+    
+    .space-detail-modal .modal-image-section .thumbnail-strip .thumb {
+      width: 40px;
+      height: 40px;
+    }
+    
+    .modal-content {
+      max-width: 100%;
+      border-radius: 24px;
+    }
+    
+    .space-detail-modal .modal-image-section .slider-btn {
+      width: 32px;
+      height: 32px;
+    }
+    
+    .space-detail-modal .modal-image-section .slider-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+    
+    .modal-close {
+      width: 32px;
+      height: 32px;
+      margin-right: 8px;
+      margin-top: 8px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .space-detail-modal .modal-image-section {
+      min-height: 220px;
+    }
+    
+    .space-detail-modal .modal-image-section .image-slider .slider-image {
+      min-height: 220px;
+    }
+    
+    .space-detail-modal .modal-content-section .space-features {
+      grid-template-columns: 1fr;
+    }
+    
+    .space-detail-modal .modal-content-section .space-price .amount {
+      font-size: 1.4rem;
+    }
+    
+    .space-detail-modal .modal-image-section .thumbnail-strip .thumb {
+      width: 32px;
+      height: 32px;
+    }
+  }
+
+  /* Card Image Slider */
+  .card-image-slider {
+    position: relative;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .card-image-slider .card-slider-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    z-index: 5;
+    opacity: 0;
+  }
+
+  .card-image-slider:hover .card-slider-btn {
+    opacity: 1;
+  }
+
+  .card-image-slider .card-slider-btn:hover {
+    background: rgba(0, 0, 0, 0.8);
+    transform: translateY(-50%) scale(1.1);
+  }
+
+  .card-image-slider .card-slider-btn.prev {
+    left: 4px;
+  }
+
+  .card-image-slider .card-slider-btn.next {
+    right: 4px;
+  }
+
+  .card-image-slider .card-slider-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .card-image-slider img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.7s;
+  }
+
+  .card-image-slider:hover img {
+    transform: scale(1.05);
+  }
+
+  .card-image-slider .card-dots {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 4px;
+    z-index: 5;
+  }
+
+  .card-image-slider .card-dots .dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    transition: all 0.3s;
+    border: none;
+    padding: 0;
+  }
+
+  .card-image-slider .card-dots .dot.active {
+    background: white;
+    transform: scale(1.2);
   }
 `;
 
@@ -1327,11 +1689,118 @@ const Counter = ({ target, suffix = "", duration = 2000 }) => {
   return <span ref={ref}>{count}{suffix}</span>;
 };
 
-// ─── CABINS MODAL ───
-const CabinsModal = ({ isOpen, onClose, cabins, loading, onBookClick }) => {
-  if (!isOpen) return null;
+// ─── IMAGE SLIDER COMPONENT ───
+const ImageSlider = ({ images, alt, className = "" }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
 
-  const activeCabins = cabins?.filter(c => c.isActive === true) || [];
+  if (!images || images.length === 0) return null;
+
+  const nextSlide = (e) => {
+    e.stopPropagation();
+    setCurrentIndex((prev) => (prev + 1) % images.length);
+  };
+
+  const prevSlide = (e) => {
+    e.stopPropagation();
+    setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
+
+  const goToSlide = (index, e) => {
+    if (e) e.stopPropagation();
+    setCurrentIndex(index);
+  };
+
+  return (
+    <div className={`card-image-slider ${className}`}>
+      <img 
+        src={images[currentIndex]} 
+        alt={alt || "Space image"} 
+        loading="lazy"
+      />
+      {images.length > 1 && (
+        <>
+          <button 
+            className="card-slider-btn prev" 
+            onClick={prevSlide}
+            aria-label="Previous image"
+          >
+            <ChevronLeft size={14} />
+          </button>
+          <button 
+            className="card-slider-btn next" 
+            onClick={nextSlide}
+            aria-label="Next image"
+          >
+            <ChevronRight size={14} />
+          </button>
+          <div className="card-dots">
+            {images.map((_, index) => (
+              <button
+                key={index}
+                className={`dot ${index === currentIndex ? 'active' : ''}`}
+                onClick={(e) => goToSlide(index, e)}
+                aria-label={`Go to image ${index + 1}`}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+// ─── SPACE DETAIL MODAL ───
+const SpaceDetailModal = ({ isOpen, onClose, space, onBookClick }) => {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  if (!isOpen || !space) return null;
+
+  // Get all images
+  const images = space.images || [space.image];
+  const imageUrls = images.map(img => 
+    img && img.startsWith('http') ? img : `https://spaceapi.iryax.com/${img}`
+  );
+
+  const nextImage = (e) => {
+    if (e) e.stopPropagation();
+    setCurrentImageIndex((prev) => (prev + 1) % imageUrls.length);
+  };
+
+  const prevImage = (e) => {
+    if (e) e.stopPropagation();
+    setCurrentImageIndex((prev) => (prev - 1 + imageUrls.length) % imageUrls.length);
+  };
+
+  const goToImage = (index, e) => {
+    if (e) e.stopPropagation();
+    setCurrentImageIndex(index);
+  };
+
+  // Get features from space amenities
+  const getFeatures = (space) => {
+    const features = [];
+    const amenities = space.amenities || {};
+    
+    if (amenities.wifi) features.push({ icon: WifiIcon, label: "High-Speed WiFi" });
+    if (amenities.parking) features.push({ icon: ParkingCircle, label: "Parking" });
+    if (amenities.lockers) features.push({ icon: Lock, label: "Lockers" });
+    if (amenities.comfortSeating) features.push({ icon: Sofa, label: "Comfort Seating" });
+    if (amenities.privateWashroom) features.push({ icon: Bath, label: "Private Washroom" });
+    if (amenities.secureAccess) features.push({ icon: Shield, label: "Secure Access" });
+    if (amenities.coffee) features.push({ icon: Coffee, label: "Coffee" });
+    if (amenities.gym) features.push({ icon: Dumbbell, label: "Gym" });
+    if (amenities.ac) features.push({ icon: Fan, label: "AC" });
+    if (amenities.tv) features.push({ icon: Tv, label: "TV" });
+    if (amenities.printer) features.push({ icon: Printer, label: "Printer" });
+    if (amenities.phone) features.push({ icon: Phone, label: "Phone" });
+    
+    return features;
+  };
+
+  const features = getFeatures(space);
+
+  // Get thumbnail images (first 5)
+  const thumbnails = imageUrls.slice(0, 5);
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -1340,77 +1809,105 @@ const CabinsModal = ({ isOpen, onClose, cabins, loading, onBookClick }) => {
           <X size={18} />
         </button>
 
-        <div className="mb-4">
-          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <Building2 size={22} className="text-blue-800" />
-            Explore Our Spaces
-          </h2>
-          <p className="text-xs text-gray-500 mt-1">
-            Discover fully-equipped workspaces available for booking
-          </p>
-        </div>
-
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-800 rounded-full animate-spin"></div>
-            <p className="text-sm text-gray-500 mt-3">Loading spaces...</p>
-          </div>
-        ) : activeCabins.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {activeCabins.map((cabin) => (
-              <div key={cabin._id} className="cabin-card-modal">
-                <div className="cabin-image">
-                  {cabin.images && cabin.images.length > 0 ? (
-                    <img 
-                      src={`https://spaceapi.iryax.com/${cabin.images[0]}`} 
-                      alt={cabin.name}
-                      onError={(e) => {
-                        e.target.src = IRYAX_SPACE_IMAGES[0];
-                      }}
-                    />
-                  ) : (
-                    <img 
-                      src={IRYAX_SPACE_IMAGES[0]} 
-                      alt={cabin.name}
-                    />
-                  )}
-                  <span className="cabin-badge" style={{ background: 'rgba(16, 185, 129, 0.8)' }}>
-                    Available
-                  </span>
-                </div>
-                <div className="cabin-body">
-                  <h4>{cabin.name}</h4>
-                  <div className="cabin-location">
-                    <MapPin size={11} /> {cabin.address || 'Location not specified'}
-                  </div>
-                  <p className="cabin-desc">{cabin.description || 'No description available'}</p>
-                  <div className="cabin-footer">
-                    <div className="cabin-price">
-                      ₹{cabin.price?.toLocaleString('en-IN') || 0} <span>/ day</span>
-                    </div>
+        <div className="space-detail-modal">
+          <div className="modal-body">
+            {/* Left: Image Section */}
+            <div className="modal-image-section">
+              <div className="image-slider">
+                <img 
+                  src={imageUrls[currentImageIndex] || IRYAX_SPACE_IMAGES[0]} 
+                  alt={space.name}
+                  className="slider-image"
+                />
+                {imageUrls.length > 1 && (
+                  <>
                     <button 
-                      className="btn-book-now"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onBookClick(cabin);
-                      }}
+                      className="slider-btn prev" 
+                      onClick={prevImage}
+                      aria-label="Previous image"
                     >
-                      Book Now <ArrowRight size={12} />
+                      <ChevronLeft size={20} />
                     </button>
-                  </div>
-                </div>
+                    <button 
+                      className="slider-btn next" 
+                      onClick={nextImage}
+                      aria-label="Next image"
+                    >
+                      <ChevronRight size={20} />
+                    </button>
+                    <div className="image-dots">
+                      {imageUrls.map((_, index) => (
+                        <button
+                          key={index}
+                          className={`dot ${index === currentImageIndex ? 'active' : ''}`}
+                          onClick={(e) => goToImage(index, e)}
+                          aria-label={`Go to image ${index + 1}`}
+                        />
+                      ))}
+                    </div>
+                    <span className="image-counter">{currentImageIndex + 1} / {imageUrls.length}</span>
+                    
+                    {/* Thumbnail Strip */}
+                    {imageUrls.length > 1 && (
+                      <div className="thumbnail-strip">
+                        {thumbnails.map((url, index) => (
+                          <div 
+                            key={index}
+                            className={`thumb ${index === currentImageIndex ? 'active' : ''}`}
+                            onClick={(e) => goToImage(index, e)}
+                          >
+                            <img src={url} alt={`Thumbnail ${index + 1}`} />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <Building2 size={40} className="mx-auto text-gray-300 mb-3" />
-            <p className="text-gray-500">No spaces available at the moment.</p>
-          </div>
-        )}
+              <span className="space-type-badge">{space.type || "Workspace"}</span>
+            </div>
 
-        <div className="mt-4 text-center text-xs text-gray-400 border-t border-gray-100 pt-3">
-          Showing {activeCabins.length} active spaces
+            {/* Right: Content Section */}
+            <div className="modal-content-section">
+              <h3 className="space-title">{space.name}</h3>
+              <div className="space-location">
+                <MapPin size={16} /> 
+                <span>{space.address || "Location not specified"}</span>
+              </div>
+              <p className="space-description">
+                {space.description || "A fully-equipped modern workspace designed for professionals. Spacious and well-equipped private cabin ideal for professionals, consultants, startups, and small teams."}
+              </p>
+              
+              <div className="space-features">
+                {features.map((feature, i) => (
+                  <div key={i} className="feature-item">
+                    <feature.icon size={16} />
+                    <span>{feature.label}</span>
+                  </div>
+                ))}
+                {features.length === 0 && (
+                  <>
+                    <div className="feature-item"><WifiIcon size={16} /> High-Speed WiFi</div>
+                    <div className="feature-item"><ParkingCircle size={16} /> Parking</div>
+                    <div className="feature-item"><Lock size={16} /> Lockers</div>
+                    <div className="feature-item"><Sofa size={16} /> Comfort Seating</div>
+                  </>
+                )}
+              </div>
+
+              <div className="space-price">
+                <span className="amount">₹{space.price?.toLocaleString('en-IN') || 0}</span>
+                <span className="period">/ day</span>
+              </div>
+
+              <button 
+                className="btn-book-now-modal"
+                onClick={() => onBookClick(space)}
+              >
+                Book Now <ArrowRight size={18} />
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1432,11 +1929,12 @@ const PromotionalPage = () => {
   const [cabins, setCabins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isCabinsModalOpen, setIsCabinsModalOpen] = useState(false);
+  const [selectedSpace, setSelectedSpace] = useState(null);
+  const [isSpaceDetailOpen, setIsSpaceDetailOpen] = useState(false);
 
-  const typingWords = ["Workspace", "Studio", "Office", "Creative Space"];
+  const typingWords = ["Workspace", "Medical Space", "Studio Space", "Office", "Creative Space"];
 
-  // Fetch cabins
+  // Fetch cabins from API
   useEffect(() => {
     const fetchCabins = async () => {
       try {
@@ -1462,6 +1960,10 @@ const PromotionalPage = () => {
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
   const toggleFaq = (index) => setOpenFaq(openFaq === index ? null : index);
+
+  // Filter cabins by type
+  const coworkingCabins = cabins.filter(cabin => cabin.type === "coworking" || cabin.type === "co-working");
+  const medicalCabins = cabins.filter(cabin => cabin.type === "medical");
 
   // ─── HANDLE SEND QUERY ───
   const handleSubmit = async (e) => {
@@ -1511,16 +2013,28 @@ const PromotionalPage = () => {
     }
   };
 
-  const openCabinsModal = () => {
-    setIsCabinsModalOpen(true);
-  };
-
-  const closeCabinsModal = () => {
-    setIsCabinsModalOpen(false);
-  };
-
-  const handleBookClick = (cabin) => {
+  const handleBookClick = (space) => {
     navigate("/login");
+  };
+
+  const handleSpaceClick = (space) => {
+    // Format space data for modal with all images
+    const images = space.images && space.images.length > 0 
+      ? space.images.map(img => `https://spaceapi.iryax.com/${img}`)
+      : [IRYAX_SPACE_IMAGES[0]];
+    
+    const formattedSpace = {
+      ...space,
+      images: images,
+      image: images[0]
+    };
+    setSelectedSpace(formattedSpace);
+    setIsSpaceDetailOpen(true);
+  };
+
+  const closeSpaceDetail = () => {
+    setIsSpaceDetailOpen(false);
+    setSelectedSpace(null);
   };
 
   const scrollToSection = (id) => {
@@ -1532,7 +2046,7 @@ const PromotionalPage = () => {
 
   const stats = [
     { label: "Professionals Trust Us", value: 120, suffix: "+" },
-    { label: "Workspaces", value: 15, suffix: "+" },
+    { label: "Workspaces", value: cabins.length || 15, suffix: "+" },
     { label: "Projects Done", value: 2500, suffix: "+" },
     { label: "Specializations", value: 20, suffix: "+" },
     { label: "Support Hours", value: 24, suffix: "/7" }
@@ -1605,11 +2119,6 @@ const PromotionalPage = () => {
     { category: "Earning", q: "How can I earn from my unused space?", a: "List your space on our platform and connect with trusted professionals." }
   ];
 
-  const handleCabinsClick = (e) => {
-    e.preventDefault();
-    openCabinsModal();
-  };
-
   const BrandWithIcon = () => (
     <span className="navbar-brand hidden sm:block transition flex items-center gap-2">
       IRYAX SPACE
@@ -1638,17 +2147,28 @@ const PromotionalPage = () => {
     }
   ];
 
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-800 rounded-full animate-spin mx-auto"></div>
+          <p className="mt-4 text-gray-600 text-lg">Loading spaces...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <style>{styles}</style>
       <div className="min-h-screen bg-white text-gray-900 font-light antialiased">
 
-        {/* ─── CABINS MODAL ─── */}
-        <CabinsModal 
-          isOpen={isCabinsModalOpen}
-          onClose={closeCabinsModal}
-          cabins={cabins}
-          loading={loading}
+        {/* ─── SPACE DETAIL MODAL ─── */}
+        <SpaceDetailModal 
+          isOpen={isSpaceDetailOpen}
+          onClose={closeSpaceDetail}
+          space={selectedSpace}
           onBookClick={handleBookClick}
         />
 
@@ -1690,26 +2210,27 @@ const PromotionalPage = () => {
               <BrandWithIcon />
             </button>
 
-            <div className="hidden md:flex items-center gap-1">
+            <div className="nav-links">
               <button onClick={() => scrollToSection('benefits')} className="navbar-link">Benefits</button>
-              <a href="#cabins" onClick={handleCabinsClick} className="navbar-link">Spaces</a>
+              <button onClick={() => { scrollToSection('coworking-section'); }} className="navbar-link">Co-working</button>
+              <button onClick={() => { scrollToSection('medical-section'); }} className="navbar-link">Medical</button>
               <button onClick={() => scrollToSection('specialties')} className="navbar-link">Specialties</button>
               <button onClick={() => scrollToSection('mission-vision')} className="navbar-link">About</button>
               <button onClick={() => scrollToSection('faq')} className="navbar-link">FAQ</button>
               <button onClick={() => scrollToSection('contact')} className="navbar-link">Contact</button>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <button onClick={() => navigate("/login")} className="navbar-signin hidden sm:block">
                 Sign In
               </button>
-              {/* Start Now button - hidden on mobile */}
               <button onClick={() => navigate("/login")} className="navbar-btn navbar-btn-mobile-hide">
                 <Layout size={14} /> Start Now
               </button>
               <button 
                 onClick={() => setMobileOpen(!mobileOpen)} 
-                className="navbar-menu-btn md:hidden"
+                className="navbar-menu-btn"
+                aria-label="Toggle menu"
               >
                 {mobileOpen ? <X size={22} /> : <Menu size={22} />}
               </button>
@@ -1719,9 +2240,18 @@ const PromotionalPage = () => {
 
         {/* ─── MOBILE MENU ─── */}
         <div className={`fixed inset-0 z-40 bg-white pt-20 px-6 transition-all duration-500 ${mobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
-          <div className="flex flex-col gap-2 max-w-sm mx-auto">
+          <button 
+            onClick={() => setMobileOpen(false)} 
+            className="mobile-menu-close"
+            aria-label="Close menu"
+          >
+            <X size={22} className="text-gray-700" />
+          </button>
+          
+          <div className="flex flex-col gap-2 max-w-sm mx-auto mt-8">
             <button onClick={() => { setMobileOpen(false); scrollToSection('benefits'); }} className="px-4 py-3 text-base text-gray-700 hover:text-blue-800 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-medium text-left">Benefits</button>
-            <a href="#cabins" onClick={(e) => { e.preventDefault(); setMobileOpen(false); openCabinsModal(); }} className="px-4 py-3 text-base text-gray-700 hover:text-blue-800 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-medium text-left block">Spaces</a>
+            <button onClick={() => { setMobileOpen(false); scrollToSection('coworking-section'); }} className="px-4 py-3 text-base text-gray-700 hover:text-blue-800 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-medium text-left">Co-working Space</button>
+            <button onClick={() => { setMobileOpen(false); scrollToSection('medical-section'); }} className="px-4 py-3 text-base text-gray-700 hover:text-blue-800 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-medium text-left">Medical Space</button>
             <button onClick={() => { setMobileOpen(false); scrollToSection('specialties'); }} className="px-4 py-3 text-base text-gray-700 hover:text-blue-800 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-medium text-left">Specialties</button>
             <button onClick={() => { setMobileOpen(false); scrollToSection('mission-vision'); }} className="px-4 py-3 text-base text-gray-700 hover:text-blue-800 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-medium text-left">About</button>
             <button onClick={() => { setMobileOpen(false); scrollToSection('faq'); }} className="px-4 py-3 text-base text-gray-700 hover:text-blue-800 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-medium text-left">FAQ</button>
@@ -1738,7 +2268,6 @@ const PromotionalPage = () => {
           <div className="hero-bg">
             <img src={IRYAX_HERO_IMAGE} alt="IRYAX SPACE Workspace" />
           </div>
-          {/* ─── GRAY OVERLAY ─── */}
           <div className="hero-overlay"></div>
           <div className="hero-content">
             <div className="hero-text-box">
@@ -1775,9 +2304,9 @@ const PromotionalPage = () => {
                     Start Your Journey
                     <ArrowRight size={16} className="group-hover:translate-x-1 transition" />
                   </button>
-                  <a href="#cabins" onClick={handleCabinsClick} className="btn-secondary" style={{ textDecoration: 'none' }}>
+                  <button onClick={() => { scrollToSection('coworking-section'); }} className="btn-secondary" style={{ textDecoration: 'none' }}>
                     <Eye size={16} /> Explore Spaces
-                  </a>
+                  </button>
                 </div>
               </RevealSection>
             </div>
@@ -1791,12 +2320,166 @@ const PromotionalPage = () => {
               <RevealSection key={i} delay={i * 0.1}>
                 <div className="text-center group p-4 rounded-2xl hover:bg-white transition shadow-sm hover:shadow-lg">
                   <div className="text-4xl font-bold bg-gradient-to-r from-blue-900 to-blue-600 bg-clip-text text-transparent group-hover:scale-110 transition">
-                    <Counter target={stat.value} suffix={stat.suffix} />
+                    {stat.label === "Workspaces" ? cabins.length || 15 : <Counter target={stat.value} suffix={stat.suffix} />}
                   </div>
                   <div className="text-sm text-gray-500 mt-1 font-medium">{stat.label}</div>
                 </div>
               </RevealSection>
             ))}
+          </div>
+        </section>
+
+        {/* ─── CO-WORKING SPACES SECTION ─── */}
+        <section id="coworking-section" className="py-20 px-6 bg-gradient-to-b from-blue-50 to-white">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-14">
+              <RevealSection>
+                <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-blue-100 border border-blue-300 text-blue-800 text-xs rounded-full mb-4 tracking-widest uppercase font-medium">
+                  <Building2 size={12} /> Co-Working Spaces
+                </span>
+              </RevealSection>
+              <RevealSection delay={0.1}>
+                <h2 className="text-3xl sm:text-4xl font-light text-gray-900">
+                  Premium <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent font-bold">Co-Working Spaces</span>
+                </h2>
+              </RevealSection>
+              <RevealSection delay={0.2}>
+                <p className="mt-3 text-base text-gray-600 max-w-2xl mx-auto">
+                  Modern, flexible workspaces designed for freelancers, startups, and growing teams.
+                </p>
+              </RevealSection>
+            </div>
+
+            {coworkingCabins.length === 0 ? (
+              <div className="text-center py-12">
+                <Building2 size={48} className="mx-auto text-gray-300 mb-4" />
+                <p className="text-gray-500 text-lg">No co-working spaces available at the moment.</p>
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {coworkingCabins.map((cabin, i) => {
+                  const cabinImages = cabin.images && cabin.images.length > 0 
+                    ? cabin.images.map(img => `https://spaceapi.iryax.com/${img}`)
+                    : [IRYAX_SPACE_IMAGES[0]];
+
+                  return (
+                    <RevealSection key={cabin._id} delay={i * 0.1}>
+                      <div 
+                        className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 cursor-pointer group border border-gray-100"
+                        onClick={() => handleSpaceClick(cabin)}
+                      >
+                        <div className="h-52 overflow-hidden relative">
+                          <ImageSlider 
+                            images={cabinImages} 
+                            alt={cabin.name}
+                          />
+                          <span className="absolute top-3 left-3 px-4 py-1.5 rounded-full text-xs font-semibold text-white bg-blue-600 z-10">
+                            {cabin.type || "Co-Working"}
+                          </span>
+                          <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black/60 to-transparent z-10"></div>
+                        </div>
+                        <div className="p-5">
+                          <h3 className="text-xl font-bold text-gray-900 mb-1 group-hover:text-blue-700 transition line-clamp-1">{cabin.name}</h3>
+                          <div className="flex items-center gap-1 text-sm text-gray-500 mb-3">
+                            <MapPin size={16} className="text-blue-600" /> 
+                            <span className="line-clamp-1">{cabin.address || "Location not specified"}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-baseline gap-1">
+                              <span className="text-2xl font-bold text-blue-800">₹{cabin.price?.toLocaleString('en-IN') || 0}</span>
+                              <span className="text-xs text-gray-500">/ day</span>
+                            </div>
+                            <button 
+                              className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-700 to-blue-500 rounded-xl hover:shadow-lg transition flex items-center gap-1 group-hover:scale-105"
+                              onClick={(e) => { e.stopPropagation(); handleSpaceClick(cabin); }}
+                            >
+                              View Details <ArrowRight size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </RevealSection>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* ─── MEDICAL SPACES SECTION ─── */}
+        <section id="medical-section" className="py-20 px-6 bg-gradient-to-b from-red-50 to-white">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-14">
+              <RevealSection>
+                <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-red-100 border border-red-300 text-red-800 text-xs rounded-full mb-4 tracking-widest uppercase font-medium">
+                  <Stethoscope size={12} /> Medical Spaces
+                </span>
+              </RevealSection>
+              <RevealSection delay={0.1}>
+                <h2 className="text-3xl sm:text-4xl font-light text-gray-900">
+                  Professional <span className="bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent font-bold">Medical Spaces</span>
+                </h2>
+              </RevealSection>
+              <RevealSection delay={0.2}>
+                <p className="mt-3 text-base text-gray-600 max-w-2xl mx-auto">
+                  Fully-equipped medical consultation rooms for healthcare professionals and practitioners.
+                </p>
+              </RevealSection>
+            </div>
+
+            {medicalCabins.length === 0 ? (
+              <div className="text-center py-12">
+                <Stethoscope size={48} className="mx-auto text-gray-300 mb-4" />
+                <p className="text-gray-500 text-lg">No medical spaces available at the moment.</p>
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {medicalCabins.map((cabin, i) => {
+                  const cabinImages = cabin.images && cabin.images.length > 0 
+                    ? cabin.images.map(img => `https://spaceapi.iryax.com/${img}`)
+                    : [IRYAX_SPACE_IMAGES[1]];
+
+                  return (
+                    <RevealSection key={cabin._id} delay={i * 0.1}>
+                      <div 
+                        className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 cursor-pointer group border border-gray-100"
+                        onClick={() => handleSpaceClick(cabin)}
+                      >
+                        <div className="h-52 overflow-hidden relative">
+                          <ImageSlider 
+                            images={cabinImages} 
+                            alt={cabin.name}
+                          />
+                          <span className="absolute top-3 left-3 px-4 py-1.5 rounded-full text-xs font-semibold text-white bg-red-600 z-10">
+                            {cabin.type || "Medical"}
+                          </span>
+                          <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black/60 to-transparent z-10"></div>
+                        </div>
+                        <div className="p-5">
+                          <h3 className="text-xl font-bold text-gray-900 mb-1 group-hover:text-red-700 transition line-clamp-1">{cabin.name}</h3>
+                          <div className="flex items-center gap-1 text-sm text-gray-500 mb-3">
+                            <MapPin size={16} className="text-red-600" /> 
+                            <span className="line-clamp-1">{cabin.address || "Location not specified"}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-baseline gap-1">
+                              <span className="text-2xl font-bold text-red-800">₹{cabin.price?.toLocaleString('en-IN') || 0}</span>
+                              <span className="text-xs text-gray-500">/ day</span>
+                            </div>
+                            <button 
+                              className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-red-700 to-rose-500 rounded-xl hover:shadow-lg transition flex items-center gap-1 group-hover:scale-105"
+                              onClick={(e) => { e.stopPropagation(); handleSpaceClick(cabin); }}
+                            >
+                              View Details <ArrowRight size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </RevealSection>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </section>
 
@@ -2176,7 +2859,7 @@ const PromotionalPage = () => {
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-gray-900">{item.label}</p>
-                        <p className={`text-sm text-gray-600 group-hover:text-blue-700 transition ${item.label === "Address" ? 'text-xs leading-relaxed' : ''}`}>{item.value}</p>
+                        <p className={`text-sm text-gray-600 group-hover:text-blue-700 transition ${item.label === 'Address' ? 'text-xs leading-relaxed' : ''}`}>{item.value}</p>
                       </div>
                     </div>
                   </RevealSection>
@@ -2281,7 +2964,8 @@ const PromotionalPage = () => {
                   <h4 className="text-sm font-medium text-white mb-4">Explore</h4>
                   <div className="space-y-2">
                     <button onClick={() => scrollToSection('benefits')} className="block text-sm text-gray-400 hover:text-blue-400 transition hover:translate-x-1 text-left">Benefits</button>
-                    <a href="#cabins" onClick={handleCabinsClick} className="block text-sm text-gray-400 hover:text-blue-400 transition hover:translate-x-1 text-left">Spaces</a>
+                    <button onClick={() => scrollToSection('coworking-section')} className="block text-sm text-gray-400 hover:text-blue-400 transition hover:translate-x-1 text-left">Co-working Space</button>
+                    <button onClick={() => scrollToSection('medical-section')} className="block text-sm text-gray-400 hover:text-blue-400 transition hover:translate-x-1 text-left">Medical Space</button>
                     <button onClick={() => scrollToSection('specialties')} className="block text-sm text-gray-400 hover:text-blue-400 transition hover:translate-x-1 text-left">Specialties</button>
                     <button onClick={() => scrollToSection('mission-vision')} className="block text-sm text-gray-400 hover:text-blue-400 transition hover:translate-x-1 text-left">About</button>
                     <button onClick={() => scrollToSection('faq')} className="block text-sm text-gray-400 hover:text-blue-400 transition hover:translate-x-1 text-left">FAQ</button>

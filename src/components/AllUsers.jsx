@@ -1,11 +1,9 @@
 import axios from "axios";
 import {
   Users,
-  Search,
   Mail,
   Phone,
   MapPin,
-  Calendar,
   Eye,
   X,
   UserCheck,
@@ -18,7 +16,6 @@ import {
   TrendingUp,
   CheckCircle,
   Clock,
-  Filter,
   XCircle as XCircleIcon,
   User as UserIcon,
   Crown,
@@ -65,13 +62,13 @@ export default function AllUsers() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
   const [filterName, setFilterName] = useState("");
   const [filterRole, setFilterRole] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterPhone, setFilterPhone] = useState("");
   const [filterAddress, setFilterAddress] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
+  const [filterJoinedFrom, setFilterJoinedFrom] = useState("");
+  const [filterJoinedTo, setFilterJoinedTo] = useState("");
   const [viewUser, setViewUser] = useState(null);
 
   const handleApprove = async (id) => {
@@ -130,26 +127,36 @@ export default function AllUsers() {
   useEffect(() => { fetchUsers(); }, []);
 
   const clearFilters = () => {
-    setSearchTerm("");
     setFilterName("");
     setFilterRole("all");
     setFilterStatus("all");
     setFilterPhone("");
     setFilterAddress("");
+    setFilterJoinedFrom("");
+    setFilterJoinedTo("");
   };
 
   const filtered = users.filter((u) => {
-    const search = searchTerm.toLowerCase();
-    const matchSearch =
-      u.name?.toLowerCase().includes(search) ||
-      u.email?.toLowerCase().includes(search) ||
-      u.mobile?.includes(search);
     const matchName = filterName ? u.name?.toLowerCase().includes(filterName.toLowerCase()) : true;
     const matchRole = filterRole === "all" || u.role === filterRole;
     const matchStatus = filterStatus === "all" || u.status === filterStatus;
     const matchPhone = filterPhone ? u.mobile?.includes(filterPhone) : true;
     const matchAddress = filterAddress ? u.address?.toLowerCase().includes(filterAddress.toLowerCase()) : true;
-    return matchSearch && matchName && matchRole && matchStatus && matchPhone && matchAddress;
+    
+    let matchDate = true;
+    if (filterJoinedFrom) {
+      const fromDate = new Date(filterJoinedFrom);
+      const userDate = new Date(u.createdAt);
+      if (userDate < fromDate) matchDate = false;
+    }
+    if (filterJoinedTo && matchDate) {
+      const toDate = new Date(filterJoinedTo);
+      const userDate = new Date(u.createdAt);
+      toDate.setHours(23, 59, 59, 999);
+      if (userDate > toDate) matchDate = false;
+    }
+    
+    return matchName && matchRole && matchStatus && matchPhone && matchAddress && matchDate;
   });
 
   const totalUsers = users.length;
@@ -158,9 +165,6 @@ export default function AllUsers() {
   const totalPending = users.filter((u) => u.status === "pending").length;
   const totalRejected = users.filter((u) => u.status === "rejected").length;
 
-  // ======================
-  // EXPORT TO EXCEL
-  // ======================
   const exportToExcel = () => {
     try {
       if (filtered.length === 0) {
@@ -199,6 +203,8 @@ export default function AllUsers() {
     }
   };
 
+  const hasActiveFilters = filterName || filterRole !== 'all' || filterStatus !== 'all' || filterPhone || filterAddress || filterJoinedFrom || filterJoinedTo;
+
   if (loading) {
     return (
       <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
@@ -221,20 +227,26 @@ export default function AllUsers() {
             <h1 className="admin-dash__greeting">
               All <span>Users</span>
             </h1>
-            <p className="admin-dash__subtitle">
-              View and manage all registered members on the platform.
-            </p>
           </div>
-          <div className="admin-dash__date-pill">
-            <Calendar size={16} />
-            <span>
-              {new Date().toLocaleDateString("en-US", {
-                weekday: "short",
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-              })}
-            </span>
+          <div className="flex items-center gap-2">
+            {/* Export Button */}
+            {filtered.length > 0 && (
+              <button
+                onClick={exportToExcel}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-medium hover:bg-emerald-100 transition-colors border border-emerald-200"
+              >
+                <Download size={14} />
+                <span className="hidden xs:inline">Export</span>
+              </button>
+            )}
+
+            <button
+              onClick={fetchUsers}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200"
+            >
+              <RefreshCw size={14} />
+              <span className="hidden xs:inline">Refresh</span>
+            </button>
           </div>
         </div>
 
@@ -271,121 +283,160 @@ export default function AllUsers() {
                 {filtered.length}
               </span>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              {/* Search Bar */}
-              <div className="relative w-full sm:w-48">
-                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search users..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                />
-              </div>
-              
-              {/* Filter Toggle Button */}
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${showFilters ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-              >
-                <Filter size={14} />
-                Filters
-                {(filterName || filterRole !== 'all' || filterStatus !== 'all' || filterPhone || filterAddress) && (
-                  <span className="w-2 h-2 rounded-full bg-red-500"></span>
-                )}
-              </button>
-
-              {/* Export Button */}
-              {filtered.length > 0 && (
-                <button
-                  onClick={exportToExcel}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-medium hover:bg-emerald-100 transition-colors border border-emerald-200"
-                >
-                  <Download size={14} />
-                  <span className="hidden xs:inline">Export</span>
-                </button>
-              )}
-
-              <button
-                onClick={fetchUsers}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200"
-              >
-                <RefreshCw size={14} />
-                <span className="hidden xs:inline">Refresh</span>
-              </button>
-            </div>
           </div>
 
-          {/* Filter Panel */}
-          {showFilters && (
-            <div className="px-4 pt-4 pb-3 border-b border-gray-100" style={{ backgroundColor: '#fafafa' }}>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                <div>
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Name</label>
-                  <input
-                    type="text"
-                    placeholder="Filter by name..."
-                    value={filterName}
-                    onChange={(e) => setFilterName(e.target.value)}
-                    className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Phone</label>
-                  <input
-                    type="text"
-                    placeholder="Filter by phone..."
-                    value={filterPhone}
-                    onChange={(e) => setFilterPhone(e.target.value)}
-                    className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Address</label>
-                  <input
-                    type="text"
-                    placeholder="Filter by address..."
-                    value={filterAddress}
-                    onChange={(e) => setFilterAddress(e.target.value)}
-                    className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Role</label>
-                  <select
-                    value={filterRole}
-                    onChange={(e) => setFilterRole(e.target.value)}
-                    className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  >
-                    <option value="all">All Roles</option>
-                    <option value="user">User</option>
-                    <option value="doctor">Doctor</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</label>
-                  <select
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
-                    className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  >
-                    <option value="all">All Status</option>
-                    <option value="active">Active</option>
-                    <option value="pending">Pending</option>
-                    <option value="approved">Approved</option>
-                    <option value="rejected">Rejected</option>
-                  </select>
-                </div>
-                <div className="flex items-end">
-                  <button onClick={clearFilters} className="w-full px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-red-600 transition-colors border border-gray-200 rounded-lg hover:border-red-300 flex items-center justify-center gap-1">
-                    <XCircleIcon size={14} /> Clear All
-                  </button>
-                </div>
+          {/* ─── FILTERS - ALWAYS VISIBLE ─── */}
+          <div className="px-4 pt-4 pb-3 border-b border-gray-100" style={{ backgroundColor: '#fafafa' }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {/* Name Filter */}
+              <div>
+                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Name</label>
+                <input
+                  type="text"
+                  placeholder="Filter by name..."
+                  value={filterName}
+                  onChange={(e) => setFilterName(e.target.value)}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                />
+              </div>
+
+              {/* Phone Filter */}
+              <div>
+                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Phone</label>
+                <input
+                  type="text"
+                  placeholder="Filter by phone..."
+                  value={filterPhone}
+                  onChange={(e) => setFilterPhone(e.target.value)}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                />
+              </div>
+
+              {/* Address Filter */}
+              <div>
+                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Address</label>
+                <input
+                  type="text"
+                  placeholder="Filter by address..."
+                  value={filterAddress}
+                  onChange={(e) => setFilterAddress(e.target.value)}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                />
+              </div>
+
+              {/* Role Filter */}
+              <div>
+                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Role</label>
+                <select
+                  value={filterRole}
+                  onChange={(e) => setFilterRole(e.target.value)}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                >
+                  <option value="all">All Roles</option>
+                  <option value="user">User</option>
+                  <option value="doctor">Doctor</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+
+              {/* Status Filter */}
+              <div>
+                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</label>
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                >
+                  <option value="all">All Status</option>
+                  <option value="active">Active</option>
+                  <option value="pending">Pending</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+              </div>
+
+              {/* Date Range - From */}
+              <div>
+                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Joined From</label>
+                <input
+                  type="date"
+                  value={filterJoinedFrom}
+                  onChange={(e) => setFilterJoinedFrom(e.target.value)}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                />
+              </div>
+
+              {/* Date Range - To */}
+              <div>
+                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Joined To</label>
+                <input
+                  type="date"
+                  value={filterJoinedTo}
+                  onChange={(e) => setFilterJoinedTo(e.target.value)}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                />
+              </div>
+
+              {/* Clear Button */}
+              <div className="flex items-end">
+                <button 
+                  onClick={clearFilters} 
+                  className="w-full px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-red-600 transition-colors border border-gray-200 rounded-lg hover:border-red-300 flex items-center justify-center gap-1"
+                >
+                  <XCircleIcon size={14} /> Clear All
+                </button>
               </div>
             </div>
-          )}
+
+            {/* Active Filters Display */}
+            {hasActiveFilters && (
+              <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-gray-200">
+                <span className="text-[10px] text-gray-500 font-medium">Active Filters:</span>
+                {filterName && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] rounded-full">
+                    Name: {filterName}
+                    <button onClick={() => setFilterName("")} className="hover:text-red-500">×</button>
+                  </span>
+                )}
+                {filterPhone && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] rounded-full">
+                    Phone: {filterPhone}
+                    <button onClick={() => setFilterPhone("")} className="hover:text-red-500">×</button>
+                  </span>
+                )}
+                {filterAddress && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] rounded-full">
+                    Address: {filterAddress}
+                    <button onClick={() => setFilterAddress("")} className="hover:text-red-500">×</button>
+                  </span>
+                )}
+                {filterRole !== "all" && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] rounded-full">
+                    Role: {filterRole}
+                    <button onClick={() => setFilterRole("all")} className="hover:text-red-500">×</button>
+                  </span>
+                )}
+                {filterStatus !== "all" && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] rounded-full">
+                    Status: {filterStatus}
+                    <button onClick={() => setFilterStatus("all")} className="hover:text-red-500">×</button>
+                  </span>
+                )}
+                {filterJoinedFrom && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] rounded-full">
+                    From: {formatDate(filterJoinedFrom)}
+                    <button onClick={() => setFilterJoinedFrom("")} className="hover:text-red-500">×</button>
+                  </span>
+                )}
+                {filterJoinedTo && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] rounded-full">
+                    To: {formatDate(filterJoinedTo)}
+                    <button onClick={() => setFilterJoinedTo("")} className="hover:text-red-500">×</button>
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Table Container */}
           <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>

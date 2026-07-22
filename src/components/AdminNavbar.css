@@ -134,23 +134,50 @@
   transform: translateX(-50%);
 }
 
-/* ── More Dropdown ── */
-.an-nav__more-wrap {
+/* ── Dropdown ── */
+.an-nav__dropdown-wrap {
   position: relative;
 }
 
-.an-nav__more-chevron {
-  transition: transform 0.2s ease;
+.an-nav__link--dropdown {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
 }
 
-.an-nav__more-chevron--open {
+.an-nav__link--dropdown:hover {
+  color: #0f172a;
+  background: #f1f5f9;
+}
+
+.an-nav__link--dropdown.an-nav__link--active {
+  color: #4f46e5;
+  background: #eef2ff;
+}
+
+.an-nav__dropdown-chevron {
+  transition: transform 0.2s ease;
+  color: #94a3b8;
+}
+
+.an-nav__dropdown-chevron--open {
   transform: rotate(180deg);
 }
 
-.an-nav__more-dropdown {
+.an-nav__dropdown-menu {
   position: absolute;
   top: calc(100% + 6px);
-  right: 0;
+  left: 0;
   min-width: 180px;
   background: #fff;
   border-radius: 12px;
@@ -171,7 +198,7 @@
   }
 }
 
-.an-nav__more-item {
+.an-nav__dropdown-item {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -185,34 +212,28 @@
   position: relative;
 }
 
-.an-nav__more-item:hover {
+.an-nav__dropdown-item:hover {
   background: #f1f5f9;
   color: #0f172a;
 }
 
-.an-nav__more-item--active {
+.an-nav__dropdown-item--active {
   background: #eef2ff;
   color: #4f46e5;
 }
 
-.an-nav__more-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  background: #f1f5f9;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.an-nav__dropdown-item svg {
+  width: 16px;
+  height: 16px;
+  color: #94a3b8;
   flex-shrink: 0;
-  color: #64748b;
 }
 
-.an-nav__more-item--active .an-nav__more-icon {
-  background: #e0e7ff;
+.an-nav__dropdown-item--active svg {
   color: #4f46e5;
 }
 
-.an-nav__more-active-dot {
+.an-nav__dropdown-active-dot {
   width: 5px;
   height: 5px;
   border-radius: 50%;
@@ -298,7 +319,7 @@
   transform: rotate(180deg);
 }
 
-/* Profile Dropdown - Updated */
+/* Profile Dropdown */
 .an-nav__profile-dropdown {
   position: absolute;
   top: calc(100% + 6px);
@@ -317,30 +338,6 @@
   align-items: center;
   gap: 12px;
   padding: 10px 12px;
-}
-
-/* Dropdown Items */
-.an-nav__dd-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 7px 12px;
-  border: none;
-  background: transparent;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 500;
-  color: #475569;
-  cursor: pointer;
-  transition: all 0.12s ease;
-  font-family: inherit;
-  text-align: left;
-}
-
-.an-nav__dd-item:hover {
-  background: #f1f5f9;
-  color: #0f172a;
 }
 
 .an-nav__dd-name {
@@ -552,7 +549,6 @@
   margin-left: auto;
 }
 
-/* Mobile Footer Buttons */
 .an-mobile__footer {
   padding-top: 12px;
   border-top: 1px solid #f1f5f9;
@@ -560,29 +556,6 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-}
-
-.an-mobile__footer-btn {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 10px 12px;
-  background: transparent;
-  border: none;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #475569;
-  cursor: pointer;
-  transition: all 0.12s ease;
-  font-family: inherit;
-  text-align: left;
-}
-
-.an-mobile__footer-btn:hover {
-  background: #f1f5f9;
-  color: #0f172a;
 }
 
 .an-mobile__logout {
@@ -607,13 +580,30 @@
 }
 
 /* ── Responsive ── */
-@media (max-width: 1024px) {
+@media (max-width: 1100px) {
   .an-nav__links {
     gap: 0;
   }
-  .an-nav__link {
-    padding: 6px 10px;
+  .an-nav__link,
+  .an-nav__link--dropdown {
+    padding: 6px 8px;
     font-size: 12px;
+  }
+  .an-nav__link span,
+  .an-nav__link--dropdown span {
+    display: none;
+  }
+  .an-nav__link svg,
+  .an-nav__link--dropdown svg {
+    width: 18px;
+    height: 18px;
+  }
+  .an-nav__link--dropdown .an-nav__dropdown-chevron {
+    display: none;
+  }
+  .an-nav__dropdown-menu {
+    left: -20px;
+    min-width: 160px;
   }
 }
 
@@ -660,5 +650,12 @@
   }
   .an-nav__logo-ig {
     font-size: 12px;
+  }
+  .an-nav__inner {
+    padding: 0 12px;
+  }
+  .an-nav__profile-dropdown {
+    right: -80px;
+    min-width: 180px;
   }
 }

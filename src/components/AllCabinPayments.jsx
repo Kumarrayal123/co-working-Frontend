@@ -13,7 +13,6 @@ import {
   XCircle,
   AlertCircle,
   Eye,
-  Search,
   X,
   Download,
   TrendingUp,
@@ -28,7 +27,6 @@ import {
   Percent,
   DollarSign,
   History,
-  Filter,
   XCircle as XCircleIcon,
   Crown
 } from "lucide-react";
@@ -43,11 +41,9 @@ const API_URL = "https://spaceapi.iryax.com";
 const AllCabinPayments = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterCabinName, setFilterCabinName] = useState("");
   const [filterOwnerName, setFilterOwnerName] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
@@ -173,7 +169,6 @@ const AllCabinPayments = () => {
   };
 
   const clearFilters = () => {
-    setSearchTerm("");
     setFilterStatus("all");
     setFilterCabinName("");
     setFilterOwnerName("");
@@ -184,16 +179,11 @@ const AllCabinPayments = () => {
     const ownerName = order.cabin?.owner?.name?.toLowerCase() || order.owner?.name?.toLowerCase() || "";
     const transactionId = order.transactionId?.toLowerCase() || "";
     
-    const matchesSearch =
-      cabinName.includes(searchTerm.toLowerCase()) ||
-      ownerName.includes(searchTerm.toLowerCase()) ||
-      transactionId.includes(searchTerm.toLowerCase());
-    
     const matchesStatus = filterStatus === "all" || order.status === filterStatus;
     const matchesCabinName = filterCabinName === "" || cabinName.includes(filterCabinName.toLowerCase());
     const matchesOwnerName = filterOwnerName === "" || ownerName.includes(filterOwnerName.toLowerCase());
     
-    return matchesSearch && matchesStatus && matchesCabinName && matchesOwnerName;
+    return matchesStatus && matchesCabinName && matchesOwnerName;
   });
 
   const handleViewDetails = (order) => {
@@ -462,20 +452,18 @@ const AllCabinPayments = () => {
             <h1 className="admin-dash__greeting">
               Cabin <span>Payments</span>
             </h1>
-            <p className="admin-dash__subtitle">
-              Manage and track all cabin registration payments.
-            </p>
           </div>
-          <div className="admin-dash__date-pill">
-            <Calendar size={16} />
-            <span>
-              {new Date().toLocaleDateString("en-US", {
-                weekday: "short",
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-              })}
-            </span>
+          <div className="flex items-center gap-2">
+            {filteredOrders.length > 0 && (
+              <button onClick={exportToExcel} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200">
+                <Download size={14} />
+                <span className="hidden xs:inline">Export</span>
+              </button>
+            )}
+            <button onClick={fetchPayments} className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors">
+              <RefreshCw size={14} />
+              <span className="hidden xs:inline">Refresh</span>
+            </button>
           </div>
         </div>
 
@@ -512,91 +500,52 @@ const AllCabinPayments = () => {
                 {filteredOrders.length}
               </span>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              {/* Search Bar */}
-              <div className="relative w-full sm:w-48">
-                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search payments..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                />
-              </div>
-              
-              {/* Filter Toggle Button */}
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${showFilters ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-              >
-                <Filter size={14} />
-                Filters
-                {(filterStatus !== 'all' || filterCabinName || filterOwnerName) && (
-                  <span className="w-2 h-2 rounded-full bg-red-500"></span>
-                )}
-              </button>
-
-              {filteredOrders.length > 0 && (
-                <button onClick={exportToExcel} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200">
-                  <Download size={14} />
-                  <span className="hidden xs:inline">Export</span>
-                </button>
-              )}
-
-              <button onClick={fetchPayments} className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors">
-                <RefreshCw size={14} />
-                <span className="hidden xs:inline">Refresh</span>
-              </button>
-            </div>
           </div>
 
-          {/* Filter Panel */}
-          {showFilters && (
-            <div className="px-4 pt-4 pb-3 border-b border-gray-100" style={{ backgroundColor: '#fafafa' }}>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                <div>
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Cabin Name</label>
-                  <input
-                    type="text"
-                    placeholder="Filter by cabin..."
-                    value={filterCabinName}
-                    onChange={(e) => setFilterCabinName(e.target.value)}
-                    className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Owner Name</label>
-                  <input
-                    type="text"
-                    placeholder="Filter by owner..."
-                    value={filterOwnerName}
-                    onChange={(e) => setFilterOwnerName(e.target.value)}
-                    className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</label>
-                  <select
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
-                    className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  >
-                    <option value="all">All</option>
-                    <option value="active">Active</option>
-                    <option value="expired">Expired</option>
-                    <option value="pending">Pending</option>
-                    <option value="cancelled">Cancelled</option>
-                  </select>
-                </div>
-                <div className="flex items-end">
-                  <button onClick={clearFilters} className="w-full px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-red-600 transition-colors border border-gray-200 rounded-lg hover:border-red-300 flex items-center justify-center gap-1">
-                    <XCircleIcon size={14} /> Clear All
-                  </button>
-                </div>
+          {/* ─── FILTERS - ALWAYS VISIBLE ─── */}
+          <div className="px-4 pt-4 pb-3 border-b border-gray-100" style={{ backgroundColor: '#fafafa' }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div>
+                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Cabin Name</label>
+                <input
+                  type="text"
+                  placeholder="Filter by cabin..."
+                  value={filterCabinName}
+                  onChange={(e) => setFilterCabinName(e.target.value)}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Owner Name</label>
+                <input
+                  type="text"
+                  placeholder="Filter by owner..."
+                  value={filterOwnerName}
+                  onChange={(e) => setFilterOwnerName(e.target.value)}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</label>
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                >
+                  <option value="all">All</option>
+                  <option value="active">Active</option>
+                  <option value="expired">Expired</option>
+                  <option value="pending">Pending</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+              <div className="flex items-end">
+                <button onClick={clearFilters} className="w-full px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-red-600 transition-colors border border-gray-200 rounded-lg hover:border-red-300 flex items-center justify-center gap-1">
+                  <XCircleIcon size={14} /> Clear All
+                </button>
               </div>
             </div>
-          )}
+          </div>
 
           {/* Table Container */}
           <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>

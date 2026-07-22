@@ -1,3 +1,4 @@
+// AdminCabins.jsx - Complete with Multi-Filter, All Images in Cards & Modal, Without Amenities in Table
 import axios from "axios";
 import {
   Building2,
@@ -21,7 +22,18 @@ import {
   XCircle as XCircleIcon,
   Crown,
   Timer,
-  Pencil
+  Pencil,
+  Wifi,
+  ParkingCircle,
+  Lock,
+  Bath,
+  Shield,
+  Sofa,
+  Info,
+  ChevronLeft,
+  ChevronRight,
+  Images,
+  Search as SearchIcon
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -32,13 +44,170 @@ import "./Dashboard.css";
 const API_URL = "https://spaceapi.iryax.com";
 const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
 
+// ─── IMAGE SLIDER COMPONENT ───
+const ImageSlider = ({ images, alt, onImageClick }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  if (!images || images.length === 0) {
+    return (
+      <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+        <Building2 size={32} className="text-gray-300" />
+      </div>
+    );
+  }
+
+  const nextSlide = (e) => {
+    e.stopPropagation();
+    setCurrentIndex((prev) => (prev + 1) % images.length);
+  };
+
+  const prevSlide = (e) => {
+    e.stopPropagation();
+    setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
+
+  const goToSlide = (index, e) => {
+    if (e) e.stopPropagation();
+    setCurrentIndex(index);
+  };
+
+  return (
+    <div className="relative w-full h-full overflow-hidden group cursor-pointer" onClick={() => onImageClick && onImageClick()}>
+      <img
+        src={images[currentIndex]}
+        alt={alt || "Cabin image"}
+        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+        onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
+      />
+      
+      {images.length > 1 && (
+        <>
+          <button
+            onClick={prevSlide}
+            className="absolute left-1 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/70"
+          >
+            <ChevronLeft size={14} />
+          </button>
+          <button
+            onClick={nextSlide}
+            className="absolute right-1 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/70"
+          >
+            <ChevronRight size={14} />
+          </button>
+          <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-1">
+            {images.map((_, index) => (
+              <button
+                key={index}
+                onClick={(e) => goToSlide(index, e)}
+                className={`w-1.5 h-1.5 rounded-full transition-all ${
+                  index === currentIndex ? 'bg-white w-3' : 'bg-white/50'
+                }`}
+              />
+            ))}
+          </div>
+          <span className="absolute top-1 right-1 bg-black/60 text-white text-[8px] px-1.5 py-0.5 rounded">
+            {currentIndex + 1}/{images.length}
+          </span>
+        </>
+      )}
+    </div>
+  );
+};
+
+// ─── IMAGE MODAL ───
+const ImageGalleryModal = ({ images, isOpen, onClose, cabinName }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  if (!isOpen || !images || images.length === 0) return null;
+
+  const nextImage = () => {
+    setCurrentIndex((prev) => (prev + 1) % images.length);
+  };
+
+  const prevImage = () => {
+    setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
+
+  const goToImage = (index) => {
+    setCurrentIndex(index);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[1300] bg-black/90 flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
+      <div className="relative max-w-5xl w-full max-h-[90vh] bg-black rounded-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className="absolute top-0 left-0 right-0 z-10 p-4 bg-gradient-to-b from-black/70 to-transparent flex items-center justify-between">
+          <h3 className="text-white font-semibold text-sm truncate max-w-[200px]">{cabinName || "Gallery"}</h3>
+          <button onClick={onClose} className="text-white/70 hover:text-white transition-colors">
+            <X size={24} />
+          </button>
+        </div>
+
+        {/* Main Image */}
+        <div className="relative h-[70vh] flex items-center justify-center">
+          <img
+            src={images[currentIndex]}
+            alt={`Gallery ${currentIndex + 1}`}
+            className="max-w-full max-h-full object-contain"
+            onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
+          />
+          
+          {images.length > 1 && (
+            <>
+              <button
+                onClick={prevImage}
+                className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 transition-colors"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <button
+                onClick={nextImage}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 transition-colors"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </>
+          )}
+        </div>
+
+        {/* Thumbnails */}
+        {images.length > 1 && (
+          <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
+            <div className="flex gap-2 overflow-x-auto justify-center px-4">
+              {images.map((img, index) => (
+                <button
+                  key={index}
+                  onClick={() => goToImage(index)}
+                  className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
+                    index === currentIndex ? 'border-white' : 'border-transparent opacity-60 hover:opacity-100'
+                  }`}
+                >
+                  <img src={img} alt={`Thumb ${index + 1}`} className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ─── MAIN ADMIN CABINS ───
 const AdminCabins = () => {
   const [cabins, setCabins] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [filterType, setFilterType] = useState("all");
-  const [showFilters, setShowFilters] = useState(false);
+  
+  // ─── MULTI FILTER STATES ───
+  const [filters, setFilters] = useState({
+    search: "",
+    cabinType: "all",
+    status: "all",
+    priceMin: "",
+    priceMax: "",
+    address: ""
+  });
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingCabin, setEditingCabin] = useState(null);
@@ -46,6 +215,8 @@ const AdminCabins = () => {
   const [pricingPlans, setPricingPlans] = useState([]);
   const [editPricingPlans, setEditPricingPlans] = useState([]);
   const [countdowns, setCountdowns] = useState({});
+  const [addressPopup, setAddressPopup] = useState({ show: false, address: "", x: 0, y: 0 });
+  const [galleryModal, setGalleryModal] = useState({ isOpen: false, images: [], cabinName: "" });
   const navigate = useNavigate();
 
   // Add Cabin Form State
@@ -68,7 +239,7 @@ const AdminCabins = () => {
   });
   const [images, setImages] = useState([]);
 
-  // Edit Form State - ALL FIELDS OPTIONAL
+  // Edit Form State
   const [editFormData, setEditFormData] = useState({
     name: "",
     description: "",
@@ -109,6 +280,20 @@ const AdminCabins = () => {
 
     return () => clearInterval(interval);
   }, []);
+
+  const getImageUrl = (img) => {
+    if (!img) return PLACEHOLDER_IMAGE;
+    if (img.startsWith("http")) return img;
+    const cleanPath = img.replace(/\\/g, "/").replace(/^\/+/, "");
+    return `${API_URL}/${cleanPath}`;
+  };
+
+  const getAllImageUrls = (cabin) => {
+    if (!cabin.images || cabin.images.length === 0) {
+      return [PLACEHOLDER_IMAGE];
+    }
+    return cabin.images.map(img => getImageUrl(img));
+  };
 
   const fetchCabins = async () => {
     setLoading(true);
@@ -159,9 +344,115 @@ const AdminCabins = () => {
     }
   };
 
-  // ======================
-  // EDIT CABIN FUNCTIONS - ALL FIELDS OPTIONAL
-  // ======================
+  // ─── FILTER HANDLERS ───
+  const handleFilterChange = (key, value) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  const clearAllFilters = () => {
+    setFilters({
+      search: "",
+      cabinType: "all",
+      status: "all",
+      priceMin: "",
+      priceMax: "",
+      address: ""
+    });
+  };
+
+  // ─── FILTERED CABINS ───
+  const filteredCabins = cabins.filter(cabin => {
+    // Search filter (cabin name)
+    if (filters.search && !cabin.name?.toLowerCase().includes(filters.search.toLowerCase())) {
+      return false;
+    }
+    
+    // Cabin Type filter
+    if (filters.cabinType !== "all" && cabin.cabinType !== filters.cabinType) {
+      return false;
+    }
+    
+    // Status filter
+    if (filters.status !== "all") {
+      if (filters.status === "active" && cabin.isActive !== true) return false;
+      if (filters.status === "inactive" && cabin.isActive !== false) return false;
+    }
+    
+    // Price range filter
+    if (filters.priceMin && (cabin.price || 0) < Number(filters.priceMin)) return false;
+    if (filters.priceMax && (cabin.price || 0) > Number(filters.priceMax)) return false;
+    
+    // Address filter
+    if (filters.address && !cabin.address?.toLowerCase().includes(filters.address.toLowerCase())) {
+      return false;
+    }
+    
+    return true;
+  });
+
+  const activeCount = cabins.filter(c => c.isActive === true).length;
+  const inactiveCount = cabins.filter(c => c.isActive === false).length;
+  const exclusiveCount = cabins.filter(c => c.cabinType === 'exclusive').length;
+  const normalCount = cabins.filter(c => c.cabinType === 'normal').length;
+  const withExpiryCount = cabins.filter(c => c.expiryDate).length;
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const formatCountdown = (seconds) => {
+    if (!seconds || seconds <= 0) return 'Expired';
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    
+    if (days > 0) {
+      return `${days}d ${hours}h`;
+    }
+    return `${hours}h ${minutes}m`;
+  };
+
+  const getCountdownColor = (seconds) => {
+    if (!seconds || seconds <= 0) return 'text-red-600';
+    if (seconds < 86400) return 'text-orange-500';
+    if (seconds < 172800) return 'text-yellow-500';
+    return 'text-emerald-600';
+  };
+
+  const handleAddressClick = (e, address) => {
+    const rect = e.target.getBoundingClientRect();
+    setAddressPopup({
+      show: true,
+      address: address || "No address available",
+      x: rect.left,
+      y: rect.bottom + 8
+    });
+  };
+
+  const closeAddressPopup = () => {
+    setAddressPopup({ show: false, address: "", x: 0, y: 0 });
+  };
+
+  const openGallery = (cabin) => {
+    const images = getAllImageUrls(cabin);
+    setGalleryModal({
+      isOpen: true,
+      images: images,
+      cabinName: cabin.name || "Cabin"
+    });
+  };
+
+  const closeGallery = () => {
+    setGalleryModal({ isOpen: false, images: [], cabinName: "" });
+  };
+
+  // ─── EDIT FUNCTIONS ───
   const openEditModal = (cabin) => {
     setEditingCabin(cabin);
     setEditFormData({
@@ -243,7 +534,6 @@ const AdminCabins = () => {
     try {
       const formData = new FormData();
       
-      // ✅ Only append if field has value (not empty)
       if (editFormData.name) {
         const cabinName = editFormData.cabin ? `${editFormData.name} - ${editFormData.cabin}` : editFormData.name;
         formData.append("name", cabinName);
@@ -254,7 +544,6 @@ const AdminCabins = () => {
       if (editFormData.price) formData.append("price", editFormData.price);
       if (editFormData.cabinType) formData.append("cabinType", editFormData.cabinType);
       
-      // ✅ isActive can be false as well, so check if not null
       if (editFormData.isActive !== null && editFormData.isActive !== undefined) {
         formData.append("isActive", editFormData.isActive);
       }
@@ -263,16 +552,12 @@ const AdminCabins = () => {
         formData.append("pricingPlans", JSON.stringify(editPricingPlans));
       }
       
-      // ✅ Amenities - only if any amenity is selected
       const hasAmenity = Object.values(editFormData.amenities).some(v => v === true);
       if (hasAmenity) {
         formData.append("amenities", JSON.stringify(editFormData.amenities));
       }
       
-      // ✅ Images - only if new images added
       editImages.forEach((img) => formData.append("images", img));
-
-      console.log("Updating cabin with data:", Object.fromEntries(formData));
 
       await axios.put(`${API_URL}/api/cabins/${editingCabin._id}`, formData, {
         headers: {
@@ -292,9 +577,7 @@ const AdminCabins = () => {
     }
   };
 
-  // ======================
-  // ADD CABIN FUNCTIONS
-  // ======================
+  // ─── ADD FUNCTIONS ───
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -383,63 +666,6 @@ const AdminCabins = () => {
     }
   };
 
-  const clearFilters = () => {
-    setSearchTerm("");
-    setFilterStatus("all");
-    setFilterType("all");
-  };
-
-  const filteredCabins = cabins.filter(cabin => {
-    const matchSearch = cabin.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        cabin.address?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchStatus = filterStatus === 'all' || 
-                       (filterStatus === 'active' && cabin.isActive === true) ||
-                       (filterStatus === 'inactive' && cabin.isActive === false);
-    const matchType = filterType === 'all' || cabin.cabinType === filterType;
-    return matchSearch && matchStatus && matchType;
-  });
-
-  const activeCount = cabins.filter(c => c.isActive === true).length;
-  const inactiveCount = cabins.filter(c => c.isActive === false).length;
-  const exclusiveCount = cabins.filter(c => c.cabinType === 'exclusive').length;
-  const withExpiryCount = cabins.filter(c => c.expiryDate).length;
-
-  const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  const formatCountdown = (seconds) => {
-    if (!seconds || seconds <= 0) return 'Expired';
-    const days = Math.floor(seconds / 86400);
-    const hours = Math.floor((seconds % 86400) / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    
-    if (days > 0) {
-      return `${days}d ${hours}h`;
-    }
-    return `${hours}h ${minutes}m`;
-  };
-
-  const getCountdownColor = (seconds) => {
-    if (!seconds || seconds <= 0) return 'text-red-600';
-    if (seconds < 86400) return 'text-orange-500';
-    if (seconds < 172800) return 'text-yellow-500';
-    return 'text-emerald-600';
-  };
-
-  const getImageUrl = (img) => {
-    if (!img) return PLACEHOLDER_IMAGE;
-    if (img.startsWith("http")) return img;
-    const cleanPath = img.replace(/\\/g, "/").replace(/^\/+/, "");
-    return `${API_URL}/${cleanPath}`;
-  };
-
   return (
     <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
       <AdminNavbar />
@@ -451,25 +677,27 @@ const AdminCabins = () => {
             <h1 className="admin-dash__greeting">
               My <span>Cabins</span>
             </h1>
-            <p className="admin-dash__subtitle">
-              Manage your workspace listings and properties.
-            </p>
           </div>
-          <div className="admin-dash__date-pill">
-            <Calendar size={16} />
-            <span>
-              {new Date().toLocaleDateString("en-US", {
-                weekday: "short",
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-              })}
-            </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate("/adminbookings")}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+            >
+              <FileText size={14} className="text-indigo-600" />
+              <span className="hidden xs:inline">Bookings</span>
+            </button>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors"
+            >
+              <Plus size={14} />
+              <span className="hidden xs:inline">Add Cabin</span>
+            </button>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-6 gap-3 sm:gap-4 mb-6">
           <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
             <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Total Cabins</p>
             <p className="text-2xl font-bold text-indigo-600 mt-1">{cabins.length}</p>
@@ -487,8 +715,12 @@ const AdminCabins = () => {
             <p className="text-2xl font-bold text-amber-600 mt-1">{exclusiveCount}</p>
           </div>
           <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-blue-600">With Expiry</p>
-            <p className="text-2xl font-bold text-blue-600 mt-1">{withExpiryCount}</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-blue-600">Normal</p>
+            <p className="text-2xl font-bold text-blue-600 mt-1">{normalCount}</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-purple-600">With Expiry</p>
+            <p className="text-2xl font-bold text-purple-600 mt-1">{withExpiryCount}</p>
           </div>
         </div>
 
@@ -501,81 +733,102 @@ const AdminCabins = () => {
                 {filteredCabins.length}
               </span>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="relative w-full sm:w-48">
-                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          </div>
+
+          {/* ─── MULTI FILTER PANEL ─── */}
+          <div className="px-4 pt-4 pb-3 border-b border-gray-100" style={{ backgroundColor: '#fafafa' }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+              {/* Search by Name */}
+              <div>
+                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Search</label>
+                <div className="relative">
+                  <SearchIcon size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    value={filters.search}
+                    onChange={(e) => handleFilterChange('search', e.target.value)}
+                    placeholder="Cabin name..."
+                    className="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+
+              {/* Cabin Type */}
+              <div>
+                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Cabin Type</label>
+                <select
+                  value={filters.cabinType}
+                  onChange={(e) => handleFilterChange('cabinType', e.target.value)}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                >
+                  <option value="all">All Types</option>
+                  <option value="normal">Normal</option>
+                  <option value="exclusive">Exclusive</option>
+                  <option value="premium">Premium</option>
+                </select>
+              </div>
+
+              {/* Status */}
+              <div>
+                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</label>
+                <select
+                  value={filters.status}
+                  onChange={(e) => handleFilterChange('status', e.target.value)}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                >
+                  <option value="all">All Status</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+
+              {/* Price Min */}
+              <div>
+                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Min Price</label>
                 <input
-                  type="text"
-                  placeholder="Search cabins..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  type="number"
+                  value={filters.priceMin}
+                  onChange={(e) => handleFilterChange('priceMin', e.target.value)}
+                  placeholder="0"
+                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                 />
               </div>
-              
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${showFilters ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-              >
-                <Filter size={14} />
-                Filters
-                {(filterStatus !== 'all' || filterType !== 'all') && (
-                  <span className="w-2 h-2 rounded-full bg-red-500"></span>
-                )}
-              </button>
 
-              <button
-                onClick={() => navigate("/adminbookings")}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
-              >
-                <FileText size={14} className="text-indigo-600" />
-                <span className="hidden xs:inline">Bookings</span>
-              </button>
+              {/* Price Max */}
+              <div>
+                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Max Price</label>
+                <input
+                  type="number"
+                  value={filters.priceMax}
+                  onChange={(e) => handleFilterChange('priceMax', e.target.value)}
+                  placeholder="999999"
+                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                />
+              </div>
 
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors"
+              {/* Address */}
+              <div>
+                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Address</label>
+                <input
+                  type="text"
+                  value={filters.address}
+                  onChange={(e) => handleFilterChange('address', e.target.value)}
+                  placeholder="City/Location..."
+                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                />
+              </div>
+            </div>
+
+            {/* Clear Filters Button */}
+            <div className="flex justify-end mt-3">
+              <button 
+                onClick={clearAllFilters} 
+                className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-red-600 transition-colors"
               >
-                <Plus size={14} />
-                <span className="hidden xs:inline">Add Cabin</span>
+                <XCircleIcon size={14} /> Clear All Filters
               </button>
             </div>
           </div>
-
-          {/* Filter Panel */}
-          {showFilters && (
-            <div className="px-4 pt-4 pb-3 border-b border-gray-100" style={{ backgroundColor: '#fafafa' }}>
-              <div className="flex flex-wrap items-end gap-3">
-                <div className="min-w-[140px]">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Type</label>
-                  <select
-                    value={filterType}
-                    onChange={(e) => setFilterType(e.target.value)}
-                    className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  >
-                    <option value="all">All Types</option>
-                    <option value="normal">Normal</option>
-                    <option value="exclusive">Exclusive</option>
-                  </select>
-                </div>
-                <div className="min-w-[140px]">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</label>
-                  <select
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
-                    className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  >
-                    <option value="all">All</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
-                </div>
-                <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-red-600 transition-colors">
-                  <XCircleIcon size={14} /> Clear
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* Table Container */}
           <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
@@ -591,18 +844,18 @@ const AdminCabins = () => {
                 <p className="text-sm">Try adjusting your filters or add a new cabin.</p>
               </div>
             ) : (
-              <table className="w-full min-w-[1200px] text-left">
+              <table className="w-full min-w-[1300px] text-left">
                 <thead>
                   <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Images</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Address</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Type</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Price</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Capacity</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Expiry</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Joined</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
@@ -613,6 +866,7 @@ const AdminCabins = () => {
                     const hasExpiry = cabin.expiryDate ? true : false;
                     const countdown = countdowns[cabin._id] || 0;
                     const isExpired = cabin.expiryDate && new Date(cabin.expiryDate) < new Date();
+                    const cabinImages = getAllImageUrls(cabin);
                     
                     return (
                       <tr key={cabin._id} className="transition-colors group hover:bg-gray-50/80">
@@ -620,25 +874,27 @@ const AdminCabins = () => {
                           <span className="text-sm font-semibold text-gray-400">#{idx + 1}</span>
                         </td>
                         <td className="p-4">
-                          <div className="flex items-center gap-3">
-                            <div className="flex-shrink-0 w-10 h-10 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
-                              <img
-                                src={cabin.images?.[0] ? getImageUrl(cabin.images[0]) : PLACEHOLDER_IMAGE}
-                                alt={cabin.name}
-                                className="w-full h-full object-cover"
-                                onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
-                              />
-                            </div>
-                            <div>
-                              <p className="font-semibold text-gray-900 text-sm">{cabin.name || 'N/A'}</p>
-                              <p className="text-[10px] text-gray-400">{cabin.cabin || 'N/A'}</p>
-                            </div>
+                          <div>
+                            <p className="font-semibold text-gray-900 text-sm">{cabin.name || 'N/A'}</p>
+                            <p className="text-[10px] text-gray-400">{cabin.cabin || 'N/A'}</p>
                           </div>
                         </td>
                         <td className="p-4">
-                          <span className="text-sm font-medium text-gray-700 flex items-center gap-1.5">
-                            <MapPin size={14} className="text-gray-400 flex-shrink-0" />
-                            <span className="truncate max-w-[150px]">{cabin.address || "N/A"}</span>
+                          <button
+                            onClick={() => openGallery(cabin)}
+                            className="flex items-center gap-1 px-2 py-1 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors text-xs font-medium"
+                          >
+                            <Images size={14} />
+                            <span>{cabinImages.length}</span>
+                          </button>
+                        </td>
+                        <td className="p-4">
+                          <span 
+                            className="text-sm font-medium text-gray-700 flex items-center gap-1.5 cursor-pointer hover:text-indigo-600 transition-colors group"
+                            onClick={(e) => handleAddressClick(e, cabin.address)}
+                          >
+                            <MapPin size={14} className="text-gray-400 flex-shrink-0 group-hover:text-indigo-500" />
+                            <span className="truncate max-w-[120px]">{cabin.address?.split(",")[0] || "N/A"}</span>
                           </span>
                         </td>
                         <td className="p-4">
@@ -697,27 +953,35 @@ const AdminCabins = () => {
                           )}
                         </td>
                         <td className="p-4">
-                          <span className="text-sm text-gray-500">{formatDate(cabin.createdAt)}</span>
-                        </td>
-                        <td className="p-4">
-                          <div className="flex items-center gap-1.5 flex-wrap">
+                          {/* ─── COMPACT ACTIONS IN SINGLE ROW ─── */}
+                          <div className="flex items-center gap-1 flex-nowrap">
+                            <button
+                              onClick={() => openGallery(cabin)}
+                              className="p-1.5 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors"
+                              title="Gallery"
+                            >
+                              <Images size={14} />
+                            </button>
                             <button
                               onClick={() => navigate(`/cabin/${cabin._id}`)}
-                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors whitespace-nowrap"
+                              className="p-1.5 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors"
+                              title="View"
                             >
-                              <Eye size={13} /> View
+                              <Eye size={14} />
                             </button>
                             <button
                               onClick={() => openEditModal(cabin)}
-                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors whitespace-nowrap"
+                              className="p-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors"
+                              title="Edit"
                             >
-                              <Pencil size={13} /> Edit
+                              <Pencil size={14} />
                             </button>
                             <button
                               onClick={(e) => handleDelete(e, cabin._id)}
-                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-red-50 text-red-700 hover:bg-red-100 transition-colors whitespace-nowrap"
+                              className="p-1.5 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-colors"
+                              title="Delete"
                             >
-                              <Trash2 size={13} /> Delete
+                              <Trash2 size={14} />
                             </button>
                           </div>
                         </td>
@@ -750,13 +1014,45 @@ const AdminCabins = () => {
                 </span>
                 <span className="flex items-center gap-1">
                   <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                  With Expiry: {withExpiryCount}
+                  Normal: {normalCount}
                 </span>
               </div>
             </div>
           )}
         </div>
       </div>
+
+      {/* Address Popup */}
+      {addressPopup.show && (
+        <div 
+          className="fixed z-[1200] bg-white rounded-xl shadow-2xl border border-gray-200 p-4 max-w-xs animate-in fade-in zoom-in-95 duration-150"
+          style={{ 
+            left: Math.min(addressPopup.x, window.innerWidth - 320),
+            top: Math.min(addressPopup.y, window.innerHeight - 150),
+            transform: 'translateX(-50%)'
+          }}
+          onMouseLeave={closeAddressPopup}
+        >
+          <div className="flex items-start gap-2">
+            <MapPin size={16} className="text-indigo-600 mt-0.5 flex-shrink-0" />
+            <p className="text-sm text-gray-700 leading-relaxed">{addressPopup.address}</p>
+          </div>
+          <button 
+            onClick={closeAddressPopup}
+            className="absolute top-1 right-1 p-1 rounded-full hover:bg-gray-100 transition-colors"
+          >
+            <X size={14} className="text-gray-400" />
+          </button>
+        </div>
+      )}
+
+      {/* Image Gallery Modal */}
+      <ImageGalleryModal
+        isOpen={galleryModal.isOpen}
+        images={galleryModal.images}
+        cabinName={galleryModal.cabinName}
+        onClose={closeGallery}
+      />
 
       {/* ====================== */}
       {/* ADD CABIN MODAL */}
@@ -850,7 +1146,7 @@ const AdminCabins = () => {
 
                 <div>
                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Cabin Type</label>
-                  <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-1">
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-1">
                     <button
                       type="button"
                       onClick={() => setFormData({...formData, cabinType: "normal"})}
@@ -875,6 +1171,18 @@ const AdminCabins = () => {
                       <Crown size={14} className="inline mr-1.5 text-amber-500" />
                       Exclusive
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({...formData, cabinType: "premium"})}
+                      className={`py-2.5 sm:py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold border-2 transition-all ${
+                        formData.cabinType === 'premium'
+                          ? 'border-purple-500 bg-purple-50 text-purple-600'
+                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      <Star size={14} className="inline mr-1.5 text-purple-500" />
+                      Premium
+                    </button>
                   </div>
                 </div>
 
@@ -882,14 +1190,15 @@ const AdminCabins = () => {
                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Amenities</label>
                   <div className="grid grid-cols-2 xs:grid-cols-3 gap-1.5 mt-1">
                     {[
-                      { key: "wifi", label: "Wi-Fi" },
-                      { key: "parking", label: "Parking" },
-                      { key: "lockers", label: "Lockers" },
-                      { key: "privateWashroom", label: "Private Washroom" },
-                      { key: "secureAccess", label: "Secure Access" },
-                      { key: "comfortSeating", label: "Comfort Seating" },
+                      { key: "wifi", label: "Wi-Fi", icon: Wifi },
+                      { key: "parking", label: "Parking", icon: ParkingCircle },
+                      { key: "lockers", label: "Lockers", icon: Lock },
+                      { key: "privateWashroom", label: "Private Washroom", icon: Bath },
+                      { key: "secureAccess", label: "Secure Access", icon: Shield },
+                      { key: "comfortSeating", label: "Comfort Seating", icon: Sofa },
                     ].map(item => {
                       const isActive = formData.amenities[item.key] || false;
+                      const Icon = item.icon;
                       return (
                         <button
                           key={item.key}
@@ -901,9 +1210,7 @@ const AdminCabins = () => {
                               : 'border-slate-200 text-slate-600 hover:bg-slate-50'
                           }`}
                         >
-                          <span className={`w-1.5 h-1.5 rounded-full border-2 ${
-                            isActive ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300'
-                          }`}></span>
+                          <Icon size={14} className={isActive ? 'text-indigo-500' : 'text-gray-400'} />
                           {item.label}
                         </button>
                       );
@@ -1013,7 +1320,7 @@ const AdminCabins = () => {
       )}
 
       {/* ====================== */}
-      {/* EDIT CABIN MODAL - ALL FIELDS OPTIONAL */}
+      {/* EDIT CABIN MODAL */}
       {/* ====================== */}
       {isEditModalOpen && editingCabin && (
         <div className="fixed inset-0 z-[1100] flex items-end sm:items-center justify-center p-2 sm:p-4 bg-slate-900/50 backdrop-blur-sm">
@@ -1041,7 +1348,6 @@ const AdminCabins = () => {
 
             <div className="overflow-y-auto p-4 sm:p-6 flex-1">
               <form onSubmit={handleEditSubmit} className="space-y-4">
-                {/* All fields are OPTIONAL - No required attribute */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Building Name</label>
@@ -1117,7 +1423,7 @@ const AdminCabins = () => {
                 {/* Cabin Type */}
                 <div>
                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Cabin Type</label>
-                  <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-1">
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-1">
                     <button
                       type="button"
                       onClick={() => setEditFormData({...editFormData, cabinType: "normal"})}
@@ -1142,6 +1448,18 @@ const AdminCabins = () => {
                       <Crown size={14} className="inline mr-1.5 text-amber-500" />
                       Exclusive
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditFormData({...editFormData, cabinType: "premium"})}
+                      className={`py-2.5 sm:py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold border-2 transition-all ${
+                        editFormData.cabinType === 'premium'
+                          ? 'border-purple-500 bg-purple-50 text-purple-600'
+                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      <Star size={14} className="inline mr-1.5 text-purple-500" />
+                      Premium
+                    </button>
                   </div>
                 </div>
 
@@ -1150,14 +1468,15 @@ const AdminCabins = () => {
                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Amenities</label>
                   <div className="grid grid-cols-2 xs:grid-cols-3 gap-1.5 mt-1">
                     {[
-                      { key: "wifi", label: "Wi-Fi" },
-                      { key: "parking", label: "Parking" },
-                      { key: "lockers", label: "Lockers" },
-                      { key: "privateWashroom", label: "Private Washroom" },
-                      { key: "secureAccess", label: "Secure Access" },
-                      { key: "comfortSeating", label: "Comfort Seating" },
+                      { key: "wifi", label: "Wi-Fi", icon: Wifi },
+                      { key: "parking", label: "Parking", icon: ParkingCircle },
+                      { key: "lockers", label: "Lockers", icon: Lock },
+                      { key: "privateWashroom", label: "Private Washroom", icon: Bath },
+                      { key: "secureAccess", label: "Secure Access", icon: Shield },
+                      { key: "comfortSeating", label: "Comfort Seating", icon: Sofa },
                     ].map(item => {
                       const isActive = editFormData.amenities[item.key] || false;
+                      const Icon = item.icon;
                       return (
                         <button
                           key={item.key}
@@ -1169,9 +1488,7 @@ const AdminCabins = () => {
                               : 'border-slate-200 text-slate-600 hover:bg-slate-50'
                           }`}
                         >
-                          <span className={`w-1.5 h-1.5 rounded-full border-2 ${
-                            isActive ? 'border-amber-500 bg-amber-500' : 'border-slate-300'
-                          }`}></span>
+                          <Icon size={14} className={isActive ? 'text-amber-500' : 'text-gray-400'} />
                           {item.label}
                         </button>
                       );

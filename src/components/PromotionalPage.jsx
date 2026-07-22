@@ -1362,7 +1362,7 @@ const CabinsModal = ({ isOpen, onClose, cabins, loading, onBookClick }) => {
                 <div className="cabin-image">
                   {cabin.images && cabin.images.length > 0 ? (
                     <img 
-                      src={`http://localhost:5003/${cabin.images[0]}`} 
+                      src={`https://spaceapi.iryax.com/${cabin.images[0]}`} 
                       alt={cabin.name}
                       onError={(e) => {
                         e.target.src = IRYAX_SPACE_IMAGES[0];
@@ -1441,7 +1441,7 @@ const PromotionalPage = () => {
     const fetchCabins = async () => {
       try {
         setLoading(true);
-        const response = await fetch("http://localhost:5003/api/cabins");
+        const response = await fetch("https://spaceapi.iryax.com/api/cabins");
         if (!response.ok) throw new Error("Failed to fetch");
         const data = await response.json();
         setCabins(Array.isArray(data) ? data : []);
@@ -1476,7 +1476,7 @@ const PromotionalPage = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("http://localhost:5003/api/cabins/sendquery", {
+      const response = await fetch("https://spaceapi.iryax.com/api/cabins/sendquery", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -20,7 +20,8 @@ import {
   Filter,
   XCircle as XCircleIcon,
   Crown,
-  Timer
+  Timer,
+  Pencil
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -39,8 +40,11 @@ const AdminCabins = () => {
   const [filterType, setFilterType] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingCabin, setEditingCabin] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [pricingPlans, setPricingPlans] = useState([]);
+  const [editPricingPlans, setEditPricingPlans] = useState([]);
   const [countdowns, setCountdowns] = useState({});
   const navigate = useNavigate();
 
@@ -63,6 +67,29 @@ const AdminCabins = () => {
     },
   });
   const [images, setImages] = useState([]);
+
+  // Edit Form State - ALL FIELDS OPTIONAL
+  const [editFormData, setEditFormData] = useState({
+    name: "",
+    description: "",
+    capacity: "",
+    address: "",
+    price: "",
+    cabin: "",
+    cabinType: "",
+    isActive: null,
+    amenities: {
+      wifi: false,
+      parking: false,
+      lockers: false,
+      privateWashroom: false,
+      secureAccess: false,
+      comfortSeating: false,
+    },
+  });
+  const [editImages, setEditImages] = useState([]);
+  const [existingImages, setExistingImages] = useState([]);
+  const [removeExistingImageIndexes, setRemoveExistingImageIndexes] = useState([]);
 
   // Countdown timer effect
   useEffect(() => {
@@ -90,14 +117,12 @@ const AdminCabins = () => {
       const data = res.data.cabins || res.data;
       const allCabins = Array.isArray(data) ? data : [];
 
-      // Filter to show only admin's cabins (admin ID: 68ebe9ee8f06d33ee022d665)
       const adminCabins = allCabins.filter(cabin =>
         cabin.owner === "68ebe9ee8f06d33ee022d665"
       );
 
       setCabins(adminCabins);
       
-      // Initialize countdowns for cabins with expiry date
       const initialCountdowns = {};
       adminCabins.forEach(cabin => {
         if (cabin.expiryDate) {
@@ -120,11 +145,6 @@ const AdminCabins = () => {
     fetchCabins();
   }, []);
 
-  const getAuthHeader = () => {
-    const token = localStorage.getItem("token");
-    return { headers: { Authorization: `Bearer ${token}` } };
-  };
-
   const handleDelete = async (e, id) => {
     e.stopPropagation();
     if (!window.confirm("Are you sure you want to delete this cabin?")) return;
@@ -139,7 +159,142 @@ const AdminCabins = () => {
     }
   };
 
-  // Form Handlers
+  // ======================
+  // EDIT CABIN FUNCTIONS - ALL FIELDS OPTIONAL
+  // ======================
+  const openEditModal = (cabin) => {
+    setEditingCabin(cabin);
+    setEditFormData({
+      name: cabin.name || "",
+      description: cabin.description || "",
+      capacity: cabin.capacity || "",
+      address: cabin.address || "",
+      price: cabin.price || "",
+      cabin: cabin.cabin || "",
+      cabinType: cabin.cabinType || "",
+      isActive: cabin.isActive,
+      amenities: cabin.amenities || {
+        wifi: false,
+        parking: false,
+        lockers: false,
+        privateWashroom: false,
+        secureAccess: false,
+        comfortSeating: false,
+      },
+    });
+    setEditPricingPlans(cabin.pricingPlans || []);
+    setExistingImages(cabin.images || []);
+    setRemoveExistingImageIndexes([]);
+    setEditImages([]);
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData({ ...editFormData, [name]: value });
+  };
+
+  const toggleEditAmenity = (key) => {
+    setEditFormData((prev) => ({
+      ...prev,
+      amenities: {
+        ...prev.amenities,
+        [key]: !prev.amenities[key],
+      },
+    }));
+  };
+
+  const handleEditImageChange = (e) => {
+    setEditImages(Array.from(e.target.files));
+  };
+
+  const removeEditImage = (index) => {
+    setEditImages(editImages.filter((_, i) => i !== index));
+  };
+
+  const removeExistingImage = (index) => {
+    setRemoveExistingImageIndexes([...removeExistingImageIndexes, index]);
+    setExistingImages(existingImages.filter((_, i) => i !== index));
+  };
+
+  const addEditPlan = () => {
+    const label = prompt("Plan Label:");
+    const hours = prompt("Included Hours:");
+    const cost = prompt("Cost (₹):");
+    const validity = prompt("Validity (Days):");
+    if (hours && cost && validity) {
+      setEditPricingPlans([...editPricingPlans, {
+        label: (label || "").trim(),
+        hours: Number(hours),
+        cost: Number(cost),
+        validity: Number(validity)
+      }]);
+    }
+  };
+
+  const removeEditPlan = (index) => {
+    setEditPricingPlans(editPricingPlans.filter((_, i) => i !== index));
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+
+    try {
+      const formData = new FormData();
+      
+      // ✅ Only append if field has value (not empty)
+      if (editFormData.name) {
+        const cabinName = editFormData.cabin ? `${editFormData.name} - ${editFormData.cabin}` : editFormData.name;
+        formData.append("name", cabinName);
+      }
+      if (editFormData.description) formData.append("description", editFormData.description);
+      if (editFormData.capacity) formData.append("capacity", editFormData.capacity);
+      if (editFormData.address) formData.append("address", editFormData.address);
+      if (editFormData.price) formData.append("price", editFormData.price);
+      if (editFormData.cabinType) formData.append("cabinType", editFormData.cabinType);
+      
+      // ✅ isActive can be false as well, so check if not null
+      if (editFormData.isActive !== null && editFormData.isActive !== undefined) {
+        formData.append("isActive", editFormData.isActive);
+      }
+      
+      if (editPricingPlans.length > 0) {
+        formData.append("pricingPlans", JSON.stringify(editPricingPlans));
+      }
+      
+      // ✅ Amenities - only if any amenity is selected
+      const hasAmenity = Object.values(editFormData.amenities).some(v => v === true);
+      if (hasAmenity) {
+        formData.append("amenities", JSON.stringify(editFormData.amenities));
+      }
+      
+      // ✅ Images - only if new images added
+      editImages.forEach((img) => formData.append("images", img));
+
+      console.log("Updating cabin with data:", Object.fromEntries(formData));
+
+      await axios.put(`${API_URL}/api/cabins/${editingCabin._id}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        }
+      });
+
+      toast.success("Cabin updated successfully!");
+      setIsEditModalOpen(false);
+      setEditingCabin(null);
+      fetchCabins();
+    } catch (err) {
+      console.error("Update Cabin Error:", err);
+      toast.error("Failed to update cabin");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // ======================
+  // ADD CABIN FUNCTIONS
+  // ======================
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -160,6 +315,25 @@ const AdminCabins = () => {
 
   const removeImage = (index) => {
     setImages(images.filter((_, i) => i !== index));
+  };
+
+  const addPlan = () => {
+    const label = prompt("Plan Label:");
+    const hours = prompt("Included Hours:");
+    const cost = prompt("Cost (₹):");
+    const validity = prompt("Validity (Days):");
+    if (hours && cost && validity) {
+      setPricingPlans([...pricingPlans, {
+        label: (label || "").trim(),
+        hours: Number(hours),
+        cost: Number(cost),
+        validity: Number(validity)
+      }]);
+    }
+  };
+
+  const removePlan = (index) => {
+    setPricingPlans(pricingPlans.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e) => {
@@ -328,7 +502,6 @@ const AdminCabins = () => {
               </span>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              {/* Search Bar */}
               <div className="relative w-full sm:w-48">
                 <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
@@ -340,7 +513,6 @@ const AdminCabins = () => {
                 />
               </div>
               
-              {/* Filter Toggle Button */}
               <button
                 onClick={() => setShowFilters(!showFilters)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${showFilters ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
@@ -536,6 +708,12 @@ const AdminCabins = () => {
                               <Eye size={13} /> View
                             </button>
                             <button
+                              onClick={() => openEditModal(cabin)}
+                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors whitespace-nowrap"
+                            >
+                              <Pencil size={13} /> Edit
+                            </button>
+                            <button
                               onClick={(e) => handleDelete(e, cabin._id)}
                               className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-red-50 text-red-700 hover:bg-red-100 transition-colors whitespace-nowrap"
                             >
@@ -551,7 +729,7 @@ const AdminCabins = () => {
             )}
           </div>
 
-          {/* Footer with stats */}
+          {/* Footer */}
           {!loading && filteredCabins.length > 0 && (
             <div className="px-4 py-3 border-t border-gray-100 rounded-b-2xl flex flex-wrap items-center justify-between gap-2" style={{ backgroundColor: '#fafafa' }}>
               <span className="text-xs text-gray-500">
@@ -580,14 +758,15 @@ const AdminCabins = () => {
         </div>
       </div>
 
-      {/* Add Cabin Modal */}
+      {/* ====================== */}
+      {/* ADD CABIN MODAL */}
+      {/* ====================== */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[1100] flex items-end sm:items-center justify-center p-2 sm:p-4 bg-slate-900/50 backdrop-blur-sm">
           <div
             className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200"
             style={{ maxHeight: "95vh" }}
           >
-            {/* Modal Header */}
             <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 sm:p-5 flex items-center justify-between flex-shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-white/20 flex items-center justify-center">
@@ -606,7 +785,6 @@ const AdminCabins = () => {
               </button>
             </div>
 
-            {/* Modal Body */}
             <div className="overflow-y-auto p-4 sm:p-6 flex-1">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
@@ -670,7 +848,6 @@ const AdminCabins = () => {
                   </div>
                 </div>
 
-                {/* Cabin Type */}
                 <div>
                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Cabin Type</label>
                   <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-1">
@@ -701,7 +878,6 @@ const AdminCabins = () => {
                   </div>
                 </div>
 
-                {/* Amenities */}
                 <div>
                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Amenities</label>
                   <div className="grid grid-cols-2 xs:grid-cols-3 gap-1.5 mt-1">
@@ -735,26 +911,12 @@ const AdminCabins = () => {
                   </div>
                 </div>
 
-                {/* Pricing Plans */}
                 <div>
                   <div className="flex justify-between items-center mb-1.5">
                     <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Pricing Plans</label>
                     <button
                       type="button"
-                      onClick={() => {
-                        const label = prompt("Plan Label:");
-                        const hours = prompt("Included Hours:");
-                        const cost = prompt("Cost (₹):");
-                        const validity = prompt("Validity (Days):");
-                        if (hours && cost && validity) {
-                          setPricingPlans([...pricingPlans, {
-                            label: (label || "").trim(),
-                            hours: Number(hours),
-                            cost: Number(cost),
-                            validity: Number(validity)
-                          }]);
-                        }
-                      }}
+                      onClick={addPlan}
                       className="text-[10px] sm:text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 sm:px-3 py-1 rounded-lg hover:bg-indigo-100 transition-colors"
                     >
                       + Add Plan
@@ -769,7 +931,7 @@ const AdminCabins = () => {
                           <div className="text-slate-400">{plan.validity}d validity</div>
                           <button
                             type="button"
-                            onClick={() => setPricingPlans(pricingPlans.filter((_, i) => i !== idx))}
+                            onClick={() => removePlan(idx)}
                             className="absolute top-1 right-1 text-red-500 hover:text-red-700 text-xs font-bold"
                           >
                             ×
@@ -782,7 +944,6 @@ const AdminCabins = () => {
                   )}
                 </div>
 
-                {/* Description */}
                 <div>
                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Description</label>
                   <textarea
@@ -795,7 +956,6 @@ const AdminCabins = () => {
                   />
                 </div>
 
-                {/* Images */}
                 <div>
                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Photos</label>
                   <div className="mt-1 border-2 border-dashed border-indigo-200 rounded-xl p-4 sm:p-6 text-center hover:border-indigo-400 transition-colors relative">
@@ -826,7 +986,6 @@ const AdminCabins = () => {
                   )}
                 </div>
 
-                {/* Actions */}
                 <div className="grid grid-cols-2 gap-2 sm:gap-3 pt-2">
                   <button
                     type="button"
@@ -845,6 +1004,302 @@ const AdminCabins = () => {
                     }`}
                   >
                     {submitting ? 'Adding...' : 'Add Cabin'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ====================== */}
+      {/* EDIT CABIN MODAL - ALL FIELDS OPTIONAL */}
+      {/* ====================== */}
+      {isEditModalOpen && editingCabin && (
+        <div className="fixed inset-0 z-[1100] flex items-end sm:items-center justify-center p-2 sm:p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div
+            className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200"
+            style={{ maxHeight: "95vh" }}
+          >
+            <div className="bg-gradient-to-r from-amber-500 to-amber-600 p-4 sm:p-5 flex items-center justify-between flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-white/20 flex items-center justify-center">
+                  <Pencil size={18} className="text-white sm:w-5 sm:h-5" />
+                </div>
+                <div>
+                  <h2 className="text-base sm:text-lg font-bold text-white">Edit Cabin</h2>
+                  <p className="text-[10px] sm:text-xs text-white/75">Update your workspace listing</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className="w-8 h-8 rounded-xl bg-white/15 hover:bg-white/25 transition-colors flex items-center justify-center text-white"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto p-4 sm:p-6 flex-1">
+              <form onSubmit={handleEditSubmit} className="space-y-4">
+                {/* All fields are OPTIONAL - No required attribute */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div>
+                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Building Name</label>
+                    <input
+                      className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition-all"
+                      type="text" name="name"
+                      placeholder={editingCabin?.name || "Enter building name"}
+                      value={editFormData.name}
+                      onChange={handleEditChange}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Address</label>
+                    <input
+                      className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition-all"
+                      type="text" name="address"
+                      placeholder={editingCabin?.address || "Enter address"}
+                      value={editFormData.address}
+                      onChange={handleEditChange}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 xs:grid-cols-3 gap-3 sm:gap-4">
+                  <div>
+                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Cabin Spec</label>
+                    <input
+                      className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition-all"
+                      type="text" name="cabin"
+                      placeholder={editingCabin?.cabin || "e.g. Office B"}
+                      value={editFormData.cabin}
+                      onChange={handleEditChange}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Capacity</label>
+                    <input
+                      className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition-all"
+                      type="number" name="capacity" min="1"
+                      placeholder={editingCabin?.capacity || "10"}
+                      value={editFormData.capacity}
+                      onChange={handleEditChange}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Price/hr</label>
+                    <input
+                      className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition-all"
+                      type="number" name="price" min="0"
+                      placeholder={editingCabin?.price || "25000"}
+                      value={editFormData.price}
+                      onChange={handleEditChange}
+                    />
+                  </div>
+                </div>
+
+                {/* Status Toggle */}
+                <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                  <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Status</label>
+                  <button
+                    type="button"
+                    onClick={() => setEditFormData({...editFormData, isActive: !editFormData.isActive})}
+                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                      editFormData.isActive
+                        ? 'bg-emerald-500 text-white'
+                        : 'bg-gray-300 text-gray-600'
+                    }`}
+                  >
+                    {editFormData.isActive ? 'Active' : 'Inactive'}
+                  </button>
+                </div>
+
+                {/* Cabin Type */}
+                <div>
+                  <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Cabin Type</label>
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-1">
+                    <button
+                      type="button"
+                      onClick={() => setEditFormData({...editFormData, cabinType: "normal"})}
+                      className={`py-2.5 sm:py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold border-2 transition-all ${
+                        editFormData.cabinType === 'normal'
+                          ? 'border-amber-500 bg-amber-50 text-amber-600'
+                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      <Building2 size={14} className="inline mr-1.5" />
+                      Normal
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditFormData({...editFormData, cabinType: "exclusive"})}
+                      className={`py-2.5 sm:py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold border-2 transition-all ${
+                        editFormData.cabinType === 'exclusive'
+                          ? 'border-amber-500 bg-amber-50 text-amber-600'
+                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      <Crown size={14} className="inline mr-1.5 text-amber-500" />
+                      Exclusive
+                    </button>
+                  </div>
+                </div>
+
+                {/* Amenities */}
+                <div>
+                  <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Amenities</label>
+                  <div className="grid grid-cols-2 xs:grid-cols-3 gap-1.5 mt-1">
+                    {[
+                      { key: "wifi", label: "Wi-Fi" },
+                      { key: "parking", label: "Parking" },
+                      { key: "lockers", label: "Lockers" },
+                      { key: "privateWashroom", label: "Private Washroom" },
+                      { key: "secureAccess", label: "Secure Access" },
+                      { key: "comfortSeating", label: "Comfort Seating" },
+                    ].map(item => {
+                      const isActive = editFormData.amenities[item.key] || false;
+                      return (
+                        <button
+                          key={item.key}
+                          type="button"
+                          onClick={() => toggleEditAmenity(item.key)}
+                          className={`flex items-center gap-1.5 p-2 rounded-lg text-[10px] sm:text-xs font-semibold border transition-all ${
+                            isActive
+                              ? 'border-amber-500 bg-amber-50 text-amber-600'
+                              : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                          }`}
+                        >
+                          <span className={`w-1.5 h-1.5 rounded-full border-2 ${
+                            isActive ? 'border-amber-500 bg-amber-500' : 'border-slate-300'
+                          }`}></span>
+                          {item.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Pricing Plans */}
+                <div>
+                  <div className="flex justify-between items-center mb-1.5">
+                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Pricing Plans</label>
+                    <button
+                      type="button"
+                      onClick={addEditPlan}
+                      className="text-[10px] sm:text-xs font-bold text-amber-600 bg-amber-50 px-2.5 sm:px-3 py-1 rounded-lg hover:bg-amber-100 transition-colors"
+                    >
+                      + Add Plan
+                    </button>
+                  </div>
+                  {editPricingPlans.length > 0 ? (
+                    <div className="grid grid-cols-1 xs:grid-cols-2 gap-1.5">
+                      {editPricingPlans.map((plan, idx) => (
+                        <div key={idx} className="p-2 bg-slate-50 rounded-lg text-[10px] sm:text-xs border border-slate-200 relative">
+                          <div><strong>{plan.label || "Plan"}</strong></div>
+                          <div>{plan.hours}h · ₹{plan.cost}</div>
+                          <div className="text-slate-400">{plan.validity}d validity</div>
+                          <button
+                            type="button"
+                            onClick={() => removeEditPlan(idx)}
+                            className="absolute top-1 right-1 text-red-500 hover:text-red-700 text-xs font-bold"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-[10px] sm:text-xs text-slate-400">No plans defined.</p>
+                  )}
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Description</label>
+                  <textarea
+                    className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition-all resize-none"
+                    name="description"
+                    placeholder={editingCabin?.description || "Describe your workspace..."}
+                    value={editFormData.description}
+                    onChange={handleEditChange}
+                    rows={2}
+                  />
+                </div>
+
+                {/* Images */}
+                <div>
+                  <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Photos</label>
+                  
+                  {/* Existing Images */}
+                  {existingImages.length > 0 && (
+                    <div className="mt-2">
+                      <p className="text-[10px] text-slate-500 mb-1">Current Images:</p>
+                      <div className="grid grid-cols-3 xs:grid-cols-4 sm:grid-cols-5 gap-2">
+                        {existingImages.map((img, index) => (
+                          <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-slate-200">
+                            <img src={getImageUrl(img)} alt="existing" className="w-full h-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => removeExistingImage(index)}
+                              className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Upload New Images */}
+                  <div className="mt-2 border-2 border-dashed border-amber-200 rounded-xl p-4 sm:p-6 text-center hover:border-amber-400 transition-colors relative">
+                    <input
+                      type="file" multiple accept="image/*"
+                      onChange={handleEditImageChange}
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                    />
+                    <Upload size={20} className="mx-auto text-amber-400 sm:w-6 sm:h-6" />
+                    <p className="text-[10px] sm:text-xs text-slate-500 mt-1">Add new photos</p>
+                  </div>
+
+                  {/* New Image Previews */}
+                  {editImages.length > 0 && (
+                    <div className="grid grid-cols-3 xs:grid-cols-4 sm:grid-cols-5 gap-2 mt-2">
+                      {editImages.map((file, index) => (
+                        <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-slate-200">
+                          <img src={URL.createObjectURL(file)} alt="preview" className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => removeEditImage(index)}
+                            className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div className="grid grid-cols-2 gap-2 sm:gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditModalOpen(false)}
+                    className="py-2.5 sm:py-3 rounded-xl border border-slate-200 text-slate-600 font-semibold text-xs sm:text-sm hover:bg-slate-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className={`py-2.5 sm:py-3 rounded-xl text-white font-bold text-xs sm:text-sm transition-all ${
+                      submitting
+                        ? 'bg-slate-400 cursor-not-allowed'
+                        : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:shadow-lg'
+                    }`}
+                  >
+                    {submitting ? 'Updating...' : 'Update Cabin'}
                   </button>
                 </div>
               </form>

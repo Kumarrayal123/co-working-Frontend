@@ -37,6 +37,7 @@ import AllCabinPayments from "./components/AllCabinPayments";
 import AllWallets from "./components/AllWallets";
 import AllWithdrawals from "./components/AllWithdrawals";
 import PromotionalPage from "./components/PromotionalPage";
+import AllQueries from "./components/AllQueries";
 
 function App() {
   return (
@@ -76,6 +77,7 @@ function App() {
         <Route path ="/cabinpayments" element={<AdminRoute><AllCabinPayments /></AdminRoute>}></Route>
         <Route path ="/userwallets" element={<AdminRoute><AllWallets /></AdminRoute>}></Route>
         <Route path ="/withdrawals" element={<AdminRoute><AllWithdrawals /></AdminRoute>}></Route>
+        <Route path ="/userqueries" element={<AdminRoute><AllQueries /></AdminRoute>}></Route>
       
 
       </Routes>

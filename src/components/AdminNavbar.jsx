@@ -13,7 +13,8 @@ import {
   Wallet,
   Banknote,
   MoreHorizontal,
-  Plus
+  Plus,
+  MessageCircle
 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -86,6 +87,7 @@ function AdminNavbar() {
     { name: "Cabin Payments", path: "/cabinpayments", icon: CreditCard },
     { name: "User Wallets", path: "/userwallets", icon: Wallet },
     { name: "Withdrawals", path: "/withdrawals", icon: Banknote },
+    { name: "User Queries", path: "/userqueries", icon: MessageCircle }, // ✅ NEW
   ];
 
   const adminString = localStorage.getItem("admin");

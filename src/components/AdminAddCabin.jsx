@@ -160,10 +160,10 @@ function AdminAddCabin() {
         headers = { Authorization: `Bearer ${token}` };
       }
 
-      console.log("Submitting to: https://spaceapi.iryax.com/api/cabins");
+      console.log("Submitting to: http://localhost:5003/api/cabins");
       console.log("Headers:", headers);
 
-      const response = await axios.post("https://spaceapi.iryax.com/api/cabins", data, {
+      const response = await axios.post("http://localhost:5003/api/cabins", data, {
         headers: headers,
       });
 
@@ -192,7 +192,7 @@ function AdminAddCabin() {
           retryData.append("amenities", JSON.stringify(formData.amenities));
           images.forEach((img) => retryData.append("images", img));
           
-          const retryRes = await axios.post("https://spaceapi.iryax.com/api/cabins", retryData);
+          const retryRes = await axios.post("http://localhost:5003/api/cabins", retryData);
           
           console.log("Retry Response:", retryRes.data);
           toast.success("Cabin added successfully!");

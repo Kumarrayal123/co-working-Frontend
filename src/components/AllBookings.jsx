@@ -53,7 +53,7 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import "./Dashboard.css";
 
-const API_URL = "https://spaceapi.iryax.com";
+const API_URL = "http://localhost:5003";
 
 const AllBookings = () => {
   const [bookings, setBookings] = useState([]);
@@ -212,10 +212,42 @@ const AllBookings = () => {
     fetchBookings();
   }, []);
 
-  const formatDate = (dateStr) => {
+  // ─── INDIAN DATE FORMAT (DD/MM/YY) ───
+  const formatDateIndian = (dateStr) => {
     if (!dateStr) return "N/A";
     const d = new Date(dateStr);
-    return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = String(d.getFullYear()).slice(2);
+    return `${day}/${month}/${year}`;
+  };
+
+  // ─── TIME FORMAT (12-hour with AM/PM) ───
+  const formatTime12 = (timeStr) => {
+    if (!timeStr) return "N/A";
+    try {
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      if (isNaN(hours) || isNaN(minutes)) return timeStr;
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const hours12 = hours % 12 || 12;
+      return `${hours12}:${String(minutes).padStart(2, '0')} ${ampm}`;
+    } catch {
+      return timeStr;
+    }
+  };
+
+  // ─── FULL DATE TIME FORMAT ───
+  const formatDateTimeIndian = (dateStr) => {
+    if (!dateStr) return "N/A";
+    const d = new Date(dateStr);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = String(d.getFullYear()).slice(2);
+    let hours = d.getHours();
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    return `${day}/${month}/${year} ${hours}:${minutes} ${ampm}`;
   };
 
   const formatCurrency = (amount) => {
@@ -494,8 +526,9 @@ const AllBookings = () => {
           'S.No': index + 1, 'Booking Type': booking.bookingBasis === 'plan' ? 'Plan Booking' : 'Hourly Booking',
           'Cabin Name': booking.cabin?.name || 'Unknown Cabin', 'Address': booking.cabin?.address || 'No Address',
           'Customer Name': booking.name || booking.user?.name || 'Unknown Guest', 'Mobile': booking.mobile || booking.user?.mobile || 'N/A',
-          'Email': booking.email || booking.user?.email || 'N/A', 'Start Date': booking.startDate || 'N/A',
-          'Start Time': booking.startTime || 'N/A', 'End Date': booking.endDate || 'N/A', 'End Time': booking.endTime || 'N/A',
+          'Email': booking.email || booking.user?.email || 'N/A', 'Start Date': formatDateIndian(booking.startDate),
+          'Start Time': formatTime12(booking.startTime), 'End Date': formatDateIndian(booking.endDate),
+          'End Time': formatTime12(booking.endTime),
           'Duration (Hours)': booking.totalHours || 0, 'Subtotal (₹)': booking.subtotal || 0,
           'GST (18%)': booking.gstAmount || 0, 'Total (₹)': booking.totalPrice || 0,
           'Seats': booking.seatCount || 0, 'Extra Charge': booking.extraCharge || 0,
@@ -527,10 +560,10 @@ const AllBookings = () => {
     const seatCount = booking.seatCount || 0;
     const selectedSeats = booking.selectedSeats || [];
     const orderId = booking._id.slice(-8).toUpperCase();
-    const startDate = booking.startDate || 'N/A';
-    const startTime = booking.startTime || 'N/A';
-    const endDate = booking.endDate || 'N/A';
-    const endTime = booking.endTime || 'N/A';
+    const startDate = formatDateIndian(booking.startDate);
+    const startTime = formatTime12(booking.startTime);
+    const endDate = formatDateIndian(booking.endDate);
+    const endTime = formatTime12(booking.endTime);
     const status = booking.status?.charAt(0).toUpperCase() + booking.status?.slice(1) || 'N/A';
     const paymentStatus = booking.paymentStatus === 'paid' ? 'PAID' : 'PENDING';
     const paymentMethod = booking.paymentMethod === 'cash' || booking.paymentMethod === 'counter' ? 'CASH' :
@@ -875,7 +908,7 @@ const AllBookings = () => {
           </div>
         </div>
 
-        {/* Filters - Always Expanded */}
+        {/* Filters - Always Expanded - No Clear Button */}
         <div className="bg-gray-50 rounded-xl p-3 mb-4 border border-gray-200">
           <div className="flex flex-wrap items-end gap-3">
             {/* From Date */}
@@ -943,9 +976,7 @@ const AllBookings = () => {
                 <option value="card">Card</option>
               </select>
             </div>
-            <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-red-600 transition-colors whitespace-nowrap">
-              <XCircleIcon size={14} /> Clear
-            </button>
+            {/* Export Button - Only Export, No Clear Button */}
             {filteredBookings.length > 0 && (
               <button onClick={exportToExcel} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200 whitespace-nowrap">
                 <Download size={14} /> Export
@@ -988,7 +1019,7 @@ const AllBookings = () => {
                     <th className="p-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Pmt Status</th>
                     <th className="p-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Visits</th>
                     <th className="p-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Amount</th>
-                    <th className="p-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Actions</th>
+                    <th className="p-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -1016,14 +1047,14 @@ const AllBookings = () => {
                         </td>
                         <td className="p-2">
                           <div>
-                            <p className="font-medium text-gray-800 text-xs">{booking.startDate}</p>
-                            <p className="text-[10px] text-gray-500">{booking.startTime}</p>
+                            <p className="font-medium text-gray-800 text-xs">{formatDateIndian(booking.startDate)}</p>
+                            <p className="text-[10px] text-gray-500">{formatTime12(booking.startTime)}</p>
                           </div>
                         </td>
                         <td className="p-2">
                           <div>
-                            <p className="font-medium text-gray-800 text-xs">{booking.endDate}</p>
-                            <p className="text-[10px] text-gray-500">{booking.endTime}</p>
+                            <p className="font-medium text-gray-800 text-xs">{formatDateIndian(booking.endDate)}</p>
+                            <p className="text-[10px] text-gray-500">{formatTime12(booking.endTime)}</p>
                           </div>
                         </td>
                         <td className="p-2">
@@ -1063,7 +1094,7 @@ const AllBookings = () => {
                           </span>
                         </td>
                         <td className="p-2">
-                          <div className="flex items-center gap-1 overflow-x-auto max-w-[280px] py-1 scrollbar-thin scrollbar-thumb-gray-300">
+                          <div className="flex items-center gap-1 justify-center overflow-x-auto max-w-[280px] py-1 scrollbar-thin scrollbar-thumb-gray-300">
                             <button onClick={() => handleViewBooking(booking)} className="flex items-center gap-0.5 px-2 py-1 rounded-lg text-[10px] font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors whitespace-nowrap">
                               <Eye size={11} /> View
                             </button>
@@ -1186,11 +1217,11 @@ const AllBookings = () => {
                 <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
                   <div>
                     <p className="text-gray-500">From</p>
-                    <p className="font-semibold">{viewBooking.startDate} {viewBooking.startTime}</p>
+                    <p className="font-semibold">{formatDateIndian(viewBooking.startDate)} {formatTime12(viewBooking.startTime)}</p>
                   </div>
                   <div>
                     <p className="text-gray-500">To</p>
-                    <p className="font-semibold">{viewBooking.endDate} {viewBooking.endTime}</p>
+                    <p className="font-semibold">{formatDateIndian(viewBooking.endDate)} {formatTime12(viewBooking.endTime)}</p>
                   </div>
                   <div>
                     <p className="text-gray-500">Duration</p>
@@ -1292,7 +1323,7 @@ const AllBookings = () => {
                         <div className="flex justify-between"><span className="text-gray-500">Card Holder</span><span className="font-medium">{viewBooking.paymentDetails.cardHolderName}</span></div>
                       )}
                       {viewBooking.paymentDetails.paymentDate && (
-                        <div className="flex justify-between"><span className="text-gray-500">Payment Date</span><span className="font-medium">{formatDate(viewBooking.paymentDetails.paymentDate)}</span></div>
+                        <div className="flex justify-between"><span className="text-gray-500">Payment Date</span><span className="font-medium">{formatDateIndian(viewBooking.paymentDetails.paymentDate)}</span></div>
                       )}
                       {viewBooking.paymentDetails.screenshot && (
                         <div className="mt-2">
@@ -1316,11 +1347,11 @@ const AllBookings = () => {
                       <div key={idx} className="flex items-center justify-between text-sm bg-white rounded-lg p-2 border border-blue-100">
                         <div className="flex items-center gap-3">
                           <span className="text-xs font-bold text-blue-600">Day {idx + 1}</span>
-                          <span className="text-slate-600">{formatDate(timing.date)}</span>
+                          <span className="text-slate-600">{formatDateIndian(timing.date)}</span>
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className="text-xs font-medium text-emerald-600">IN: {timing.checkIn}</span>
-                          <span className="text-xs font-medium text-red-500">OUT: {timing.checkOut}</span>
+                          <span className="text-xs font-medium text-emerald-600">IN: {formatTime12(timing.checkIn)}</span>
+                          <span className="text-xs font-medium text-red-500">OUT: {formatTime12(timing.checkOut)}</span>
                         </div>
                       </div>
                     ))}
@@ -1332,7 +1363,7 @@ const AllBookings = () => {
               <div className="bg-gray-50 rounded-xl p-3">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Created At</span>
-                  <span className="font-medium">{formatDate(viewBooking.createdAt)}</span>
+                  <span className="font-medium">{formatDateTimeIndian(viewBooking.createdAt)}</span>
                 </div>
               </div>
 
@@ -1577,7 +1608,7 @@ const AllBookings = () => {
             <div className="p-5 space-y-4">
               <div className="bg-gray-50 rounded-xl p-4 space-y-2 text-sm">
                 <div className="flex justify-between"><span className="text-gray-500">Customer</span><span className="font-semibold">{timingBooking.name || 'N/A'}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Period</span><span className="font-medium">{timingBooking.startDate} - {timingBooking.endDate}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Period</span><span className="font-medium">{formatDateIndian(timingBooking.startDate)} - {formatDateIndian(timingBooking.endDate)}</span></div>
                 <div className="flex justify-between pt-2 border-t border-gray-200"><span className="text-gray-500">Visits Logged</span><span className="font-bold text-blue-600">{timingBooking.visitingTimings?.length || 0}</span></div>
               </div>
               <div>
@@ -1600,11 +1631,11 @@ const AllBookings = () => {
                   <div className="space-y-1 mt-1.5">
                     {timingBooking.visitingTimings.map((t, idx) => (
                       <div key={idx} className="flex items-center justify-between text-xs">
-                        <span className="text-gray-600">{formatDate(t.date)}</span>
+                        <span className="text-gray-600">{formatDateIndian(t.date)}</span>
                         <div className="flex items-center gap-2">
-                          <span className="text-emerald-600 font-medium">{t.checkIn}</span>
+                          <span className="text-emerald-600 font-medium">{formatTime12(t.checkIn)}</span>
                           <span className="text-gray-300">-</span>
-                          <span className="text-red-500 font-medium">{t.checkOut}</span>
+                          <span className="text-red-500 font-medium">{formatTime12(t.checkOut)}</span>
                           <button onClick={() => { if (window.confirm("Delete this timing entry?")) { handleDeleteTiming(timingBooking._id, idx); } }} className="text-red-400 hover:text-red-600 transition-colors"><Trash2 size={12} /></button>
                         </div>
                       </div>
@@ -1644,7 +1675,7 @@ const AllBookings = () => {
                 <div className="space-y-1 text-gray-600">
                   <p><span className="text-gray-500">Cabin:</span> {deleteBooking.cabin?.name || 'N/A'}</p>
                   <p><span className="text-gray-500">Customer:</span> {deleteBooking.name || deleteBooking.user?.name || 'N/A'}</p>
-                  <p><span className="text-gray-500">Date:</span> {deleteBooking.startDate} · {deleteBooking.startTime}</p>
+                  <p><span className="text-gray-500">Date:</span> {formatDateIndian(deleteBooking.startDate)} · {formatTime12(deleteBooking.startTime)}</p>
                   <p><span className="text-gray-500">Amount:</span> ₹{deleteBooking.totalPrice}</p>
                 </div>
               </div>

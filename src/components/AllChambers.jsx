@@ -1,3 +1,4 @@
+// AllChambers.jsx - Complete All Chambers Component with DoctorNavbar
 import axios from "axios";
 import { 
   ArrowRight, 
@@ -31,14 +32,13 @@ import {
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import UsersNavbar from "./UsersNavbar";
-import AdminNavbar from "./AdminNavbar";
+import DoctorNavbar from "./DoctorNavbar";
 import "./Dashboard.css";
 
 const API_URL = "http://localhost:5003";
 const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
 
-const Spaces = () => {
+const AllChambers = () => {
   const [cabins, setCabins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -48,7 +48,6 @@ const Spaces = () => {
   const [showInactiveModal, setShowInactiveModal] = useState(false);
   const [selectedCabin, setSelectedCabin] = useState(null);
   const navigate = useNavigate();
-  const isAdmin = localStorage.getItem("admin") !== null;
 
   useEffect(() => {
     axios
@@ -132,7 +131,7 @@ const Spaces = () => {
     return `${API_URL}/${cleanPath}`;
   };
 
-  // ─── CABIN CARD ─── (Height increased)
+  // ─── CABIN CARD ───
   const CabinCard = ({ cabin, showBadge = true }) => {
     const isActive = cabin.isActive === true;
     const isExclusive = cabin.cabinType === 'exclusive';
@@ -146,7 +145,7 @@ const Spaces = () => {
             : 'opacity-60 hover:opacity-80'
         } bg-white border border-slate-200/80`}
       >
-        {/* Image - Height increased */}
+        {/* Image */}
         <div className="relative overflow-hidden h-44 sm:h-48 md:h-52">
           <img
             src={cabin.images?.[0] ? getImageUrl(cabin.images[0]) : PLACEHOLDER_IMAGE}
@@ -201,7 +200,7 @@ const Spaces = () => {
           </div>
         </div>
 
-        {/* Content - More padding for height */}
+        {/* Content */}
         <div className="p-3 sm:p-4 space-y-1.5 sm:space-y-2 flex-1 flex flex-col">
           <h3 className={`text-sm font-semibold truncate ${isActive ? 'text-slate-800 group-hover:text-indigo-600' : 'text-slate-400'} transition-colors duration-300`}>
             {cabin.name}
@@ -235,18 +234,30 @@ const Spaces = () => {
 
   return (
     <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
-      {isAdmin ? <AdminNavbar /> : <UsersNavbar />}
+      <DoctorNavbar />
 
       <div className="pt-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
         {/* Header */}
         <div className="admin-dash__header">
           <div>
             <h1 className="admin-dash__greeting">
-              Workspace <span>Spaces</span>
+              All <span>Chambers</span>
             </h1>
-          
+            <p className="admin-dash__subtitle">
+              Discover professionally equipped chambers and consultation rooms for your practice.
+            </p>
           </div>
-         
+          <div className="admin-dash__date-pill">
+            <Calendar size={16} />
+            <span>
+              {new Date().toLocaleDateString("en-US", {
+                weekday: "short",
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              })}
+            </span>
+          </div>
         </div>
 
         {/* Filter Section */}
@@ -258,8 +269,8 @@ const Spaces = () => {
                   <Filter size={16} />
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-gray-800">Filter Spaces</h4>
-                  <p className="text-[8px] text-gray-400 font-bold uppercase tracking-widest">Find your perfect workspace</p>
+                  <h4 className="text-xs font-bold text-gray-800">Filter Chambers</h4>
+                  <p className="text-[8px] text-gray-400 font-bold uppercase tracking-widest">Find your perfect chamber</p>
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
@@ -268,7 +279,7 @@ const Spaces = () => {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
                   <input
                     type="text"
-                    placeholder="Search spaces..."
+                    placeholder="Search chambers..."
                     className="pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 w-full md:w-44"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -324,7 +335,7 @@ const Spaces = () => {
               Showing <strong className="text-gray-900">{sortedCabins.length}</strong> results
             </p>
             <span className="text-[10px] text-gray-400">
-              {sortedCabins.length} of {activeCabins.length} active spaces
+              {sortedCabins.length} of {activeCabins.length} active chambers
             </span>
           </div>
         )}
@@ -333,13 +344,13 @@ const Spaces = () => {
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20">
             <div className="w-12 h-12 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin" />
-            <p className="text-sm text-gray-500 mt-4">Loading spaces...</p>
+            <p className="text-sm text-gray-500 mt-4">Loading chambers...</p>
           </div>
         ) : activeCabins.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-4 py-20 text-gray-400">
             <Building2 size={48} className="opacity-20" />
-            <p className="text-lg font-medium">No active spaces available</p>
-            <p className="text-sm">Check back later for available cabins.</p>
+            <p className="text-lg font-medium">No active chambers available</p>
+            <p className="text-sm">Check back later for available chambers.</p>
           </div>
         ) : (
           <>
@@ -349,7 +360,7 @@ const Spaces = () => {
                 {sortedCabins.length === 0 ? (
                   <div className="flex flex-col items-center justify-center gap-3 py-20 text-gray-400">
                     <Search size={48} className="opacity-20" />
-                    <p className="text-lg font-medium">No cabins match your filters</p>
+                    <p className="text-lg font-medium">No chambers match your filters</p>
                     <button
                       onClick={() => {
                         setSearchTerm("");
@@ -380,7 +391,7 @@ const Spaces = () => {
                         <h3 className="text-sm font-bold text-gray-900">
                           <span className="text-indigo-600">Newly</span> Added
                         </h3>
-                        <p className="text-[10px] text-gray-400">Recently listed spaces</p>
+                        <p className="text-[10px] text-gray-400">Recently listed chambers</p>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
@@ -399,7 +410,7 @@ const Spaces = () => {
                         <h3 className="text-sm font-bold text-gray-900">
                           <span className="text-indigo-600">Most</span> Popular
                         </h3>
-                        <p className="text-[10px] text-gray-400">Top rated and most booked spaces</p>
+                        <p className="text-[10px] text-gray-400">Top rated and most booked chambers</p>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
@@ -437,7 +448,7 @@ const Spaces = () => {
                         <h3 className="text-sm font-bold text-gray-900">
                           <span className="text-amber-600">Featured</span> Premium
                         </h3>
-                        <p className="text-[10px] text-gray-400">Exclusive premium workspaces</p>
+                        <p className="text-[10px] text-gray-400">Exclusive premium chambers</p>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
@@ -448,16 +459,16 @@ const Spaces = () => {
                   </div>
                 )}
 
-                {/* All Spaces */}
+                {/* All Chambers */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <div>
                       <h3 className="text-sm font-bold text-gray-900">
-                        <span className="text-indigo-600">All</span> Spaces
+                        <span className="text-indigo-600">All</span> Chambers
                       </h3>
-                      <p className="text-[10px] text-gray-400">Complete list of available workspaces</p>
+                      <p className="text-[10px] text-gray-400">Complete list of available chambers</p>
                     </div>
-                    <span className="text-[10px] text-gray-400">{activeCabins.length} spaces</span>
+                    <span className="text-[10px] text-gray-400">{activeCabins.length} chambers</span>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
                     {activeCabins.map((cabin) => (
@@ -484,14 +495,14 @@ const Spaces = () => {
               <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-3">
                 <XCircle size={32} className="text-white" />
               </div>
-              <h3 className="text-xl font-bold">Cabin Not Available</h3>
-              <p className="text-sm text-red-100 mt-1">This cabin is currently inactive</p>
+              <h3 className="text-xl font-bold">Chamber Not Available</h3>
+              <p className="text-sm text-red-100 mt-1">This chamber is currently inactive</p>
             </div>
 
             <div className="p-5 space-y-4">
               <div className="bg-gray-50 rounded-xl p-4 space-y-3 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Cabin Name</span>
+                  <span className="text-gray-500">Chamber Name</span>
                   <span className="font-semibold text-gray-800">{selectedCabin.name}</span>
                 </div>
                 <div className="flex justify-between">
@@ -517,7 +528,7 @@ const Spaces = () => {
 
               <div className="bg-red-50 rounded-xl p-3 text-xs text-red-700 flex items-start gap-2 border border-red-200">
                 <AlertCircle size={16} className="shrink-0 mt-0.5" />
-                <span>This cabin is not available for booking at the moment. Please check back later or explore other active cabins.</span>
+                <span>This chamber is not available for booking at the moment. Please check back later or explore other active chambers.</span>
               </div>
 
               <div className="flex flex-col gap-2">
@@ -538,7 +549,7 @@ const Spaces = () => {
                   }}
                   className="w-full py-3 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition"
                 >
-                  Explore Active Cabins
+                  Explore Active Chambers
                 </button>
               </div>
             </div>
@@ -549,4 +560,4 @@ const Spaces = () => {
   );
 };
 
-export default Spaces;
+export default AllChambers;

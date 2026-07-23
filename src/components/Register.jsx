@@ -53,7 +53,7 @@ function Register() {
     });
 
     try {
-      const res = await axios.post("https://spaceapi.iryax.com/api/auth/register", data, {
+      const res = await axios.post("http://localhost:5003/api/auth/register", data, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 

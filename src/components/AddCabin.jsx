@@ -144,7 +144,7 @@ function AddCabin() {
         navigate("/login");
         return;
       }
-      await axios.post("https://spaceapi.iryax.com/api/cabins", data, {
+      await axios.post("http://localhost:5003/api/cabins", data, {
         headers: { Authorization: `Bearer ${token}` },
       });
       toast.success("Cabin added successfully!");

@@ -1,4 +1,4 @@
-// MyWallet.jsx - Complete with Fixed View Popup Overflow
+// DoctorWallet.jsx - Complete with Fixed View Popup Overflow
 import axios from "axios";
 import {
   Wallet as WalletIcon,
@@ -31,14 +31,13 @@ import {
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import UsersNavbar from "./UsersNavbar";
-import AdminNavbar from "./AdminNavbar";
+import DoctorNavbar from "./DoctorNavbar";
 import * as XLSX from 'xlsx';
 import "./Dashboard.css";
 
 const API_URL = "http://localhost:5003";
 
-const MyWallet = () => {
+const DoctorWallet = () => {
   const [wallet, setWallet] = useState({
     balance: 0,
     totalEarned: 0,
@@ -58,6 +57,7 @@ const MyWallet = () => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   
   // Filter States
+  const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [filterDate, setFilterDate] = useState("");
   
@@ -76,7 +76,6 @@ const MyWallet = () => {
   const [selectedWithdrawal, setSelectedWithdrawal] = useState(null);
   const [showWithdrawalDetailModal, setShowWithdrawalDetailModal] = useState(false);
   
-  const isAdmin = localStorage.getItem("admin") !== null;
   const navigate = useNavigate();
 
   const getAuthHeader = () => {
@@ -153,6 +152,15 @@ const MyWallet = () => {
   useEffect(() => {
     let filtered = transactions;
 
+    if (searchTerm) {
+      filtered = filtered.filter(t =>
+        t.cabinName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        t.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        t.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        t.transactionId?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
     if (filterType !== "all") {
       filtered = filtered.filter(t => t.type === filterType);
     }
@@ -162,7 +170,7 @@ const MyWallet = () => {
     }
 
     setFilteredTransactions(filtered);
-  }, [filterType, filterDate, transactions]);
+  }, [searchTerm, filterType, filterDate, transactions]);
 
   const formatCurrency = (amount) => {
     return `₹${amount?.toLocaleString('en-IN') || 0}`;
@@ -248,7 +256,7 @@ const MyWallet = () => {
 
       const exportData = filteredTransactions.map((t, index) => ({
         'S.No': index + 1,
-        'Cabin Name': t.cabinName || 'Unknown',
+        'Chamber Name': t.cabinName || 'Unknown',
         'Customer Name': t.customerName || 'Unknown',
         'Customer Mobile': t.customerMobile || 'N/A',
         'Amount': t.amount || 0,
@@ -269,10 +277,10 @@ const MyWallet = () => {
       ];
 
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Wallet');
+      XLSX.utils.book_append_sheet(wb, ws, 'Doctor_Wallet');
       
       const date = new Date().toISOString().split('T')[0];
-      XLSX.writeFile(wb, `wallet_${date}.xlsx`);
+      XLSX.writeFile(wb, `doctor_wallet_${date}.xlsx`);
       
       toast.success(`Exported ${filteredTransactions.length} transactions!`);
     } catch (error) {
@@ -334,6 +342,7 @@ const MyWallet = () => {
   };
 
   const clearFilters = () => {
+    setSearchTerm("");
     setFilterType("all");
     setFilterDate("");
   };
@@ -357,7 +366,7 @@ const MyWallet = () => {
   if (loading) {
     return (
       <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
-        {isAdmin ? <AdminNavbar /> : <UsersNavbar />}
+        <DoctorNavbar />
         <div className="flex justify-center items-center h-64">
           <div className="w-12 h-12 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin" />
         </div>
@@ -367,16 +376,18 @@ const MyWallet = () => {
 
   return (
     <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
-      {isAdmin ? <AdminNavbar /> : <UsersNavbar />}
+      <DoctorNavbar />
 
       <div className="pt-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
         {/* Header */}
         <div className="admin-dash__header">
           <div>
             <h1 className="admin-dash__greeting">
-              My <span>Wallet</span>
+              Doctor <span>Wallet</span>
             </h1>
+          
           </div>
+         
         </div>
 
         {/* Stats Cards */}
@@ -456,6 +467,21 @@ const MyWallet = () => {
                 </span>
               </div>
               <div className="flex flex-wrap items-center gap-2">
+                {/* Search Bar */}
+                <div className="relative w-full sm:w-48">
+                  <Search
+                    size={15}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Search..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  />
+                </div>
+
                 {/* Filters - Always Visible */}
                 <select
                   value={filterType}
@@ -475,7 +501,7 @@ const MyWallet = () => {
                 />
 
                 {/* Clear Filters */}
-                {(filterType !== 'all' || filterDate) && (
+                {(searchTerm || filterType !== 'all' || filterDate) && (
                   <button
                     onClick={clearFilters}
                     className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -518,6 +544,14 @@ const MyWallet = () => {
                     <span className="hidden xs:inline">Export</span>
                   </button>
                 )}
+
+                <button
+                  onClick={() => navigate("/my-cabins")}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+                >
+                  <Building2 size={14} className="text-indigo-600" />
+                  <span className="hidden xs:inline">Chambers</span>
+                </button>
               </div>
             </div>
 
@@ -613,7 +647,7 @@ const MyWallet = () => {
                   <thead>
                     <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
-                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
+                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Chamber</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Customer</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Date</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Amount</th>
@@ -632,7 +666,7 @@ const MyWallet = () => {
                           <td className="p-4">
                             <div>
                               <p className="font-semibold text-gray-900 text-sm">
-                                {transaction.cabinName || "Unknown Cabin"}
+                                {transaction.cabinName || "Unknown Chamber"}
                               </p>
                               <p className="text-[10px] text-gray-400">
                                 Booking #{transaction.bookingId?._id?.slice(-6) || transaction.bookingId?.slice?.(-6) || "N/A"}
@@ -853,12 +887,12 @@ const MyWallet = () => {
                 </span>
               </div>
 
-              {/* Cabin & Customer */}
+              {/* Chamber & Customer */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-4 bg-gray-50 rounded-xl">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
                     <Building2 size={12} />
-                    Cabin
+                    Chamber
                   </p>
                   <p className="mt-1 font-semibold text-gray-800 text-sm break-words">{selectedTransaction.cabinName || "Unknown"}</p>
                 </div>
@@ -1131,4 +1165,4 @@ const MyWallet = () => {
   );
 };
 
-export default MyWallet;
+export default DoctorWallet;

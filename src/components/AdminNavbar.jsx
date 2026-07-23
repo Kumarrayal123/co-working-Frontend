@@ -123,7 +123,7 @@ function AdminNavbar() {
 
   const revenueLinks = [
     { name: "Booking Revenue", path: "/booking-revenue", icon: TrendingUp },
-    { name: "Space Revenue", path: "/space-revenue", icon: TrendingUp },
+    { name: "Reg. Revenue", path: "/space-revenue", icon: TrendingUp },
   ];
 
   const spacesActive = isParentActive(spacesLinks.map(l => l.path));
@@ -326,14 +326,14 @@ function AdminNavbar() {
               )}
             </li>
 
-            {/* Queries */}
+            {/* User Support - Renamed from Queries */}
             <li>
               <Link
                 to="/userqueries"
                 className={`an-nav__link${isActive("/userqueries") ? " an-nav__link--active" : ""}`}
               >
                 <MessageCircle size={17} />
-                <span>Queries</span>
+                <span>Support Tickets</span>
                 {isActive("/userqueries") && <span className="an-nav__link-dot" />}
               </Link>
             </li>
@@ -521,7 +521,7 @@ function AdminNavbar() {
               className={`an-mobile__link${isActive("/userqueries") ? " an-mobile__link--active" : ""}`}
             >
               <MessageCircle size={18} />
-              <span>User Queries</span>
+              <span>User Support</span>
               {isActive("/userqueries") && <span className="an-mobile__link-dot" />}
             </Link>
           </div>

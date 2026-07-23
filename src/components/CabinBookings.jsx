@@ -52,7 +52,7 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import "./Dashboard.css";
 
-const API_URL = "https://spaceapi.iryax.com";
+const API_URL = "http://localhost:5003";
 
 const CabinBookings = () => {
   const [bookings, setBookings] = useState([]);

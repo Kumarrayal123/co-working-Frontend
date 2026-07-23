@@ -12,13 +12,16 @@ import {
   Zap,
   User,
   Building2,
-  Loader2
+  Loader2,
+  Stethoscope,
+  HeartPulse
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import logo from "../assets/logo.png";
 
-function Login() {
+function DoctorLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -42,7 +45,8 @@ function Login() {
           _id: "68ebe9ee8f06d33ee022d665",
           name: "Saidulu Reddy",
           email: "saidulureddy@gmail.com",
-          role: "admin"
+          role: "admin",
+          isDoctor: true
         };
 
         localStorage.setItem("token", token);
@@ -62,12 +66,16 @@ function Login() {
       // If not admin, try user login with backend API
       const res = await axios.post("http://localhost:5003/api/auth/login", {
         email,
-        password
+        password,
+        isDoctor: true  // Added isDoctor: true to identify doctor login
       });
 
       const { token, user } = res.data;
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
+      
+      // Store isDoctor flag in localStorage
+      localStorage.setItem("isDoctor", "true");
       
       setUserName(user.name || "User");
       setShowSuccessPopup(true);
@@ -75,7 +83,7 @@ function Login() {
       
       setTimeout(() => {
         setShowSuccessPopup(false);
-        navigate("/userdashboard");
+        navigate("/doctordashbaord");
       }, 2000);
       
     } catch (err) {
@@ -111,21 +119,29 @@ function Login() {
           {/* Decorative Top Line */}
           <div className="w-16 h-0.5 bg-gradient-to-r from-emerald-400 via-blue-500 to-purple-500 rounded-full mx-auto mb-6"></div>
 
-          {/* Header */}
+          {/* Header with Logo */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-400/20 to-blue-500/20 rounded-2xl mb-4 shadow-lg shadow-emerald-500/10 border border-white/10 backdrop-blur-sm relative group transition-all duration-300 hover:scale-105">
-              <span className="text-2xl font-light tracking-wider text-white/90 group-hover:text-white transition-colors">IG</span>
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full blur-sm animate-pulse"></div>
+            <div className="flex items-center justify-center gap-3 mb-3">
+              <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-emerald-400/30 shadow-lg shadow-emerald-500/20 bg-white/10 flex items-center justify-center p-1.5">
+                <img src={logo} alt="IRYAX MEDICAL SPACE" className="w-full h-full object-contain" />
+              </div>
+              <Stethoscope size={20} className="text-emerald-400/50" />
             </div>
             
-            <h2 className="text-2xl font-light text-white tracking-wide mb-1">
-              <span className="text-emerald-400 font-normal">IRYAX</span> Space
+            <h2 className="text-2xl font-light text-white tracking-wide mb-0.5">
+              <span className="text-emerald-400 font-normal">IRYAX</span> 
+              <span className="text-white/90"> MEDICAL</span>
+              <span className="text-blue-400 font-light"> SPACE</span>
             </h2>
-            <p className="text-white/40 text-xs font-light tracking-wider mt-2">
-              Welcome Back · How are you today?
-            </p>
-            <p className="text-white/30 text-[10px] font-light tracking-widest mt-0.5">
-              Sign in to continue your journey
+            <div className="flex items-center justify-center gap-2 mt-1">
+              <HeartPulse size={12} className="text-emerald-400/40" />
+              <p className="text-white/30 text-[10px] font-light tracking-[0.15em] uppercase">
+                Doctor's Login Portal
+              </p>
+              <HeartPulse size={12} className="text-emerald-400/40" />
+            </div>
+            <p className="text-white/20 text-[9px] font-light tracking-widest mt-1.5">
+              Secure Access · Medical Professionals Only
             </p>
           </div>
 
@@ -144,7 +160,7 @@ function Login() {
               <Mail className="absolute left-3 top-3 text-white/30 group-focus-within:text-emerald-400/70 transition-colors" size={16} />
               <input
                 type="email"
-                placeholder="Email Address"
+                placeholder="Medical Email Address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -190,7 +206,7 @@ function Login() {
               <button
                 type="button"
                 className="text-[11px] text-emerald-400/50 hover:text-emerald-400/80 transition-colors font-light tracking-wider"
-                onClick={() => toast.info("Contact support to reset password")}
+                onClick={() => toast.info("Contact medical support to reset password")}
               >
                 Forgot Password?
               </button>
@@ -210,8 +226,8 @@ function Login() {
                 </>
               ) : (
                 <>
-                  <LogIn size={16} className="group-hover:scale-110 transition-transform" />
-                  <span className="font-light tracking-wider">Sign In</span>
+                  <Stethoscope size={16} className="group-hover:scale-110 transition-transform" />
+                  <span className="font-light tracking-wider">Sign In as Doctor</span>
                   <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                 </>
               )}
@@ -224,15 +240,15 @@ function Login() {
               <div className="w-full border-t border-white/5"></div>
             </div>
             <div className="relative flex justify-center text-[9px]">
-              <span className="px-3 bg-transparent text-white/20 font-light tracking-[0.2em]">SECURE ACCESS</span>
+              <span className="px-3 bg-transparent text-white/20 font-light tracking-[0.2em]">MEDICAL SECURE ACCESS</span>
             </div>
           </div>
 
           {/* Footer */}
           <div className="text-center space-y-3">
             <p className="text-sm text-white/30 font-light tracking-wide">
-              Don't have an account?{" "}
-              <a href="/register" className="font-normal text-emerald-400/70 hover:text-emerald-400 transition-colors hover:underline underline-offset-2">
+              New to IRYAX MEDICAL SPACE?{" "}
+              <a href="/doctorregister" className="font-normal text-emerald-400/70 hover:text-emerald-400 transition-colors hover:underline underline-offset-2">
                 Create Account
               </a>
             </p>
@@ -241,17 +257,22 @@ function Login() {
             <div className="flex items-center justify-center gap-4 text-[10px] text-white/20 font-light tracking-wider">
               <span className="flex items-center gap-1.5">
                 <ShieldCheck size={11} className="text-emerald-400/30" />
-                SSL Secured
+                HIPAA Compliant
               </span>
               <span className="w-px h-3 bg-white/5"></span>
               <span className="flex items-center gap-1.5">
                 <Zap size={11} className="text-blue-400/30" />
-                Enterprise Grade
+                Medical Grade
+              </span>
+              <span className="w-px h-3 bg-white/5"></span>
+              <span className="flex items-center gap-1.5">
+                <HeartPulse size={11} className="text-emerald-400/30" />
+                Secure Portal
               </span>
             </div>
 
             <p className="text-[8px] text-white/10 font-light tracking-[0.15em] mt-2">
-              Protected by advanced encryption & security protocols
+              Protected by advanced medical-grade encryption & security protocols
             </p>
           </div>
 
@@ -280,15 +301,18 @@ function Login() {
                 <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping"></div>
                 <div className="absolute inset-0 bg-emerald-500/10 rounded-full animate-pulse"></div>
                 <div className="relative w-16 h-16 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/30">
-                  <CheckCircle size={32} className="text-white" />
+                  <Stethoscope size={32} className="text-white" />
                 </div>
               </div>
               
               <h3 className="text-xl font-light text-white tracking-wide">
-                Welcome Back!
+                Welcome Doctor!
               </h3>
               <p className="text-white/60 text-sm font-light mt-1">
-                {userName || "User"}
+                {userName || "Medical Professional"}
+              </p>
+              <p className="text-emerald-400/50 text-[10px] font-light tracking-wider mt-0.5">
+                IRYAX MEDICAL SPACE
               </p>
               <div className="mt-2 flex items-center justify-center gap-2">
                 <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce"></span>
@@ -296,7 +320,7 @@ function Login() {
                 <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce delay-300"></span>
               </div>
               <p className="text-white/30 text-xs font-light mt-3 tracking-wider">
-                Redirecting to dashboard...
+                Redirecting to medical dashboard...
               </p>
               
               {/* Loading Progress Bar */}
@@ -353,4 +377,4 @@ function Login() {
   );
 }
 
-export default Login;
+export default DoctorLogin;

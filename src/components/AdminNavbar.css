@@ -1,4 +1,5 @@
 /* ── AdminNavbar.css ── */
+/* Complete CSS for UsersNavbar with Doctor-specific styles */
 
 /* ── Navbar Base ── */
 .an-nav {
@@ -81,6 +82,16 @@
   border-radius: 4px;
   display: inline-block;
   width: fit-content;
+}
+
+.an-nav__logo-badge--doctor {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.an-nav__logo-badge--user {
+  background: #eef2ff;
+  color: #4f46e5;
 }
 
 /* ── Nav Links ── */
@@ -249,8 +260,10 @@
   flex-shrink: 0;
 }
 
-.an-nav__dropdown-wrap {
-  position: relative;
+.an-nav__divider {
+  width: 1px;
+  height: 28px;
+  background: #e2e8f0;
 }
 
 .an-nav__profile-btn {
@@ -284,6 +297,10 @@
   flex-shrink: 0;
 }
 
+.an-nav__avatar--doctor {
+  background: linear-gradient(135deg, #059669, #10b981);
+}
+
 .an-nav__avatar--lg {
   width: 40px;
   height: 40px;
@@ -310,6 +327,10 @@
   color: #94a3b8;
 }
 
+.an-nav__profile-role--doctor {
+  color: #059669;
+}
+
 .an-nav__profile-chevron {
   transition: transform 0.2s ease;
   color: #94a3b8;
@@ -324,7 +345,7 @@
   position: absolute;
   top: calc(100% + 6px);
   right: 0;
-  min-width: 200px;
+  min-width: 220px;
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04);
@@ -353,10 +374,80 @@
   margin: 0;
 }
 
+.an-nav__dd-role--doctor {
+  color: #059669;
+  font-weight: 600;
+}
+
+.an-nav__dd-doctor-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #059669;
+  background: #ecfdf5;
+  padding: 1px 8px;
+  border-radius: 4px;
+  margin-top: 2px;
+}
+
 .an-nav__dd-divider {
   height: 1px;
   background: #f1f5f9;
   margin: 4px 8px;
+}
+
+/* Dropdown items */
+.an-nav__dd-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  font-family: inherit;
+}
+
+.an-nav__dd-item:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.an-nav__dd-item svg {
+  width: 15px;
+  height: 15px;
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.an-nav__dd-item:hover svg {
+  color: #4f46e5;
+}
+
+.an-nav__dd-item--doctor {
+  color: #059669;
+}
+
+.an-nav__dd-item--doctor:hover {
+  background: #ecfdf5;
+}
+
+.an-nav__dd-item--doctor svg {
+  color: #10b981;
+}
+
+.an-nav__dd-item--doctor:hover svg {
+  color: #059669;
 }
 
 .an-nav__dd-logout {
@@ -378,6 +469,12 @@
 
 .an-nav__dd-logout:hover {
   background: #fef2f2;
+}
+
+.an-nav__dd-logout svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
 }
 
 /* ── Hamburger ── */
@@ -468,6 +565,11 @@
   display: block;
 }
 
+.an-mobile__logo-badge--doctor {
+  background: #ecfdf5;
+  color: #059669;
+}
+
 .an-mobile__close {
   background: none;
   border: none;
@@ -504,6 +606,20 @@
   margin: 0;
 }
 
+.an-mobile__admin-role--doctor {
+  color: #059669;
+}
+
+.an-mobile__doctor-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  color: #059669;
+  margin-top: 2px;
+}
+
 .an-mobile__section {
   margin-bottom: 16px;
 }
@@ -516,6 +632,12 @@
   color: #94a3b8;
   padding: 0 4px 6px;
   margin: 0;
+}
+
+.an-mobile__links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
 .an-mobile__link {
@@ -541,12 +663,46 @@
   color: #4f46e5;
 }
 
-.an-mobile__link-dot {
+.an-mobile__link-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #f1f5f9;
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.an-mobile__link--active .an-mobile__link-icon {
+  background: #eef2ff;
+  color: #4f46e5;
+}
+
+.an-mobile__link-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.an-mobile__link-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #0f172a;
+}
+
+.an-mobile__link-desc {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.an-mobile__link-active-dot {
   width: 5px;
   height: 5px;
   border-radius: 50%;
   background: #4f46e5;
-  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .an-mobile__footer {
@@ -556,6 +712,55 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+.an-mobile__footer-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  font-family: inherit;
+}
+
+.an-mobile__footer-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.an-mobile__footer-btn svg {
+  width: 17px;
+  height: 17px;
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.an-mobile__footer-btn:hover svg {
+  color: #4f46e5;
+}
+
+.an-mobile__footer-btn--doctor {
+  color: #059669;
+}
+
+.an-mobile__footer-btn--doctor:hover {
+  background: #ecfdf5;
+}
+
+.an-mobile__footer-btn--doctor svg {
+  color: #10b981;
+}
+
+.an-mobile__footer-btn--doctor:hover svg {
+  color: #059669;
 }
 
 .an-mobile__logout {
@@ -577,6 +782,12 @@
 
 .an-mobile__logout:hover {
   background: #fef2f2;
+}
+
+.an-mobile__logout svg {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
 }
 
 /* ── Responsive ── */
@@ -635,6 +846,10 @@
   .an-mobile--open {
     display: block;
   }
+
+  .an-nav__divider {
+    display: none;
+  }
 }
 
 @media (max-width: 480px) {
@@ -657,5 +872,82 @@
   .an-nav__profile-dropdown {
     right: -80px;
     min-width: 180px;
+  }
+  .an-mobile__drawer {
+    width: 280px;
+  }
+}
+
+/* ── Scrollbar Styling ── */
+.an-mobile__drawer::-webkit-scrollbar {
+  width: 4px;
+}
+
+.an-mobile__drawer::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.an-mobile__drawer::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 4px;
+}
+
+.an-mobile__drawer::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
+}
+
+/* ── Animations ── */
+@keyframes pulse-dot {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.8);
+  }
+}
+
+.an-nav__link-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+/* ── Doctor-specific hover effects ── */
+.an-nav__link--doctor:hover {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.an-nav__link--doctor.an-nav__link--active {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.an-nav__link--doctor .an-nav__link-dot {
+  background: #059669;
+}
+
+/* ── Accessibility ── */
+.an-nav__profile-btn:focus-visible,
+.an-nav__hamburger:focus-visible,
+.an-mobile__close:focus-visible,
+.an-nav__dd-item:focus-visible,
+.an-nav__dd-logout:focus-visible,
+.an-mobile__footer-btn:focus-visible,
+.an-mobile__logout:focus-visible {
+  outline: 2px solid #4f46e5;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .an-nav,
+  .an-nav__dropdown-menu,
+  .an-nav__profile-dropdown,
+  .an-mobile__drawer,
+  .an-nav__profile-chevron,
+  .an-nav__dropdown-chevron,
+  .an-nav__link-dot {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
 }

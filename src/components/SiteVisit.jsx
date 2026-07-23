@@ -15,7 +15,7 @@ import UsersNavbar from "./UsersNavbar";
 import AdminNavbar from "./AdminNavbar";
 import "./Dashboard.css";
 
-const API_URL = "https://spaceapi.iryax.com";
+const API_URL = "http://localhost:5003";
 const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
 
 const SiteVisit = () => {

@@ -27,7 +27,7 @@ import { toast } from "react-toastify";
 import AdminNavbar from "./AdminNavbar";
 import "./Dashboard.css";
 
-const API_URL = "https://spaceapi.iryax.com";
+const API_URL = "http://localhost:5003";
 
 const AllQueries = () => {
   const [queries, setQueries] = useState([]);
@@ -209,18 +209,10 @@ const AllQueries = () => {
         <div className="admin-dash__header">
           <div>
             <h1 className="admin-dash__greeting">
-              All <span>Queries</span>
+              All <span>Support Tickets</span>
             </h1>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={fetchQueries}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200"
-            >
-              <RefreshCw size={14} />
-              <span className="hidden xs:inline">Refresh</span>
-            </button>
-          </div>
+         
         </div>
 
         {/* Stats Cards */}

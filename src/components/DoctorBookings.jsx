@@ -13,7 +13,7 @@
 //         setError(null);
 //         try {
 //             const token = localStorage.getItem("token");
-//             const res = await axios.get("https://spaceapi.iryax.com/api/bookings/owner-bookings", {
+//             const res = await axios.get("http://localhost:5003/api/bookings/owner-bookings", {
 //                 headers: { Authorization: `Bearer ${token}` }
 //             });
 //             setBookings(res.data.bookings || []);
@@ -216,7 +216,7 @@ const DoctorBookings = () => {
       try {
         const token = localStorage.getItem("token");
         const res = await axios.get(
-          "https://spaceapi.iryax.com/api/bookings/owner-bookings",
+          "http://localhost:5003/api/bookings/owner-bookings",
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setBookings(res.data.bookings || []);

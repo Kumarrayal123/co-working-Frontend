@@ -1,4 +1,4 @@
-// MyCabin.jsx - Fully Responsive with Table Layout and Filters (White Background)
+// MyChamber.jsx - Complete My Chambers Component with Always Visible Filters (No Search Bar)
 import axios from "axios";
 import {
   Building2,
@@ -49,7 +49,7 @@ import {
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import UsersNavbar from "./UsersNavbar";
+import DoctorNavbar from "./DoctorNavbar";
 import "./Dashboard.css";
 
 // Load Razorpay script
@@ -91,19 +91,19 @@ const EXCLUSIVE_AMENITIES = [
   { key: "phone", label: "Conference Phone", emoji: "📞", icon: Phone },
 ];
 
-const MyCabin = () => {
-  const [cabins, setCabins] = useState([]);
+const MyChamber = () => {
+  const [chambers, setChambers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [pricingPlans, setPricingPlans] = useState([]);
-  const [cabinCount, setCabinCount] = useState(0);
+  const [chamberCount, setChamberCount] = useState(0);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
-  const [selectedCabin, setSelectedCabin] = useState(null);
+  const [selectedChamber, setSelectedChamber] = useState(null);
   const [filters, setFilters] = useState({
     name: '',
     address: '',
@@ -205,7 +205,8 @@ const MyCabin = () => {
     return { headers: { Authorization: `Bearer ${token}` } };
   };
 
-  const fetchCabins = async () => {
+  // ─── USING OLD CABINS ENDPOINT ───
+  const fetchChambers = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
@@ -215,48 +216,51 @@ const MyCabin = () => {
         return;
       }
 
+      // OLD ENDPOINT: /api/cabins/user
       const res = await axios.get(`${API_URL}/api/cabins/user`, getAuthHeader());
       const data = res.data.cabins || res.data;
-      const cabinList = Array.isArray(data) ? data : [];
-      setCabins(cabinList);
-      setCabinCount(cabinList.length);
+      const chamberList = Array.isArray(data) ? data : [];
+      setChambers(chamberList);
+      setChamberCount(chamberList.length);
       
-      // Initialize countdowns for cabins with expiry date
+      // Initialize countdowns for chambers with expiry date
       const initialCountdowns = {};
-      cabinList.forEach(cabin => {
-        if (cabin.expiryDate) {
-          const expiry = new Date(cabin.expiryDate);
+      chamberList.forEach(chamber => {
+        if (chamber.expiryDate) {
+          const expiry = new Date(chamber.expiryDate);
           const now = new Date();
           const diff = Math.max(0, Math.floor((expiry - now) / 1000));
-          initialCountdowns[cabin._id] = diff;
+          initialCountdowns[chamber._id] = diff;
         }
       });
       setCountdowns(initialCountdowns);
       
     } catch (err) {
-      console.error("Error fetching cabins:", err);
-      toast.error("Failed to fetch cabins");
+      console.error("Error fetching chambers:", err);
+      toast.error("Failed to fetch chambers");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchCabins();
+    fetchChambers();
   }, []);
 
+  // ─── USING OLD DELETE ENDPOINT ───
   const handleDelete = async (e, id) => {
     e.stopPropagation();
-    if (!window.confirm("Are you sure you want to delete this cabin?")) return;
+    if (!window.confirm("Are you sure you want to delete this chamber?")) return;
 
     try {
+      // OLD ENDPOINT: /api/cabins/${id}
       await axios.delete(`${API_URL}/api/cabins/${id}`, getAuthHeader());
-      setCabins(cabins.filter(c => c._id !== id));
-      setCabinCount(prev => prev - 1);
-      toast.success("Cabin deleted successfully");
+      setChambers(chambers.filter(c => c._id !== id));
+      setChamberCount(prev => prev - 1);
+      toast.success("Chamber deleted successfully");
     } catch (error) {
-      console.error("Error deleting cabin", error);
-      toast.error("Failed to delete cabin");
+      console.error("Error deleting chamber", error);
+      toast.error("Failed to delete chamber");
     }
   };
 
@@ -427,12 +431,13 @@ const MyCabin = () => {
   };
 
   const getFeeWithGST = () => {
-    const baseFee = isFirstCabin ? 2000 : 1000;
+    const baseFee = isFirstChamber ? 2000 : 1000;
     const { gstAmount, totalWithGST } = calculateGST(baseFee);
     return { baseFee, gstAmount, totalWithGST };
   };
 
-  const initiateRazorpayPayment = async (cabinId, orderData) => {
+  // ─── USING OLD PAYMENT ENDPOINTS ───
+  const initiateRazorpayPayment = async (chamberId, orderData) => {
     setPaymentProcessing(true);
     try {
       if (typeof window.Razorpay === 'undefined') {
@@ -447,18 +452,19 @@ const MyCabin = () => {
         key: razorpayKey,
         amount: orderData.order.amount * 100,
         currency: "INR",
-        name: "Cabin Registration",
-        description: `Cabin #${cabinCount + 1} Registration Fee (incl. GST)`,
+        name: "Chamber Registration",
+        description: `Chamber #${chamberCount + 1} Registration Fee (incl. GST)`,
         order_id: orderData.order.razorpayOrderId,
         handler: async function(response) {
           try {
+            // OLD ENDPOINT: /api/cabins/verify-cabin-payment
             const verifyRes = await axios.post(
               `${API_URL}/api/cabins/verify-cabin-payment`,
               {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
-                cabinId: cabinId
+                cabinId: chamberId
               },
               getAuthHeader()
             );
@@ -509,7 +515,7 @@ const MyCabin = () => {
               setPricingPlans([]);
               setSeats([]);
               setSeatBatchMode(false);
-              await fetchCabins();
+              await fetchChambers();
             } else {
               toast.error('Payment verification failed');
               setPaymentProcessing(false);
@@ -521,9 +527,9 @@ const MyCabin = () => {
           }
         },
         prefill: {
-          name: localStorage.getItem("userName") || "",
-          email: localStorage.getItem("userEmail") || "",
-          contact: localStorage.getItem("userPhone") || "",
+          name: localStorage.getItem("doctorName") || "",
+          email: localStorage.getItem("doctorEmail") || "",
+          contact: localStorage.getItem("doctorPhone") || "",
         },
         theme: {
           color: "#6366f1",
@@ -545,11 +551,12 @@ const MyCabin = () => {
     }
   };
 
-  const createCabinAndOrder = async () => {
+  // ─── USING OLD CREATE ENDPOINT ───
+  const createChamberAndOrder = async () => {
     setSubmitting(true);
     const data = new FormData();
-    const cabinName = formData.cabin ? `${formData.name} - ${formData.cabin}` : formData.name;
-    data.append("name", cabinName);
+    const chamberName = formData.cabin ? `${formData.name} - ${formData.cabin}` : formData.name;
+    data.append("name", chamberName);
     data.append("description", formData.description);
     data.append("capacity", formData.capacity);
     data.append("address", formData.address);
@@ -563,31 +570,33 @@ const MyCabin = () => {
     try {
       const token = localStorage.getItem("token");
       
-      const cabinRes = await axios.post(`${API_URL}/api/cabins`, data, {
+      // OLD ENDPOINT: /api/cabins
+      const chamberRes = await axios.post(`${API_URL}/api/cabins`, data, {
         headers: { 
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
         },
       });
 
-      const newCabin = cabinRes.data.cabin;
-      toast.success("Cabin created successfully!");
+      const newChamber = chamberRes.data.cabin;
+      toast.success("Chamber created successfully!");
 
+      // OLD ENDPOINT: /api/cabins/createcabinorder
       const orderRes = await axios.post(
         `${API_URL}/api/cabins/createcabinorder`,
-        { cabinId: newCabin._id },
+        { cabinId: newChamber._id },
         getAuthHeader()
       );
 
       if (orderRes.data.success) {
         setShowConfirmModal(false);
         setSubmitting(false);
-        await initiateRazorpayPayment(newCabin._id, orderRes.data);
+        await initiateRazorpayPayment(newChamber._id, orderRes.data);
       }
       
     } catch (err) {
       console.error("Error:", err);
-      toast.error(err.response?.data?.error || "Failed to create cabin and order");
+      toast.error(err.response?.data?.error || "Failed to create chamber and order");
       setSubmitting(false);
     } finally {
       setSubmitting(false);
@@ -604,7 +613,7 @@ const MyCabin = () => {
 
     // Validate seats
     if (seats.length === 0) {
-      toast.error("Please add at least one seat to the cabin");
+      toast.error("Please add at least one seat to the chamber");
       return;
     }
 
@@ -617,20 +626,20 @@ const MyCabin = () => {
     setShowConfirmModal(true);
   };
 
-  // Filter cabins based on all filters
-  const filteredCabins = cabins.filter(cabin => {
+  // Filter chambers based on all filters
+  const filteredChambers = chambers.filter(chamber => {
     const searchLower = searchTerm.toLowerCase();
-    const matchesSearch = cabin.name?.toLowerCase().includes(searchLower) ||
-                         cabin.address?.toLowerCase().includes(searchLower);
+    const matchesSearch = chamber.name?.toLowerCase().includes(searchLower) ||
+                         chamber.address?.toLowerCase().includes(searchLower);
     
-    const matchesName = cabin.name?.toLowerCase().includes(filters.name.toLowerCase());
-    const matchesAddress = cabin.address?.toLowerCase().includes(filters.address.toLowerCase());
+    const matchesName = chamber.name?.toLowerCase().includes(filters.name.toLowerCase());
+    const matchesAddress = chamber.address?.toLowerCase().includes(filters.address.toLowerCase());
     
-    const price = cabin.price || 0;
+    const price = chamber.price || 0;
     const matchesPriceMin = filters.priceMin === '' || price >= Number(filters.priceMin);
     const matchesPriceMax = filters.priceMax === '' || price <= Number(filters.priceMax);
     
-    const isActive = cabin.isActive === true;
+    const isActive = chamber.isActive === true;
     const matchesStatus = filters.status === 'all' || 
                          (filters.status === 'active' && isActive) ||
                          (filters.status === 'inactive' && !isActive);
@@ -639,25 +648,25 @@ const MyCabin = () => {
            matchesPriceMin && matchesPriceMax && matchesStatus;
   });
 
-  const getCabinStatus = (cabin) => {
-    if (cabin.isActive === true) {
+  const getChamberStatus = (chamber) => {
+    if (chamber.isActive === true) {
       return { status: 'Active', color: 'green' };
     }
     return { status: 'Inactive', color: 'gray' };
   };
 
-  const isFirstCabin = cabinCount === 0;
+  const isFirstChamber = chamberCount === 0;
   const currentAmenities = getAmenitiesForType(formData.cabinType);
   const { baseFee, gstAmount, totalWithGST } = getFeeWithGST();
 
-  const handleViewCabin = (cabin) => {
-    setSelectedCabin(cabin);
+  const handleViewChamber = (chamber) => {
+    setSelectedChamber(chamber);
     setShowViewModal(true);
   };
 
   const closeViewModal = () => {
     setShowViewModal(false);
-    setSelectedCabin(null);
+    setSelectedChamber(null);
   };
 
   const formatDate = (dateString) => {
@@ -701,29 +710,43 @@ const MyCabin = () => {
     setSearchTerm('');
   };
 
-  const activeCount = cabins.filter(c => c.isActive === true).length;
-  const inactiveCount = cabins.filter(c => c.isActive !== true).length;
-  const exclusiveCount = cabins.filter(c => c.cabinType === 'exclusive').length;
+  const activeCount = chambers.filter(c => c.isActive === true).length;
+  const inactiveCount = chambers.filter(c => c.isActive !== true).length;
+  const exclusiveCount = chambers.filter(c => c.cabinType === 'exclusive').length;
 
   return (
     <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
-      <UsersNavbar />
+      <DoctorNavbar />
 
       <div className="pt-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
         {/* Header */}
         <div className="admin-dash__header">
           <div>
             <h1 className="admin-dash__greeting">
-              My <span>Cabins</span>
+              My <span>Chambers</span>
             </h1>
+            <p className="admin-dash__subtitle">
+              Manage and view all your registered chambers.
+            </p>
+          </div>
+          <div className="admin-dash__date-pill">
+            <Calendar size={16} />
+            <span>
+              {new Date().toLocaleDateString("en-US", {
+                weekday: "short",
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              })}
+            </span>
           </div>
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
           <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
-            <p className="text-xs text-gray-500 font-medium">Total Cabins</p>
-            <p className="text-xl sm:text-2xl font-bold text-indigo-600">{cabins.length}</p>
+            <p className="text-xs text-gray-500 font-medium">Total Chambers</p>
+            <p className="text-xl sm:text-2xl font-bold text-indigo-600">{chambers.length}</p>
           </div>
           <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
             <p className="text-xs text-gray-500 font-medium">Active</p>
@@ -740,99 +763,95 @@ const MyCabin = () => {
         </div>
 
         <div className="space-y-6">
-          {/* Cabins Table Section */}
+          {/* Chambers Table Section */}
           <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
+            {/* Header with Filters - Always Visible */}
             <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
               <div className="flex items-center gap-3">
-                <h3 className="admin-dash__card-title">Registered Cabins</h3>
+                <h3 className="admin-dash__card-title">Registered Chambers</h3>
                 <span className="px-2.5 py-0.5 text-xs font-bold text-indigo-700 bg-indigo-100 rounded-full">
-                  {filteredCabins.length}
+                  {filteredChambers.length}
                 </span>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                {/* Search Bar */}
-                <div className="relative w-full sm:w-48">
-                  <Search
-                    size={16}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Search cabins..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  />
-                </div>
+                {/* Name Filter */}
+                <input
+                  type="text"
+                  placeholder="Filter by name..."
+                  value={filters.name}
+                  onChange={(e) => setFilters({...filters, name: e.target.value})}
+                  className="w-28 sm:w-36 px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                />
 
-                {/* Filters - Always Visible */}
-                <div className="flex items-center gap-2 flex-wrap">
-                  <input
-                    type="text"
-                    placeholder="Name"
-                    value={filters.name}
-                    onChange={(e) => setFilters({...filters, name: e.target.value})}
-                    className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700 w-28"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Address"
-                    value={filters.address}
-                    onChange={(e) => setFilters({...filters, address: e.target.value})}
-                    className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700 w-28"
-                  />
+                {/* Address Filter */}
+                <input
+                  type="text"
+                  placeholder="Filter by address..."
+                  value={filters.address}
+                  onChange={(e) => setFilters({...filters, address: e.target.value})}
+                  className="w-28 sm:w-36 px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                />
+
+                {/* Price Range */}
+                <div className="flex items-center gap-1">
                   <input
                     type="number"
-                    placeholder="Min Price"
+                    placeholder="Min"
                     value={filters.priceMin}
                     onChange={(e) => setFilters({...filters, priceMin: e.target.value})}
-                    className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700 w-24"
+                    className="w-16 sm:w-20 px-2 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                   />
+                  <span className="text-gray-400 text-xs">-</span>
                   <input
                     type="number"
-                    placeholder="Max Price"
+                    placeholder="Max"
                     value={filters.priceMax}
                     onChange={(e) => setFilters({...filters, priceMax: e.target.value})}
-                    className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700 w-24"
+                    className="w-16 sm:w-20 px-2 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                   />
-                  <select
-                    value={filters.status}
-                    onChange={(e) => setFilters({...filters, status: e.target.value})}
-                    className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700"
-                  >
-                    <option value="all">All Status</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
-                  {(filters.name || filters.address || filters.priceMin || filters.priceMax || filters.status !== 'all' || searchTerm) && (
-                    <button
-                      onClick={clearFilters}
-                      className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    >
-                      <XCircle size={14} />
-                      Clear
-                    </button>
-                  )}
                 </div>
 
+                {/* Status Filter */}
+                <select
+                  value={filters.status}
+                  onChange={(e) => setFilters({...filters, status: e.target.value})}
+                  className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700"
+                >
+                  <option value="all">All Status</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+
+                {/* Clear Filters */}
+                {(filters.name || filters.address || filters.priceMin || filters.priceMax || filters.status !== 'all') && (
+                  <button
+                    onClick={clearFilters}
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  >
+                    <XCircle size={14} />
+                    Clear
+                  </button>
+                )}
+
+                {/* Payments Button */}
                 <button
-                  onClick={() => navigate("/my-cabin-payments")}
+                  onClick={() => navigate("/mychamberpayments")}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200"
                 >
                   <CreditCard size={14} />
-                  <span className="hidden xs:inline">Payments</span>
-                  <span className="xs:hidden">Pmt</span>
+                  <span>Payments</span>
                 </button>
 
+                {/* Bookings Button */}
                 <button
-                  onClick={() => navigate("/cabin-bookings")}
+                  onClick={() => navigate("/chamberbookings")}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
                 >
                   <FileText size={14} className="text-indigo-600" />
-                  <span className="hidden xs:inline">Bookings</span>
-                  <span className="xs:hidden">Bkgs</span>
+                  <span>Bookings</span>
                 </button>
 
+                {/* Add Chamber Button */}
                 <button
                   onClick={() => {
                     setIsModalOpen(true);
@@ -842,8 +861,7 @@ const MyCabin = () => {
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors"
                 >
                   <Plus size={14} />
-                  <span className="hidden xs:inline">Add Cabin</span>
-                  <span className="xs:hidden">Add</span>
+                  <span>Add Chamber</span>
                 </button>
               </div>
             </div>
@@ -853,20 +871,14 @@ const MyCabin = () => {
               {loading ? (
                 <div className="flex flex-col items-center justify-center gap-3 py-20">
                   <div className="w-12 h-12 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin"></div>
-                  <p className="text-gray-500">Loading cabins...</p>
-                </div>
-              ) : filteredCabins.length === 0 ? (
-                <div className="flex flex-col items-center justify-center gap-3 py-20 text-gray-400">
-                  <BuildingIcon size={48} className="opacity-20" />
-                  <p className="text-lg font-medium">No cabins found</p>
-                  <p className="text-sm">Try adjusting your filters or add a new cabin.</p>
+                  <p className="text-gray-500">Loading chambers...</p>
                 </div>
               ) : (
                 <table className="w-full min-w-[1200px] text-left">
                   <thead>
                     <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
-                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
+                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Chamber</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Address</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Type</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Price</th>
@@ -878,120 +890,132 @@ const MyCabin = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {filteredCabins.map((cabin, index) => {
-                      const cabinStatus = getCabinStatus(cabin);
-                      const isExclusive = cabin.cabinType === 'exclusive';
-                      const countdown = countdowns[cabin._id] || 0;
-                      const hasExpiry = cabin.expiryDate ? true : false;
-                      const isExpired = cabin.expiryDate && new Date(cabin.expiryDate) < new Date();
-                      const seatCount = cabin.seats?.length || 0;
-                      
-                      return (
-                        <tr key={cabin._id} className="transition-colors group hover:bg-gray-50/80">
-                          <td className="p-4">
-                            <span className="text-sm font-semibold text-gray-400">#{index + 1}</span>
-                          </td>
-                          <td className="p-4">
-                            <div className="flex items-center gap-3">
-                              <div className="flex-shrink-0 w-10 h-10 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
-                                <img
-                                  src={cabin.images?.[0] ? getImageUrl(cabin.images[0]) : PLACEHOLDER_IMAGE}
-                                  alt={cabin.name}
-                                  className="w-full h-full object-cover"
-                                  onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
-                                />
+                    {filteredChambers.length > 0 ? (
+                      filteredChambers.map((chamber, index) => {
+                        const chamberStatus = getChamberStatus(chamber);
+                        const isExclusive = chamber.cabinType === 'exclusive';
+                        const countdown = countdowns[chamber._id] || 0;
+                        const hasExpiry = chamber.expiryDate ? true : false;
+                        const isExpired = chamber.expiryDate && new Date(chamber.expiryDate) < new Date();
+                        const seatCount = chamber.seats?.length || 0;
+                        
+                        return (
+                          <tr key={chamber._id} className="transition-colors group hover:bg-gray-50/80">
+                            <td className="p-4">
+                              <span className="text-sm font-semibold text-gray-400">#{index + 1}</span>
+                            </td>
+                            <td className="p-4">
+                              <div className="flex items-center gap-3">
+                                <div className="flex-shrink-0 w-10 h-10 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
+                                  <img
+                                    src={chamber.images?.[0] ? getImageUrl(chamber.images[0]) : PLACEHOLDER_IMAGE}
+                                    alt={chamber.name}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
+                                  />
+                                </div>
+                                <div>
+                                  <p className="font-semibold text-gray-900 text-sm">{chamber.name || 'N/A'}</p>
+                                  <p className="text-[10px] text-gray-400">{chamber.cabin || 'N/A'}</p>
+                                </div>
                               </div>
-                              <div>
-                                <p className="font-semibold text-gray-900 text-sm">{cabin.name || 'N/A'}</p>
-                                <p className="text-[10px] text-gray-400">{cabin.cabin || 'N/A'}</p>
+                            </td>
+                            <td className="p-4">
+                              <span className="text-sm font-medium text-gray-700 flex items-center gap-1.5">
+                                <MapPin size={14} className="text-gray-400 flex-shrink-0" />
+                                <span className="truncate max-w-[150px]">{chamber.address || "N/A"}</span>
+                              </span>
+                            </td>
+                            <td className="p-4">
+                              <span className={`px-3 py-1 text-xs font-bold rounded-full inline-flex items-center gap-1.5 ${
+                                isExclusive ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
+                              }`}>
+                                {isExclusive ? <><Crown size={12} /> Exclusive</> : 'Normal'}
+                              </span>
+                            </td>
+                            <td className="p-4">
+                              <span className="text-sm font-bold text-gray-900">₹{chamber.price || 0}</span>
+                              <span className="text-xs text-gray-400 ml-0.5">/hr</span>
+                            </td>
+                            <td className="p-4">
+                              <div className="flex items-center gap-1.5">
+                                <Armchair size={14} className="text-gray-400" />
+                                <span className="text-sm font-medium text-gray-700">{seatCount}</span>
+                                <span className="text-xs text-gray-400">seats</span>
                               </div>
-                            </div>
-                          </td>
-                          <td className="p-4">
-                            <span className="text-sm font-medium text-gray-700 flex items-center gap-1.5">
-                              <MapPin size={14} className="text-gray-400 flex-shrink-0" />
-                              <span className="truncate max-w-[150px]">{cabin.address || "N/A"}</span>
-                            </span>
-                          </td>
-                          <td className="p-4">
-                            <span className={`px-3 py-1 text-xs font-bold rounded-full inline-flex items-center gap-1.5 ${
-                              isExclusive ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
-                            }`}>
-                              {isExclusive ? <><Crown size={12} /> Exclusive</> : 'Normal'}
-                            </span>
-                          </td>
-                          <td className="p-4">
-                            <span className="text-sm font-bold text-gray-900">₹{cabin.price || 0}</span>
-                            <span className="text-xs text-gray-400 ml-0.5">/hr</span>
-                          </td>
-                          <td className="p-4">
-                            <div className="flex items-center gap-1.5">
-                              <Armchair size={14} className="text-gray-400" />
-                              <span className="text-sm font-medium text-gray-700">{seatCount}</span>
-                              <span className="text-xs text-gray-400">seats</span>
-                            </div>
-                          </td>
-                          <td className="p-4">
-                            <span className={`px-3 py-1 text-xs font-bold rounded-full ${
-                              cabinStatus.color === 'green' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'
-                            }`}>
-                              {cabinStatus.status}
-                            </span>
-                          </td>
-                          <td className="p-4">
-                            {hasExpiry ? (
-                              <div className="flex flex-col gap-0.5">
-                                <span className="text-sm text-gray-600">{formatDate(cabin.expiryDate)}</span>
-                                {countdown > 0 && (
-                                  <span className={`text-[10px] font-mono font-medium flex items-center gap-1 ${getCountdownColor(countdown)}`}>
-                                    <Timer size={10} />
-                                    {formatCountdown(countdown)}
-                                  </span>
-                                )}
-                                {isExpired && <span className="text-[10px] text-red-500 font-medium">🔴 Expired</span>}
+                            </td>
+                            <td className="p-4">
+                              <span className={`px-3 py-1 text-xs font-bold rounded-full ${
+                                chamberStatus.color === 'green' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'
+                              }`}>
+                                {chamberStatus.status}
+                              </span>
+                            </td>
+                            <td className="p-4">
+                              {hasExpiry ? (
+                                <div className="flex flex-col gap-0.5">
+                                  <span className="text-sm text-gray-600">{formatDate(chamber.expiryDate)}</span>
+                                  {countdown > 0 && (
+                                    <span className={`text-[10px] font-mono font-medium flex items-center gap-1 ${getCountdownColor(countdown)}`}>
+                                      <Timer size={10} />
+                                      {formatCountdown(countdown)}
+                                    </span>
+                                  )}
+                                  {isExpired && <span className="text-[10px] text-red-500 font-medium">🔴 Expired</span>}
+                                </div>
+                              ) : (
+                                <span className="text-sm text-gray-400">No expiry</span>
+                              )}
+                            </td>
+                            <td className="p-4">
+                              <span className="text-sm text-gray-500">{formatDate(chamber.createdAt)}</span>
+                            </td>
+                            <td className="p-4">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <button
+                                  onClick={() => handleViewChamber(chamber)}
+                                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors whitespace-nowrap"
+                                >
+                                  <Eye size={13} /> View
+                                </button>
+                                <button
+                                  onClick={() => navigate(`/cabin/${chamber._id}`)}
+                                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-orange-50 text-orange-700 hover:bg-orange-100 transition-colors whitespace-nowrap"
+                                >
+                                  <Home size={13} /> Open
+                                </button>
+                                <button 
+                                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-red-50 text-red-700 hover:bg-red-100 transition-colors whitespace-nowrap"
+                                  onClick={(e) => handleDelete(e, chamber._id)}
+                                >
+                                  <Trash2 size={13} /> Delete
+                                </button>
                               </div>
-                            ) : (
-                              <span className="text-sm text-gray-400">No expiry</span>
-                            )}
-                          </td>
-                          <td className="p-4">
-                            <span className="text-sm text-gray-500">{formatDate(cabin.createdAt)}</span>
-                          </td>
-                          <td className="p-4">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <button
-                                onClick={() => handleViewCabin(cabin)}
-                                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors whitespace-nowrap"
-                              >
-                                <Eye size={13} /> View
-                              </button>
-                              <button
-                                onClick={() => navigate(`/cabin/${cabin._id}`)}
-                                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-orange-50 text-orange-700 hover:bg-orange-100 transition-colors whitespace-nowrap"
-                              >
-                                <Home size={13} /> Open
-                              </button>
-                              <button 
-                                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-red-50 text-red-700 hover:bg-red-100 transition-colors whitespace-nowrap"
-                                onClick={(e) => handleDelete(e, cabin._id)}
-                              >
-                                <Trash2 size={13} /> Delete
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan={10} className="p-12 text-center">
+                          <div className="flex flex-col items-center justify-center gap-3 text-gray-400">
+                            <BuildingIcon size={48} className="opacity-20" />
+                            <p className="text-lg font-medium">No chambers found</p>
+                            <p className="text-sm">Try adjusting your filters or add a new chamber.</p>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               )}
             </div>
 
             {/* Footer */}
-            {!loading && filteredCabins.length > 0 && (
+            {!loading && filteredChambers.length > 0 && (
               <div className="px-4 py-3 border-t border-gray-100 rounded-b-2xl flex flex-wrap items-center justify-between gap-2" style={{ backgroundColor: '#fafafa' }}>
                 <span className="text-xs text-gray-500">
-                  Showing <strong>{filteredCabins.length}</strong> of <strong>{cabins.length}</strong> cabins
+                  Showing <strong>{filteredChambers.length}</strong> of <strong>{chambers.length}</strong> chambers
                 </span>
                 <div className="flex items-center gap-3 text-xs text-gray-500">
                   <span className="flex items-center gap-1">
@@ -1013,8 +1037,8 @@ const MyCabin = () => {
         </div>
       </div>
 
-      {/* View Cabin Modal */}
-      {showViewModal && selectedCabin && (
+      {/* View Chamber Modal */}
+      {showViewModal && selectedChamber && (
         <div 
           className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
           onClick={(e) => {
@@ -1028,17 +1052,17 @@ const MyCabin = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <div className={`p-6 ${
-              selectedCabin.cabinType === 'exclusive' 
+              selectedChamber.cabinType === 'exclusive' 
                 ? 'bg-gradient-to-br from-amber-500 to-amber-600' 
                 : 'bg-gradient-to-br from-indigo-600 to-purple-600'
             } text-white sticky top-0 z-10`}>
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 rounded-xl bg-white/20 flex items-center justify-center overflow-hidden backdrop-blur-sm">
-                    {selectedCabin.images?.[0] ? (
+                    {selectedChamber.images?.[0] ? (
                       <img 
-                        src={getImageUrl(selectedCabin.images[0])} 
-                        alt={selectedCabin.name}
+                        src={getImageUrl(selectedChamber.images[0])} 
+                        alt={selectedChamber.name}
                         className="w-full h-full object-cover"
                       />
                     ) : (
@@ -1046,10 +1070,10 @@ const MyCabin = () => {
                     )}
                   </div>
                   <div>
-                    <h3 className="text-2xl font-bold">{selectedCabin.name || 'N/A'}</h3>
+                    <h3 className="text-2xl font-bold">{selectedChamber.name || 'N/A'}</h3>
                     <p className="text-sm opacity-80 flex items-center gap-2">
                       <MapPin size={14} />
-                      {selectedCabin.address || 'No address'}
+                      {selectedChamber.address || 'No address'}
                     </p>
                   </div>
                 </div>
@@ -1067,7 +1091,7 @@ const MyCabin = () => {
                 <div className="p-4 bg-gray-50 rounded-xl">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Type</p>
                   <p className="mt-1 font-medium text-gray-700 flex items-center gap-2">
-                    {selectedCabin.cabinType === 'exclusive' ? (
+                    {selectedChamber.cabinType === 'exclusive' ? (
                       <><Crown size={16} className="text-amber-500" /> Exclusive</>
                     ) : 'Normal'}
                   </p>
@@ -1075,7 +1099,7 @@ const MyCabin = () => {
                 <div className="p-4 bg-gray-50 rounded-xl">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Price</p>
                   <p className="mt-1 font-bold text-gray-700 flex items-center gap-1">
-                    ₹{selectedCabin.price || 0}
+                    ₹{selectedChamber.price || 0}
                     <span className="text-sm font-normal text-gray-400">/hr</span>
                   </p>
                 </div>
@@ -1083,29 +1107,29 @@ const MyCabin = () => {
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Seats</p>
                   <p className="mt-1 font-medium text-gray-700 flex items-center gap-2">
                     <Armchair size={16} className="text-gray-400" />
-                    {selectedCabin.seats?.length || 0} seats
+                    {selectedChamber.seats?.length || 0} seats
                   </p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-xl">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Status</p>
                   <p className="mt-1 font-medium">
                     <span className={`px-3 py-1 text-xs font-bold rounded-full ${
-                      selectedCabin.isActive === true 
+                      selectedChamber.isActive === true 
                         ? 'bg-emerald-100 text-emerald-700' 
                         : 'bg-gray-100 text-gray-600'
                     }`}>
-                      {selectedCabin.isActive === true ? 'Active' : 'Inactive'}
+                      {selectedChamber.isActive === true ? 'Active' : 'Inactive'}
                     </span>
                   </p>
                 </div>
               </div>
 
               {/* Seats List */}
-              {selectedCabin.seats && selectedCabin.seats.length > 0 && (
+              {selectedChamber.seats && selectedChamber.seats.length > 0 && (
                 <div className="p-4 bg-gray-50 rounded-xl">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Seats</p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mt-2">
-                    {selectedCabin.seats.map((seat, idx) => (
+                    {selectedChamber.seats.map((seat, idx) => (
                       <div key={idx} className="bg-white p-2 rounded-lg border border-gray-200 text-center">
                         <Armchair size={14} className="mx-auto text-indigo-500 mb-1" />
                         <p className="text-xs font-medium text-gray-700">{seat.name}</p>
@@ -1120,10 +1144,10 @@ const MyCabin = () => {
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Expiry Date</p>
                 <p className="mt-1 font-medium text-gray-700 flex items-center gap-2">
                   <Calendar size={16} className="text-gray-400" />
-                  {selectedCabin.expiryDate ? (
+                  {selectedChamber.expiryDate ? (
                     <span>
-                      {formatDate(selectedCabin.expiryDate)}
-                      {new Date(selectedCabin.expiryDate) < new Date() ? (
+                      {formatDate(selectedChamber.expiryDate)}
+                      {new Date(selectedChamber.expiryDate) < new Date() ? (
                         <span className="ml-2 px-2 py-0.5 text-[10px] font-bold bg-red-100 text-red-700 rounded-full">Expired</span>
                       ) : (
                         <span className="ml-2 px-2 py-0.5 text-[10px] font-bold bg-emerald-100 text-emerald-700 rounded-full">Valid</span>
@@ -1135,18 +1159,18 @@ const MyCabin = () => {
                 </p>
               </div>
 
-              {selectedCabin.description && (
+              {selectedChamber.description && (
                 <div className="p-4 bg-gray-50 rounded-xl">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Description</p>
-                  <p className="mt-1 text-gray-700">{selectedCabin.description}</p>
+                  <p className="mt-1 text-gray-700">{selectedChamber.description}</p>
                 </div>
               )}
 
-              {selectedCabin.amenities && Object.values(selectedCabin.amenities).some(v => v) && (
+              {selectedChamber.amenities && Object.values(selectedChamber.amenities).some(v => v) && (
                 <div className="p-4 bg-gray-50 rounded-xl">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Amenities</p>
                   <div className="flex flex-wrap gap-1.5 mt-2">
-                    {Object.entries(selectedCabin.amenities)
+                    {Object.entries(selectedChamber.amenities)
                       .filter(([key, value]) => value)
                       .map(([key]) => {
                         const allAmenities = [...NORMAL_AMENITIES, ...EXCLUSIVE_AMENITIES];
@@ -1163,11 +1187,11 @@ const MyCabin = () => {
                 </div>
               )}
 
-              {selectedCabin.pricingPlans && selectedCabin.pricingPlans.length > 0 && (
+              {selectedChamber.pricingPlans && selectedChamber.pricingPlans.length > 0 && (
                 <div className="p-4 bg-gray-50 rounded-xl">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Pricing Plans</p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
-                    {selectedCabin.pricingPlans.map((plan, idx) => (
+                    {selectedChamber.pricingPlans.map((plan, idx) => (
                       <div key={idx} className="bg-white p-2 rounded-lg border border-gray-200 text-center">
                         <p className="text-xs font-bold text-gray-700">{plan.label || `Plan ${idx + 1}`}</p>
                         <p className="text-xs text-gray-500">{plan.hours}h · ₹{plan.cost}</p>
@@ -1182,17 +1206,17 @@ const MyCabin = () => {
                 <button
                   onClick={() => {
                     closeViewModal();
-                    navigate(`/cabin/${selectedCabin._id}`);
+                    navigate(`/cabin/${selectedChamber._id}`);
                   }}
                   className="flex-1 min-w-[120px] py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-sm active:scale-[0.98]"
                 >
                   <Home size={16} className="inline mr-2" />
-                  Open Cabin
+                  Open Chamber
                 </button>
                 <button
                   onClick={() => {
                     closeViewModal();
-                    navigate("/cabin-bookings");
+                    navigate("/chamberbookings");
                   }}
                   className="flex-1 min-w-[120px] py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition shadow-sm active:scale-[0.98]"
                 >
@@ -1205,7 +1229,7 @@ const MyCabin = () => {
         </div>
       )}
 
-      {/* Add Cabin Modal */}
+      {/* Add Chamber Modal - SAME AS MyCabin */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[1100] flex items-end sm:items-center justify-center p-2 sm:p-4 bg-slate-900/50 backdrop-blur-sm">
           <div
@@ -1219,10 +1243,10 @@ const MyCabin = () => {
                 </div>
                 <div>
                   <h2 className="text-base sm:text-lg font-bold text-white">
-                    Add New Cabin #{cabinCount + 1}
+                    Add New Chamber #{chamberCount + 1}
                   </h2>
                   <p className="text-[10px] sm:text-xs text-white/75">
-                    Fee: ₹{isFirstCabin ? '2,000' : '1,000'} + GST (18%)
+                    Fee: ₹{isFirstChamber ? '2,000' : '1,000'} + GST (18%)
                   </p>
                 </div>
               </div>
@@ -1242,7 +1266,7 @@ const MyCabin = () => {
                     <input
                       className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
                       type="text" name="name"
-                      placeholder="e.g. Tech Hub"
+                      placeholder="e.g. Medical Center"
                       value={formData.name}
                       onChange={handleChange}
                       required
@@ -1263,11 +1287,11 @@ const MyCabin = () => {
 
                 <div className="grid grid-cols-1 xs:grid-cols-3 gap-3 sm:gap-4">
                   <div>
-                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Cabin Spec *</label>
+                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Room/Suite *</label>
                     <input
                       className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
                       type="text" name="cabin"
-                      placeholder="e.g. Office B"
+                      placeholder="e.g. Suite 101"
                       value={formData.cabin}
                       onChange={handleChange}
                       required
@@ -1388,7 +1412,7 @@ const MyCabin = () => {
                 </div>
 
                 <div>
-                  <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Cabin Type</label>
+                  <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Chamber Type</label>
                   <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-1">
                     <button
                       type="button"
@@ -1496,7 +1520,7 @@ const MyCabin = () => {
                   <textarea
                     className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all resize-none"
                     name="description"
-                    placeholder="Describe your workspace..."
+                    placeholder="Describe your chamber..."
                     value={formData.description}
                     onChange={handleChange}
                     rows={2}
@@ -1544,7 +1568,7 @@ const MyCabin = () => {
                     )}
                     <div className="flex-1 min-w-0">
                       <p className="text-[10px] sm:text-xs font-bold text-slate-700">
-                        Cabin #{cabinCount + 1} {formData.cabinType === 'exclusive' ? '⭐ Exclusive' : 'Normal'}
+                        Chamber #{chamberCount + 1} {formData.cabinType === 'exclusive' ? '⭐ Exclusive' : 'Normal'}
                       </p>
                       <p className="text-[8px] sm:text-[10px] text-slate-600 truncate">
                         Base: ₹{baseFee} | GST: ₹{gstAmount.toFixed(2)} | Total: ₹{totalWithGST.toFixed(2)}
@@ -1676,16 +1700,16 @@ const MyCabin = () => {
                 )}
               </div>
               <h3 className="text-white font-bold text-base sm:text-lg mt-2">
-                {formData.cabinType === 'exclusive' ? '⭐ Exclusive Cabin' : 'Confirm Cabin'}
+                {formData.cabinType === 'exclusive' ? '⭐ Exclusive Chamber' : 'Confirm Chamber'}
               </h3>
               <p className="text-white/80 text-xs sm:text-sm">
-                {formData.cabinType === 'exclusive' ? 'Premium exclusive cabin' : 'Review details below'}
+                {formData.cabinType === 'exclusive' ? 'Premium exclusive chamber' : 'Review details below'}
               </p>
             </div>
 
             <div className="p-4 sm:p-6">
               <div className="bg-slate-50 rounded-xl p-3 sm:p-4 space-y-2 sm:space-y-3 text-xs sm:text-sm">
-                <div className="flex justify-between"><span className="text-slate-500">Cabin</span><span className="font-semibold">#{cabinCount + 1}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Chamber</span><span className="font-semibold">#{chamberCount + 1}</span></div>
                 <div className="flex justify-between"><span className="text-slate-500">Type</span>
                   <span className={`font-semibold ${formData.cabinType === 'exclusive' ? 'text-amber-600' : 'text-indigo-600'}`}>
                     {formData.cabinType === 'exclusive' ? '⭐ Exclusive' : 'Normal'}
@@ -1719,7 +1743,7 @@ const MyCabin = () => {
                   Cancel
                 </button>
                 <button
-                  onClick={createCabinAndOrder}
+                  onClick={createChamberAndOrder}
                   disabled={submitting || !razorpayLoaded || paymentProcessing}
                   className={`py-2.5 sm:py-3 rounded-xl text-white font-bold text-xs sm:text-sm transition-all ${
                     (submitting || !razorpayLoaded || paymentProcessing)
@@ -1746,4 +1770,4 @@ const MyCabin = () => {
   );
 };
 
-export default MyCabin;
+export default MyChamber;

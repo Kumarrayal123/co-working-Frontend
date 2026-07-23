@@ -1,4 +1,4 @@
-// AdminDashboard.jsx - Complete with Latest Tables
+// AdminDashboard.jsx - Complete with Latest Tables and Curve Chart
 import axios from "axios";
 import {
   Building,
@@ -21,19 +21,20 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
-  Bar,
-  BarChart,
   CartesianGrid,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
+  Area,
+  AreaChart,
+  Legend
 } from "recharts";
 import AdminNavbar from "./AdminNavbar";
 import { useNavigate } from "react-router-dom";
 import "./Dashboard.css";
 
-const API_URL = "https://spaceapi.iryax.com";
+const API_URL = "http://localhost:5003";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -106,10 +107,31 @@ const AdminDashboard = () => {
 
   const ChartTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
+      const data = payload[0].payload;
       return (
-        <div className="admin-dash__tooltip">
-          <p className="admin-dash__tooltip-title">{payload[0].payload.month}</p>
-          <p className="admin-dash__tooltip-value">Bookings: {payload[0].value}</p>
+        <div className="admin-dash__tooltip" style={{ 
+          backgroundColor: 'white', 
+          padding: '10px 14px', 
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          border: '1px solid #e5e7eb'
+        }}>
+          <p className="admin-dash__tooltip-title" style={{ fontWeight: 700, color: '#0a1628', marginBottom: '4px' }}>
+            {data.month}
+          </p>
+          {payload.map((item, idx) => (
+            <p key={idx} className="admin-dash__tooltip-value" style={{ fontSize: '11px', color: item.color }}>
+              {item.name}: {item.value}
+            </p>
+          ))}
+          {data.cabinNames && data.cabinNames.length > 0 && (
+            <div style={{ marginTop: '4px', paddingTop: '4px', borderTop: '1px solid #e5e7eb' }}>
+              <p style={{ fontSize: '9px', color: '#6b7280', fontWeight: 600 }}>Cabins:</p>
+              {data.cabinNames.map((name, idx) => (
+                <p key={idx} style={{ fontSize: '9px', color: '#374151' }}>• {name}</p>
+              ))}
+            </div>
+          )}
         </div>
       );
     }
@@ -135,6 +157,13 @@ const AdminDashboard = () => {
       return (
         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-red-100 text-red-700">
           ✕ Cancelled
+        </span>
+      );
+    }
+    if (status === 'active') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-700">
+          <Clock size={10} /> Active
         </span>
       );
     }
@@ -275,7 +304,7 @@ const AdminDashboard = () => {
       <AdminNavbar />
 
       <div className="pt-20 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
-        {/* Header - Welcome message removed */}
+        {/* Header */}
         <div className="admin-dash__header" style={{ marginBottom: '8px' }}>
           <div>
             <h1 className="admin-dash__greeting" style={{ fontSize: '1.25rem' }}>
@@ -311,92 +340,173 @@ const AdminDashboard = () => {
 
         {/* Charts Grid - increased height to 370px */}
         <div className="admin-dash__charts-grid" style={{ marginBottom: '16px' }}>
-          {/* Booking Trends Chart */}
+          {/* Booking Trends Chart - CURVE CHART with Months on X-axis and Hours on Y-axis */}
           <div className="admin-dash__card admin-dash__chart-wrap" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', height: '370px' }}>
             <div className="admin-dash__card-header py-2 px-4" style={{ borderBottom: '1px solid #e5e7eb' }}>
               <div>
                 <h3 className="admin-dash__card-title" style={{ fontSize: '13px' }}>Booking Trends</h3>
-                <p className="admin-dash__card-desc text-[9px] text-gray-400">Monthly booking statistics</p>
+                <p className="admin-dash__card-desc text-[9px] text-gray-400">Monthly booking hours & statistics</p>
               </div>
             </div>
             <div className="admin-dash__card-body flex-1 p-2" style={{ height: 'calc(100% - 50px)' }}>
-              {bookingChartData && Array.isArray(bookingChartData) && bookingChartData.some(d => d.bookings > 0) ? (
+              {bookingChartData && Array.isArray(bookingChartData) && bookingChartData.some(d => d.hours > 0 || d.bookings > 0) ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={bookingChartData} margin={{ top: 15, right: 10, left: -20, bottom: 5 }}>
+                  <AreaChart data={bookingChartData} margin={{ top: 20, right: 10, left: -10, bottom: 5 }}>
+                    <defs>
+                      <linearGradient id="colorHours" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="colorBookings" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="colorCabins" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                     <XAxis
                       dataKey="month"
                       axisLine={false}
                       tickLine={false}
-                      tick={{ fill: '#64748b', fontSize: 10 }}
+                      tick={{ fill: '#64748b', fontSize: 10, fontWeight: 600 }}
+                      interval={0}
                     />
                     <YAxis
                       axisLine={false}
                       tickLine={false}
                       tick={{ fill: '#64748b', fontSize: 10 }}
+                      label={{ 
+                        value: 'Hours', 
+                        angle: -90, 
+                        position: 'insideLeft', 
+                        style: { fontSize: '10px', fill: '#64748b', fontWeight: 600 }
+                      }}
                     />
                     <Tooltip content={<ChartTooltip />} cursor={{ fill: '#f8fafc' }} />
-                    <Bar dataKey="bookings" radius={[4, 4, 0, 0]} barSize={32} fill="#6366f1" />
-                  </BarChart>
+                    <Legend 
+                      verticalAlign="top" 
+                      height={30}
+                      iconType="circle"
+                      iconSize={8}
+                      wrapperStyle={{ fontSize: '10px', color: '#64748b', paddingBottom: '5px' }}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="hours" 
+                      stroke="#6366f1" 
+                      strokeWidth={2.5}
+                      fill="url(#colorHours)"
+                      dot={{ r: 4, fill: "#6366f1" }}
+                      activeDot={{ r: 6, fill: "#6366f1" }}
+                      name="Total Hours"
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="bookings" 
+                      stroke="#10b981" 
+                      strokeWidth={2.5}
+                      fill="url(#colorBookings)"
+                      dot={{ r: 4, fill: "#10b981" }}
+                      activeDot={{ r: 6, fill: "#10b981" }}
+                      name="Bookings"
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="cabins" 
+                      stroke="#f59e0b" 
+                      strokeWidth={2.5}
+                      fill="url(#colorCabins)"
+                      dot={{ r: 4, fill: "#f59e0b" }}
+                      activeDot={{ r: 6, fill: "#f59e0b" }}
+                      name="Cabins"
+                    />
+                  </AreaChart>
                 </ResponsiveContainer>
               ) : (
                 <div className="flex flex-col items-center justify-center h-32 text-gray-400">
                   <Calendar size={28} className="text-gray-300 mb-1" />
-                  <p className="text-xs">No booking data available</p>
+                  <p className="text-xs">No data available</p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Recent Activity - increased height to 370px */}
-          <div className="admin-dash__card admin-dash__chart-wrap" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', height: '370px' }}>
-            <div className="admin-dash__card-header py-2 px-4" style={{ borderBottom: '1px solid #e5e7eb' }}>
+          {/* Recent Activity - TABLE FORMAT */}
+          <div className="admin-dash__card admin-dash__chart-wrap" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', height: '370px', display: 'flex', flexDirection: 'column' }}>
+            <div className="admin-dash__card-header py-2 px-4" style={{ borderBottom: '1px solid #e5e7eb', flexShrink: 0 }}>
               <div>
                 <h3 className="admin-dash__card-title" style={{ fontSize: '13px' }}>Recent Activity</h3>
                 <p className="admin-dash__card-desc text-[9px] text-gray-400">Latest workspace reservations</p>
               </div>
             </div>
-            <div className="admin-dash__card-body flex-1 p-2" style={{ height: 'calc(100% - 50px)', overflowY: 'auto' }}>
-              {recentBookings && Array.isArray(recentBookings) && recentBookings.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-32 text-gray-400">
+            <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ flex: 1, overflowY: 'auto' }}>
+              {(recentBookings || []).length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-gray-400">
                   <Calendar size={28} className="text-gray-300 mb-1" />
                   <p className="text-xs">No recent activity</p>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {(recentBookings || []).slice(0, 7).map((b) => (
-                    <div
-                      key={b._id}
-                      className="flex items-start gap-2 p-2 rounded-lg hover:bg-gray-50 transition-all duration-200 border border-transparent hover:border-gray-200 cursor-pointer"
-                      onClick={() => navigate("/allbookings")}
-                    >
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-sm">
-                        {b.name?.charAt(0)?.toUpperCase() || "U"}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1 flex-wrap">
-                          <p className="text-xs font-semibold text-gray-900 truncate">
-                            {b.name || "User"}
+                <table className="w-full min-w-[500px] text-left">
+                  <thead>
+                    <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb', position: 'sticky', top: 0, zIndex: 1 }}>
+                      <th className="p-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">User</th>
+                      <th className="p-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
+                      <th className="p-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Amount</th>
+                      <th className="p-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
+                      <th className="p-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {(recentBookings || []).slice(0, 7).map((b) => (
+                      <tr 
+                        key={b._id} 
+                        className="transition-colors hover:bg-gray-50/80 cursor-pointer" 
+                        onClick={() => navigate("/allbookings")}
+                      >
+                        <td className="p-2">
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0">
+                              {b.name?.charAt(0)?.toUpperCase() || "U"}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-gray-900 text-xs truncate max-w-[100px]">
+                                {b.name || "User"}
+                              </p>
+                              <p className="text-[9px] text-gray-400 truncate max-w-[80px]">
+                                {b.mobile || "—"}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-2">
+                          <p className="text-xs font-medium text-gray-700 truncate max-w-[130px]">
+                            {b.cabinName || "—"}
                           </p>
-                          {getStatusBadge(b.status, b.paymentStatus)}
-                        </div>
-                        <p className="text-[10px] text-gray-500 mt-0.5 truncate">
-                          <span className="font-medium text-gray-700">{b.cabinName}</span>
-                        </p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          {b.amount > 0 && (
-                            <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+                        </td>
+                        <td className="p-2">
+                          {b.amount > 0 ? (
+                            <span className="text-xs font-bold text-indigo-600">
                               {formatCurrency(b.amount)}
                             </span>
+                          ) : (
+                            <span className="text-xs text-gray-400">—</span>
                           )}
-                          <span className="text-[9px] text-gray-400 font-medium">
+                        </td>
+                        <td className="p-2">
+                          {getStatusBadge(b.status, b.paymentStatus)}
+                        </td>
+                        <td className="p-2">
+                          <span className="text-[10px] text-gray-500">
                             {formatDate(b.createdAt)}
                           </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               )}
             </div>
           </div>
@@ -454,7 +564,7 @@ const AdminDashboard = () => {
                         </div>
                       </td>
                       <td className="p-3">
-                        <p className="font-medium text-gray-800 text-xs">{b.cabinName}</p>
+                        <p className="font-medium text-gray-800 text-xs">{b.cabinName || "—"}</p>
                       </td>
                       <td className="p-3">
                         <span className="text-xs text-gray-600">{formatDate(b.createdAt)}</span>

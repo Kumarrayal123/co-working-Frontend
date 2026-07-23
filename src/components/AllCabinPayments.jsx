@@ -36,7 +36,7 @@ import AdminNavbar from "./AdminNavbar";
 import * as XLSX from 'xlsx';
 import "./Dashboard.css";
 
-const API_URL = "https://spaceapi.iryax.com";
+const API_URL = "http://localhost:5003";
 
 const AllCabinPayments = () => {
   const [orders, setOrders] = useState([]);
@@ -453,18 +453,7 @@ const AllCabinPayments = () => {
               Cabin <span>Payments</span>
             </h1>
           </div>
-          <div className="flex items-center gap-2">
-            {filteredOrders.length > 0 && (
-              <button onClick={exportToExcel} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200">
-                <Download size={14} />
-                <span className="hidden xs:inline">Export</span>
-              </button>
-            )}
-            <button onClick={fetchPayments} className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors">
-              <RefreshCw size={14} />
-              <span className="hidden xs:inline">Refresh</span>
-            </button>
-          </div>
+         
         </div>
 
         {/* Stats Cards */}

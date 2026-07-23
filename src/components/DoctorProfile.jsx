@@ -1,4 +1,4 @@
-// MyProfile.jsx - Redesigned with Consistent UI
+// DoctorProfile.jsx - Redesigned with Consistent UI
 import axios from "axios";
 import {
   User,
@@ -31,12 +31,12 @@ import {
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import UsersNavbar from "./UsersNavbar";
+import DoctorNavbar from "./DoctorNavbar";
 import "./Dashboard.css";
 
 const API_URL = "http://localhost:5003";
 
-const MyProfile = () => {
+const DoctorProfile = () => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -157,7 +157,7 @@ const MyProfile = () => {
   if (loading) {
     return (
       <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
-        <UsersNavbar />
+        <DoctorNavbar />
         <div className="flex justify-center items-center h-64">
           <div className="w-12 h-12 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin" />
         </div>
@@ -168,7 +168,7 @@ const MyProfile = () => {
   if (!profile) {
     return (
       <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
-        <UsersNavbar />
+        <DoctorNavbar />
         <div className="pt-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
           <div className="flex flex-col items-center justify-center gap-4 py-20 text-gray-400">
             <User size={48} className="opacity-20" />
@@ -195,29 +195,15 @@ const MyProfile = () => {
 
   return (
     <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
-      <UsersNavbar />
+      <DoctorNavbar />
 
       <div className="pt-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
         {/* Header */}
         <div className="admin-dash__header">
           <div>
             <h1 className="admin-dash__greeting">
-              My <span>Profile</span>
+              Doctor <span>Profile</span>
             </h1>
-            <p className="admin-dash__subtitle">
-              View and manage your profile information.
-            </p>
-          </div>
-          <div className="admin-dash__date-pill">
-            <Calendar size={16} />
-            <span>
-              {new Date().toLocaleDateString("en-US", {
-                weekday: "short",
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-              })}
-            </span>
           </div>
         </div>
 
@@ -430,32 +416,32 @@ const MyProfile = () => {
               </div>
             )}
 
-            {/* Quick Actions */}
+            {/* Quick Actions - Doctor Specific */}
             <div className="mt-6 pt-6 border-t border-gray-200">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <button
-                  onClick={() => navigate("/mybookings")}
+                  onClick={() => navigate("/doctorbookings")}
                   className="flex items-center justify-center gap-2 px-4 py-3 bg-indigo-50 text-indigo-700 rounded-xl text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200"
                 >
                   <Calendar size={14} />
                   My Bookings
                 </button>
                 <button
-                  onClick={() => navigate("/mycabin")}
+                  onClick={() => navigate("/mychambers")}
                   className="flex items-center justify-center gap-2 px-4 py-3 bg-emerald-50 text-emerald-700 rounded-xl text-xs font-medium hover:bg-emerald-100 transition-colors border border-emerald-200"
                 >
                   <Home size={14} />
-                  My Cabins
+                  My Chambers
                 </button>
                 <button
-                  onClick={() => navigate("/userwallet")}
+                  onClick={() => navigate("/doctorwallet")}
                   className="flex items-center justify-center gap-2 px-4 py-3 bg-amber-50 text-amber-700 rounded-xl text-xs font-medium hover:bg-amber-100 transition-colors border border-amber-200"
                 >
                   <Wallet size={14} />
                   My Wallet
                 </button>
                 <button
-                  onClick={() => navigate("/my-cabin-payments")}
+                  onClick={() => navigate("/mychamberpayments")}
                   className="flex items-center justify-center gap-2 px-4 py-3 bg-purple-50 text-purple-700 rounded-xl text-xs font-medium hover:bg-purple-100 transition-colors border border-purple-200"
                 >
                   <CreditCard size={14} />
@@ -470,4 +456,4 @@ const MyProfile = () => {
   );
 };
 
-export default MyProfile;
+export default DoctorProfile;

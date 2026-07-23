@@ -1,4 +1,4 @@
-// MyBookings.jsx - Complete with Seat Details Display
+// DoctorBookings.jsx - Complete Doctor Bookings Component
 import axios from "axios";
 import {
   Calendar,
@@ -27,31 +27,30 @@ import {
   Filter,
   XCircle as XCircleIcon,
   Users,
-  Armchair
+  Armchair,
+  Plus
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import UsersNavbar from "./UsersNavbar";
-import AdminNavbar from "./AdminNavbar";
+import DoctorNavbar from "./DoctorNavbar";
 import * as XLSX from 'xlsx';
 import "./Dashboard.css";
 
 const API_URL = "http://localhost:5003";
 
-const MyBookings = () => {
+const BookingDoctor = () => {
   const [bookings, setBookings] = useState([]);
-  const [allCabins, setAllCabins] = useState([]);
+  const [allChambers, setAllChambers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterDate, setFilterDate] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
+  const [filterDateFrom, setFilterDateFrom] = useState("");
+  const [filterDateTo, setFilterDateTo] = useState("");
   const [filters, setFilters] = useState({
     status: 'all',
     paymentStatus: 'all',
-    paymentMethod: 'all'
+    paymentMethod: 'all',
+    cabinId: 'all'
   });
-  const isAdmin = localStorage.getItem("admin") !== null;
   const navigate = useNavigate();
   
   const [showViewModal, setShowViewModal] = useState(false);
@@ -65,9 +64,9 @@ const MyBookings = () => {
 
   const [showReplaceModal, setShowReplaceModal] = useState(false);
   const [replaceBooking, setReplaceBooking] = useState(null);
-  const [selectedCabin, setSelectedCabin] = useState("");
+  const [selectedChamber, setSelectedChamber] = useState("");
   const [replaceLoading, setReplaceLoading] = useState(false);
-  const [selectedCabinData, setSelectedCabinData] = useState(null);
+  const [selectedChamberData, setSelectedChamberData] = useState(null);
 
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelBooking, setCancelBooking] = useState(null);
@@ -75,10 +74,8 @@ const MyBookings = () => {
 
   const currentUser = (() => {
     try {
-      const u = localStorage.getItem("user");
-      const a = localStorage.getItem("admin");
+      const u = localStorage.getItem("doctor");
       if (u) return JSON.parse(u);
-      if (a) return JSON.parse(a);
       return null;
     } catch (err) {
       return null;
@@ -112,93 +109,36 @@ const MyBookings = () => {
     });
   };
 
+  // ─── OLD ENDPOINT: /api/bookings/user ───
   const fetchBookings = async () => {
+    setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      console.log("Token:", token);
-      
       if (!token) {
-        console.log("No token found, redirecting to login...");
         toast.error("Please login to view your bookings");
         navigate("/login");
         return;
       }
 
-      // ✅ Check if user is admin or normal user
-      const isAdminUser = localStorage.getItem("admin") !== null;
-      
-      let url;
-      if (isAdminUser) {
-        // ✅ ADMIN: Fetch ALL bookings (admin can see everything)
-        url = `${API_URL}/api/bookings`;
-      } else {
-        // ✅ NORMAL USER: Fetch only user's bookings
-        url = `${API_URL}/api/bookings/user`;
-      }
-      
-      console.log("Fetching from URL:", url);
-      console.log("Is Admin:", isAdminUser);
-      
+      // OLD ENDPOINT: /api/bookings/user
       const res = await axios.get(
-        url,
+        `${API_URL}/api/bookings/user`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
-      console.log("Response data:", res.data);
-      
-      // Response mein 'bookings' array hai with 'cabin' object
-      let bookingsData = res.data.bookings || [];
-      
-      // ✅ If admin, filter bookings to show only admin's bookings + guest bookings (user: null)
-      if (isAdminUser) {
-        const adminId = currentUser?._id || currentUser?.id;
-        console.log("Admin ID:", adminId);
-        
-        bookingsData = bookingsData.filter(b => {
-          // Show if: 
-          // 1. user is null (guest booking by admin)
-          // 2. user._id matches admin's ID (admin booked for themselves)
-          // 3. userId matches admin's ID (admin booked for themselves - old format)
-          const userId = b.user?._id || b.userId?.toString() || b.userId;
-          
-          // If user is null or undefined, it's a guest booking (admin created it)
-          if (!userId) {
-            console.log("Guest booking found:", b._id, b.name);
-            return true;
-          }
-          
-          // If user ID matches admin ID
-          if (userId === adminId) {
-            console.log("Admin's own booking found:", b._id, b.name);
-            return true;
-          }
-          
-          console.log("Filtered out booking:", b._id, "user:", userId);
-          return false;
-        });
-        
-        console.log("Filtered bookings for admin:", bookingsData.length);
-      }
-      
+      const bookingsData = res.data.bookings || [];
       setBookings(bookingsData);
       
       if (bookingsData.length === 0) {
-        console.log("No bookings found");
-        if (isAdminUser) {
-          toast.info("No bookings found for admin");
-        } else {
-          toast.info("You have no bookings yet");
-        }
+        toast.info("You have no bookings yet");
       }
       
     } catch (error) {
       console.error("Error fetching bookings:", error);
-      
       if (error.response?.status === 401) {
         toast.error("Session expired. Please login again.");
         localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        localStorage.removeItem("admin");
+        localStorage.removeItem("doctor");
         navigate("/login");
       } else {
         toast.error("Failed to fetch bookings: " + (error.response?.data?.error || error.message));
@@ -208,37 +148,36 @@ const MyBookings = () => {
     }
   };
 
-  const fetchCabins = async () => {
+  // ─── OLD ENDPOINT: /api/cabins ───
+  const fetchChambers = async () => {
     try {
       const token = localStorage.getItem("token");
-      if (!token) {
-        console.log("No token for cabins fetch");
-        return;
-      }
+      if (!token) return;
+      // OLD ENDPOINT: /api/cabins
       const res = await axios.get(`${API_URL}/api/cabins`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      const activeCabins = res.data.filter(c => c.isActive === true);
-      setAllCabins(activeCabins);
+      const activeChambers = res.data.filter(c => c.isActive === true);
+      setAllChambers(activeChambers);
     } catch (error) {
-      console.error("Failed to fetch cabins:", error);
+      console.error("Failed to fetch chambers:", error);
     }
   };
 
   useEffect(() => {
     fetchBookings();
-    fetchCabins();
+    fetchChambers();
   }, []);
 
-  // Calculate price difference when cabin is selected
+  // Calculate price difference when chamber is selected
   useEffect(() => {
-    if (selectedCabin && replaceBooking) {
-      const cabin = allCabins.find(c => c._id === selectedCabin);
-      setSelectedCabinData(cabin || null);
+    if (selectedChamber && replaceBooking) {
+      const chamber = allChambers.find(c => c._id === selectedChamber);
+      setSelectedChamberData(chamber || null);
     } else {
-      setSelectedCabinData(null);
+      setSelectedChamberData(null);
     }
-  }, [selectedCabin, allCabins, replaceBooking]);
+  }, [selectedChamber, allChambers, replaceBooking]);
 
   const getStatusBadge = (status) => {
     const map = {
@@ -278,15 +217,17 @@ const MyBookings = () => {
       }
       const data = filteredBookings.map((b, i) => ({
         'S.No': i + 1,
-        'Cabin': b.cabin?.name || 'Unknown',
-        'Customer': b.name || 'N/A',
-        'Mobile': b.mobile || 'N/A',
-        'Start': `${b.startDate} ${b.startTime}`,
-        'End': `${b.endDate} ${b.endTime}`,
+        'Chamber': b.cabin?.name || b.chamberName || 'Unknown',
+        'User': b.patientName || b.name || 'N/A',
+        'Mobile': b.patientMobile || b.mobile || 'N/A',
+        'From': b.startDate || b.date,
+        'To': b.endDate,
+        'From Time': b.startTime || b.time,
+        'To Time': b.endTime,
         'Hours': b.totalHours || 0,
         'Seats': b.seatCount || 0,
         'Extra Charge': b.extraCharge || 0,
-        'Total (₹)': b.totalPrice || 0,
+        'Total (₹)': b.totalPrice || b.amount || 0,
         'Status': getStatusBadge(b.status).label,
         'Payment': getPaymentMethodBadge(b.paymentMethod).label,
         'Pmt Status': getPaymentStatusBadge(b.paymentStatus).label,
@@ -296,7 +237,7 @@ const MyBookings = () => {
       const ws = XLSX.utils.json_to_sheet(data);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Bookings');
-      XLSX.writeFile(wb, `bookings_${new Date().toISOString().split('T')[0]}.xlsx`);
+      XLSX.writeFile(wb, `doctor_bookings_${new Date().toISOString().split('T')[0]}.xlsx`);
       toast.success(`Exported ${filteredBookings.length} bookings!`);
     } catch (error) {
       console.error(error);
@@ -309,10 +250,10 @@ const MyBookings = () => {
     setShowViewModal(true);
   };
 
-  // Replace Booking
+  // ─── OLD ENDPOINT: /api/bookings/replace-booking ───
   const handleReplaceBooking = async () => {
-    if (!selectedCabin) {
-      toast.error("Please select a cabin to replace");
+    if (!selectedChamber) {
+      toast.error("Please select a chamber to replace");
       return;
     }
 
@@ -321,7 +262,7 @@ const MyBookings = () => {
       const token = localStorage.getItem("token");
       const response = await axios.put(
         `${API_URL}/api/bookings/replace-booking/${replaceBooking._id}`,
-        { newCabinId: selectedCabin },
+        { newCabinId: selectedChamber },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -329,8 +270,8 @@ const MyBookings = () => {
         toast.success("Booking replaced successfully!");
         setShowReplaceModal(false);
         setReplaceBooking(null);
-        setSelectedCabin("");
-        setSelectedCabinData(null);
+        setSelectedChamber("");
+        setSelectedChamberData(null);
         fetchBookings();
       } else {
         toast.error(response.data.error || "Failed to replace booking");
@@ -342,7 +283,7 @@ const MyBookings = () => {
     }
   };
 
-  // Cancel Booking
+  // ─── OLD ENDPOINT: /api/bookings/cancel-booking ───
   const handleCancelBooking = async () => {
     setCancelLoading(true);
     try {
@@ -368,7 +309,7 @@ const MyBookings = () => {
     }
   };
 
-  // Update Payment Status
+  // ─── OLD ENDPOINT: /api/bookings/bookingpayment-status ───
   const handleUpdatePaymentStatus = async () => {
     if (!paymentBooking || !newPaymentStatus) {
       toast.error("Please select a payment status");
@@ -414,7 +355,6 @@ const MyBookings = () => {
         return;
       }
       
-      // Generate seat list HTML
       let seatListHtml = '';
       if (booking.selectedSeats && booking.selectedSeats.length > 0) {
         seatListHtml = booking.selectedSeats.map(s => 
@@ -439,14 +379,14 @@ const MyBookings = () => {
         </style>
         </head><body>
           <div class="header">
-            <div><h1>${(owner.organizationName || 'IRYAX Workspace').toUpperCase()}</h1>
+            <div><h1>${(owner.organizationName || 'IRYAX SPACE').toUpperCase()}</h1>
             <p>GST: ${owner.gstNumber || 'N/A'}</p></div>
             <div><p><strong>Invoice #${booking._id.slice(-8).toUpperCase()}</strong></p>
             <p>${new Date().toLocaleDateString()}</p></div>
           </div>
           <div class="info">
-            <div><strong>Bill To:</strong><br>${booking.name || 'Customer'}<br>${booking.mobile || 'N/A'}<br>${booking.email || 'N/A'}</div>
-            <div><strong>Cabin:</strong><br>${cabin.name || 'Unknown'}<br>${cabin.address || 'N/A'}</div>
+            <div><strong>User:</strong><br>${booking.patientName || booking.name || 'User'}<br>${booking.patientMobile || booking.mobile || 'N/A'}<br>${booking.patientEmail || booking.email || 'N/A'}</div>
+            <div><strong>Chamber:</strong><br>${cabin.name || booking.chamberName || 'Unknown'}<br>${cabin.address || 'N/A'}</div>
           </div>
           ${booking.selectedSeats && booking.selectedSeats.length > 0 ? `
             <div class="seat-section">
@@ -457,8 +397,8 @@ const MyBookings = () => {
           ` : ''}
           <table>
             <tr><th>Description</th><th>Details</th><th>Amount</th></tr>
-            <tr><td><strong>${cabin.name || 'Cabin Booking'}</strong></td>
-            <td>${booking.startDate} ${booking.startTime} - ${booking.endDate} ${booking.endTime}<br>${booking.totalHours}h • ${booking.bookingBasis === 'plan' ? 'Plan' : 'Hourly'}</td>
+            <tr><td><strong>${cabin.name || booking.chamberName || 'Chamber Booking'}</strong></td>
+            <td>${booking.startDate || booking.date} ${booking.startTime || booking.time} - ${booking.endDate} ${booking.endTime}<br>${booking.totalHours}h • ${booking.bookingBasis === 'plan' ? 'Plan' : 'Hourly'}</td>
             <td>₹${(booking.subtotal || 0).toFixed(2)}</td></tr>
             ${booking.extraCharge > 0 ? `
             <tr><td><strong>Seat Charges</strong></td>
@@ -484,26 +424,36 @@ const MyBookings = () => {
     }
   };
 
-  // Filter bookings
+  // Filter bookings - Updated to use From/To date range and cabin filter
   const filteredBookings = bookings.filter((b) => {
-    const search = searchTerm.toLowerCase();
-    const matchSearch = b.cabin?.name?.toLowerCase().includes(search) ||
-                        b.cabin?.address?.toLowerCase().includes(search) ||
-                        b.name?.toLowerCase().includes(search) ||
-                        b.mobile?.includes(searchTerm);
-    const matchDate = filterDate ? b.startDate === filterDate : true;
+    const bookingDate = b.startDate || b.date;
+    
+    // Date range filter
+    let matchDateRange = true;
+    if (filterDateFrom && filterDateTo) {
+      matchDateRange = bookingDate >= filterDateFrom && bookingDate <= filterDateTo;
+    } else if (filterDateFrom) {
+      matchDateRange = bookingDate >= filterDateFrom;
+    } else if (filterDateTo) {
+      matchDateRange = bookingDate <= filterDateTo;
+    }
+    
+    // Cabin filter
+    const matchCabin = filters.cabinId === 'all' || b.cabin?._id === filters.cabinId;
+    
     const matchStatus = filters.status === 'all' || b.status === filters.status;
     const matchPaymentStatus = filters.paymentStatus === 'all' || b.paymentStatus === filters.paymentStatus;
     const matchPaymentMethod = filters.paymentMethod === 'all' || b.paymentMethod === filters.paymentMethod;
-    return matchSearch && matchDate && matchStatus && matchPaymentStatus && matchPaymentMethod;
+    
+    return matchDateRange && matchCabin && matchStatus && matchPaymentStatus && matchPaymentMethod;
   });
 
   // Calculate price difference
   const getPriceDifference = () => {
-    if (!replaceBooking || !selectedCabinData) return null;
+    if (!replaceBooking || !selectedChamberData) return null;
     
     const currentPrice = replaceBooking.totalPrice || 0;
-    const newPrice = selectedCabinData.price || 0;
+    const newPrice = selectedChamberData.price || 0;
     const totalHours = replaceBooking.totalHours || 1;
     const newTotal = newPrice * totalHours;
     const difference = newTotal - currentPrice;
@@ -538,16 +488,17 @@ const MyBookings = () => {
     setFilters({
       status: 'all',
       paymentStatus: 'all',
-      paymentMethod: 'all'
+      paymentMethod: 'all',
+      cabinId: 'all'
     });
-    setSearchTerm('');
-    setFilterDate('');
+    setFilterDateFrom('');
+    setFilterDateTo('');
   };
 
   if (loading) {
     return (
       <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
-        {isAdmin ? <AdminNavbar /> : <UsersNavbar />}
+        <DoctorNavbar />
         <div className="flex justify-center items-center h-64">
           <div className="w-12 h-12 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin" />
         </div>
@@ -557,20 +508,17 @@ const MyBookings = () => {
 
   return (
     <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
-      {isAdmin ? <AdminNavbar /> : <UsersNavbar />}
+      <DoctorNavbar />
 
       <div className="pt-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
         {/* Header */}
         <div className="admin-dash__header">
           <div>
             <h1 className="admin-dash__greeting">
-              {isAdmin ? 'Admin' : 'My'} <span>Bookings</span>
+              Doctor <span>Bookings</span>
             </h1>
-            <p className="admin-dash__subtitle">
-              {isAdmin ? 'Manage and view bookings created by you.' : 'Manage and view all your bookings.'}
-            </p>
           </div>
-       
+        
         </div>
 
         {/* Stats Cards */}
@@ -596,6 +544,7 @@ const MyBookings = () => {
         <div className="space-y-6">
           {/* Bookings Table Section */}
           <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
+            {/* Header with Filters - Updated */}
             <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
               <div className="flex items-center gap-3">
                 <h3 className="admin-dash__card-title">All Bookings</h3>
@@ -604,35 +553,93 @@ const MyBookings = () => {
                 </span>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                {/* Search Bar */}
-                <div className="relative w-full sm:w-56">
-                  <Search
-                    size={16}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                  />
+                {/* From Date Filter */}
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-gray-500 font-medium">From:</span>
                   <input
-                    type="text"
-                    placeholder="Search bookings..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    type="date"
+                    value={filterDateFrom}
+                    onChange={(e) => setFilterDateFrom(e.target.value)}
+                    className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700"
                   />
                 </div>
-                
-                {/* Filter Toggle Button */}
-                <button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                    showFilters ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  <Filter size={14} />
-                  Filters
-                  {(filters.status !== 'all' || filters.paymentStatus !== 'all' || filters.paymentMethod !== 'all' || filterDate) && (
-                    <span className="w-2 h-2 rounded-full bg-red-500"></span>
-                  )}
-                </button>
 
+                {/* To Date Filter */}
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-gray-500 font-medium">To:</span>
+                  <input
+                    type="date"
+                    value={filterDateTo}
+                    onChange={(e) => setFilterDateTo(e.target.value)}
+                    className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700"
+                  />
+                </div>
+
+                {/* Cabin Filter */}
+                <select
+                  value={filters.cabinId}
+                  onChange={(e) => setFilters({...filters, cabinId: e.target.value})}
+                  className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700 min-w-[150px]"
+                >
+                  <option value="all">All Chambers</option>
+                  {allChambers.map(cabin => (
+                    <option key={cabin._id} value={cabin._id}>
+                      {cabin.name}
+                    </option>
+                  ))}
+                </select>
+
+                {/* Status Filter */}
+                <select
+                  value={filters.status}
+                  onChange={(e) => setFilters({...filters, status: e.target.value})}
+                  className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700"
+                >
+                  <option value="all">All Status</option>
+                  <option value="pending">Pending</option>
+                  <option value="confirmed">Confirmed</option>
+                  <option value="active">Active</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+
+                {/* Payment Status Filter */}
+                <select
+                  value={filters.paymentStatus}
+                  onChange={(e) => setFilters({...filters, paymentStatus: e.target.value})}
+                  className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700"
+                >
+                  <option value="all">All Payment</option>
+                  <option value="pending">Pending</option>
+                  <option value="paid">Paid</option>
+                  <option value="failed">Failed</option>
+                  <option value="refunded">Refunded</option>
+                </select>
+
+                {/* Payment Method Filter */}
+                <select
+                  value={filters.paymentMethod}
+                  onChange={(e) => setFilters({...filters, paymentMethod: e.target.value})}
+                  className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700"
+                >
+                  <option value="all">All Method</option>
+                  <option value="online">Online</option>
+                  <option value="cash">Cash</option>
+                  <option value="counter">Counter</option>
+                </select>
+
+                {/* Clear Filters */}
+                {(filterDateFrom || filterDateTo || filters.status !== 'all' || filters.paymentStatus !== 'all' || filters.paymentMethod !== 'all' || filters.cabinId !== 'all') && (
+                  <button
+                    onClick={clearFilters}
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  >
+                    <XCircleIcon size={14} />
+                    Clear
+                  </button>
+                )}
+
+                {/* Export Button */}
                 {filteredBookings.length > 0 && (
                   <button
                     onClick={exportToExcel}
@@ -643,91 +650,19 @@ const MyBookings = () => {
                   </button>
                 )}
 
+                {/* My Chambers Button */}
                 <button
-                  onClick={() => navigate("/my-cabin-payments")}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
-                >
-                  <CreditCard size={14} className="text-indigo-600" />
-                  <span className="hidden xs:inline">Payments</span>
-                </button>
-                <button
-                  onClick={() => navigate("/my-cabins")}
+                  onClick={() => navigate("/mychambers")}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors"
                 >
                   <Building2 size={14} />
-                  <span className="hidden xs:inline">Cabins</span>
-                  <span className="xs:hidden">Cabins</span>
+                  <span className="hidden xs:inline">Chambers</span>
+                  <span className="xs:hidden">Chambers</span>
                 </button>
               </div>
             </div>
 
-            {/* Filter Panel */}
-            {showFilters && (
-              <div className="px-4 pt-4 pb-3 border-b border-gray-100" style={{ backgroundColor: '#fafafa' }}>
-                <div className="flex flex-wrap items-end gap-3">
-                  <div className="min-w-[130px]">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Date</label>
-                    <input
-                      type="date"
-                      value={filterDate}
-                      onChange={(e) => setFilterDate(e.target.value)}
-                      className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                    />
-                  </div>
-                  <div className="min-w-[130px]">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</label>
-                    <select
-                      value={filters.status}
-                      onChange={(e) => setFilters({...filters, status: e.target.value})}
-                      className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                    >
-                      <option value="all">All</option>
-                      <option value="pending">Pending</option>
-                      <option value="confirmed">Confirmed</option>
-                      <option value="active">Active</option>
-                      <option value="completed">Completed</option>
-                      <option value="cancelled">Cancelled</option>
-                    </select>
-                  </div>
-                  <div className="min-w-[130px]">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Payment Status</label>
-                    <select
-                      value={filters.paymentStatus}
-                      onChange={(e) => setFilters({...filters, paymentStatus: e.target.value})}
-                      className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                    >
-                      <option value="all">All</option>
-                      <option value="pending">Pending</option>
-                      <option value="paid">Paid</option>
-                      <option value="failed">Failed</option>
-                      <option value="refunded">Refunded</option>
-                    </select>
-                  </div>
-                  <div className="min-w-[130px]">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Payment Method</label>
-                    <select
-                      value={filters.paymentMethod}
-                      onChange={(e) => setFilters({...filters, paymentMethod: e.target.value})}
-                      className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                    >
-                      <option value="all">All</option>
-                      <option value="online">Online</option>
-                      <option value="cash">Cash</option>
-                      <option value="counter">Counter</option>
-                    </select>
-                  </div>
-                  <button
-                    onClick={clearFilters}
-                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-red-600 transition-colors"
-                  >
-                    <XCircleIcon size={14} />
-                    Clear
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Table Container */}
+            {/* Table Container - Updated columns */}
             <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
               {filteredBookings.length === 0 ? (
                 <div className="flex flex-col items-center justify-center gap-3 py-20 text-gray-400">
@@ -736,13 +671,16 @@ const MyBookings = () => {
                   <p className="text-sm">Try adjusting your filters.</p>
                 </div>
               ) : (
-                <table className="w-full min-w-[1300px] text-left">
+                <table className="w-full min-w-[1400px] text-left">
                   <thead>
                     <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
-                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
-                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Customer</th>
-                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Date & Time</th>
+                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Chamber</th>
+                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">User</th>
+                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">From</th>
+                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">To</th>
+                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">From Time</th>
+                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">To Time</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Hours</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Seats</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
@@ -757,7 +695,6 @@ const MyBookings = () => {
                       const status = getStatusBadge(b.status);
                       const pmtMethod = getPaymentMethodBadge(b.paymentMethod);
                       const pmtStatus = getPaymentStatusBadge(b.paymentStatus);
-                      const terms = getTermsBadge(b.termsAccepted);
                       const isCashPending = (b.paymentMethod === 'cash' || b.paymentMethod === 'counter') && b.paymentStatus === 'pending';
                       const seatCount = b.seatCount || 0;
                       const seatNames = b.selectedSeats?.map(s => s.name).join(', ') || 'N/A';
@@ -769,19 +706,27 @@ const MyBookings = () => {
                           </td>
                           <td className="p-4">
                             <div>
-                              <p className="font-semibold text-gray-900 text-sm">{b.cabin?.name || 'Unknown'}</p>
+                              <p className="font-semibold text-gray-900 text-sm">{b.cabin?.name || b.chamberName || 'Unknown'}</p>
                               <p className="text-[10px] text-gray-400 flex items-center gap-1">
                                 <MapPin size={10} /> {b.cabin?.address?.split(',')[0] || 'N/A'}
                               </p>
                             </div>
                           </td>
                           <td className="p-4">
-                            <p className="font-medium text-gray-800 text-sm">{b.name || 'N/A'}</p>
-                            <p className="text-xs text-gray-400">{b.mobile || 'N/A'}</p>
+                            <p className="font-medium text-gray-800 text-sm">{b.patientName || b.name || 'N/A'}</p>
+                            <p className="text-xs text-gray-400">{b.patientMobile || b.mobile || 'N/A'}</p>
                           </td>
                           <td className="p-4">
-                            <p className="text-sm text-gray-700">{b.startDate}</p>
-                            <p className="text-xs text-gray-400">{b.startTime} - {b.endTime}</p>
+                            <p className="text-sm text-gray-700">{b.startDate || b.date || 'N/A'}</p>
+                          </td>
+                          <td className="p-4">
+                            <p className="text-sm text-gray-700">{b.endDate || b.startDate || b.date || 'N/A'}</p>
+                          </td>
+                          <td className="p-4">
+                            <p className="text-sm text-gray-700">{b.startTime || b.time || 'N/A'}</p>
+                          </td>
+                          <td className="p-4">
+                            <p className="text-sm text-gray-700">{b.endTime || 'N/A'}</p>
                           </td>
                           <td className="p-4">
                             <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-bold">{b.totalHours}h</span>
@@ -810,7 +755,7 @@ const MyBookings = () => {
                           </td>
                           <td className="p-4">
                             <div>
-                              <span className="text-sm font-bold text-indigo-600">₹{b.totalPrice}</span>
+                              <span className="text-sm font-bold text-indigo-600">₹{b.totalPrice || b.amount || 0}</span>
                               {b.extraCharge > 0 && (
                                 <p className="text-[9px] text-amber-500">+₹{b.extraCharge} seat</p>
                               )}
@@ -837,8 +782,8 @@ const MyBookings = () => {
                                 <button
                                   onClick={() => {
                                     setReplaceBooking(b);
-                                    setSelectedCabin("");
-                                    setSelectedCabinData(null);
+                                    setSelectedChamber("");
+                                    setSelectedChamberData(null);
                                     setShowReplaceModal(true);
                                   }}
                                   className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors whitespace-nowrap"
@@ -922,7 +867,6 @@ const MyBookings = () => {
           }}
         >
           <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            {/* Header */}
             <div className="sticky top-0 bg-gradient-to-br from-indigo-600 to-purple-600 text-white p-6 rounded-t-3xl flex justify-between items-center">
               <div>
                 <h3 className="text-2xl font-bold">Booking Details</h3>
@@ -935,31 +879,31 @@ const MyBookings = () => {
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Cabin</p>
-                  <p className="mt-1 font-semibold text-gray-800">{viewBooking.cabin?.name || 'N/A'}</p>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Chamber</p>
+                  <p className="mt-1 font-semibold text-gray-800">{viewBooking.cabin?.name || viewBooking.chamberName || 'N/A'}</p>
                   <p className="text-xs text-gray-400">{viewBooking.cabin?.address || 'N/A'}</p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Customer</p>
-                  <p className="mt-1 font-semibold text-gray-800">{viewBooking.name || 'N/A'}</p>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">User</p>
+                  <p className="mt-1 font-semibold text-gray-800">{viewBooking.patientName || viewBooking.name || 'N/A'}</p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-xl">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Mobile</p>
-                  <p className="mt-1 font-semibold text-gray-800">{viewBooking.mobile || 'N/A'}</p>
+                  <p className="mt-1 font-semibold text-gray-800">{viewBooking.patientMobile || viewBooking.mobile || 'N/A'}</p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-xl">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Email</p>
-                  <p className="mt-1 font-semibold text-gray-800 text-sm break-all">{viewBooking.email || 'N/A'}</p>
+                  <p className="mt-1 font-semibold text-gray-800 text-sm break-all">{viewBooking.patientEmail || viewBooking.email || 'N/A'}</p>
                 </div>
               </div>
 
               <div className="p-4 bg-gray-50 rounded-xl">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Schedule</p>
-                <p className="mt-1 font-semibold text-gray-800">{viewBooking.startDate} {viewBooking.startTime} - {viewBooking.endDate} {viewBooking.endTime}</p>
+                <p className="mt-1 font-semibold text-gray-800">From: {viewBooking.startDate || viewBooking.date} {viewBooking.startTime || viewBooking.time}</p>
+                <p className="mt-0.5 font-semibold text-gray-800">To: {viewBooking.endDate || viewBooking.startDate || viewBooking.date} {viewBooking.endTime}</p>
                 <p className="text-xs text-gray-500 mt-0.5">{viewBooking.totalHours}h • {viewBooking.bookingBasis === 'plan' ? 'Plan' : 'Hourly'}</p>
               </div>
 
-              {/* Seats Section */}
               {viewBooking.selectedSeats && viewBooking.selectedSeats.length > 0 && (
                 <div className="p-4 bg-indigo-50 rounded-xl">
                   <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider flex items-center gap-2">
@@ -1021,7 +965,7 @@ const MyBookings = () => {
                 <div className="flex justify-between text-sm"><span className="text-gray-500">GST (18%)</span><span>₹{viewBooking.gstAmount || 0}</span></div>
                 <div className="flex justify-between text-lg font-bold border-t border-gray-200 pt-2 mt-2">
                   <span>Total</span>
-                  <span className="text-indigo-600">₹{viewBooking.totalPrice || 0}</span>
+                  <span className="text-indigo-600">₹{viewBooking.totalPrice || viewBooking.amount || 0}</span>
                 </div>
               </div>
 
@@ -1053,7 +997,7 @@ const MyBookings = () => {
             <div className="bg-gradient-to-br from-blue-600 to-blue-700 text-white p-5 rounded-t-3xl flex justify-between items-center shrink-0">
               <div>
                 <h3 className="text-xl font-bold">Replace Space</h3>
-                <p className="text-sm text-blue-200">{replaceBooking.cabin?.name} → New Space</p>
+                <p className="text-sm text-blue-200">{replaceBooking.cabin?.name || replaceBooking.chamberName} → New Space</p>
               </div>
               <button onClick={() => setShowReplaceModal(false)} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors">
                 <X size={20} />
@@ -1062,21 +1006,22 @@ const MyBookings = () => {
             <div className="p-5 space-y-4 overflow-y-auto flex-1">
               <div className="bg-blue-50 rounded-xl p-4 text-sm">
                 <p className="font-bold text-blue-800">Current Booking</p>
-                <p className="text-slate-600 mt-1">{replaceBooking.cabin?.name}</p>
-                <p className="text-xs text-slate-500">{replaceBooking.startDate} {replaceBooking.startTime} - {replaceBooking.endDate} {replaceBooking.endTime}</p>
-                <p className="text-xs font-bold text-slate-700 mt-1">Total: ₹{replaceBooking.totalPrice}</p>
+                <p className="text-slate-600 mt-1">{replaceBooking.cabin?.name || replaceBooking.chamberName}</p>
+                <p className="text-xs text-slate-500">From: {replaceBooking.startDate || replaceBooking.date} {replaceBooking.startTime || replaceBooking.time}</p>
+                <p className="text-xs text-slate-500">To: {replaceBooking.endDate || replaceBooking.startDate || replaceBooking.date} {replaceBooking.endTime}</p>
+                <p className="text-xs font-bold text-slate-700 mt-1">Total: ₹{replaceBooking.totalPrice || replaceBooking.amount}</p>
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Select New Cabin</label>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Select New Chamber</label>
                 <div className="relative">
                   <select
-                    value={selectedCabin}
-                    onChange={(e) => setSelectedCabin(e.target.value)}
+                    value={selectedChamber}
+                    onChange={(e) => setSelectedChamber(e.target.value)}
                     className="w-full p-3 pr-10 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
                   >
-                    <option value="">Select a cabin...</option>
-                    {allCabins
+                    <option value="">Select a chamber...</option>
+                    {allChambers
                       .filter(c => c._id !== replaceBooking.cabin?._id)
                       .map(c => (
                         <option key={c._id} value={c._id}>
@@ -1088,20 +1033,19 @@ const MyBookings = () => {
                 </div>
               </div>
 
-              {/* Price Difference */}
-              {selectedCabinData && priceDiff && (
+              {selectedChamberData && priceDiff && (
                 <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 space-y-3">
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Price Comparison</p>
                   
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div className="bg-blue-50 rounded-lg p-3">
-                      <p className="text-[10px] text-blue-600 font-medium">Current Cabin</p>
-                      <p className="font-bold text-slate-800">₹{replaceBooking.cabin?.price}/hr</p>
-                      <p className="text-xs text-slate-500">{replaceBooking.totalHours}h = ₹{replaceBooking.totalPrice}</p>
+                      <p className="text-[10px] text-blue-600 font-medium">Current Chamber</p>
+                      <p className="font-bold text-slate-800">₹{replaceBooking.cabin?.price || 0}/hr</p>
+                      <p className="text-xs text-slate-500">{replaceBooking.totalHours}h = ₹{replaceBooking.totalPrice || replaceBooking.amount}</p>
                     </div>
                     <div className="bg-emerald-50 rounded-lg p-3">
-                      <p className="text-[10px] text-emerald-600 font-medium">New Cabin</p>
-                      <p className="font-bold text-slate-800">₹{selectedCabinData.price}/hr</p>
+                      <p className="text-[10px] text-emerald-600 font-medium">New Chamber</p>
+                      <p className="font-bold text-slate-800">₹{selectedChamberData.price}/hr</p>
                       <p className="text-xs text-slate-500">{replaceBooking.totalHours}h = ₹{priceDiff.newTotal}</p>
                     </div>
                   </div>
@@ -1142,7 +1086,7 @@ const MyBookings = () => {
             <div className="p-4 border-t border-gray-200 shrink-0">
               <button
                 onClick={handleReplaceBooking}
-                disabled={replaceLoading || !selectedCabin}
+                disabled={replaceLoading || !selectedChamber}
                 className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {replaceLoading ? 'Replacing...' : <><RefreshCw size={16} /> Replace Booking</>}
@@ -1159,7 +1103,7 @@ const MyBookings = () => {
             <div className="bg-gradient-to-br from-red-600 to-red-700 text-white p-5 rounded-t-3xl flex justify-between items-center">
               <div>
                 <h3 className="text-xl font-bold">Cancel Booking</h3>
-                <p className="text-sm text-red-200">{cancelBooking.cabin?.name}</p>
+                <p className="text-sm text-red-200">{cancelBooking.cabin?.name || cancelBooking.chamberName}</p>
               </div>
               <button onClick={() => setShowCancelModal(false)} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors">
                 <X size={20} />
@@ -1169,9 +1113,10 @@ const MyBookings = () => {
               <div className="bg-red-50 rounded-xl p-4 text-sm">
                 <p className="font-bold text-red-800">Are you sure you want to cancel this booking?</p>
                 <div className="mt-2 space-y-1 text-slate-600">
-                  <p><span className="text-slate-500">Cabin:</span> {cancelBooking.cabin?.name}</p>
-                  <p><span className="text-slate-500">Date:</span> {cancelBooking.startDate} {cancelBooking.startTime} - {cancelBooking.endDate} {cancelBooking.endTime}</p>
-                  <p><span className="text-slate-500">Total:</span> ₹{cancelBooking.totalPrice}</p>
+                  <p><span className="text-slate-500">Chamber:</span> {cancelBooking.cabin?.name || cancelBooking.chamberName}</p>
+                  <p><span className="text-slate-500">From:</span> {cancelBooking.startDate || cancelBooking.date} {cancelBooking.startTime || cancelBooking.time}</p>
+                  <p><span className="text-slate-500">To:</span> {cancelBooking.endDate || cancelBooking.startDate || cancelBooking.date} {cancelBooking.endTime}</p>
+                  <p><span className="text-slate-500">Total:</span> ₹{cancelBooking.totalPrice || cancelBooking.amount}</p>
                 </div>
               </div>
 
@@ -1214,7 +1159,7 @@ const MyBookings = () => {
             <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 text-white p-5 rounded-t-3xl flex justify-between items-center">
               <div>
                 <h3 className="text-xl font-bold">Update Payment</h3>
-                <p className="text-sm text-yellow-100">₹{paymentBooking.totalPrice}</p>
+                <p className="text-sm text-yellow-100">₹{paymentBooking.totalPrice || paymentBooking.amount}</p>
               </div>
               <button onClick={() => setShowPaymentModal(false)} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors">
                 <X size={20} />
@@ -1247,7 +1192,7 @@ const MyBookings = () => {
                         key={s}
                         onClick={() => {
                           setNewPaymentStatus(s);
-                          if(s === 'paid') setAmountPaid(paymentBooking.totalPrice);
+                          if(s === 'paid') setAmountPaid(paymentBooking.totalPrice || paymentBooking.amount);
                           else setAmountPaid(0);
                         }}
                         className={`py-2.5 rounded-xl text-xs font-bold border transition ${newPaymentStatus === s ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-200 hover:bg-gray-50 text-gray-700'}`}
@@ -1281,4 +1226,4 @@ const MyBookings = () => {
   );
 };
 
-export default MyBookings;
+export default BookingDoctor;

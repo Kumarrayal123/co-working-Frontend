@@ -38,6 +38,19 @@ import AllWallets from "./components/AllWallets";
 import AllWithdrawals from "./components/AllWithdrawals";
 import PromotionalPage from "./components/PromotionalPage";
 import AllQueries from "./components/AllQueries";
+import DoctorChamberPage from "./components/DoctorChamberPage";
+import DoctorLogin from "./components/DoctorLogin";
+import DoctorRegister from "./components/DoctorRegister";
+import DoctorDashboard from "./components/DoctorDashboard";
+import AllChambers from "./components/AllChambers";
+import MyChamber from "./components/MyChamber";
+import BookingDoctor from "./components/BookingDoctor";
+import ChamberBookings from "./components/ChamberBookings";
+import MyChamberPayments from "./components/MyChamberPayments";
+import DoctorWallet from "./components/DoctorWallet";
+import DoctorProfile from "./components/DoctorProfile";
+import RevenueAnalytics from "./components/RevenueAnalytics";
+import CabinRevenue from "./components/CabinRevenue";
 
 function App() {
   return (
@@ -45,8 +58,19 @@ function App() {
       <ToastContainer position="top-right" autoClose={3000} />
       <Routes>
         <Route path="/" element={<PromotionalPage />} />
+        <Route path="/doctor-chamber" element={<DoctorChamberPage />} />
+        <Route path="/doctordashbaord" element={<DoctorDashboard />} />
+        <Route path="/doctorwallet" element={<DoctorWallet />} />
+        <Route path="/allchambers" element={<AllChambers />} />
+        <Route path="/mychambers" element={<MyChamber />} />
+        <Route path="/doctorbookings" element={<BookingDoctor />} />
+        <Route path="/doctorprofile" element={<DoctorProfile />} />
+        <Route path="/chamberbookings" element={<ChamberBookings />} />
+        <Route path="/mychamberpayments" element={<MyChamberPayments />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/doctorlogin" element={<DoctorLogin />} />
+        <Route path="/doctorregister" element={<DoctorRegister />} />
         {/* <Route path="/home" element={<Home />}></Route> */}
         <Route path="/usernavbar" element={<UsersNavbar />}></Route>
         <Route path="/addcabin" element={<UserRoute><AddCabin /></UserRoute>}></Route>
@@ -78,6 +102,8 @@ function App() {
         <Route path ="/userwallets" element={<AdminRoute><AllWallets /></AdminRoute>}></Route>
         <Route path ="/withdrawals" element={<AdminRoute><AllWithdrawals /></AdminRoute>}></Route>
         <Route path ="/userqueries" element={<AdminRoute><AllQueries /></AdminRoute>}></Route>
+        <Route path ="/booking-revenue" element={<AdminRoute><RevenueAnalytics /></AdminRoute>}></Route>
+        <Route path ="/space-revenue" element={<AdminRoute><CabinRevenue /></AdminRoute>}></Route>
       
 
       </Routes>

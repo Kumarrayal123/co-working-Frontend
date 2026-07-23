@@ -1,10 +1,10 @@
+// DoctorDashboard.jsx - Complete Doctor Dashboard (Same as UserDashboard with DoctorNavbar)
 import axios from "axios";
 import {
   Calendar,
   Building2,
   Home,
   Plus,
-  LogOut,
   Wallet,
   IndianRupee,
   TrendingUp,
@@ -12,53 +12,56 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  BarChart3,
-  PieChart,
   Activity,
-  DollarSign,
   Users,
   ArrowUpRight,
   ArrowDownRight,
-  RefreshCw,
-  Sparkles,
-  Zap,
-  Star,
-  Gift,
   Filter,
-  ChevronDown,
-  Search,
   Eye,
-  Edit,
   MapPin,
-  ChevronRight,
-  FileText,
+  Search,
+  RefreshCw,
   Crown,
-  Wifi,
-  ParkingCircle,
+  Stethoscope,
+  User,
+  Award,
+  Clock as ClockIcon,
+  Calendar as CalendarIcon,
+  BarChart3,
+  PieChart,
+  DollarSign,
+  Menu,
+  X,
+  ChevronDown,
+  LogOut,
+  FileText,
+  Star,
+  Loader2,
+  Upload,
+  Shield,
   Lock,
   Bath,
-  Shield,
   Armchair,
+  Wifi,
+  ParkingCircle,
+  Receipt,
+  CreditCard,
+  AlertCircle,
+  Percent,
+  Sparkles,
+  Zap,
+  Gift,
   Coffee,
   Dumbbell,
   Fan,
   Tv,
   Printer,
-  Phone,
-  Upload,
-  Loader2,
-  Receipt,
-  X as XIcon,
-  CreditCard,
-  Menu,
-  ArrowLeft,
-  Clipboard,
-  Percent
+  Phone
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import UsersNavbar from "./UsersNavbar";
+import DoctorNavbar from "./DoctorNavbar";
 import "./Dashboard.css";
 
 const API_URL = "http://localhost:5003";
@@ -100,7 +103,90 @@ const loadRazorpayScript = () => {
   });
 };
 
-const UserDashboard = () => {
+// ─── PIE CHART COMPONENT ───
+const PieChartComponent = ({ data }) => {
+  const total = Object.values(data).reduce((a, b) => a + b, 0) || 1;
+  
+  const segments = [
+    { key: 'pending', label: 'Pending', color: '#f59e0b', gradient: 'from-amber-400 to-orange-500' },
+    { key: 'confirmed', label: 'Confirmed', color: '#3b82f6', gradient: 'from-blue-400 to-indigo-500' },
+    { key: 'active', label: 'Active', color: '#8b5cf6', gradient: 'from-violet-400 to-purple-500' },
+    { key: 'completed', label: 'Completed', color: '#10b981', gradient: 'from-emerald-400 to-green-500' },
+    { key: 'cancelled', label: 'Cancelled', color: '#ef4444', gradient: 'from-rose-400 to-red-500' }
+  ];
+
+  const activeSegments = segments.filter(s => data[s.key] > 0);
+  
+  if (activeSegments.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-48">
+        <div className="w-32 h-32 rounded-full bg-gradient-to-r from-slate-100 to-slate-200 flex items-center justify-center shadow-inner">
+          <span className="text-slate-400 text-xs font-medium">No Bookings</span>
+        </div>
+      </div>
+    );
+  }
+
+  let startAngle = -90;
+  const getPath = (percentage) => {
+    const angle = (percentage / 100) * 360;
+    const endAngle = startAngle + angle;
+    const startRad = (startAngle * Math.PI) / 180;
+    const endRad = (endAngle * Math.PI) / 180;
+    const x1 = 50 + 35 * Math.cos(startRad);
+    const y1 = 50 + 35 * Math.sin(startRad);
+    const x2 = 50 + 35 * Math.cos(endRad);
+    const y2 = 50 + 35 * Math.sin(endRad);
+    const largeArc = angle > 180 ? 1 : 0;
+    
+    startAngle = endAngle;
+    
+    return `M 50 50 L ${x1} ${y1} A 35 35 0 ${largeArc} 1 ${x2} ${y2} Z`;
+  };
+
+  return (
+    <div className="flex flex-col md:flex-row items-center gap-6">
+      <div className="relative w-48 h-48">
+        <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
+          {activeSegments.map((seg, idx) => {
+            const percentage = (data[seg.key] / total) * 100;
+            if (percentage < 0.1) return null;
+            return (
+              <path
+                key={idx}
+                d={getPath(percentage)}
+                fill={seg.color}
+                className="transition-all duration-500 cursor-pointer hover:opacity-80"
+                stroke="#fff"
+                strokeWidth="1"
+              />
+            );
+          })}
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="text-center bg-white/80 backdrop-blur-sm rounded-full w-16 h-16 flex flex-col items-center justify-center shadow-lg">
+            <p className="text-lg font-bold text-slate-900">{total}</p>
+            <p className="text-[6px] text-slate-400 uppercase tracking-wider">Total</p>
+          </div>
+        </div>
+      </div>
+      
+      <div className="flex flex-wrap gap-2">
+        {activeSegments.map((seg) => (
+          <div 
+            key={seg.key} 
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-medium bg-gradient-to-r ${seg.gradient} text-white shadow-sm`}
+          >
+            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: seg.color }}></span>
+            {seg.label}: {data[seg.key]} ({Math.round((data[seg.key] / total) * 100)}%)
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const DoctorDashboard = () => {
   const [user, setUser] = useState(null);
   const [dashboardData, setDashboardData] = useState({
     totalBookings: 0,
@@ -148,11 +234,11 @@ const UserDashboard = () => {
   const [myBookings, setMyBookings] = useState([]);
   const [myCabinBookings, setMyCabinBookings] = useState([]);
   
-  // My Cabins data
-  const [cabins, setCabins] = useState([]);
-  const [cabinCount, setCabinCount] = useState(0);
+  // My Chambers data
+  const [chambers, setChambers] = useState([]);
+  const [chamberCount, setChamberCount] = useState(0);
   
-  // Add Cabin Modal States
+  // Add Chamber Modal States
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [pricingPlans, setPricingPlans] = useState([]);
@@ -186,6 +272,28 @@ const UserDashboard = () => {
   
   const navigate = useNavigate();
 
+  // ─── GET USER ID FROM LOCALSTORAGE ───
+  const getUserId = () => {
+    let userId = localStorage.getItem("userId");
+    
+    if (!userId) {
+      try {
+        const token = localStorage.getItem("token");
+        if (token) {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          userId = payload.userId || payload.id || payload._id;
+          if (userId) {
+            localStorage.setItem("userId", userId);
+          }
+        }
+      } catch (err) {
+        console.error("Error extracting userId from token:", err);
+      }
+    }
+    
+    return userId;
+  };
+
   const getAmenitiesForType = (type) => {
     return type === 'exclusive' ? EXCLUSIVE_AMENITIES : NORMAL_AMENITIES;
   };
@@ -212,74 +320,48 @@ const UserDashboard = () => {
   }, []);
 
   useEffect(() => {
-    const userData = localStorage.getItem("user");
-    if (userData) {
-      setUser(JSON.parse(userData));
+    const doctorData = localStorage.getItem("doctor");
+    if (doctorData) {
+      try {
+        const parsed = JSON.parse(doctorData);
+        setUser(parsed);
+        // Ensure userId is stored
+        if (parsed._id) {
+          localStorage.setItem("userId", parsed._id);
+        }
+      } catch (e) {
+        console.error("Error parsing doctor data:", e);
+      }
     }
-    fetchUserDashboard();
-    fetchMyBookings();
-    fetchMyCabinBookings();
-    fetchCabins();
+    
+    // Get userId and fetch data
+    const userId = getUserId();
+    if (userId) {
+      fetchUserDashboard(userId);
+      fetchMyBookings(userId);
+      fetchMyCabinBookings(userId);
+      fetchChambers(userId);
+    } else {
+      toast.error("User ID not found. Please login again.");
+      setLoading(false);
+    }
   }, []);
 
-  // Fetch My Cabins
-  const fetchCabins = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) return;
-      const res = await axios.get(`${API_URL}/api/cabins/user`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = res.data.cabins || res.data;
-      const cabinList = Array.isArray(data) ? data : [];
-      setCabins(cabinList);
-      setCabinCount(cabinList.length);
-    } catch (err) {
-      console.error("Error fetching cabins:", err);
-    }
-  };
-
-  // Fetch My Bookings
-  const fetchMyBookings = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) return;
-      const res = await axios.get(
-        `${API_URL}/api/bookings/user`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setMyBookings(res.data.bookings || []);
-    } catch (error) {
-      console.error("Failed to fetch my bookings:", error);
-    }
-  };
-
-  // Fetch My Cabin Bookings
-  const fetchMyCabinBookings = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) return;
-      const res = await axios.get(
-        `${API_URL}/api/bookings/owner-bookings`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setMyCabinBookings(res.data.bookings || []);
-    } catch (error) {
-      console.error("Failed to fetch cabin bookings:", error);
-    }
-  };
-
-  const fetchUserDashboard = async () => {
+  // ─── FETCH USER DASHBOARD ───
+  const fetchUserDashboard = async (userId) => {
     setLoading(true);
     setError(null);
     try {
       const token = localStorage.getItem("token");
-      const userData = localStorage.getItem("user");
-      
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
       const res = await fetch(`${API_URL}/api/bookings/user-dashboard`, {
         headers: {
           'Authorization': `Bearer ${token}`,
-          'user': userData || ''
+          'user': JSON.stringify({ _id: userId })
         }
       });
       
@@ -338,6 +420,69 @@ const UserDashboard = () => {
       setError("Failed to fetch dashboard data. Please try again.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ─── FETCH MY BOOKINGS ───
+  const fetchMyBookings = async (userId) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      
+      const res = await axios.get(
+        `${API_URL}/api/bookings/user`,
+        { 
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'user': JSON.stringify({ _id: userId })
+          } 
+        }
+      );
+      setMyBookings(res.data.bookings || []);
+    } catch (error) {
+      console.error("Failed to fetch my bookings:", error);
+    }
+  };
+
+  // ─── FETCH MY CHAMBER BOOKINGS ───
+  const fetchMyCabinBookings = async (userId) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      
+      const res = await axios.get(
+        `${API_URL}/api/bookings/owner-bookings`,
+        { 
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'user': JSON.stringify({ _id: userId })
+          } 
+        }
+      );
+      setMyCabinBookings(res.data.bookings || []);
+    } catch (error) {
+      console.error("Failed to fetch chamber bookings:", error);
+    }
+  };
+
+  // ─── FETCH MY CHAMBERS ───
+  const fetchChambers = async (userId) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      
+      const res = await axios.get(`${API_URL}/api/cabins/user`, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'user': JSON.stringify({ _id: userId })
+        }
+      });
+      const data = res.data.cabins || res.data;
+      const chamberList = Array.isArray(data) ? data : [];
+      setChambers(chamberList);
+      setChamberCount(chamberList.length);
+    } catch (err) {
+      console.error("Error fetching chambers:", err);
     }
   };
 
@@ -489,90 +634,7 @@ const UserDashboard = () => {
     return map[status?.toLowerCase()] || { label: status || 'Unknown', color: 'bg-gray-100 text-gray-700' };
   };
 
-  // ─── PIE CHART COMPONENT ───
-  const PieChartComponent = ({ data }) => {
-    const total = Object.values(data).reduce((a, b) => a + b, 0) || 1;
-    
-    const segments = [
-      { key: 'pending', label: 'Pending', color: '#f59e0b', gradient: 'from-amber-400 to-orange-500' },
-      { key: 'confirmed', label: 'Confirmed', color: '#3b82f6', gradient: 'from-blue-400 to-indigo-500' },
-      { key: 'active', label: 'Active', color: '#8b5cf6', gradient: 'from-violet-400 to-purple-500' },
-      { key: 'completed', label: 'Completed', color: '#10b981', gradient: 'from-emerald-400 to-green-500' },
-      { key: 'cancelled', label: 'Cancelled', color: '#ef4444', gradient: 'from-rose-400 to-red-500' }
-    ];
-
-    const activeSegments = segments.filter(s => data[s.key] > 0);
-    
-    if (activeSegments.length === 0) {
-      return (
-        <div className="flex flex-col items-center justify-center h-48">
-          <div className="w-32 h-32 rounded-full bg-gradient-to-r from-slate-100 to-slate-200 flex items-center justify-center shadow-inner">
-            <span className="text-slate-400 text-xs font-medium">No Bookings</span>
-          </div>
-        </div>
-      );
-    }
-
-    let startAngle = -90;
-    const getPath = (percentage) => {
-      const angle = (percentage / 100) * 360;
-      const endAngle = startAngle + angle;
-      const startRad = (startAngle * Math.PI) / 180;
-      const endRad = (endAngle * Math.PI) / 180;
-      const x1 = 50 + 35 * Math.cos(startRad);
-      const y1 = 50 + 35 * Math.sin(startRad);
-      const x2 = 50 + 35 * Math.cos(endRad);
-      const y2 = 50 + 35 * Math.sin(endRad);
-      const largeArc = angle > 180 ? 1 : 0;
-      
-      startAngle = endAngle;
-      
-      return `M 50 50 L ${x1} ${y1} A 35 35 0 ${largeArc} 1 ${x2} ${y2} Z`;
-    };
-
-    return (
-      <div className="flex flex-col md:flex-row items-center gap-6">
-        <div className="relative w-48 h-48">
-          <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
-            {activeSegments.map((seg, idx) => {
-              const percentage = (data[seg.key] / total) * 100;
-              if (percentage < 0.1) return null;
-              return (
-                <path
-                  key={idx}
-                  d={getPath(percentage)}
-                  fill={seg.color}
-                  className="transition-all duration-500 cursor-pointer hover:opacity-80"
-                  stroke="#fff"
-                  strokeWidth="1"
-                />
-              );
-            })}
-          </svg>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center bg-white/80 backdrop-blur-sm rounded-full w-16 h-16 flex flex-col items-center justify-center shadow-lg">
-              <p className="text-lg font-bold text-slate-900">{total}</p>
-              <p className="text-[6px] text-slate-400 uppercase tracking-wider">Total</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="flex flex-wrap gap-2">
-          {activeSegments.map((seg) => (
-            <div 
-              key={seg.key} 
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-medium bg-gradient-to-r ${seg.gradient} text-white shadow-sm`}
-            >
-              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: seg.color }}></span>
-              {seg.label}: {data[seg.key]} ({Math.round((data[seg.key] / total) * 100)}%)
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
-  // ─── ADD CABIN FUNCTIONS ───
+  // ─── ADD CHAMBER FUNCTIONS ───
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -607,8 +669,8 @@ const UserDashboard = () => {
   };
 
   const getFeeWithGST = () => {
-    const isFirstCabin = cabinCount === 0;
-    const baseFee = isFirstCabin ? 2000 : 1000;
+    const isFirstChamber = chamberCount === 0;
+    const baseFee = isFirstChamber ? 2000 : 1000;
     const { gstAmount, totalWithGST } = calculateGST(baseFee);
     return { baseFee, gstAmount, totalWithGST };
   };
@@ -640,8 +702,8 @@ const UserDashboard = () => {
         key: razorpayKey,
         amount: orderData.order.amount * 100,
         currency: "INR",
-        name: "Cabin Registration",
-        description: `Cabin #${cabinCount + 1} Registration Fee (incl. GST)`,
+        name: "Chamber Registration",
+        description: `Chamber #${chamberCount + 1} Registration Fee (incl. GST)`,
         order_id: orderData.order.razorpayOrderId,
         handler: async function(response) {
           try {
@@ -687,8 +749,12 @@ const UserDashboard = () => {
               });
               setImages([]);
               setPricingPlans([]);
-              await fetchCabins();
-              await fetchUserDashboard();
+              
+              const userId = getUserId();
+              if (userId) {
+                await fetchChambers(userId);
+                await fetchUserDashboard(userId);
+              }
             } else {
               toast.error('Payment verification failed');
               setPaymentProcessing(false);
@@ -700,9 +766,9 @@ const UserDashboard = () => {
           }
         },
         prefill: {
-          name: localStorage.getItem("userName") || "",
-          email: localStorage.getItem("userEmail") || "",
-          contact: localStorage.getItem("userPhone") || "",
+          name: localStorage.getItem("doctorName") || "",
+          email: localStorage.getItem("doctorEmail") || "",
+          contact: localStorage.getItem("doctorPhone") || "",
         },
         theme: {
           color: "#6366f1",
@@ -724,11 +790,11 @@ const UserDashboard = () => {
     }
   };
 
-  const createCabinAndOrder = async () => {
+  const createChamberAndOrder = async () => {
     setSubmitting(true);
     const data = new FormData();
-    const cabinName = formData.cabin ? `${formData.name} - ${formData.cabin}` : formData.name;
-    data.append("name", cabinName);
+    const chamberName = formData.cabin ? `${formData.name} - ${formData.cabin}` : formData.name;
+    data.append("name", chamberName);
     data.append("description", formData.description);
     data.append("capacity", formData.capacity);
     data.append("address", formData.address);
@@ -749,7 +815,7 @@ const UserDashboard = () => {
       });
 
       const newCabin = cabinRes.data.cabin;
-      toast.success("Cabin created successfully!");
+      toast.success("Chamber created successfully!");
 
       const orderRes = await axios.post(
         `${API_URL}/api/cabins/createcabinorder`,
@@ -765,7 +831,7 @@ const UserDashboard = () => {
       
     } catch (err) {
       console.error("Error:", err);
-      toast.error(err.response?.data?.error || "Failed to create cabin");
+      toast.error(err.response?.data?.error || "Failed to create chamber");
       setSubmitting(false);
     } finally {
       setSubmitting(false);
@@ -783,8 +849,8 @@ const UserDashboard = () => {
     setShowConfirmModal(true);
   };
 
-  const getCabinStatus = (cabin) => {
-    if (cabin.isActive === true) {
+  const getChamberStatus = (chamber) => {
+    if (chamber.isActive === true) {
       return { status: 'Active', color: 'green' };
     }
     return { status: 'Inactive', color: 'gray' };
@@ -792,12 +858,12 @@ const UserDashboard = () => {
 
   const { baseFee, gstAmount, totalWithGST } = getFeeWithGST();
   const currentAmenities = getAmenitiesForType(formData.cabinType);
-  const isFirstCabin = cabinCount === 0;
+  const isFirstChamber = chamberCount === 0;
 
   if (loading) {
     return (
       <div className="admin-dash">
-        <UsersNavbar />
+        <DoctorNavbar />
         <div className="admin-dash__loading">
           <div className="admin-dash__spinner" />
           <p className="admin-dash__loading-text">Loading dashboard analytics...</p>
@@ -809,7 +875,7 @@ const UserDashboard = () => {
   if (error) {
     return (
       <div className="admin-dash">
-        <UsersNavbar />
+        <DoctorNavbar />
         <div className="admin-dash__error">
           <p className="admin-dash__error-title">Oops!</p>
           <p className="admin-dash__error-message">{error}</p>
@@ -838,23 +904,23 @@ const UserDashboard = () => {
       meta: `${monthlyStats?.bookingsThisMonth || 0} this month`,
       icon: Calendar,
       iconBg: "bg-indigo-100 text-indigo-600",
-      onClick: () => navigate("/mybookings")
+      onClick: () => navigate("/doctorbookings")
     },
     {
-      label: "My Cabins",
+      label: "My Chambers",
       value: myCabinsCount,
       meta: `${totalCabins} total spaces available`,
       icon: Home,
       iconBg: "bg-emerald-100 text-emerald-600",
-      onClick: () => navigate("/mycabin")
+      onClick: () => navigate("/mychambers")
     },
     {
-      label: "Cabin Bookings",
+      label: "Chamber Bookings",
       value: cabinBookingsCount,
       meta: `₹${cabinRevenue.toLocaleString('en-IN')} revenue`,
       icon: Building2,
       iconBg: "bg-rose-100 text-rose-600",
-      onClick: () => navigate("/cabin-bookings")
+      onClick: () => navigate("/chamberbookings")
     },
     {
       label: "Total Spent",
@@ -869,25 +935,25 @@ const UserDashboard = () => {
       meta: `${wallet.transactions || 0} transactions`,
       icon: Wallet,
       iconBg: "bg-cyan-100 text-cyan-600",
-      onClick: () => navigate("/userwallet")
+      onClick: () => navigate("/doctorwallet")
     }
   ];
 
   const footerStats = [
     {
-      label: "Total Cabins",
+      label: "Total Chambers",
       value: totalCabins,
       icon: Home,
       iconBg: "bg-indigo-100 text-indigo-600"
     },
     {
-      label: "Cabin Bookings",
+      label: "Chamber Bookings",
       value: cabinBookingsCount,
       icon: Building2,
       iconBg: "bg-amber-100 text-amber-600"
     },
     {
-      label: "Cabin Revenue",
+      label: "Chamber Revenue",
       value: formatCurrency(cabinRevenue),
       icon: IndianRupee,
       iconBg: "bg-emerald-100 text-emerald-600"
@@ -905,30 +971,17 @@ const UserDashboard = () => {
 
   return (
     <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
-      <UsersNavbar />
+      <DoctorNavbar />
 
       <div className="pt-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
         {/* Header */}
         <div className="admin-dash__header">
           <div>
             <h1 className="admin-dash__greeting">
-              Welcome <span>back</span>
+              Doctor <span>Dashboard</span>
             </h1>
-            <p className="admin-dash__subtitle">
-              {user?.name?.split(' ')[0] || 'User'}! Manage your workspace bookings and properties from one place.
-            </p>
           </div>
-          <div className="admin-dash__date-pill">
-            <Calendar size={16} />
-            <span>
-              {new Date().toLocaleDateString("en-US", {
-                weekday: "short",
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-              })}
-            </span>
-          </div>
+       
         </div>
 
         {/* Row 1: 5 Stats Cards */}
@@ -951,7 +1004,7 @@ const UserDashboard = () => {
           ))}
         </div>
 
-        {/* Row 2: 4 Footer Stats Cards with Add Cabin Button - Capsule Style */}
+        {/* Row 2: 4 Footer Stats Cards with Add Chamber Button - Capsule Style */}
         <div className="admin-dash__stats mt-4">
           {footerStats.map((stat, index) => (
             <div
@@ -967,13 +1020,13 @@ const UserDashboard = () => {
               <div className="admin-dash__stat-value">{stat.value}</div>
             </div>
           ))}
-          {/* Add Cabin Button - Capsule Style Blue Button */}
+          {/* Add Chamber Button - Capsule Style Blue Button */}
           <div 
             className="cursor-pointer bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full px-6 py-4 flex items-center justify-center gap-3 hover:shadow-lg transition-all hover:scale-[1.02] shadow-md shadow-indigo-200"
             onClick={() => setIsModalOpen(true)}
           >
             <Plus size={20} className="text-white" />
-            <span className="font-bold text-sm tracking-wide">+ Cabin</span>
+            <span className="font-bold text-sm tracking-wide">+ Chamber</span>
           </div>
         </div>
 
@@ -1111,13 +1164,13 @@ const UserDashboard = () => {
           </div>
         </div>
 
-        {/* Row 5: My Cabins Section */}
+        {/* Row 5: My Chambers Section */}
         <div className="admin-dash__card mt-6" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
           <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
             <div className="flex items-center gap-3">
-              <h3 className="admin-dash__card-title text-sm">My Cabins</h3>
+              <h3 className="admin-dash__card-title text-sm">My Chambers</h3>
               <span className="px-2.5 py-0.5 text-xs font-bold text-indigo-700 bg-indigo-100 rounded-full">
-                {cabins.length}
+                {chambers.length}
               </span>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -1126,10 +1179,10 @@ const UserDashboard = () => {
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors"
               >
                 <Plus size={14} />
-                <span className="hidden xs:inline">Add Cabin</span>
+                <span className="hidden xs:inline">Add Chamber</span>
               </button>
               <button
-                onClick={() => navigate("/mycabin")}
+                onClick={() => navigate("/mychambers")}
                 className="text-xs font-medium text-indigo-600 hover:text-indigo-800 transition-colors flex items-center gap-1 bg-indigo-50 px-3 py-1.5 rounded-lg hover:bg-indigo-100"
               >
                 View All <ArrowUpRight size={12} />
@@ -1137,15 +1190,15 @@ const UserDashboard = () => {
             </div>
           </div>
           <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
-            {cabins.length === 0 ? (
+            {chambers.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-3 py-12 text-gray-400">
                 <Home size={36} className="opacity-20" />
-                <p className="text-sm font-medium">No cabins found</p>
+                <p className="text-sm font-medium">No chambers found</p>
                 <button
                   onClick={() => setIsModalOpen(true)}
                   className="text-xs font-medium text-indigo-600 hover:text-indigo-800 mt-2 bg-indigo-50 px-4 py-2 rounded-lg hover:bg-indigo-100"
                 >
-                  Add Your First Cabin
+                  Add Your First Chamber
                 </button>
               </div>
             ) : (
@@ -1153,7 +1206,7 @@ const UserDashboard = () => {
                 <thead>
                   <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
                     <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
-                    <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
+                    <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Chamber</th>
                     <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Address</th>
                     <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Type</th>
                     <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Price</th>
@@ -1162,11 +1215,11 @@ const UserDashboard = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {cabins.slice(0, 5).map((cabin, index) => {
-                    const cabinStatus = getCabinStatus(cabin);
-                    const isExclusive = cabin.cabinType === 'exclusive';
+                  {chambers.slice(0, 5).map((chamber, index) => {
+                    const chamberStatus = getChamberStatus(chamber);
+                    const isExclusive = chamber.cabinType === 'exclusive';
                     return (
-                      <tr key={cabin._id} className="transition-colors hover:bg-gray-50/80 cursor-pointer" onClick={() => navigate(`/cabin/${cabin._id}`)}>
+                      <tr key={chamber._id} className="transition-colors hover:bg-gray-50/80 cursor-pointer" onClick={() => navigate(`/cabin/${chamber._id}`)}>
                         <td className="p-3">
                           <span className="text-xs font-semibold text-gray-400">#{index + 1}</span>
                         </td>
@@ -1174,22 +1227,22 @@ const UserDashboard = () => {
                           <div className="flex items-center gap-2.5">
                             <div className="flex-shrink-0 w-8 h-8 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
                               <img
-                                src={cabin.images?.[0] ? getImageUrl(cabin.images[0]) : PLACEHOLDER_IMAGE}
-                                alt={cabin.name}
+                                src={chamber.images?.[0] ? getImageUrl(chamber.images[0]) : PLACEHOLDER_IMAGE}
+                                alt={chamber.name}
                                 className="w-full h-full object-cover"
                                 onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
                               />
                             </div>
                             <div>
-                              <p className="font-semibold text-gray-900 text-sm">{cabin.name || 'N/A'}</p>
-                              <p className="text-[10px] text-gray-400">{cabin.cabin || 'N/A'}</p>
+                              <p className="font-semibold text-gray-900 text-sm">{chamber.name || 'N/A'}</p>
+                              <p className="text-[10px] text-gray-400">{chamber.cabin || 'N/A'}</p>
                             </div>
                           </div>
                         </td>
                         <td className="p-3">
                           <span className="text-sm text-gray-600 flex items-center gap-1">
                             <MapPin size={12} className="text-gray-400" />
-                            <span className="truncate max-w-[120px]">{cabin.address || "N/A"}</span>
+                            <span className="truncate max-w-[120px]">{chamber.address || "N/A"}</span>
                           </span>
                         </td>
                         <td className="p-3">
@@ -1201,19 +1254,19 @@ const UserDashboard = () => {
                           </span>
                         </td>
                         <td className="p-3">
-                          <span className="text-sm font-bold text-gray-900">₹{cabin.price || 0}</span>
+                          <span className="text-sm font-bold text-gray-900">₹{chamber.price || 0}</span>
                           <span className="text-[10px] text-gray-400">/hr</span>
                         </td>
                         <td className="p-3">
                           <span className={`px-2.5 py-0.5 text-[10px] font-bold rounded-full ${
-                            cabinStatus.color === 'green' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'
+                            chamberStatus.color === 'green' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'
                           }`}>
-                            {cabinStatus.status}
+                            {chamberStatus.status}
                           </span>
                         </td>
                         <td className="p-3">
                           <button
-                            onClick={(e) => { e.stopPropagation(); navigate(`/cabin/${cabin._id}`); }}
+                            onClick={(e) => { e.stopPropagation(); navigate(`/cabin/${chamber._id}`); }}
                             className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors"
                           >
                             <Eye size={12} /> View
@@ -1238,7 +1291,7 @@ const UserDashboard = () => {
               </span>
             </div>
             <button
-              onClick={() => navigate("/mybookings")}
+              onClick={() => navigate("/doctorbookings")}
               className="text-xs font-medium text-indigo-600 hover:text-indigo-800 transition-colors flex items-center gap-1 bg-indigo-50 px-3 py-1.5 rounded-lg hover:bg-indigo-100"
             >
               View All <ArrowUpRight size={12} />
@@ -1255,7 +1308,7 @@ const UserDashboard = () => {
                 <thead>
                   <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
                     <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
-                    <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
+                    <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Chamber</th>
                     <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Date</th>
                     <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
                     <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Amount</th>
@@ -1265,7 +1318,7 @@ const UserDashboard = () => {
                   {latestMyBookings.map((b, idx) => {
                     const status = getStatusBadgeSimple(b.status);
                     return (
-                      <tr key={b._id} className="transition-colors hover:bg-gray-50/80 cursor-pointer" onClick={() => navigate("/mybookings")}>
+                      <tr key={b._id} className="transition-colors hover:bg-gray-50/80 cursor-pointer" onClick={() => navigate("/doctorbookings")}>
                         <td className="p-3">
                           <span className="text-xs font-semibold text-gray-400">#{idx + 1}</span>
                         </td>
@@ -1296,17 +1349,17 @@ const UserDashboard = () => {
           </div>
         </div>
 
-        {/* Row 7: My Cabin Bookings Table */}
+        {/* Row 7: My Chamber Bookings Table */}
         <div className="admin-dash__card mt-4" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
           <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
             <div className="flex items-center gap-3">
-              <h3 className="admin-dash__card-title text-sm">My Cabin Bookings</h3>
+              <h3 className="admin-dash__card-title text-sm">My Chamber Bookings</h3>
               <span className="px-2.5 py-0.5 text-xs font-bold text-amber-700 bg-amber-100 rounded-full">
                 {latestCabinBookings.length}
               </span>
             </div>
             <button
-              onClick={() => navigate("/cabin-bookings")}
+              onClick={() => navigate("/chamberbookings")}
               className="text-xs font-medium text-amber-600 hover:text-amber-800 transition-colors flex items-center gap-1 bg-amber-50 px-3 py-1.5 rounded-lg hover:bg-amber-100"
             >
               View All <ArrowUpRight size={12} />
@@ -1316,14 +1369,14 @@ const UserDashboard = () => {
             {latestCabinBookings.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-3 py-12 text-gray-400">
                 <Building2 size={36} className="opacity-20" />
-                <p className="text-sm font-medium">No cabin bookings found</p>
+                <p className="text-sm font-medium">No chamber bookings found</p>
               </div>
             ) : (
               <table className="w-full min-w-[700px] text-left">
                 <thead>
                   <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
                     <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
-                    <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
+                    <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Chamber</th>
                     <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Customer</th>
                     <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Date</th>
                     <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
@@ -1334,7 +1387,7 @@ const UserDashboard = () => {
                   {latestCabinBookings.map((b, idx) => {
                     const status = getStatusBadgeSimple(b.status);
                     return (
-                      <tr key={b._id} className="transition-colors hover:bg-gray-50/80 cursor-pointer" onClick={() => navigate("/cabin-bookings")}>
+                      <tr key={b._id} className="transition-colors hover:bg-gray-50/80 cursor-pointer" onClick={() => navigate("/chamberbookings")}>
                         <td className="p-3">
                           <span className="text-xs font-semibold text-gray-400">#{idx + 1}</span>
                         </td>
@@ -1370,7 +1423,7 @@ const UserDashboard = () => {
         </div>
       </div>
 
-      {/* ─── ADD CABIN MODAL ─── */}
+      {/* ─── ADD CHAMBER MODAL ─── */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[1100] flex items-end sm:items-center justify-center p-2 sm:p-4 bg-slate-900/50 backdrop-blur-sm">
           <div
@@ -1385,10 +1438,10 @@ const UserDashboard = () => {
                 </div>
                 <div>
                   <h2 className="text-base sm:text-lg font-bold text-white">
-                    Add New Cabin #{cabinCount + 1}
+                    Add New Chamber #{chamberCount + 1}
                   </h2>
                   <p className="text-[10px] sm:text-xs text-white/75">
-                    Fee: ₹{isFirstCabin ? '2,000' : '1,000'} + GST (18%)
+                    Fee: ₹{isFirstChamber ? '2,000' : '1,000'} + GST (18%)
                   </p>
                 </div>
               </div>
@@ -1396,7 +1449,7 @@ const UserDashboard = () => {
                 onClick={() => setIsModalOpen(false)}
                 className="w-8 h-8 rounded-xl bg-white/15 hover:bg-white/25 transition-colors flex items-center justify-center text-white"
               >
-                <XIcon size={18} />
+                <X size={18} />
               </button>
             </div>
 
@@ -1429,10 +1482,10 @@ const UserDashboard = () => {
                   </div>
                 </div>
 
-                {/* Cabin Details - Grid */}
+                {/* Chamber Details - Grid */}
                 <div className="grid grid-cols-1 xs:grid-cols-3 gap-3 sm:gap-4">
                   <div>
-                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Cabin Spec *</label>
+                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Room/Suite *</label>
                     <input
                       className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
                       type="text" name="cabin"
@@ -1466,9 +1519,9 @@ const UserDashboard = () => {
                   </div>
                 </div>
 
-                {/* Cabin Type */}
+                {/* Chamber Type */}
                 <div>
-                  <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Cabin Type</label>
+                  <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Chamber Type</label>
                   <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-1">
                     <button
                       type="button"
@@ -1579,7 +1632,7 @@ const UserDashboard = () => {
                   <textarea
                     className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all resize-none"
                     name="description"
-                    placeholder="Describe your workspace..."
+                    placeholder="Describe your chamber..."
                     value={formData.description}
                     onChange={handleChange}
                     rows={2}
@@ -1629,7 +1682,7 @@ const UserDashboard = () => {
                     )}
                     <div className="flex-1 min-w-0">
                       <p className="text-[10px] sm:text-xs font-bold text-slate-700">
-                        Cabin #{cabinCount + 1} {formData.cabinType === 'exclusive' ? '⭐ Exclusive' : 'Normal'}
+                        Chamber #{chamberCount + 1} {formData.cabinType === 'exclusive' ? '⭐ Exclusive' : 'Normal'}
                       </p>
                       <p className="text-[8px] sm:text-[10px] text-slate-600 truncate">
                         Base: ₹{baseFee} | GST: ₹{gstAmount.toFixed(2)} | Total: ₹{totalWithGST.toFixed(2)}
@@ -1686,16 +1739,16 @@ const UserDashboard = () => {
                 )}
               </div>
               <h3 className="text-white font-bold text-base sm:text-lg mt-2">
-                {formData.cabinType === 'exclusive' ? '⭐ Exclusive Cabin' : 'Confirm Cabin'}
+                {formData.cabinType === 'exclusive' ? '⭐ Exclusive Chamber' : 'Confirm Chamber'}
               </h3>
               <p className="text-white/80 text-xs sm:text-sm">
-                {formData.cabinType === 'exclusive' ? 'Premium exclusive cabin' : 'Review details below'}
+                {formData.cabinType === 'exclusive' ? 'Premium exclusive chamber' : 'Review details below'}
               </p>
             </div>
 
             <div className="p-4 sm:p-6">
               <div className="bg-slate-50 rounded-xl p-3 sm:p-4 space-y-2 sm:space-y-3 text-xs sm:text-sm">
-                <div className="flex justify-between"><span className="text-slate-500">Cabin</span><span className="font-semibold">#{cabinCount + 1}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Chamber</span><span className="font-semibold">#{chamberCount + 1}</span></div>
                 <div className="flex justify-between"><span className="text-slate-500">Type</span>
                   <span className={`font-semibold ${formData.cabinType === 'exclusive' ? 'text-amber-600' : 'text-indigo-600'}`}>
                     {formData.cabinType === 'exclusive' ? '⭐ Exclusive' : 'Normal'}
@@ -1723,7 +1776,7 @@ const UserDashboard = () => {
                   Cancel
                 </button>
                 <button
-                  onClick={createCabinAndOrder}
+                  onClick={createChamberAndOrder}
                   disabled={submitting || !razorpayLoaded || paymentProcessing}
                   className={`py-2.5 sm:py-3 rounded-xl text-white font-bold text-xs sm:text-sm transition-all ${
                     (submitting || !razorpayLoaded || paymentProcessing)
@@ -1750,4 +1803,4 @@ const UserDashboard = () => {
   );
 };
 
-export default UserDashboard;
+export default DoctorDashboard;

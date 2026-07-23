@@ -1,8 +1,8 @@
-// AdminBookings.jsx - Complete with Full Features (Same as CabinBookings)
+// ChamberBookings.jsx - Complete with THERMAL PDF Download (NO EXTERNAL LIBRARY)
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import AdminNavbar from "./AdminNavbar";
+import DoctorNavbar from "./DoctorNavbar";
 import {
   Calendar,
   User,
@@ -52,19 +52,20 @@ import jsPDF from 'jspdf';
 import "./Dashboard.css";
 
 const API_URL = "http://localhost:5003";
-const ADMIN_ID = "68ebe9ee8f06d33ee022d665";
 
-const AdminBookings = () => {
+const ChamberBookings = () => {
   const [bookings, setBookings] = useState([]);
+  const [allChambers, setAllChambers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterDate, setFilterDate] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
+  const [filterDateFrom, setFilterDateFrom] = useState("");
+  const [filterDateTo, setFilterDateTo] = useState("");
   const [filters, setFilters] = useState({
     status: 'all',
     paymentStatus: 'all',
-    paymentMethod: 'all'
+    paymentMethod: 'all',
+    cabinId: 'all'
   });
+  
   const navigate = useNavigate();
 
   const [showStatusModal, setShowStatusModal] = useState(false);
@@ -92,6 +93,7 @@ const AdminBookings = () => {
   });
   const [paymentScreenshot, setPaymentScreenshot] = useState(null);
   const [paymentScreenshotPreview, setPaymentScreenshotPreview] = useState(null);
+  const [uploadingScreenshot, setUploadingScreenshot] = useState(false);
 
   const [showViewModal, setShowViewModal] = useState(false);
   const [viewBooking, setViewBooking] = useState(null);
@@ -116,6 +118,11 @@ const AdminBookings = () => {
     confirmedRevenue: 0,
     completedRevenue: 0
   });
+
+  const getAuthHeader = () => {
+    const token = localStorage.getItem("token");
+    return { headers: { Authorization: `Bearer ${token}` } };
+  };
 
   const getStatusBadge = (status) => {
     const statusMap = {
@@ -183,28 +190,40 @@ const AdminBookings = () => {
     setStats({ totalBookings: total, confirmed, active, completed, cancelled, pending, totalRevenue, confirmedRevenue, completedRevenue });
   };
 
+  // Fetch chambers for filter dropdown
+  const fetchChambers = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      const res = await axios.get(`${API_URL}/api/cabins`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const activeChambers = res.data.filter(c => c.isActive === true);
+      setAllChambers(activeChambers);
+    } catch (error) {
+      console.error("Failed to fetch chambers:", error);
+    }
+  };
+
   useEffect(() => {
     const fetchBookings = async () => {
       try {
-        const res = await axios.get(`${API_URL}/api/bookings`);
-        const allBookings = res.data.bookings || [];
+        const token = localStorage.getItem("token");
+        if (!token) { setLoading(false); return; }
         
-        // Filter bookings where cabin owner is admin OR owner is null
-        const adminBookings = allBookings.filter(booking => {
-          const owner = booking.cabin?.owner || booking.cabinId?.owner;
-          return owner === ADMIN_ID || owner === null || owner === undefined;
-        });
-        
-        setBookings(adminBookings);
-        calculateStats(adminBookings);
+        const res = await axios.get(`${API_URL}/api/bookings/owner-bookings`, { headers: { Authorization: `Bearer ${token}` } });
+        const bookingsData = res.data.bookings || [];
+        setBookings(bookingsData);
+        calculateStats(bookingsData);
       } catch (err) {
-        console.error("Failed to fetch bookings:", err);
+        console.error("Failed to fetch chamber bookings:", err);
         toast.error("Failed to fetch bookings");
       } finally {
         setLoading(false);
       }
     };
     fetchBookings();
+    fetchChambers();
   }, []);
 
   const formatDate = (dateStr) => {
@@ -457,7 +476,7 @@ const AdminBookings = () => {
         const paymentStatus = getPaymentStatusBadge(booking.paymentStatus);
         return {
           'S.No': index + 1, 'Booking Type': booking.bookingBasis === 'plan' ? 'Plan Booking' : 'Hourly Booking',
-          'Cabin Name': booking.cabin?.name || 'Unknown Cabin', 'Address': booking.cabin?.address || 'No Address',
+          'Chamber Name': booking.cabin?.name || 'Unknown Chamber', 'Address': booking.cabin?.address || 'No Address',
           'Customer Name': booking.name || booking.user?.name || 'Unknown Guest', 'Mobile': booking.mobile || booking.user?.mobile || 'N/A',
           'Email': booking.email || booking.user?.email || 'N/A', 'Start Date': booking.startDate || 'N/A',
           'Start Time': booking.startTime || 'N/A', 'End Date': booking.endDate || 'N/A', 'End Time': booking.endTime || 'N/A',
@@ -471,9 +490,9 @@ const AdminBookings = () => {
       });
       const ws = XLSX.utils.json_to_sheet(exportData);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Admin_Bookings');
+      XLSX.utils.book_append_sheet(wb, ws, 'Chamber_Bookings');
       const date = new Date().toISOString().split('T')[0];
-      XLSX.writeFile(wb, `admin_bookings_${date}.xlsx`);
+      XLSX.writeFile(wb, `chamber_bookings_${date}.xlsx`);
       toast.success(`Exported ${filteredBookings.length} bookings to Excel!`);
     } catch (error) {
       console.error("Export error:", error);
@@ -486,7 +505,7 @@ const AdminBookings = () => {
   // ============================================================
   const generateReceiptHTML = (booking) => {
     const cabin = booking.cabin || {};
-    const cabinName = cabin.name || 'Unknown Cabin';
+    const cabinName = cabin.name || 'Unknown Chamber';
     const cabinAddress = cabin.address || 'N/A';
     const amount = booking.totalPrice || 0;
     const subtotal = booking.subtotal || 0;
@@ -525,6 +544,7 @@ const AdminBookings = () => {
       return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
     };
 
+    // Generate seat list HTML
     let seatListHtml = '';
     if (selectedSeats && selectedSeats.length > 0) {
       seatListHtml = selectedSeats.map(s => 
@@ -615,6 +635,9 @@ const AdminBookings = () => {
     `;
   };
 
+  // ============================================================
+  // Shared print/PDF <style> block
+  // ============================================================
   const getReceiptPageStyles = () => `
     * {
       margin: 0;
@@ -668,6 +691,9 @@ const AdminBookings = () => {
     }
   `;
 
+  // ============================================================
+  // THERMAL PRINTER RECEIPT - Print Direct
+  // ============================================================
   const printReceipt = (booking) => {
     try {
       const html = generateReceiptHTML(booking);
@@ -702,6 +728,9 @@ const AdminBookings = () => {
     }
   };
 
+  // ============================================================
+  // DOWNLOAD AS PDF - DIRECT SILENT DOWNLOAD
+  // ============================================================
   const downloadPDF = async (booking) => {
     const toastId = toast.loading('Generating PDF...');
     let iframe = null;
@@ -773,29 +802,39 @@ const AdminBookings = () => {
   };
 
   const clearFilters = () => {
-    setFilters({ status: 'all', paymentStatus: 'all', paymentMethod: 'all' });
-    setSearchTerm('');
-    setFilterDate('');
+    setFilters({ status: 'all', paymentStatus: 'all', paymentMethod: 'all', cabinId: 'all' });
+    setFilterDateFrom('');
+    setFilterDateTo('');
   };
 
+  // Updated filter logic with From/To dates and chamber filter
   const filteredBookings = bookings.filter((b) => {
-    const matchesSearch = b.cabin?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      b.cabin?.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      b.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      b.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      b.mobile?.includes(searchTerm) ||
-      b.user?.mobile?.includes(searchTerm);
-    const matchesDate = filterDate ? b.startDate === filterDate : true;
-    const matchesStatus = filters.status === 'all' || b.status === filters.status;
-    const matchesPaymentStatus = filters.paymentStatus === 'all' || b.paymentStatus === filters.paymentStatus;
-    const matchesPaymentMethod = filters.paymentMethod === 'all' || b.paymentMethod === filters.paymentMethod;
-    return matchesSearch && matchesDate && matchesStatus && matchesPaymentStatus && matchesPaymentMethod;
+    const bookingDate = b.startDate || b.date;
+    
+    // Date range filter
+    let matchDateRange = true;
+    if (filterDateFrom && filterDateTo) {
+      matchDateRange = bookingDate >= filterDateFrom && bookingDate <= filterDateTo;
+    } else if (filterDateFrom) {
+      matchDateRange = bookingDate >= filterDateFrom;
+    } else if (filterDateTo) {
+      matchDateRange = bookingDate <= filterDateTo;
+    }
+    
+    // Chamber filter
+    const matchCabin = filters.cabinId === 'all' || b.cabin?._id === filters.cabinId;
+    
+    const matchStatus = filters.status === 'all' || b.status === filters.status;
+    const matchPaymentStatus = filters.paymentStatus === 'all' || b.paymentStatus === filters.paymentStatus;
+    const matchPaymentMethod = filters.paymentMethod === 'all' || b.paymentMethod === filters.paymentMethod;
+    
+    return matchDateRange && matchCabin && matchStatus && matchPaymentStatus && matchPaymentMethod;
   });
 
   if (loading) {
     return (
       <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
-        <AdminNavbar />
+        <DoctorNavbar />
         <div className="flex justify-center items-center h-64">
           <div className="w-12 h-12 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin" />
         </div>
@@ -805,32 +844,19 @@ const AdminBookings = () => {
 
   return (
     <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
-      <AdminNavbar />
+      <DoctorNavbar />
 
       <div className="pt-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
         <div className="admin-dash__header">
           <div>
             <h1 className="admin-dash__greeting">
-              Admin <span>Bookings</span>
+              Chamber <span>Bookings</span>
             </h1>
-            <p className="admin-dash__subtitle">
-              Manage all bookings across the platform.
-            </p>
+            
           </div>
-          <div className="admin-dash__date-pill">
-            <Calendar size={16} />
-            <span>
-              {new Date().toLocaleDateString("en-US", {
-                weekday: "short",
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-              })}
-            </span>
-          </div>
+          
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
           <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-4 sm:p-5 text-white shadow-lg shadow-indigo-500/25">
             <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-200">Total Bookings</p>
@@ -905,7 +931,6 @@ const AdminBookings = () => {
           </div>
         </div>
 
-        {/* Table Section */}
         <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
           <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
             <div className="flex items-center gap-3">
@@ -915,27 +940,93 @@ const AdminBookings = () => {
               </span>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <div className="relative w-full sm:w-56">
-                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              {/* From Date Filter */}
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-gray-500 font-medium">From:</span>
                 <input
-                  type="text"
-                  placeholder="Search bookings..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  type="date"
+                  value={filterDateFrom}
+                  onChange={(e) => setFilterDateFrom(e.target.value)}
+                  className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700"
                 />
               </div>
 
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${showFilters ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              {/* To Date Filter */}
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-gray-500 font-medium">To:</span>
+                <input
+                  type="date"
+                  value={filterDateTo}
+                  onChange={(e) => setFilterDateTo(e.target.value)}
+                  className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700"
+                />
+              </div>
+
+              {/* Chamber Filter */}
+              <select
+                value={filters.cabinId}
+                onChange={(e) => setFilters({...filters, cabinId: e.target.value})}
+                className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700 min-w-[150px]"
               >
-                <Filter size={14} />
-                Filters
-                {(filters.status !== 'all' || filters.paymentStatus !== 'all' || filters.paymentMethod !== 'all' || filterDate) && (
-                  <span className="w-2 h-2 rounded-full bg-red-500"></span>
-                )}
-              </button>
+                <option value="all">All Chambers</option>
+                {allChambers.map(chamber => (
+                  <option key={chamber._id} value={chamber._id}>
+                    {chamber.name}
+                  </option>
+                ))}
+              </select>
+
+              {/* Status Filter */}
+              <select
+                value={filters.status}
+                onChange={(e) => setFilters({...filters, status: e.target.value})}
+                className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700"
+              >
+                <option value="all">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="active">Active</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+
+              {/* Payment Status Filter */}
+              <select
+                value={filters.paymentStatus}
+                onChange={(e) => setFilters({...filters, paymentStatus: e.target.value})}
+                className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700"
+              >
+                <option value="all">All Payment</option>
+                <option value="pending">Pending</option>
+                <option value="paid">Paid</option>
+                <option value="failed">Failed</option>
+                <option value="refunded">Refunded</option>
+              </select>
+
+              {/* Payment Method Filter */}
+              <select
+                value={filters.paymentMethod}
+                onChange={(e) => setFilters({...filters, paymentMethod: e.target.value})}
+                className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700"
+              >
+                <option value="all">All Method</option>
+                <option value="online">Online</option>
+                <option value="cash">Cash</option>
+                <option value="counter">Counter</option>
+                <option value="upi">UPI</option>
+                <option value="card">Card</option>
+              </select>
+
+              {/* Clear Filters */}
+              {(filterDateFrom || filterDateTo || filters.status !== 'all' || filters.paymentStatus !== 'all' || filters.paymentMethod !== 'all' || filters.cabinId !== 'all') && (
+                <button
+                  onClick={clearFilters}
+                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                >
+                  <XCircleIcon size={14} />
+                  Clear
+                </button>
+              )}
 
               {filteredBookings.length > 0 && (
                 <button onClick={exportToExcel} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200">
@@ -944,86 +1035,51 @@ const AdminBookings = () => {
                 </button>
               )}
 
-              <button onClick={() => navigate("/my-cabins")} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors">
+              <button onClick={() => navigate("/mychamberpayments")} className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors">
+                <CreditCard size={14} className="text-indigo-600" />
+                <span className="hidden xs:inline">Payments</span>
+              </button>
+              <button onClick={() => navigate("/mychambers")} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors">
                 <Building2 size={14} />
-                <span className="hidden xs:inline">Cabins</span>
+                <span className="hidden xs:inline">Chambers</span>
               </button>
             </div>
           </div>
 
-          {showFilters && (
-            <div className="px-4 pt-4 pb-3 border-b border-gray-100" style={{ backgroundColor: '#fafafa' }}>
-              <div className="flex flex-wrap items-end gap-3">
-                <div className="min-w-[130px]">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Date</label>
-                  <input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" />
-                </div>
-                <div className="min-w-[130px]">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</label>
-                  <select value={filters.status} onChange={(e) => setFilters({...filters, status: e.target.value})} className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
-                    <option value="all">All</option>
-                    <option value="pending">Pending</option>
-                    <option value="confirmed">Confirmed</option>
-                    <option value="active">Active</option>
-                    <option value="completed">Completed</option>
-                    <option value="cancelled">Cancelled</option>
-                  </select>
-                </div>
-                <div className="min-w-[130px]">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Payment Status</label>
-                  <select value={filters.paymentStatus} onChange={(e) => setFilters({...filters, paymentStatus: e.target.value})} className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
-                    <option value="all">All</option>
-                    <option value="pending">Pending</option>
-                    <option value="paid">Paid</option>
-                    <option value="failed">Failed</option>
-                    <option value="refunded">Refunded</option>
-                  </select>
-                </div>
-                <div className="min-w-[130px]">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Payment Method</label>
-                  <select value={filters.paymentMethod} onChange={(e) => setFilters({...filters, paymentMethod: e.target.value})} className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
-                    <option value="all">All</option>
-                    <option value="online">Online</option>
-                    <option value="cash">Cash</option>
-                    <option value="counter">Counter</option>
-                    <option value="upi">UPI</option>
-                    <option value="card">Card</option>
-                  </select>
-                </div>
-                <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-red-600 transition-colors">
-                  <XCircleIcon size={14} /> Clear
-                </button>
-              </div>
-            </div>
-          )}
-
           <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
-            {filteredBookings.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-3 py-20 text-gray-400">
-                <Calendar size={48} className="opacity-20" />
-                <p className="text-lg font-medium">No bookings found</p>
-                <p className="text-sm">Try adjusting your filters.</p>
-              </div>
-            ) : (
-              <table className="w-full min-w-[1300px] text-left">
-                <thead>
-                  <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Customer</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Period</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Hours</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Seats</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Payment</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Pmt Status</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Visits</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Amount</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Actions</th>
+            {/* Table with default headers always visible */}
+            <table className="w-full min-w-[1300px] text-left">
+              <thead>
+                <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
+                  <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
+                  <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Chamber</th>
+                  <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Customer</th>
+                  <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">From Date</th>
+                  <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">To Date</th>
+                  <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Time</th>
+                  <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Hours</th>
+                  <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Seats</th>
+                  <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
+                  <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Payment</th>
+                  <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Pmt Status</th>
+                  <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Visits</th>
+                  <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Amount</th>
+                  <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {filteredBookings.length === 0 ? (
+                  <tr>
+                    <td colSpan="14">
+                      <div className="flex flex-col items-center justify-center gap-3 py-20 text-gray-400">
+                        <Calendar size={48} className="opacity-20" />
+                        <p className="text-lg font-medium">No bookings found</p>
+                        <p className="text-sm">Try adjusting your filters.</p>
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {filteredBookings.map((booking, idx) => {
+                ) : (
+                  filteredBookings.map((booking, idx) => {
                     const statusBadge = getStatusBadge(booking.status);
                     const paymentMethodBadge = getPaymentMethodBadge(booking.paymentMethod);
                     const paymentStatusBadge = getPaymentStatusBadge(booking.paymentStatus);
@@ -1061,10 +1117,13 @@ const AdminBookings = () => {
                           </div>
                         </td>
                         <td className="p-4">
-                          <div className="space-y-1">
-                            <p className="text-sm text-gray-900 font-medium">{booking.startDate} · {booking.startTime}</p>
-                            <p className="text-sm text-gray-500">{booking.endDate} · {booking.endTime}</p>
-                          </div>
+                          <p className="text-sm text-gray-900 font-medium">{booking.startDate || 'N/A'}</p>
+                        </td>
+                        <td className="p-4">
+                          <p className="text-sm text-gray-900 font-medium">{booking.endDate || booking.startDate || 'N/A'}</p>
+                        </td>
+                        <td className="p-4">
+                          <p className="text-sm text-gray-500">{booking.startTime || 'N/A'} - {booking.endTime || 'N/A'}</p>
                         </td>
                         <td className="p-4">
                           <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-bold">{booking.totalHours}h</span>
@@ -1159,10 +1218,10 @@ const AdminBookings = () => {
                         </td>
                       </tr>
                     );
-                  })}
-                </tbody>
-              </table>
-            )}
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
 
           {!loading && filteredBookings.length > 0 && (
@@ -1181,9 +1240,7 @@ const AdminBookings = () => {
         </div>
       </div>
 
-      {/* ====================== */}
       {/* VIEW BOOKING MODAL */}
-      {/* ====================== */}
       {showViewModal && viewBooking && (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setShowViewModal(false); }}>
           <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
@@ -1199,7 +1256,7 @@ const AdminBookings = () => {
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Cabin</p>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Chamber</p>
                   <p className="mt-1 font-semibold text-gray-800">{viewBooking.cabin?.name || 'N/A'}</p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-xl">
@@ -1218,10 +1275,12 @@ const AdminBookings = () => {
 
               <div className="p-4 bg-gray-50 rounded-xl">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Schedule</p>
-                <p className="mt-1 font-semibold text-gray-800">{viewBooking.startDate} {viewBooking.startTime} - {viewBooking.endDate} {viewBooking.endTime}</p>
+                <p className="mt-1 font-semibold text-gray-800">From: {viewBooking.startDate || 'N/A'} {viewBooking.startTime || 'N/A'}</p>
+                <p className="mt-0.5 font-semibold text-gray-800">To: {viewBooking.endDate || viewBooking.startDate || 'N/A'} {viewBooking.endTime || 'N/A'}</p>
                 <p className="text-xs text-gray-500 mt-0.5">{viewBooking.totalHours}h • {viewBooking.bookingBasis === 'plan' ? 'Plan' : 'Hourly'}</p>
               </div>
 
+              {/* Seats Section */}
               {viewBooking.selectedSeats && viewBooking.selectedSeats.length > 0 && (
                 <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-200">
                   <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider flex items-center gap-2">
@@ -1394,7 +1453,7 @@ const AdminBookings = () => {
             <div className="p-5 space-y-4">
               <div className="bg-gray-50 rounded-xl p-4 space-y-2 text-sm">
                 <div className="flex justify-between"><span className="text-gray-500">Customer</span><span className="font-semibold">{paymentBooking.name || 'N/A'}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Cabin</span><span className="font-semibold">{paymentBooking.cabin?.name || 'N/A'}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Chamber</span><span className="font-semibold">{paymentBooking.cabin?.name || 'N/A'}</span></div>
                 <div className="flex justify-between"><span className="text-gray-500">Current Status</span><span className={`px-3 py-1 text-xs font-bold rounded-full ${getPaymentStatusBadge(paymentBooking.paymentStatus).color}`}>{getPaymentStatusBadge(paymentBooking.paymentStatus).label}</span></div>
                 <div className="flex justify-between"><span className="text-gray-500">Total Amount</span><span className="font-bold text-gray-800">₹{paymentBooking.totalPrice}</span></div>
               </div>
@@ -1613,4 +1672,4 @@ const AdminBookings = () => {
   );
 };
 
-export default AdminBookings;
+export default ChamberBookings;

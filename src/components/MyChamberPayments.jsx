@@ -1,4 +1,4 @@
-// MyCabinPayments.jsx - Complete with All Data and Professional Invoice (Redesigned)
+// MyChamberPayments.jsx - Complete with All Data and Professional Invoice (Redesigned)
 import axios from "axios";
 import {
   CreditCard,
@@ -35,12 +35,12 @@ import {
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import UsersNavbar from "./UsersNavbar";
+import DoctorNavbar from "./DoctorNavbar";
 import "./Dashboard.css";
 
 const API_URL = "http://localhost:5003";
 
-const MyCabinPayments = () => {
+const MyChamberPayments = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -57,10 +57,8 @@ const MyCabinPayments = () => {
   const [renewOrder, setRenewOrder] = useState(null);
   const [renewing, setRenewing] = useState(false);
   const [countdowns, setCountdowns] = useState({});
-  const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
-  const [filterCabinName, setFilterCabinName] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
+  const [filterChamberName, setFilterChamberName] = useState("");
   const navigate = useNavigate();
 
   const getAuthHeader = () => {
@@ -128,14 +126,11 @@ const MyCabinPayments = () => {
     fetchPayments();
   }, []);
 
-  // Filter orders
+  // Filter orders - No search, only status and chamber name filters
   const filteredOrders = orders.filter(order => {
-    const matchSearch = order.cabin?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        order.cabin?.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        order.transactionId?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchStatus = filterStatus === 'all' || order.status === filterStatus;
-    const matchCabinName = filterCabinName === "" || order.cabin?.name?.toLowerCase().includes(filterCabinName.toLowerCase());
-    return matchSearch && matchStatus && matchCabinName;
+    const matchChamberName = filterChamberName === "" || order.cabin?.name?.toLowerCase().includes(filterChamberName.toLowerCase());
+    return matchStatus && matchChamberName;
   });
 
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -188,11 +183,11 @@ const MyCabinPayments = () => {
     return 'text-emerald-600';
   };
 
-  const getCabinName = (order) => {
-    return order.cabin?.name || 'Cabin Deleted';
+  const getChamberName = (order) => {
+    return order.cabin?.name || 'Chamber Deleted';
   };
 
-  const getCabinAddress = (order) => {
+  const getChamberAddress = (order) => {
     return order.cabin?.address || 'N/A';
   };
 
@@ -241,7 +236,7 @@ const MyCabinPayments = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      toast.success(`Cabin renewed successfully! Amount: ₹${res.data.amount}`);
+      toast.success(`Chamber renewed successfully! Amount: ₹${res.data.amount}`);
       setShowRenewModal(false);
       setRenewOrder(null);
       
@@ -249,7 +244,7 @@ const MyCabinPayments = () => {
       
     } catch (err) {
       console.error("Renew payment error:", err);
-      toast.error(err.response?.data?.error || "Failed to renew cabin");
+      toast.error(err.response?.data?.error || "Failed to renew chamber");
     } finally {
       setRenewing(false);
     }
@@ -265,10 +260,13 @@ const MyCabinPayments = () => {
         return;
       }
 
+      // Dynamically import xlsx
+      const XLSX = require('xlsx');
+
       const exportData = filteredOrders.map((order, index) => ({
         'S.No': index + 1,
-        'Cabin Name': getCabinName(order),
-        'Address': getCabinAddress(order),
+        'Chamber Name': getChamberName(order),
+        'Address': getChamberAddress(order),
         'Amount': order.amount || 0,
         'Transaction ID': order.transactionId || 'N/A',
         'Payment Count': order.paymentCount || 1,
@@ -282,10 +280,10 @@ const MyCabinPayments = () => {
 
       const ws = XLSX.utils.json_to_sheet(exportData);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Cabin_Payments');
+      XLSX.utils.book_append_sheet(wb, ws, 'Chamber_Payments');
       
       const date = new Date().toISOString().split('T')[0];
-      XLSX.writeFile(wb, `cabin_payments_${date}.xlsx`);
+      XLSX.writeFile(wb, `chamber_payments_${date}.xlsx`);
       
       toast.success(`Exported ${filteredOrders.length} payments to Excel!`);
     } catch (error) {
@@ -300,8 +298,8 @@ const MyCabinPayments = () => {
   const downloadInvoice = (order) => {
     try {
       const cabin = order.cabin || {};
-      const cabinName = cabin.name || 'Cabin Deleted';
-      const cabinAddress = cabin.address || 'N/A';
+      const chamberName = cabin.name || 'Chamber Deleted';
+      const chamberAddress = cabin.address || 'N/A';
       
       const amount = order.amount || 0;
       const baseAmount = order.baseAmount || amount;
@@ -371,18 +369,18 @@ const MyCabinPayments = () => {
           <body>
             <div class="invoice-container">
               <div class="invoice-header">
-                <div class="brand"><h1>${cabinName.toUpperCase()}</h1><div class="gst">GST: ${(gstRate * 100).toFixed(0)}%</div><div class="address-line">${cabinAddress}</div></div>
+                <div class="brand"><h1>${chamberName.toUpperCase()}</h1><div class="gst">GST: ${(gstRate * 100).toFixed(0)}%</div><div class="address-line">${chamberAddress}</div></div>
                 <div class="invoice-number"><div class="label">Invoice</div><div class="number">#${orderId}</div><div class="date">${today}</div></div>
               </div>
               <div class="info-grid">
-                <div><div class="title">Bill To</div><div class="value">${localStorage.getItem('userName') || 'Customer'}</div><div class="value-small">Cabin Registration</div></div>
-                <div><div class="title">Cabin Details</div><div class="value">${cabinName}</div><div class="address-line">${cabinAddress}</div><div class="value-small" style="margin-top:4px;">${order.isFirstCabin ? '⭐ First Cabin' : 'Payment #' + paymentCount}</div></div>
+                <div><div class="title">Bill To</div><div class="value">${localStorage.getItem('userName') || 'Customer'}</div><div class="value-small">Chamber Registration</div></div>
+                <div><div class="title">Chamber Details</div><div class="value">${chamberName}</div><div class="address-line">${chamberAddress}</div><div class="value-small" style="margin-top:4px;">${order.isFirstCabin ? '⭐ First Chamber' : 'Payment #' + paymentCount}</div></div>
               </div>
               <table class="invoice-table"><thead><tr><th>Description</th><th>Details</th><th>Amount</th></tr></thead>
-                <tbody><tr><td><strong>Cabin Registration</strong></td><td>${cabinName}<br><span style="font-size:11px;color:#666666;">${order.isFirstCabin ? 'First Cabin Registration' : 'Cabin Registration'}</span>${transactionId !== 'N/A' ? `<br><span style="font-size:10px;color:#888888;font-family:monospace;">TXN: ${transactionId}</span>` : ''}${paymentCount > 1 ? `<br><span style="font-size:11px;color:#059669;font-weight:600;">🔄 Renewal #${paymentCount}</span>` : ''}</td><td>₹${baseAmount.toFixed(2)}</td></tr></tbody></table>
+                <tbody><tr><td><strong>Chamber Registration</strong></td><td>${chamberName}<br><span style="font-size:11px;color:#666666;">${order.isFirstCabin ? 'First Chamber Registration' : 'Chamber Registration'}</span>${transactionId !== 'N/A' ? `<br><span style="font-size:10px;color:#888888;font-family:monospace;">TXN: ${transactionId}</span>` : ''}${paymentCount > 1 ? `<br><span style="font-size:11px;color:#059669;font-weight:600;">🔄 Renewal #${paymentCount}</span>` : ''}</td><td>₹${baseAmount.toFixed(2)}</td></tr></tbody></table>
               <div class="status-row"><div class="item"><div class="label">Payment Method</div><div class="value">Online</div></div><div class="item"><div class="label">Payment Status</div><div class="value">${paymentStatus}</div></div><div class="item"><div class="label">Order Status</div><div class="value">${status}</div></div>${transactionId !== 'N/A' ? `<div class="item"><div class="label">Transaction ID</div><div class="value" style="font-family:monospace;font-size:11px;">${transactionId}</div></div>` : ''}</div>
               <div class="totals"><div class="totals-box"><div class="totals-row"><span>Subtotal</span><span>₹${baseAmount.toFixed(2)}</span></div><div class="totals-row"><span>GST (${(gstRate * 100).toFixed(0)}%)</span><span>₹${gstAmount.toFixed(2)}</span></div><div class="totals-row total"><span>Total Amount</span><span class="amount">₹${amount.toFixed(2)}</span></div></div></div>
-              <div class="footer"><div class="powered">POWERED BY <span>IRYAX SPACE</span></div><div class="sub">Thank you for choosing ${cabinName}</div><div class="sub" style="margin-top:2px;">This is a system generated invoice</div></div>
+              <div class="footer"><div class="powered">POWERED BY <span>IRYAX SPACE</span></div><div class="sub">Thank you for choosing ${chamberName}</div><div class="sub" style="margin-top:2px;">This is a system generated invoice</div></div>
             </div>
             <button class="print-btn" onclick="window.print()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M18 9H6"/><path d="M18 13v6H6v-6"/><rect x="8" y="2" width="8" height="4" rx="1"/><rect x="8" y="13" width="8" height="4" rx="1"/></svg>Print / Save PDF</button>
           </body></html>
@@ -400,25 +398,24 @@ const MyCabinPayments = () => {
   };
 
   const clearFilters = () => {
-    setSearchTerm("");
     setFilterStatus("all");
-    setFilterCabinName("");
+    setFilterChamberName("");
     setCurrentPage(1);
   };
 
   return (
     <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
-      <UsersNavbar />
+      <DoctorNavbar />
 
       <div className="pt-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
         {/* Header */}
         <div className="admin-dash__header">
           <div>
             <h1 className="admin-dash__greeting">
-              My <span>Payments</span>
+              My <span>Chamber Payments</span>
             </h1>
             <p className="admin-dash__subtitle">
-              Track all your cabin registration payments and orders.
+              Track all your chamber registration payments and orders.
             </p>
           </div>
           <div className="admin-dash__date-pill">
@@ -497,29 +494,40 @@ const MyCabinPayments = () => {
               </span>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              {/* Search Bar */}
-              <div className="relative w-full sm:w-48">
-                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              {/* Chamber Name Filter */}
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-gray-500 font-medium">Chamber:</span>
                 <input
                   type="text"
-                  placeholder="Search payments..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  placeholder="Filter by chamber..."
+                  value={filterChamberName}
+                  onChange={(e) => setFilterChamberName(e.target.value)}
+                  className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700 w-40"
                 />
               </div>
-              
-              {/* Filter Toggle Button */}
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${showFilters ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+
+              {/* Status Filter */}
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700"
               >
-                <Filter size={14} />
-                Filters
-                {(filterStatus !== 'all' || filterCabinName) && (
-                  <span className="w-2 h-2 rounded-full bg-red-500"></span>
-                )}
-              </button>
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="expired">Expired</option>
+                <option value="pending">Pending</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+
+              {/* Clear Filters */}
+              {(filterStatus !== 'all' || filterChamberName) && (
+                <button
+                  onClick={clearFilters}
+                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                >
+                  <X size={14} /> Clear
+                </button>
+              )}
 
               {/* Export Button - Excel Download */}
               {filteredOrders.length > 0 && (
@@ -545,48 +553,10 @@ const MyCabinPayments = () => {
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
               >
                 <Building2 size={14} className="text-indigo-600" />
-                <span className="hidden xs:inline">Cabins</span>
+                <span className="hidden xs:inline">Chambers</span>
               </button>
             </div>
           </div>
-
-          {/* Filter Panel */}
-          {showFilters && (
-            <div className="px-4 pt-4 pb-3 border-b border-gray-100" style={{ backgroundColor: '#fafafa' }}>
-              <div className="flex flex-wrap items-end gap-3">
-                <div className="min-w-[150px]">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Cabin Name</label>
-                  <input
-                    type="text"
-                    placeholder="Filter by cabin name..."
-                    value={filterCabinName}
-                    onChange={(e) => setFilterCabinName(e.target.value)}
-                    className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  />
-                </div>
-                <div className="min-w-[150px]">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</label>
-                  <select
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
-                    className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  >
-                    <option value="all">All</option>
-                    <option value="active">Active</option>
-                    <option value="expired">Expired</option>
-                    <option value="pending">Pending</option>
-                    <option value="cancelled">Cancelled</option>
-                  </select>
-                </div>
-                <button
-                  onClick={clearFilters}
-                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-red-600 transition-colors"
-                >
-                  <X size={14} /> Clear
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* Table Container */}
           <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
@@ -599,14 +569,14 @@ const MyCabinPayments = () => {
               <div className="flex flex-col items-center justify-center gap-3 py-20 text-gray-400">
                 <CreditCard size={48} className="opacity-20" />
                 <p className="text-lg font-medium">No payments found</p>
-                <p className="text-sm">Add a cabin to start your payment history.</p>
+                <p className="text-sm">Add a chamber to start your payment history.</p>
               </div>
             ) : (
               <table className="w-full min-w-[1000px] text-left">
                 <thead>
                   <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Chamber</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Amount</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">TXN ID</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Payments</th>
@@ -630,17 +600,17 @@ const MyCabinPayments = () => {
                         <td className="p-4">
                           <div>
                             <p className="font-semibold text-gray-900 text-sm flex items-center gap-1">
-                              {getCabinName(order)}
+                              {getChamberName(order)}
                               {order.isFirstCabin && (
                                 <span className="text-[10px] text-indigo-600 font-bold">⭐</span>
                               )}
                             </p>
                             <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
                               <MapPin size={12} className="text-gray-400" />
-                              {getCabinAddress(order)}
+                              {getChamberAddress(order)}
                             </p>
                             {order.cabin === null && (
-                              <span className="text-[10px] text-red-500 font-medium">⚠️ Cabin Deleted</span>
+                              <span className="text-[10px] text-red-500 font-medium">⚠️ Chamber Deleted</span>
                             )}
                           </div>
                         </td>
@@ -708,7 +678,7 @@ const MyCabinPayments = () => {
                             <button
                               onClick={() => { setRenewOrder(order); setShowRenewModal(true); }}
                               className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${isExpired ? 'bg-red-50 text-red-700 hover:bg-red-100' : 'bg-orange-50 text-orange-700 hover:bg-orange-100'}`}
-                              title={isExpired ? "Renew Expired Cabin" : "Extend Validity"}
+                              title={isExpired ? "Renew Expired Chamber" : "Extend Validity"}
                             >
                               <RefreshCw size={13} /> Renew
                             </button>
@@ -797,13 +767,13 @@ const MyCabinPayments = () => {
             </div>
             <div className="p-6 space-y-4">
               <div className="bg-gray-50 rounded-xl p-4">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Cabin Details</p>
-                <p className="mt-1 font-semibold text-gray-800">{getCabinName(selectedOrder)}</p>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Chamber Details</p>
+                <p className="mt-1 font-semibold text-gray-800">{getChamberName(selectedOrder)}</p>
                 <p className="text-sm text-gray-600 flex items-center gap-1 mt-0.5">
-                  <MapPin size={14} /> {getCabinAddress(selectedOrder)}
+                  <MapPin size={14} /> {getChamberAddress(selectedOrder)}
                 </p>
                 {selectedOrder.isFirstCabin && (
-                  <span className="text-xs text-indigo-600 font-medium mt-1 inline-block">⭐ First Cabin</span>
+                  <span className="text-xs text-indigo-600 font-medium mt-1 inline-block">⭐ First Chamber</span>
                 )}
               </div>
 
@@ -931,22 +901,22 @@ const MyCabinPayments = () => {
               </div>
               <h3 className="text-xl font-bold">
                 {renewOrder.status === 'expired' || new Date(renewOrder.expiryDate) < new Date()
-                  ? 'Renew Expired Cabin'
-                  : 'Extend Cabin Validity'
+                  ? 'Renew Expired Chamber'
+                  : 'Extend Chamber Validity'
                 }
               </h3>
               <p className="text-sm opacity-80 mt-1">
                 {renewOrder.status === 'expired' || new Date(renewOrder.expiryDate) < new Date()
-                  ? 'Your cabin has expired. Renew to activate for 30 more days.'
-                  : 'Extend your cabin validity for 30 more days.'
+                  ? 'Your chamber has expired. Renew to activate for 30 more days.'
+                  : 'Extend your chamber validity for 30 more days.'
                 }
               </p>
             </div>
             <div className="p-5 space-y-4">
               <div className="bg-gray-50 rounded-xl p-4 space-y-3 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Cabin</span>
-                  <span className="font-semibold text-gray-800">{getCabinName(renewOrder)}</span>
+                  <span className="text-gray-500">Chamber</span>
+                  <span className="font-semibold text-gray-800">{getChamberName(renewOrder)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Current Status</span>
@@ -966,7 +936,7 @@ const MyCabinPayments = () => {
 
               <div className="bg-amber-50 rounded-xl p-3 text-xs text-amber-700 flex items-start gap-2 border border-amber-200">
                 <AlertCircle size={16} className="shrink-0 mt-0.5" />
-                <span>Your cabin will be active for 30 more days after successful renewal.</span>
+                <span>Your chamber will be active for 30 more days after successful renewal.</span>
               </div>
 
               <div className="flex gap-3">
@@ -994,4 +964,4 @@ const MyCabinPayments = () => {
   );
 };
 
-export default MyCabinPayments;
+export default MyChamberPayments;

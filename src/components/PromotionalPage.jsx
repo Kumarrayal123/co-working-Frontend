@@ -114,7 +114,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Maximize2,
-  Minimize2
+  Minimize2,
+  Stethoscope as StethoscopeIcon,
+  UserCheck,
+  Clock as ClockIcon,
+  Award as AwardIcon
 } from "lucide-react";
 import logo from "../assets/logo.png";
 import iryaxHero from "../assets/iryaxspace.png";
@@ -129,6 +133,15 @@ const IRYAX_SPACE_IMAGES = [
   "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=800&h=600",
   "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=800&h=600",
   "https://images.unsplash.com/photo-1581092795360-fd1ca04f0952?auto=format&fit=crop&q=80&w=800&h=600"
+];
+
+const DOCTOR_HERO_IMAGE = "https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?auto=format&fit=crop&q=80&w=1920&h=800";
+
+const DOCTOR_SPACE_IMAGES = [
+  "https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?auto=format&fit=crop&q=80&w=800&h=600",
+  "https://images.unsplash.com/photo-1582750433449-648ed127bb54?auto=format&fit=crop&q=80&w=800&h=600",
+  "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=800&h=600",
+  "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=800&h=600"
 ];
 
 const IRYAX_LOCATION_IMAGES = [
@@ -1581,6 +1594,256 @@ const styles = `
     background: white;
     transform: scale(1.2);
   }
+
+  /* Doctor Page Specific Styles */
+  .doctor-hero-section {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    padding: 80px 24px 60px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 50%, #ede9fe 100%);
+  }
+
+  .doctor-hero-content {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .doctor-hero-text-box {
+    max-width: 650px;
+    margin-left: 0;
+    margin-right: auto;
+  }
+
+  .doctor-hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 20px;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 9999px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #4f46e5;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.1);
+  }
+
+  .doctor-hero-title {
+    font-size: 3.2rem !important;
+    font-weight: 300 !important;
+    line-height: 1.15 !important;
+    color: #0f172a !important;
+    margin-bottom: 8px;
+  }
+
+  .doctor-hero-title-gradient {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed, #2563eb);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 800 !important;
+    animation: gradient 3s ease infinite;
+  }
+
+  .doctor-hero-subtitle {
+    font-size: 1.8rem !important;
+    font-weight: 200 !important;
+    line-height: 1.3 !important;
+    color: #1e293b !important;
+  }
+
+  .doctor-hero-desc {
+    font-size: 1.05rem !important;
+    line-height: 1.7 !important;
+    color: #475569 !important;
+    max-width: 500px;
+    margin-top: 12px;
+    font-weight: 300;
+  }
+
+  .doctor-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-top: 30px;
+    background: rgba(255,255,255,0.8);
+    backdrop-filter: blur(8px);
+    border-radius: 20px;
+    padding: 24px 28px;
+    border: 1px solid rgba(255,255,255,0.3);
+  }
+
+  .doctor-stat-item {
+    text-align: center;
+  }
+
+  .doctor-stat-item .number {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #4f46e5;
+  }
+
+  .doctor-stat-item .label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 2px;
+  }
+
+  .doctor-features-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+    margin-top: 40px;
+  }
+
+  .doctor-feature-card {
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 20px;
+    padding: 28px 20px;
+    text-align: center;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+  }
+
+  .doctor-feature-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 60px rgba(79, 70, 229, 0.15);
+    border-color: rgba(79, 70, 229, 0.2);
+  }
+
+  .doctor-feature-card .icon-wrap {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #eef2ff, #e0e7ff);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 14px;
+    color: #4f46e5;
+    font-size: 24px;
+  }
+
+  .doctor-feature-card h4 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 4px;
+  }
+
+  .doctor-feature-card p {
+    font-size: 0.8rem;
+    color: #64748b;
+    line-height: 1.5;
+  }
+
+  .doctor-cta-section {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    border-radius: 24px;
+    padding: 48px 40px;
+    margin-top: 60px;
+    text-align: center;
+    color: white;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .doctor-cta-section::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 60%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .doctor-cta-section h2 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    position: relative;
+  }
+
+  .doctor-cta-section p {
+    font-size: 1rem;
+    opacity: 0.9;
+    max-width: 500px;
+    margin: 0 auto 24px;
+    position: relative;
+  }
+
+  .doctor-cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 36px;
+    background: white;
+    color: #4f46e5;
+    border: none;
+    border-radius: 14px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+  }
+
+  .doctor-cta-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+  }
+
+  @media (max-width: 768px) {
+    .doctor-stats {
+      grid-template-columns: 1fr 1fr 1fr;
+      padding: 16px;
+      gap: 12px;
+    }
+    .doctor-stat-item .number {
+      font-size: 1.4rem;
+    }
+    .doctor-features-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+    .doctor-hero-title {
+      font-size: 2.2rem !important;
+    }
+    .doctor-hero-subtitle {
+      font-size: 1.2rem !important;
+    }
+    .doctor-cta-section {
+      padding: 32px 20px;
+    }
+    .doctor-cta-section h2 {
+      font-size: 1.6rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .doctor-features-grid {
+      grid-template-columns: 1fr;
+    }
+    .doctor-stats {
+      grid-template-columns: 1fr;
+    }
+  }
 `;
 
 // ─── HOOKS ───
@@ -1755,10 +2018,9 @@ const SpaceDetailModal = ({ isOpen, onClose, space, onBookClick }) => {
 
   if (!isOpen || !space) return null;
 
-  // Get all images
   const images = space.images || [space.image];
   const imageUrls = images.map(img => 
-    img && img.startsWith('http') ? img : `https://spaceapi.iryax.com/${img}`
+    img && img.startsWith('http') ? img : `http://localhost:5003/${img}`
   );
 
   const nextImage = (e) => {
@@ -1776,7 +2038,6 @@ const SpaceDetailModal = ({ isOpen, onClose, space, onBookClick }) => {
     setCurrentImageIndex(index);
   };
 
-  // Get features from space amenities
   const getFeatures = (space) => {
     const features = [];
     const amenities = space.amenities || {};
@@ -1798,8 +2059,6 @@ const SpaceDetailModal = ({ isOpen, onClose, space, onBookClick }) => {
   };
 
   const features = getFeatures(space);
-
-  // Get thumbnail images (first 5)
   const thumbnails = imageUrls.slice(0, 5);
 
   return (
@@ -1811,7 +2070,6 @@ const SpaceDetailModal = ({ isOpen, onClose, space, onBookClick }) => {
 
         <div className="space-detail-modal">
           <div className="modal-body">
-            {/* Left: Image Section */}
             <div className="modal-image-section">
               <div className="image-slider">
                 <img 
@@ -1847,7 +2105,6 @@ const SpaceDetailModal = ({ isOpen, onClose, space, onBookClick }) => {
                     </div>
                     <span className="image-counter">{currentImageIndex + 1} / {imageUrls.length}</span>
                     
-                    {/* Thumbnail Strip */}
                     {imageUrls.length > 1 && (
                       <div className="thumbnail-strip">
                         {thumbnails.map((url, index) => (
@@ -1867,7 +2124,6 @@ const SpaceDetailModal = ({ isOpen, onClose, space, onBookClick }) => {
               <span className="space-type-badge">{space.type || "Workspace"}</span>
             </div>
 
-            {/* Right: Content Section */}
             <div className="modal-content-section">
               <h3 className="space-title">{space.name}</h3>
               <div className="space-location">
@@ -1875,7 +2131,7 @@ const SpaceDetailModal = ({ isOpen, onClose, space, onBookClick }) => {
                 <span>{space.address || "Location not specified"}</span>
               </div>
               <p className="space-description">
-                {space.description || "A fully-equipped modern workspace designed for professionals. Spacious and well-equipped private cabin ideal for professionals, consultants, startups, and small teams."}
+                {space.description || "A fully-equipped modern workspace designed for professionals."}
               </p>
               
               <div className="space-features">
@@ -1914,6 +2170,195 @@ const SpaceDetailModal = ({ isOpen, onClose, space, onBookClick }) => {
   );
 };
 
+// ─── DOCTOR CHAMBER PAGE ───
+const DoctorChamberPage = () => {
+  const navigate = useNavigate();
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-white text-gray-900 font-light antialiased">
+      {/* Navbar for Doctor Page */}
+      <nav className={`navbar-custom ${scrolled ? 'navbar-scrolled' : ''}`}>
+        <div className="navbar-inner">
+          <button onClick={() => navigate('/')} className="flex items-center gap-3 group">
+            <div className="navbar-logo">
+              <img src={logo} alt="Logo" />
+            </div>
+            <span className="navbar-brand hidden sm:block transition flex items-center gap-2">
+              IRYAX SPACE
+              <span className="brand-icon flex items-center justify-center">
+                <Layout size={18} />
+              </span>
+            </span>
+          </button>
+
+          <div className="nav-links">
+            <button onClick={() => navigate('/')} className="navbar-link">Home</button>
+            <button onClick={() => navigate('/#benefits')} className="navbar-link">Benefits</button>
+            <button onClick={() => navigate('/#faq')} className="navbar-link">FAQ</button>
+            <button onClick={() => navigate('/#contact')} className="navbar-link">Contact</button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button onClick={() => navigate("/login")} className="navbar-signin hidden sm:block">
+              Sign In
+            </button>
+            <button onClick={() => navigate("/login")} className="navbar-btn navbar-btn-mobile-hide">
+              <Layout size={14} /> Start Now
+            </button>
+            <button 
+              onClick={() => navigate('/')} 
+              className="navbar-menu-btn"
+              aria-label="Go back"
+            >
+              <X size={22} />
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* Doctor Hero Section */}
+      <section className="doctor-hero-section">
+        <div className="absolute inset-0 z-0 overflow-hidden">
+          <img 
+            src={DOCTOR_HERO_IMAGE} 
+            alt="Doctor Chamber" 
+            className="w-full h-full object-cover opacity-10"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-white/80 via-white/50 to-transparent" />
+        </div>
+        <div className="doctor-hero-content">
+          <div className="doctor-hero-text-box">
+            <RevealSection>
+              <div className="doctor-hero-badge">
+                <StethoscopeIcon size={14} className="animate-heartbeat" />
+                <span>Doctor's Chamber</span>
+              </div>
+            </RevealSection>
+
+            <RevealSection delay={0.1}>
+              <h1 className="doctor-hero-title">
+                <span className="doctor-hero-title-gradient">Professional</span>
+                <br />
+                <span className="doctor-hero-subtitle">Doctor's Chamber</span>
+              </h1>
+            </RevealSection>
+
+            <RevealSection delay={0.2}>
+              <p className="doctor-hero-desc">
+                Fully-equipped consultation rooms with premium amenities, flexible hours, and complete admin support for healthcare professionals.
+              </p>
+            </RevealSection>
+
+            <RevealSection delay={0.3}>
+              <div className="doctor-stats">
+                <div className="doctor-stat-item">
+                  <div className="number">50+</div>
+                  <div className="label">Chambers</div>
+                </div>
+                <div className="doctor-stat-item">
+                  <div className="number">24/7</div>
+                  <div className="label">Access</div>
+                </div>
+                <div className="doctor-stat-item">
+                  <div className="number">100+</div>
+                  <div className="label">Happy Doctors</div>
+                </div>
+              </div>
+            </RevealSection>
+
+            <RevealSection delay={0.4}>
+              <div className="hero-buttons mt-6">
+                <button onClick={() => navigate("/login")} className="btn-primary">
+                  <StethoscopeIcon size={16} />
+                  Book Your Chamber
+                  <ArrowRight size={16} className="group-hover:translate-x-1 transition" />
+                </button>
+                <button onClick={() => navigate('/#contact')} className="btn-secondary" style={{ textDecoration: 'none', color: '#0f172a', background: 'rgba(255,255,255,0.8)' }}>
+                  <Phone size={16} /> Contact Us
+                </button>
+              </div>
+            </RevealSection>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-20 px-6 bg-white">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-14">
+            <RevealSection>
+              <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-indigo-50 border border-indigo-200 text-indigo-800 text-xs rounded-full mb-4 tracking-widest uppercase font-medium">
+                <SparklesIcon size={12} /> Why Doctor's Chamber
+              </span>
+            </RevealSection>
+            <RevealSection delay={0.1}>
+              <h2 className="text-3xl sm:text-4xl font-light text-gray-900">
+                Everything You Need to <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent font-bold">Practice with Ease</span>
+              </h2>
+            </RevealSection>
+            <RevealSection delay={0.2}>
+              <p className="mt-3 text-base text-gray-600 max-w-2xl mx-auto">
+                Modern consultation rooms designed for healthcare professionals to deliver the best care.
+              </p>
+            </RevealSection>
+          </div>
+
+          <div className="doctor-features-grid">
+            {[
+              { icon: StethoscopeIcon, title: "Medical Equipment", desc: "State-of-the-art medical tools and equipment" },
+              { icon: UserCheck, title: "Admin Support", desc: "Reception, billing, and patient management" },
+              { icon: ClockIcon, title: "Flexible Hours", desc: "24/7 access with flexible scheduling" },
+              { icon: AwardIcon, title: "Premium Location", desc: "High-visibility prime medical locations" }
+            ].map((feature, i) => (
+              <RevealSection key={i} delay={i * 0.1}>
+                <div className="doctor-feature-card">
+                  <div className="icon-wrap"><feature.icon size={24} /></div>
+                  <h4>{feature.title}</h4>
+                  <p>{feature.desc}</p>
+                </div>
+              </RevealSection>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20 px-6 bg-gray-50">
+        <div className="max-w-6xl mx-auto">
+          <RevealSection>
+            <div className="doctor-cta-section">
+              <h2>Start Your Practice Today</h2>
+              <p>Join 100+ healthcare professionals who've transformed their practice with IRYAX SPACE</p>
+              <button onClick={() => navigate("/login")} className="doctor-cta-btn">
+                Get Started Now <ArrowRight size={18} />
+              </button>
+            </div>
+          </RevealSection>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="py-12 px-6 border-t border-gray-200 bg-gray-900 text-white">
+        <div className="max-w-6xl mx-auto text-center">
+          <p className="text-sm text-gray-400">
+            © IRYAX SPACE All Rights Reserved. | Made with 
+            <span className="footer-heart mx-1">❤️</span> 
+            by IRYAX
+          </p>
+          <p className="text-xs text-gray-500 tracking-wider uppercase mt-2">Doctor's Chamber - IRYAX SPACE</p>
+        </div>
+      </footer>
+    </div>
+  );
+};
+
 // ─── MAIN ───
 const PromotionalPage = () => {
   const { theme, toggleTheme } = useTheme();
@@ -1932,14 +2377,13 @@ const PromotionalPage = () => {
   const [selectedSpace, setSelectedSpace] = useState(null);
   const [isSpaceDetailOpen, setIsSpaceDetailOpen] = useState(false);
 
-  const typingWords = ["Workspace", "Medical Space", "Studio Space", "Office", "Creative Space"];
+  const typingWords = ["Workspace", "Studio", "Office", "Creative Space"];
 
-  // Fetch cabins from API
   useEffect(() => {
     const fetchCabins = async () => {
       try {
         setLoading(true);
-        const response = await fetch("https://spaceapi.iryax.com/api/cabins");
+        const response = await fetch("http://localhost:5003/api/cabins");
         if (!response.ok) throw new Error("Failed to fetch");
         const data = await response.json();
         setCabins(Array.isArray(data) ? data : []);
@@ -1961,11 +2405,9 @@ const PromotionalPage = () => {
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
   const toggleFaq = (index) => setOpenFaq(openFaq === index ? null : index);
 
-  // Filter cabins by type
   const coworkingCabins = cabins.filter(cabin => cabin.type === "coworking" || cabin.type === "co-working");
   const medicalCabins = cabins.filter(cabin => cabin.type === "medical");
 
-  // ─── HANDLE SEND QUERY ───
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitError(null);
@@ -1978,7 +2420,7 @@ const PromotionalPage = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("https://spaceapi.iryax.com/api/cabins/sendquery", {
+      const response = await fetch("http://localhost:5003/api/cabins/sendquery", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -2018,9 +2460,8 @@ const PromotionalPage = () => {
   };
 
   const handleSpaceClick = (space) => {
-    // Format space data for modal with all images
     const images = space.images && space.images.length > 0 
-      ? space.images.map(img => `https://spaceapi.iryax.com/${img}`)
+      ? space.images.map(img => `http://localhost:5003/${img}`)
       : [IRYAX_SPACE_IMAGES[0]];
     
     const formattedSpace = {
@@ -2147,7 +2588,6 @@ const PromotionalPage = () => {
     }
   ];
 
-  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
@@ -2164,7 +2604,6 @@ const PromotionalPage = () => {
       <style>{styles}</style>
       <div className="min-h-screen bg-white text-gray-900 font-light antialiased">
 
-        {/* ─── SPACE DETAIL MODAL ─── */}
         <SpaceDetailModal 
           isOpen={isSpaceDetailOpen}
           onClose={closeSpaceDetail}
@@ -2172,7 +2611,6 @@ const PromotionalPage = () => {
           onBookClick={handleBookClick}
         />
 
-        {/* ─── THANK YOU POPUP ─── */}
         {showThankYouPopup && (
           <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
             <div className="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl border border-gray-100 animate-slideUp relative">
@@ -2200,7 +2638,6 @@ const PromotionalPage = () => {
           </div>
         )}
 
-        {/* ─── NAVBAR ─── */}
         <nav className={`navbar-custom ${scrolled ? 'navbar-scrolled' : ''}`}>
           <div className="navbar-inner">
             <button onClick={scrollToTop} className="flex items-center gap-3 group">
@@ -2213,7 +2650,7 @@ const PromotionalPage = () => {
             <div className="nav-links">
               <button onClick={() => scrollToSection('benefits')} className="navbar-link">Benefits</button>
               <button onClick={() => { scrollToSection('coworking-section'); }} className="navbar-link">Co-working</button>
-              <button onClick={() => { scrollToSection('medical-section'); }} className="navbar-link">Medical</button>
+              <button onClick={() => navigate('/doctor-chamber')} className="navbar-link">Doctor's Chamber</button>
               <button onClick={() => scrollToSection('specialties')} className="navbar-link">Specialties</button>
               <button onClick={() => scrollToSection('mission-vision')} className="navbar-link">About</button>
               <button onClick={() => scrollToSection('faq')} className="navbar-link">FAQ</button>
@@ -2238,7 +2675,6 @@ const PromotionalPage = () => {
           </div>
         </nav>
 
-        {/* ─── MOBILE MENU ─── */}
         <div className={`fixed inset-0 z-40 bg-white pt-20 px-6 transition-all duration-500 ${mobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
           <button 
             onClick={() => setMobileOpen(false)} 
@@ -2251,7 +2687,7 @@ const PromotionalPage = () => {
           <div className="flex flex-col gap-2 max-w-sm mx-auto mt-8">
             <button onClick={() => { setMobileOpen(false); scrollToSection('benefits'); }} className="px-4 py-3 text-base text-gray-700 hover:text-blue-800 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-medium text-left">Benefits</button>
             <button onClick={() => { setMobileOpen(false); scrollToSection('coworking-section'); }} className="px-4 py-3 text-base text-gray-700 hover:text-blue-800 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-medium text-left">Co-working Space</button>
-            <button onClick={() => { setMobileOpen(false); scrollToSection('medical-section'); }} className="px-4 py-3 text-base text-gray-700 hover:text-blue-800 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-medium text-left">Medical Space</button>
+            <button onClick={() => { setMobileOpen(false); navigate('/doctor-chamber'); }} className="px-4 py-3 text-base text-gray-700 hover:text-blue-800 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-medium text-left">Doctor's Chamber</button>
             <button onClick={() => { setMobileOpen(false); scrollToSection('specialties'); }} className="px-4 py-3 text-base text-gray-700 hover:text-blue-800 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-medium text-left">Specialties</button>
             <button onClick={() => { setMobileOpen(false); scrollToSection('mission-vision'); }} className="px-4 py-3 text-base text-gray-700 hover:text-blue-800 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-medium text-left">About</button>
             <button onClick={() => { setMobileOpen(false); scrollToSection('faq'); }} className="px-4 py-3 text-base text-gray-700 hover:text-blue-800 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-medium text-left">FAQ</button>
@@ -2263,7 +2699,7 @@ const PromotionalPage = () => {
           </div>
         </div>
 
-        {/* ─── HERO ─── */}
+        {/* Hero Section */}
         <section className="hero-section">
           <div className="hero-bg">
             <img src={IRYAX_HERO_IMAGE} alt="IRYAX SPACE Workspace" />
@@ -2313,7 +2749,7 @@ const PromotionalPage = () => {
           </div>
         </section>
 
-        {/* ─── STATS ─── */}
+        {/* Stats */}
         <section className="py-16 px-6 border-t border-gray-100 bg-gray-50">
           <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-5 gap-8">
             {stats.map((stat, i) => (
@@ -2329,7 +2765,7 @@ const PromotionalPage = () => {
           </div>
         </section>
 
-        {/* ─── CO-WORKING SPACES SECTION ─── */}
+        {/* Co-Working Section */}
         <section id="coworking-section" className="py-20 px-6 bg-gradient-to-b from-blue-50 to-white">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-14">
@@ -2359,7 +2795,7 @@ const PromotionalPage = () => {
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {coworkingCabins.map((cabin, i) => {
                   const cabinImages = cabin.images && cabin.images.length > 0 
-                    ? cabin.images.map(img => `https://spaceapi.iryax.com/${img}`)
+                    ? cabin.images.map(img => `http://localhost:5003/${img}`)
                     : [IRYAX_SPACE_IMAGES[0]];
 
                   return (
@@ -2369,10 +2805,7 @@ const PromotionalPage = () => {
                         onClick={() => handleSpaceClick(cabin)}
                       >
                         <div className="h-52 overflow-hidden relative">
-                          <ImageSlider 
-                            images={cabinImages} 
-                            alt={cabin.name}
-                          />
+                          <ImageSlider images={cabinImages} alt={cabin.name} />
                           <span className="absolute top-3 left-3 px-4 py-1.5 rounded-full text-xs font-semibold text-white bg-blue-600 z-10">
                             {cabin.type || "Co-Working"}
                           </span>
@@ -2406,84 +2839,7 @@ const PromotionalPage = () => {
           </div>
         </section>
 
-        {/* ─── MEDICAL SPACES SECTION ─── */}
-        <section id="medical-section" className="py-20 px-6 bg-gradient-to-b from-red-50 to-white">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-14">
-              <RevealSection>
-                <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-red-100 border border-red-300 text-red-800 text-xs rounded-full mb-4 tracking-widest uppercase font-medium">
-                  <Stethoscope size={12} /> Medical Spaces
-                </span>
-              </RevealSection>
-              <RevealSection delay={0.1}>
-                <h2 className="text-3xl sm:text-4xl font-light text-gray-900">
-                  Professional <span className="bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent font-bold">Medical Spaces</span>
-                </h2>
-              </RevealSection>
-              <RevealSection delay={0.2}>
-                <p className="mt-3 text-base text-gray-600 max-w-2xl mx-auto">
-                  Fully-equipped medical consultation rooms for healthcare professionals and practitioners.
-                </p>
-              </RevealSection>
-            </div>
-
-            {medicalCabins.length === 0 ? (
-              <div className="text-center py-12">
-                <Stethoscope size={48} className="mx-auto text-gray-300 mb-4" />
-                <p className="text-gray-500 text-lg">No medical spaces available at the moment.</p>
-              </div>
-            ) : (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {medicalCabins.map((cabin, i) => {
-                  const cabinImages = cabin.images && cabin.images.length > 0 
-                    ? cabin.images.map(img => `https://spaceapi.iryax.com/${img}`)
-                    : [IRYAX_SPACE_IMAGES[1]];
-
-                  return (
-                    <RevealSection key={cabin._id} delay={i * 0.1}>
-                      <div 
-                        className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 cursor-pointer group border border-gray-100"
-                        onClick={() => handleSpaceClick(cabin)}
-                      >
-                        <div className="h-52 overflow-hidden relative">
-                          <ImageSlider 
-                            images={cabinImages} 
-                            alt={cabin.name}
-                          />
-                          <span className="absolute top-3 left-3 px-4 py-1.5 rounded-full text-xs font-semibold text-white bg-red-600 z-10">
-                            {cabin.type || "Medical"}
-                          </span>
-                          <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black/60 to-transparent z-10"></div>
-                        </div>
-                        <div className="p-5">
-                          <h3 className="text-xl font-bold text-gray-900 mb-1 group-hover:text-red-700 transition line-clamp-1">{cabin.name}</h3>
-                          <div className="flex items-center gap-1 text-sm text-gray-500 mb-3">
-                            <MapPin size={16} className="text-red-600" /> 
-                            <span className="line-clamp-1">{cabin.address || "Location not specified"}</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-baseline gap-1">
-                              <span className="text-2xl font-bold text-red-800">₹{cabin.price?.toLocaleString('en-IN') || 0}</span>
-                              <span className="text-xs text-gray-500">/ day</span>
-                            </div>
-                            <button 
-                              className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-red-700 to-rose-500 rounded-xl hover:shadow-lg transition flex items-center gap-1 group-hover:scale-105"
-                              onClick={(e) => { e.stopPropagation(); handleSpaceClick(cabin); }}
-                            >
-                              View Details <ArrowRight size={16} />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </RevealSection>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* ─── MISSION & VISION ─── */}
+        {/* Mission & Vision */}
         <section id="mission-vision" className="py-16 px-6 bg-gradient-to-br from-blue-50 via-white to-purple-50">
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-10">
@@ -2549,7 +2905,7 @@ const PromotionalPage = () => {
           </div>
         </section>
 
-        {/* ─── BENEFITS ─── */}
+        {/* Benefits */}
         <section id="benefits" className="py-20 px-6 bg-gradient-to-b from-gray-100 via-white to-gray-50">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-14">
@@ -2584,7 +2940,7 @@ const PromotionalPage = () => {
           </div>
         </section>
 
-        {/* ─── FEATURES ─── */}
+        {/* Features */}
         <section className="py-20 px-6 bg-gradient-to-b from-blue-900 via-blue-800 to-blue-900 text-white">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-14">
@@ -2620,7 +2976,7 @@ const PromotionalPage = () => {
           </div>
         </section>
 
-        {/* ─── LOCATIONS ─── */}
+        {/* Locations */}
         <section className="py-20 px-6 bg-gray-50">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-14">
@@ -2673,7 +3029,7 @@ const PromotionalPage = () => {
           </div>
         </section>
 
-        {/* ─── EARN ─── */}
+        {/* Earn */}
         <section className="py-20 px-6 bg-white">
           <div className="max-w-6xl mx-auto">
             <div className="grid md:grid-cols-2 gap-12 items-center">
@@ -2719,7 +3075,7 @@ const PromotionalPage = () => {
           </div>
         </section>
 
-        {/* ─── SPECIALTIES ─── */}
+        {/* Specialties */}
         <section id="specialties" className="py-20 px-6 bg-gray-50">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-14">
@@ -2756,7 +3112,7 @@ const PromotionalPage = () => {
           </div>
         </section>
 
-        {/* ─── MODERN SPACES ─── */}
+        {/* Modern Spaces */}
         <section className="py-20 px-6 bg-white">
           <div className="max-w-6xl mx-auto">
             <RevealSection>
@@ -2791,7 +3147,7 @@ const PromotionalPage = () => {
           </div>
         </section>
 
-        {/* ─── FAQ ─── */}
+        {/* FAQ */}
         <section id="faq" className="py-20 px-6 bg-gray-50">
           <div className="max-w-3xl mx-auto">
             <div className="text-center mb-12">
@@ -2829,7 +3185,7 @@ const PromotionalPage = () => {
           </div>
         </section>
 
-        {/* ─── CONTACT ─── */}
+        {/* Contact */}
         <section id="contact" className="py-20 px-6 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50" />
           <div className="relative max-w-4xl mx-auto">
@@ -2941,7 +3297,7 @@ const PromotionalPage = () => {
           </div>
         </section>
 
-        {/* ─── FOOTER ─── */}
+        {/* Footer */}
         <footer className="py-12 px-6 border-t border-gray-200 bg-gray-900 text-white">
           <div className="max-w-6xl mx-auto">
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -2965,7 +3321,7 @@ const PromotionalPage = () => {
                   <div className="space-y-2">
                     <button onClick={() => scrollToSection('benefits')} className="block text-sm text-gray-400 hover:text-blue-400 transition hover:translate-x-1 text-left">Benefits</button>
                     <button onClick={() => scrollToSection('coworking-section')} className="block text-sm text-gray-400 hover:text-blue-400 transition hover:translate-x-1 text-left">Co-working Space</button>
-                    <button onClick={() => scrollToSection('medical-section')} className="block text-sm text-gray-400 hover:text-blue-400 transition hover:translate-x-1 text-left">Medical Space</button>
+                    <button onClick={() => navigate('/doctor-chamber')} className="block text-sm text-gray-400 hover:text-blue-400 transition hover:translate-x-1 text-left">Doctor's Chamber</button>
                     <button onClick={() => scrollToSection('specialties')} className="block text-sm text-gray-400 hover:text-blue-400 transition hover:translate-x-1 text-left">Specialties</button>
                     <button onClick={() => scrollToSection('mission-vision')} className="block text-sm text-gray-400 hover:text-blue-400 transition hover:translate-x-1 text-left">About</button>
                     <button onClick={() => scrollToSection('faq')} className="block text-sm text-gray-400 hover:text-blue-400 transition hover:translate-x-1 text-left">FAQ</button>
@@ -3012,7 +3368,18 @@ const PromotionalPage = () => {
   );
 };
 
+// ─── APP ───
 export default function App() {
+  const location = window.location.pathname;
+  
+  if (location === '/doctor-chamber') {
+    return (
+      <ThemeProvider>
+        <DoctorChamberPage />
+      </ThemeProvider>
+    );
+  }
+  
   return (
     <ThemeProvider>
       <PromotionalPage />

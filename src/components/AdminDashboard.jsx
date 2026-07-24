@@ -167,6 +167,13 @@ const AdminDashboard = () => {
         </span>
       );
     }
+    if (status === 'completed') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">
+          <CheckCircle size={10} /> Completed
+        </span>
+      );
+    }
     return (
       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-yellow-100 text-yellow-700">
         <Clock size={10} /> Pending
@@ -338,9 +345,9 @@ const AdminDashboard = () => {
           ))}
         </div>
 
-        {/* Charts Grid - increased height to 370px */}
+        {/* Charts Grid - 2 columns */}
         <div className="admin-dash__charts-grid" style={{ marginBottom: '16px' }}>
-          {/* Booking Trends Chart - CURVE CHART with Months on X-axis and Hours on Y-axis */}
+          {/* Booking Trends Chart */}
           <div className="admin-dash__card admin-dash__chart-wrap" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', height: '370px' }}>
             <div className="admin-dash__card-header py-2 px-4" style={{ borderBottom: '1px solid #e5e7eb' }}>
               <div>
@@ -434,11 +441,11 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          {/* Recent Activity - TABLE FORMAT */}
+          {/* Recent Bookings - RIGHT SIDE (Name changed from Recent Activity) */}
           <div className="admin-dash__card admin-dash__chart-wrap" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', height: '370px', display: 'flex', flexDirection: 'column' }}>
             <div className="admin-dash__card-header py-2 px-4" style={{ borderBottom: '1px solid #e5e7eb', flexShrink: 0 }}>
               <div>
-                <h3 className="admin-dash__card-title" style={{ fontSize: '13px' }}>Recent Activity</h3>
+                <h3 className="admin-dash__card-title" style={{ fontSize: '13px' }}>Recent Bookings</h3>
                 <p className="admin-dash__card-desc text-[9px] text-gray-400">Latest workspace reservations</p>
               </div>
             </div>
@@ -446,7 +453,7 @@ const AdminDashboard = () => {
               {(recentBookings || []).length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-gray-400">
                   <Calendar size={28} className="text-gray-300 mb-1" />
-                  <p className="text-xs">No recent activity</p>
+                  <p className="text-xs">No recent bookings</p>
                 </div>
               ) : (
                 <table className="w-full min-w-[500px] text-left">
@@ -512,11 +519,11 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Latest Bookings Table */}
+        {/* Latest Bookings Table - Full Width */}
         <div className="admin-dash__card mt-4" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
           <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3 py-2 px-4" style={{ borderBottom: '1px solid #e5e7eb' }}>
             <div className="flex items-center gap-3">
-              <h3 className="admin-dash__card-title" style={{ fontSize: '13px' }}>Latest Bookings</h3>
+              <h3 className="admin-dash__card-title" style={{ fontSize: '13px' }}>All Recent Bookings</h3>
               <span className="px-2 py-0.5 text-[10px] font-bold text-indigo-700 bg-indigo-100 rounded-full">
                 {(recentBookings || []).length}
               </span>

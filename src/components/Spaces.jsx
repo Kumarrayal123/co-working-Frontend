@@ -63,7 +63,8 @@ const Spaces = () => {
       });
   }, []);
 
-  const activeCabins = cabins.filter(c => c.isActive === true);
+  // ✅ Filter: Only show cabins where isChamber is NOT true
+  const activeCabins = cabins.filter(c => c.isActive === true && c.isChamber !== true);
 
   const newlyAdded = activeCabins
     .filter(c => new Date(c.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000))
@@ -108,7 +109,7 @@ const Spaces = () => {
 
   const getLocations = () => {
     const locations = cabins
-      .filter(c => c.address)
+      .filter(c => c.address && c.isActive === true && c.isChamber !== true)
       .map(c => c.address.split(',')[0]?.trim())
       .filter((loc, index, self) => loc && self.indexOf(loc) === index);
     return locations;
@@ -132,10 +133,11 @@ const Spaces = () => {
     return `${API_URL}/${cleanPath}`;
   };
 
-  // ─── CABIN CARD ─── (Height increased)
+  // ─── CABIN CARD ───
   const CabinCard = ({ cabin, showBadge = true }) => {
     const isActive = cabin.isActive === true;
     const isExclusive = cabin.cabinType === 'exclusive';
+    const isChamber = cabin.isChamber === true;
     
     return (
       <div
@@ -146,7 +148,7 @@ const Spaces = () => {
             : 'opacity-60 hover:opacity-80'
         } bg-white border border-slate-200/80`}
       >
-        {/* Image - Height increased */}
+        {/* Image */}
         <div className="relative overflow-hidden h-44 sm:h-48 md:h-52">
           <img
             src={cabin.images?.[0] ? getImageUrl(cabin.images[0]) : PLACEHOLDER_IMAGE}
@@ -201,7 +203,7 @@ const Spaces = () => {
           </div>
         </div>
 
-        {/* Content - More padding for height */}
+        {/* Content */}
         <div className="p-3 sm:p-4 space-y-1.5 sm:space-y-2 flex-1 flex flex-col">
           <h3 className={`text-sm font-semibold truncate ${isActive ? 'text-slate-800 group-hover:text-indigo-600' : 'text-slate-400'} transition-colors duration-300`}>
             {cabin.name}
@@ -244,9 +246,7 @@ const Spaces = () => {
             <h1 className="admin-dash__greeting">
               Workspace <span>Spaces</span>
             </h1>
-          
           </div>
-         
         </div>
 
         {/* Filter Section */}

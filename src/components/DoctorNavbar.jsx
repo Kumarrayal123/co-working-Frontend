@@ -107,7 +107,6 @@ const DoctorNavbar = () => {
 
   const walletLinks = [
     { name: "My Wallet", path: "/doctorwallet", icon: Wallet },
-    { name: "Withdrawals", path: "/doctorwithdrawals", icon: Banknote },
   ];
 
   const paymentsLinks = [

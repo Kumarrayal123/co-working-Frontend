@@ -1,4 +1,4 @@
-// ChamberBookings.jsx - Complete with THERMAL PDF Download (NO EXTERNAL LIBRARY)
+// ChamberBookings.jsx - Complete with Clean UI (No Icons, Single Row Actions)
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -857,6 +857,7 @@ const ChamberBookings = () => {
           
         </div>
 
+        {/* Stats Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
           <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-4 sm:p-5 text-white shadow-lg shadow-indigo-500/25">
             <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-200">Total Bookings</p>
@@ -916,6 +917,7 @@ const ChamberBookings = () => {
           </div>
         </div>
 
+        {/* Mini Stats */}
         <div className="grid grid-cols-3 gap-3 mb-6">
           <div className="bg-yellow-50 rounded-xl border border-yellow-200 p-3 text-center">
             <p className="text-[10px] font-bold uppercase tracking-wider text-yellow-600">Pending</p>
@@ -931,6 +933,7 @@ const ChamberBookings = () => {
           </div>
         </div>
 
+        {/* Main Table */}
         <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
           <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
             <div className="flex items-center gap-3">
@@ -1047,24 +1050,24 @@ const ChamberBookings = () => {
           </div>
 
           <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
-            {/* Table with default headers always visible */}
-            <table className="w-full min-w-[1300px] text-left">
+            {/* Table */}
+            <table className="w-full min-w-[1200px] text-left">
               <thead>
                 <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
-                  <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
-                  <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Chamber</th>
-                  <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Customer</th>
-                  <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">From Date</th>
-                  <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">To Date</th>
-                  <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Time</th>
-                  <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Hours</th>
-                  <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Seats</th>
-                  <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
-                  <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Payment</th>
-                  <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Pmt Status</th>
-                  <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Visits</th>
-                  <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Amount</th>
-                  <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Actions</th>
+                  <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
+                  <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Chamber</th>
+                  <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Customer</th>
+                  <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">From Date</th>
+                  <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">To Date</th>
+                  <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Time</th>
+                  <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Hours</th>
+                  <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Seats</th>
+                  <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
+                  <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Payment</th>
+                  <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Pmt Status</th>
+                  <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Visits</th>
+                  <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Amount</th>
+                  <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -1090,105 +1093,79 @@ const ChamberBookings = () => {
 
                     return (
                       <tr key={booking._id} className="transition-colors group hover:bg-gray-50/80">
-                        <td className="p-4"><span className="text-sm font-semibold text-gray-400">#{idx + 1}</span></td>
-                        <td className="p-4">
-                          <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
-                              <Building2 size={18} className="text-indigo-600" />
-                            </div>
-                            <div>
-                              <p className="font-semibold text-gray-900 text-sm">{booking.cabin?.name || "Unknown"}</p>
-                              <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-1">
-                                <MapPin size={12} className="text-indigo-500" />
-                                {booking.cabin?.address?.split(",")[0] || "No Address"}
-                              </div>
-                            </div>
+                        <td className="p-3"><span className="text-sm font-semibold text-gray-400">#{idx + 1}</span></td>
+                        <td className="p-3">
+                          <div>
+                            <p className="font-semibold text-gray-900 text-sm">{booking.cabin?.name || "Unknown"}</p>
+                            <p className="text-xs text-gray-500 mt-0.5">{booking.cabin?.address?.split(",")[0] || "No Address"}</p>
                           </div>
                         </td>
-                        <td className="p-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                              <User size={18} className="text-gray-600" />
-                            </div>
-                            <div>
-                              <p className="font-medium text-gray-800 text-sm">{booking.name || booking.user?.name || "Unknown"}</p>
-                              <p className="text-xs text-gray-400">{booking.mobile || booking.user?.mobile || "N/A"}</p>
-                            </div>
+                        <td className="p-3">
+                          <div>
+                            <p className="font-medium text-gray-800 text-sm">{booking.name || booking.user?.name || "Unknown"}</p>
+                            <p className="text-xs text-gray-400">{booking.mobile || booking.user?.mobile || "N/A"}</p>
                           </div>
                         </td>
-                        <td className="p-4">
+                        <td className="p-3">
                           <p className="text-sm text-gray-900 font-medium">{booking.startDate || 'N/A'}</p>
                         </td>
-                        <td className="p-4">
+                        <td className="p-3">
                           <p className="text-sm text-gray-900 font-medium">{booking.endDate || booking.startDate || 'N/A'}</p>
                         </td>
-                        <td className="p-4">
+                        <td className="p-3">
                           <p className="text-sm text-gray-500">{booking.startTime || 'N/A'} - {booking.endTime || 'N/A'}</p>
                         </td>
-                        <td className="p-4">
+                        <td className="p-3">
                           <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-bold">{booking.totalHours}h</span>
                         </td>
-                        <td className="p-4">
+                        <td className="p-3">
                           <div>
-                            <span className="flex items-center gap-1 text-sm font-medium text-gray-700">
-                              <Armchair size={14} className="text-indigo-500" />
-                              {seatCount}
-                            </span>
+                            <span className="text-sm font-medium text-gray-700">{seatCount}</span>
                             {seatCount > 0 && (
-                              <p className="text-[10px] text-gray-400 truncate max-w-[120px]" title={seatNames}>
+                              <p className="text-[10px] text-gray-400 truncate max-w-[100px]" title={seatNames}>
                                 {seatNames}
                               </p>
                             )}
                           </div>
                         </td>
-                        <td className="p-4">
+                        <td className="p-3">
                           <span className={`px-3 py-1 text-xs font-bold rounded-full inline-flex items-center gap-1.5 ${statusBadge.color}`}>
                             {statusBadge.icon} {statusBadge.label}
                           </span>
                         </td>
-                        <td className="p-4">
+                        <td className="p-3">
                           <span className={`px-3 py-1 text-xs font-bold rounded-full inline-flex items-center gap-1.5 ${paymentMethodBadge.color}`}>
                             {paymentMethodBadge.icon} {paymentMethodBadge.label}
                           </span>
                         </td>
-                        <td className="p-4">
+                        <td className="p-3">
                           <span className={`px-3 py-1 text-xs font-bold rounded-full inline-flex items-center gap-1.5 ${paymentStatusBadge.color}`}>
                             {paymentStatusBadge.icon} {paymentStatusBadge.label}
                           </span>
                         </td>
-                        <td className="p-4">
-                          <div className="flex items-center gap-1">
-                            <History size={14} className="text-indigo-400" />
-                            <span className="text-sm font-semibold text-gray-700">{visitCount}</span>
-                          </div>
+                        <td className="p-3">
+                          <span className="text-sm font-semibold text-gray-700">{visitCount}</span>
                         </td>
-                        <td className="p-4">
-                          <div>
-                            <span className="flex items-center gap-1 text-indigo-600 font-bold text-sm">
-                              <IndianRupee size={14} />
-                              {booking.totalPrice?.toLocaleString("en-IN") || "0"}
-                            </span>
-                            {booking.extraCharge > 0 && (
-                              <p className="text-[9px] text-amber-500">+₹{booking.extraCharge} seat</p>
-                            )}
-                          </div>
+                        <td className="p-3">
+                          <span className="text-indigo-600 font-bold text-sm">₹{booking.totalPrice?.toLocaleString("en-IN") || "0"}</span>
                         </td>
-                        <td className="p-4">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <button onClick={() => handleViewBooking(booking)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors whitespace-nowrap">
-                              <Eye size={13} /> View
+                        <td className="p-3">
+                          {/* ALL ACTIONS IN SINGLE ROW WITH SCROLL */}
+                          <div className="flex items-center gap-1 overflow-x-auto max-w-[300px] py-1">
+                            <button onClick={() => handleViewBooking(booking)} className="flex items-center gap-0.5 px-2 py-1 rounded text-[10px] font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors whitespace-nowrap">
+                              <Eye size={12} /> View
                             </button>
-                            <button onClick={() => printReceipt(booking)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors whitespace-nowrap">
-                              <Printer size={13} /> Print
+                            <button onClick={() => printReceipt(booking)} className="flex items-center gap-0.5 px-2 py-1 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors whitespace-nowrap">
+                              <Printer size={12} /> Print
                             </button>
-                            <button onClick={() => downloadPDF(booking)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors whitespace-nowrap">
-                              <FileDown size={13} /> PDF
+                            <button onClick={() => downloadPDF(booking)} className="flex items-center gap-0.5 px-2 py-1 rounded text-[10px] font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors whitespace-nowrap">
+                              <FileDown size={12} /> PDF
                             </button>
-                            <button onClick={() => { setTimingBooking(booking); setNewTiming({ date: "", checkIn: "", checkOut: "" }); setShowTimingModal(true); }} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors whitespace-nowrap">
-                              <Plus size={13} /> Timing
+                            <button onClick={() => { setTimingBooking(booking); setNewTiming({ date: "", checkIn: "", checkOut: "" }); setShowTimingModal(true); }} className="flex items-center gap-0.5 px-2 py-1 rounded text-[10px] font-medium bg-cyan-50 text-cyan-700 hover:bg-cyan-100 transition-colors whitespace-nowrap">
+                              <Plus size={12} /> Timing
                             </button>
-                            <button onClick={() => { setSelectedBooking(booking); setNewStatus(booking.status || 'pending'); setShowStatusModal(true); }} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-orange-50 text-orange-700 hover:bg-orange-100 transition-colors whitespace-nowrap">
-                              <Edit size={13} /> Status
+                            <button onClick={() => { setSelectedBooking(booking); setNewStatus(booking.status || 'pending'); setShowStatusModal(true); }} className="flex items-center gap-0.5 px-2 py-1 rounded text-[10px] font-medium bg-orange-50 text-orange-700 hover:bg-orange-100 transition-colors whitespace-nowrap">
+                              <Edit size={12} /> Status
                             </button>
                             {isCashPending && (
                               <button onClick={() => {
@@ -1210,8 +1187,8 @@ const ChamberBookings = () => {
                                 setPaymentScreenshot(null);
                                 setPaymentScreenshotPreview(null);
                                 setShowPaymentModal(true);
-                              }} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-yellow-50 text-yellow-700 hover:bg-yellow-100 transition-colors whitespace-nowrap">
-                                <CreditCard size={13} /> Payment
+                              }} className="flex items-center gap-0.5 px-2 py-1 rounded text-[10px] font-medium bg-yellow-50 text-yellow-700 hover:bg-yellow-100 transition-colors whitespace-nowrap">
+                                <CreditCard size={12} /> Pay
                               </button>
                             )}
                           </div>
@@ -1240,7 +1217,9 @@ const ChamberBookings = () => {
         </div>
       </div>
 
+      {/* ============================================================ */}
       {/* VIEW BOOKING MODAL */}
+      {/* ============================================================ */}
       {showViewModal && viewBooking && (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setShowViewModal(false); }}>
           <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
@@ -1392,7 +1371,9 @@ const ChamberBookings = () => {
         </div>
       )}
 
+      {/* ============================================================ */}
       {/* STATUS UPDATE MODAL */}
+      {/* ============================================================ */}
       {showStatusModal && selectedBooking && (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) { setShowStatusModal(false); setSelectedBooking(null); setNewStatus(""); } }}>
           <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden">
@@ -1439,7 +1420,9 @@ const ChamberBookings = () => {
         </div>
       )}
 
+      {/* ============================================================ */}
       {/* PAYMENT STATUS UPDATE MODAL */}
+      {/* ============================================================ */}
       {showPaymentModal && paymentBooking && (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) resetPaymentModal(); }}>
           <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-y-auto max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
@@ -1605,7 +1588,9 @@ const ChamberBookings = () => {
         </div>
       )}
 
+      {/* ============================================================ */}
       {/* VISITING TIMINGS MODAL */}
+      {/* ============================================================ */}
       {showTimingModal && timingBooking && (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) { setShowTimingModal(false); setTimingBooking(null); setNewTiming({ date: "", checkIn: "", checkOut: "" }); } }}>
           <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden">

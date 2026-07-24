@@ -45,7 +45,6 @@ const MyBookings = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDate, setFilterDate] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
     status: 'all',
     paymentStatus: 'all',
@@ -124,15 +123,12 @@ const MyBookings = () => {
         return;
       }
 
-      // ✅ Check if user is admin or normal user
       const isAdminUser = localStorage.getItem("admin") !== null;
       
       let url;
       if (isAdminUser) {
-        // ✅ ADMIN: Fetch ALL bookings (admin can see everything)
         url = `${API_URL}/api/bookings`;
       } else {
-        // ✅ NORMAL USER: Fetch only user's bookings
         url = `${API_URL}/api/bookings/user`;
       }
       
@@ -146,28 +142,20 @@ const MyBookings = () => {
       
       console.log("Response data:", res.data);
       
-      // Response mein 'bookings' array hai with 'cabin' object
       let bookingsData = res.data.bookings || [];
       
-      // ✅ If admin, filter bookings to show only admin's bookings + guest bookings (user: null)
       if (isAdminUser) {
         const adminId = currentUser?._id || currentUser?.id;
         console.log("Admin ID:", adminId);
         
         bookingsData = bookingsData.filter(b => {
-          // Show if: 
-          // 1. user is null (guest booking by admin)
-          // 2. user._id matches admin's ID (admin booked for themselves)
-          // 3. userId matches admin's ID (admin booked for themselves - old format)
           const userId = b.user?._id || b.userId?.toString() || b.userId;
           
-          // If user is null or undefined, it's a guest booking (admin created it)
           if (!userId) {
             console.log("Guest booking found:", b._id, b.name);
             return true;
           }
           
-          // If user ID matches admin ID
           if (userId === adminId) {
             console.log("Admin's own booking found:", b._id, b.name);
             return true;
@@ -230,7 +218,6 @@ const MyBookings = () => {
     fetchCabins();
   }, []);
 
-  // Calculate price difference when cabin is selected
   useEffect(() => {
     if (selectedCabin && replaceBooking) {
       const cabin = allCabins.find(c => c._id === selectedCabin);
@@ -309,7 +296,6 @@ const MyBookings = () => {
     setShowViewModal(true);
   };
 
-  // Replace Booking
   const handleReplaceBooking = async () => {
     if (!selectedCabin) {
       toast.error("Please select a cabin to replace");
@@ -342,7 +328,6 @@ const MyBookings = () => {
     }
   };
 
-  // Cancel Booking
   const handleCancelBooking = async () => {
     setCancelLoading(true);
     try {
@@ -368,7 +353,6 @@ const MyBookings = () => {
     }
   };
 
-  // Update Payment Status
   const handleUpdatePaymentStatus = async () => {
     if (!paymentBooking || !newPaymentStatus) {
       toast.error("Please select a payment status");
@@ -414,7 +398,6 @@ const MyBookings = () => {
         return;
       }
       
-      // Generate seat list HTML
       let seatListHtml = '';
       if (booking.selectedSeats && booking.selectedSeats.length > 0) {
         seatListHtml = booking.selectedSeats.map(s => 
@@ -498,7 +481,6 @@ const MyBookings = () => {
     return matchSearch && matchDate && matchStatus && matchPaymentStatus && matchPaymentMethod;
   });
 
-  // Calculate price difference
   const getPriceDifference = () => {
     if (!replaceBooking || !selectedCabinData) return null;
     
@@ -527,13 +509,11 @@ const MyBookings = () => {
 
   const priceDiff = getPriceDifference();
 
-  // Get counts
   const totalCount = bookings.length;
   const activeCount = bookings.filter(b => b.status === 'active' || b.status === 'confirmed').length;
   const pendingCount = bookings.filter(b => b.status === 'pending').length;
   const completedCount = bookings.filter(b => b.status === 'completed').length;
 
-  // Clear filters
   const clearFilters = () => {
     setFilters({
       status: 'all',
@@ -570,7 +550,6 @@ const MyBookings = () => {
               {isAdmin ? 'Manage and view bookings created by you.' : 'Manage and view all your bookings.'}
             </p>
           </div>
-       
         </div>
 
         {/* Stats Cards */}
@@ -619,19 +598,72 @@ const MyBookings = () => {
                   />
                 </div>
                 
-                {/* Filter Toggle Button */}
-                <button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                    showFilters ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  <Filter size={14} />
-                  Filters
-                  {(filters.status !== 'all' || filters.paymentStatus !== 'all' || filters.paymentMethod !== 'all' || filterDate) && (
-                    <span className="w-2 h-2 rounded-full bg-red-500"></span>
-                  )}
-                </button>
+                {/* Date Filter */}
+                <div className="min-w-[140px]">
+                  <input
+                    type="date"
+                    value={filterDate}
+                    onChange={(e) => setFilterDate(e.target.value)}
+                    className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    placeholder="Filter by date"
+                  />
+                </div>
+
+                {/* Status Filter */}
+                <div className="min-w-[120px]">
+                  <select
+                    value={filters.status}
+                    onChange={(e) => setFilters({...filters, status: e.target.value})}
+                    className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="confirmed">Confirmed</option>
+                    <option value="active">Active</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </div>
+
+                {/* Payment Status Filter */}
+                <div className="min-w-[130px]">
+                  <select
+                    value={filters.paymentStatus}
+                    onChange={(e) => setFilters({...filters, paymentStatus: e.target.value})}
+                    className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                  >
+                    <option value="all">Payment Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="paid">Paid</option>
+                    <option value="failed">Failed</option>
+                    <option value="refunded">Refunded</option>
+                  </select>
+                </div>
+
+                {/* Payment Method Filter */}
+                <div className="min-w-[130px]">
+                  <select
+                    value={filters.paymentMethod}
+                    onChange={(e) => setFilters({...filters, paymentMethod: e.target.value})}
+                    className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                  >
+                    <option value="all">Payment Method</option>
+                    <option value="online">Online</option>
+                    <option value="cash">Cash</option>
+                    <option value="counter">Counter</option>
+                  </select>
+                </div>
+
+                {/* Clear Filters Button */}
+                {(filters.status !== 'all' || filters.paymentStatus !== 'all' || filters.paymentMethod !== 'all' || filterDate || searchTerm) && (
+                  <button
+                    onClick={clearFilters}
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                  >
+                    <XCircleIcon size={14} />
+                    Clear
+                  </button>
+                )}
 
                 {filteredBookings.length > 0 && (
                   <button
@@ -650,82 +682,9 @@ const MyBookings = () => {
                   <CreditCard size={14} className="text-indigo-600" />
                   <span className="hidden xs:inline">Payments</span>
                 </button>
-                <button
-                  onClick={() => navigate("/my-cabins")}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors"
-                >
-                  <Building2 size={14} />
-                  <span className="hidden xs:inline">Cabins</span>
-                  <span className="xs:hidden">Cabins</span>
-                </button>
+             
               </div>
             </div>
-
-            {/* Filter Panel */}
-            {showFilters && (
-              <div className="px-4 pt-4 pb-3 border-b border-gray-100" style={{ backgroundColor: '#fafafa' }}>
-                <div className="flex flex-wrap items-end gap-3">
-                  <div className="min-w-[130px]">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Date</label>
-                    <input
-                      type="date"
-                      value={filterDate}
-                      onChange={(e) => setFilterDate(e.target.value)}
-                      className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                    />
-                  </div>
-                  <div className="min-w-[130px]">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</label>
-                    <select
-                      value={filters.status}
-                      onChange={(e) => setFilters({...filters, status: e.target.value})}
-                      className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                    >
-                      <option value="all">All</option>
-                      <option value="pending">Pending</option>
-                      <option value="confirmed">Confirmed</option>
-                      <option value="active">Active</option>
-                      <option value="completed">Completed</option>
-                      <option value="cancelled">Cancelled</option>
-                    </select>
-                  </div>
-                  <div className="min-w-[130px]">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Payment Status</label>
-                    <select
-                      value={filters.paymentStatus}
-                      onChange={(e) => setFilters({...filters, paymentStatus: e.target.value})}
-                      className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                    >
-                      <option value="all">All</option>
-                      <option value="pending">Pending</option>
-                      <option value="paid">Paid</option>
-                      <option value="failed">Failed</option>
-                      <option value="refunded">Refunded</option>
-                    </select>
-                  </div>
-                  <div className="min-w-[130px]">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Payment Method</label>
-                    <select
-                      value={filters.paymentMethod}
-                      onChange={(e) => setFilters({...filters, paymentMethod: e.target.value})}
-                      className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                    >
-                      <option value="all">All</option>
-                      <option value="online">Online</option>
-                      <option value="cash">Cash</option>
-                      <option value="counter">Counter</option>
-                    </select>
-                  </div>
-                  <button
-                    onClick={clearFilters}
-                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-red-600 transition-colors"
-                  >
-                    <XCircleIcon size={14} />
-                    Clear
-                  </button>
-                </div>
-              </div>
-            )}
 
             {/* Table Container */}
             <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
@@ -922,7 +881,6 @@ const MyBookings = () => {
           }}
         >
           <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            {/* Header */}
             <div className="sticky top-0 bg-gradient-to-br from-indigo-600 to-purple-600 text-white p-6 rounded-t-3xl flex justify-between items-center">
               <div>
                 <h3 className="text-2xl font-bold">Booking Details</h3>
@@ -959,7 +917,6 @@ const MyBookings = () => {
                 <p className="text-xs text-gray-500 mt-0.5">{viewBooking.totalHours}h • {viewBooking.bookingBasis === 'plan' ? 'Plan' : 'Hourly'}</p>
               </div>
 
-              {/* Seats Section */}
               {viewBooking.selectedSeats && viewBooking.selectedSeats.length > 0 && (
                 <div className="p-4 bg-indigo-50 rounded-xl">
                   <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider flex items-center gap-2">
@@ -1088,7 +1045,6 @@ const MyBookings = () => {
                 </div>
               </div>
 
-              {/* Price Difference */}
               {selectedCabinData && priceDiff && (
                 <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 space-y-3">
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Price Comparison</p>

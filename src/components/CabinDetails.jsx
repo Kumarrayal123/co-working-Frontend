@@ -13,12 +13,20 @@ import {
   Wifi,
   Building2 as BuildingIcon,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Crown,
+  Calendar,
+  Sun,
+  Moon,
+  Clock as ClockIcon,
+  Video,
+  Play,
+  X,
+  Eye,
+  Star
 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import UsersNavbar from "./UsersNavbar";
-import AdminNavbar from "./AdminNavbar";
 import "./Dashboard.css";
 
 const API_URL = "http://localhost:5003";
@@ -27,7 +35,6 @@ const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526
 export default function CabinDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const isAdmin = localStorage.getItem("admin") !== null;
 
   const [cabin, setCabin] = useState(null);
   const [relatedCabins, setRelatedCabins] = useState([]);
@@ -37,11 +44,32 @@ export default function CabinDetails() {
   const [images, setImages] = useState([]);
   const autoSlideRef = useRef(null);
 
+  // Video Popup State
+  const [showVideoPopup, setShowVideoPopup] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState('');
+
   const getImageUrl = (img) => {
     if (!img) return PLACEHOLDER_IMAGE;
     if (img.startsWith("http")) return img;
     const cleanPath = img.replace(/\\/g, "/").replace(/^\/+/, "");
     return `${API_URL}/${cleanPath}`;
+  };
+
+  const getMediaUrl = (media) => {
+    if (!media) return null;
+    if (media.startsWith("http")) return media;
+    const cleanPath = media.replace(/\\/g, "/").replace(/^\/+/, "");
+    return `${API_URL}/${cleanPath}`;
+  };
+
+  const openVideoPopup = (videoUrl) => {
+    setSelectedVideo(videoUrl);
+    setShowVideoPopup(true);
+  };
+
+  const closeVideoPopup = () => {
+    setShowVideoPopup(false);
+    setSelectedVideo('');
   };
 
   // Auto-slide effect
@@ -57,7 +85,6 @@ export default function CabinDetails() {
     };
   }, [images.length]);
 
-  // Reset timer on manual change
   const handleImageChange = (index) => {
     setActiveImage(index);
     if (autoSlideRef.current) {
@@ -73,29 +100,25 @@ export default function CabinDetails() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Fetch cabin details
         const cabinRes = await axios.get(`${API_URL}/api/cabins/${id}`);
         setCabin(cabinRes.data);
         
-        // Set images
         if (cabinRes.data.images && cabinRes.data.images.length > 0) {
           setImages(cabinRes.data.images.map(img => getImageUrl(img)));
         } else {
           setImages([PLACEHOLDER_IMAGE]);
         }
 
-        // Fetch all cabins for related
         try {
           const allRes = await axios.get(`${API_URL}/api/cabins`);
           setRelatedCabins(
-            allRes.data.filter((c) => c._id !== id).slice(0, 3)
+            allRes.data.filter((c) => c._id !== id && c.isChamber === true).slice(0, 3)
           );
         } catch (err) {
           console.error("Error fetching related cabins:", err);
           setRelatedCabins([]);
         }
 
-        // Fetch booked slots
         try {
           const slotsRes = await axios.get(`${API_URL}/api/bookings/cabin/${id}`);
           setBookedSlots(slotsRes.data.bookedSlots || []);
@@ -114,14 +137,6 @@ export default function CabinDetails() {
     fetchData();
   }, [id]);
 
-  // Group booked slots by date
-  const slotsByDate = bookedSlots.reduce((acc, slot) => {
-    const key = slot.startDate;
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(slot);
-    return acc;
-  }, {});
-
   const formatDate = (dateStr) => {
     if (!dateStr) return "";
     const d = new Date(dateStr + "T00:00:00");
@@ -137,6 +152,15 @@ export default function CabinDetails() {
     return `${displayHour}:${m} ${ampm}`;
   };
 
+  const formatTimeDisplay = (time) => {
+    if (!time) return 'N/A';
+    const [hours, minutes] = time.split(':');
+    const h = parseInt(hours);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 || 12;
+    return `${h12}:${minutes} ${ampm}`;
+  };
+
   const nextImage = () => {
     if (images.length <= 1) return;
     handleImageChange((activeImage + 1) % images.length);
@@ -149,11 +173,10 @@ export default function CabinDetails() {
 
   if (loading) {
     return (
-      <div className="admin-dash">
-        {isAdmin ? <AdminNavbar /> : <UsersNavbar />}
-        <div className="admin-dash__loading">
-          <div className="admin-dash__spinner" />
-          <p className="admin-dash__loading-text">Loading cabin details...</p>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin" />
+          <p className="text-sm text-gray-500">Loading cabin details...</p>
         </div>
       </div>
     );
@@ -161,21 +184,18 @@ export default function CabinDetails() {
 
   if (!cabin) {
     return (
-      <div className="admin-dash">
-        {isAdmin ? <AdminNavbar /> : <UsersNavbar />}
-        <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-16">
-          <div className="admin-dash__error" style={{ background: '#f8fafc', borderColor: '#e2e8f0' }}>
-            <BuildingIcon size={48} className="text-slate-300 mb-4" />
-            <p className="admin-dash__error-title" style={{ color: '#475569' }}>Cabin not found</p>
-            <p className="admin-dash__error-message">The cabin you're looking for doesn't exist or has been removed.</p>
-            <button
-              onClick={() => navigate(-1)}
-              className="mt-4 px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors"
-            >
-              Go Back
-            </button>
-          </div>
-        </main>
+      <div className="min-h-screen bg-white flex items-center justify-center px-4">
+        <div className="text-center">
+          <BuildingIcon size={48} className="text-slate-300 mx-auto mb-4" />
+          <p className="text-lg font-bold text-slate-700">Cabin not found</p>
+          <p className="text-sm text-slate-400 mt-1">The cabin you're looking for doesn't exist.</p>
+          <button
+            onClick={() => navigate(-1)}
+            className="mt-4 px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors"
+          >
+            Go Back
+          </button>
+        </div>
       </div>
     );
   }
@@ -187,17 +207,26 @@ export default function CabinDetails() {
     privateWashroom: { label: "Private Washroom", icon: Bath },
     secureAccess: { label: "Secure Access", icon: Shield },
     comfortSeating: { label: "Comfort Seating", icon: Armchair },
+    coffee: { label: "Coffee & Tea", icon: Star },
+    gym: { label: "Gym Access", icon: Star },
+    ac: { label: "Air Conditioning", icon: Star },
+    tv: { label: "Smart TV", icon: Star },
+    printer: { label: "Printer Access", icon: Star },
+    phone: { label: "Conference Phone", icon: Star },
   };
 
   const activeAmenities = Object.keys(cabin.amenities || {}).filter(
     (key) => cabin.amenities[key]
   );
 
-  return (
-    <div className="admin-dash">
-      {isAdmin ? <AdminNavbar /> : <UsersNavbar />}
+  // Get button text based on isChamber
+  const getBookButtonText = () => {
+    return cabin.isChamber ? "Book Chamber" : "Book Space";
+  };
 
-      <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-16">
+  return (
+    <div className="min-h-screen bg-white">
+      <main className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto py-8 pb-16">
         {/* Back */}
         <button
           onClick={() => navigate(-1)}
@@ -207,9 +236,9 @@ export default function CabinDetails() {
         </button>
 
         {/* Main Section */}
-        <div className="admin-dash__card grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 p-6 lg:p-8">
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 p-6 lg:p-8">
 
-          {/* Left Images with Slider */}
+          {/* Left - Images with Slider */}
           <div className="flex flex-col gap-4">
             {/* Main Image Slider */}
             <div className="relative overflow-hidden rounded-2xl h-[300px] sm:h-[340px] lg:h-[420px] shadow-lg shadow-slate-200/50 group">
@@ -226,8 +255,15 @@ export default function CabinDetails() {
               <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 via-transparent to-transparent opacity-60" />
               
               {/* Badges */}
-              <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest text-indigo-700 shadow-sm z-10">
-                Premium Workspace
+              <div className="absolute top-4 left-4 flex flex-col gap-1.5">
+                <span className="bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest text-indigo-700 shadow-sm">
+                  {cabin.isChamber ? '🏛️ Chamber' : 'Workspace'}
+                </span>
+                {cabin.cabinType === 'exclusive' && (
+                  <span className="bg-amber-500/95 backdrop-blur-sm px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest text-white shadow-sm flex items-center gap-1">
+                    <Crown size={12} /> Premium
+                  </span>
+                )}
               </div>
               {cabin.seats && cabin.seats.length > 0 && (
                 <div className="absolute top-4 right-4 bg-indigo-600/95 backdrop-blur-sm px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest text-white shadow-sm flex items-center gap-1.5 z-10">
@@ -298,12 +334,58 @@ export default function CabinDetails() {
                 ))}
               </div>
             )}
+
+            {/* Videos Section */}
+            {cabin.videos && cabin.videos.length > 0 && (
+              <div>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <Video size={14} /> Videos ({cabin.videos.length})
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {cabin.videos.map((video, idx) => (
+                    <div 
+                      key={idx} 
+                      className="relative bg-black/5 rounded-lg border border-gray-200 overflow-hidden cursor-pointer group"
+                      onClick={() => openVideoPopup(getMediaUrl(video))}
+                    >
+                      <video 
+                        src={getMediaUrl(video)} 
+                        className="w-full h-28 object-cover"
+                        poster={cabin.images?.[0] ? getImageUrl(cabin.images[0]) : undefined}
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 flex items-center justify-center">
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/90 rounded-full p-2">
+                          <Play size={20} className="text-indigo-600" />
+                        </div>
+                      </div>
+                      <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[8px] px-2 py-0.5 rounded-full">
+                        Video {idx + 1}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Right Details */}
           <div className="flex flex-col justify-center space-y-6">
             <div>
-              <span className="inline-block text-[10px] font-bold text-indigo-600 uppercase tracking-[0.2em] mb-3">Workspace Details</span>
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                <span className="inline-block text-[10px] font-bold text-indigo-600 uppercase tracking-[0.2em]">
+                  {cabin.isChamber ? '🏛️ Chamber' : 'Workspace'} Details
+                </span>
+                {cabin.isChamber && (
+                  <span className="text-[10px] bg-rose-100 text-rose-600 px-2 py-0.5 rounded-full font-bold">
+                    Chamber
+                  </span>
+                )}
+                {cabin.cabinType === 'exclusive' && (
+                  <span className="text-[10px] bg-amber-100 text-amber-600 px-2 py-0.5 rounded-full font-bold flex items-center gap-0.5">
+                    <Crown size={10} /> Premium
+                  </span>
+                )}
+              </div>
               <h1 className="text-2xl sm:text-3xl font-black uppercase text-slate-900 leading-tight mb-3 tracking-tighter">
                 {cabin.name}
               </h1>
@@ -322,6 +404,36 @@ export default function CabinDetails() {
             <div className="flex items-center gap-2">
               <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tighter">₹{cabin.price}</span>
               <span className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-2">/ Hour</span>
+            </div>
+
+            {/* ✅ Open/Close Time - SHOWING PROPERLY */}
+            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest flex items-center gap-2 mb-2">
+                <ClockIcon size={14} className="text-indigo-600" />
+                Operating Hours
+              </h3>
+              {cabin.is24x7 ? (
+                <div className="flex items-center gap-2 text-emerald-600 font-bold">
+                  <ClockIcon size={16} className="text-emerald-500" />
+                  24×7 Open
+                </div>
+              ) : (
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-1.5">
+                    <Sun size={14} className="text-amber-500" />
+                    <span className="text-sm font-semibold text-slate-700">
+                      {formatTimeDisplay(cabin.openTime || '09:00')}
+                    </span>
+                  </div>
+                  <span className="text-slate-400">—</span>
+                  <div className="flex items-center gap-1.5">
+                    <Moon size={14} className="text-indigo-500" />
+                    <span className="text-sm font-semibold text-slate-700">
+                      {formatTimeDisplay(cabin.closeTime || '21:00')}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Seats Display */}
@@ -374,7 +486,7 @@ export default function CabinDetails() {
                         {Icon && <Icon size={14} />}
                       </div>
                       <span className="text-[11px] font-bold text-slate-600 uppercase tracking-tight">
-                        {amenityMap[key]?.label}
+                        {amenityMap[key]?.label || key}
                       </span>
                     </div>
                   );
@@ -406,9 +518,11 @@ export default function CabinDetails() {
               </div>
             )}
 
+         
+
             {/* Info & Book */}
             <div className="pt-6 border-t border-slate-100 flex flex-col gap-6">
-              <div className="flex gap-6 sm:gap-8 text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+              <div className="flex gap-6 sm:gap-8 text-[11px] font-bold text-slate-400 uppercase tracking-widest flex-wrap">
                 <div className="flex items-center gap-2">
                   <Users size={14} className="text-indigo-500" /> {cabin.capacity} Seats
                 </div>
@@ -420,6 +534,11 @@ export default function CabinDetails() {
                     <Armchair size={14} className="text-indigo-500" /> {cabin.seats.length} Available
                   </div>
                 )}
+                {cabin.isChamber && (
+                  <div className="flex items-center gap-2">
+                    <BuildingIcon size={14} className="text-rose-500" /> Chamber
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-4">
@@ -427,7 +546,7 @@ export default function CabinDetails() {
                   onClick={() => navigate(`/book/${cabin._id}`)}
                   className="flex-1 py-4 bg-[#007A52] text-white rounded-xl font-bold text-sm uppercase tracking-[0.1em] hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-500/20 active:scale-[0.98] flex items-center justify-center gap-3"
                 >
-                  Book Cabin 
+                  {getBookButtonText()}
                 </button>
                 <button
                   onClick={() => navigate(`/site-visit/${cabin._id}`)}
@@ -441,112 +560,52 @@ export default function CabinDetails() {
         </div>
 
         {/* Booked Slots Section */}
-        <div style={{
-          background: "#fff",
-          border: "1px solid #e4e7ec",
-          borderRadius: 16,
-          boxShadow: "0 1px 2px rgba(16,24,40,0.05)",
-          padding: "1.5rem",
-          marginTop: "1.5rem",
-        }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-              <div style={{
-                width: 40, height: 40, borderRadius: 12,
-                background: "linear-gradient(135deg,#fef2f2,#fee2e2)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                flexShrink: 0, border: "1.5px solid #fecaca",
-              }}>
+        <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm p-6 mt-6">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center border border-red-200">
                 <Clock size={20} color="#dc2626" />
               </div>
               <div>
-                <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 700, color: "#101828", letterSpacing: "-0.01em" }}>
-                  Already Booked Slots
-                </h3>
-                <p style={{ margin: 0, fontSize: "0.72rem", color: "#98a2b3", marginTop: 2 }}>
-                  These time slots are unavailable — please choose a different time
-                </p>
+                <h3 className="text-sm font-bold text-slate-900">Already Booked Slots</h3>
+                <p className="text-xs text-slate-400">These time slots are unavailable</p>
               </div>
             </div>
             {bookedSlots.length > 0 && (
-              <div style={{
-                background: "#fee2e2", color: "#dc2626",
-                fontSize: "0.72rem", fontWeight: 700,
-                padding: "4px 12px", borderRadius: 999,
-                border: "1px solid #fecaca",
-                whiteSpace: "nowrap",
-              }}>
+              <div className="bg-red-100 text-red-600 text-xs font-bold px-3 py-1 rounded-full border border-red-200">
                 {bookedSlots.length} Booking{bookedSlots.length > 1 ? "s" : ""}
               </div>
             )}
           </div>
 
           {bookedSlots.length === 0 ? (
-            <div style={{
-              display: "flex", alignItems: "center", gap: "0.875rem",
-              padding: "1.125rem 1.25rem",
-              background: "#f0fdf4", border: "1.5px solid #86efac",
-              borderRadius: 12,
-            }}>
+            <div className="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
               <ShieldCheck size={22} color="#16a34a" />
               <div>
-                <p style={{ margin: 0, fontSize: "0.875rem", fontWeight: 700, color: "#15803d" }}>All Clear — Fully Available!</p>
-                <p style={{ margin: 0, fontSize: "0.75rem", color: "#4ade80", marginTop: 2 }}>No bookings yet for this cabin. Go ahead and book your slot.</p>
+                <p className="text-sm font-bold text-emerald-700">All Clear — Fully Available!</p>
+                <p className="text-xs text-emerald-500">No bookings yet. Go ahead and book your slot.</p>
               </div>
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
+            <div className="space-y-2">
               {bookedSlots.map((slot, idx) => (
-                <div key={idx} style={{
-                  display: "flex", alignItems: "center", gap: "1rem",
-                  padding: "0.875rem 1.125rem",
-                  background: "#fef2f2",
-                  border: "1.5px solid #fecaca",
-                  borderRadius: 12,
-                  flexWrap: "wrap",
-                }}>
-                  <div style={{
-                    width: 10, height: 10, borderRadius: "50%",
-                    background: "#dc2626", flexShrink: 0,
-                    boxShadow: "0 0 0 3px rgba(220,38,38,0.2)",
-                  }} />
-
-                  <div style={{ minWidth: 120 }}>
-                    <div style={{ fontSize: "0.65rem", fontWeight: 700, color: "#ef4444", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>
-                      Date
-                    </div>
-                    <div style={{ fontSize: "0.82rem", fontWeight: 700, color: "#7f1d1d" }}>
-                      {formatDate(slot.startDate)}
-                      {slot.endDate && slot.endDate !== slot.startDate && (
-                        <span style={{ color: "#fca5a5", fontWeight: 500 }}> → {formatDate(slot.endDate)}</span>
-                      )}
-                    </div>
+                <div key={idx} className="flex items-center gap-4 p-3 bg-red-50 border border-red-200 rounded-xl flex-wrap">
+                  <div className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-sm shadow-red-200" />
+                  <div className="min-w-[100px]">
+                    <div className="text-[10px] font-bold text-red-400 uppercase tracking-wider">Date</div>
+                    <div className="text-sm font-bold text-red-800">{formatDate(slot.startDate)}</div>
                   </div>
-
-                  <div style={{
-                    display: "inline-flex", alignItems: "center", gap: "0.4rem",
-                    padding: "0.3rem 0.875rem",
-                    background: "#fff", border: "1.5px solid #fca5a5",
-                    borderRadius: 999,
-                    fontSize: "0.82rem", fontWeight: 800, color: "#b91c1c",
-                  }}>
+                  <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-full border border-red-300">
                     <Clock size={13} color="#ef4444" />
-                    {formatTime(slot.startTime)}
-                    <span style={{ color: "#fca5a5", fontWeight: 400, margin: "0 2px" }}>→</span>
-                    {formatTime(slot.endTime)}
+                    <span className="text-sm font-bold text-red-700">{formatTime(slot.startTime)}</span>
+                    <span className="text-red-300">→</span>
+                    <span className="text-sm font-bold text-red-700">{formatTime(slot.endTime)}</span>
                   </div>
-
                   {(slot.name || slot.email) && (
-                    <div style={{ marginLeft: "auto", textAlign: "right" }}>
-                      <div style={{ fontSize: "0.65rem", fontWeight: 700, color: "#ef4444", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>
-                        Booked By
-                      </div>
-                      {slot.name && (
-                        <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "#7f1d1d" }}>{slot.name}</div>
-                      )}
-                      {slot.email && (
-                        <div style={{ fontSize: "0.72rem", color: "#dc2626", fontWeight: 500 }}>{slot.email}</div>
-                      )}
+                    <div className="ml-auto text-right">
+                      <div className="text-[10px] font-bold text-red-400 uppercase tracking-wider">Booked By</div>
+                      {slot.name && <div className="text-sm font-bold text-red-800">{slot.name}</div>}
+                      {slot.email && <div className="text-xs text-red-500">{slot.email}</div>}
                     </div>
                   )}
                 </div>
@@ -559,7 +618,7 @@ export default function CabinDetails() {
         {relatedCabins.length > 0 && (
           <div className="mt-16">
             <h2 className="text-xl sm:text-2xl font-bold uppercase text-slate-900 mb-8 tracking-tight">
-              Related Workspaces
+              Related Chambers
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -567,9 +626,9 @@ export default function CabinDetails() {
                 <div
                   key={rc._id}
                   onClick={() => navigate(`/cabin/${rc._id}`)}
-                  className="admin-dash__card cursor-pointer hover:shadow-lg transition-all duration-300 group"
+                  className="bg-white border border-slate-200/80 rounded-2xl shadow-sm cursor-pointer hover:shadow-lg transition-all duration-300 group overflow-hidden"
                 >
-                  <div className="h-48 overflow-hidden rounded-t-2xl relative">
+                  <div className="h-48 overflow-hidden relative">
                     <img
                       src={getImageUrl(rc.images?.[0])}
                       className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -579,7 +638,7 @@ export default function CabinDetails() {
                       }}
                     />
                     <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest text-indigo-700 shadow-sm">
-                      Available
+                      {rc.isChamber ? '🏛️ Chamber' : 'Workspace'}
                     </div>
                     {rc.seats && rc.seats.length > 0 && (
                       <div className="absolute top-3 right-3 bg-indigo-600/95 backdrop-blur-sm px-2 py-1 rounded-full text-[10px] font-bold text-white shadow-sm flex items-center gap-1">
@@ -611,6 +670,39 @@ export default function CabinDetails() {
           Verified professional workspace
         </div>
       </main>
+
+      {/* Video Fullscreen Popup */}
+      {showVideoPopup && (
+        <div 
+          className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 backdrop-blur-md"
+          onClick={closeVideoPopup}
+        >
+          <div 
+            className="relative max-w-[90vw] max-h-[90vh] w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={closeVideoPopup}
+              className="absolute -top-12 right-0 text-white/70 hover:text-white transition-colors p-2 z-10"
+            >
+              <X size={32} />
+            </button>
+            <video 
+              src={selectedVideo} 
+              controls 
+              autoPlay
+              className="w-full max-h-[85vh] rounded-lg shadow-2xl"
+              poster={cabin.images?.[0] ? getImageUrl(cabin.images[0]) : undefined}
+            />
+            <button
+              onClick={closeVideoPopup}
+              className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/50 hover:text-white transition-colors text-sm bg-black/50 px-6 py-2 rounded-full backdrop-blur-sm"
+            >
+              Click anywhere to close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

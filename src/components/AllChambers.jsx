@@ -1,4 +1,4 @@
-// AllChambers.jsx - Complete All Chambers Component with DoctorNavbar
+// AllChambers.jsx - Complete All Chambers Component with DoctorNavbar (Only isChamber: true)
 import axios from "axios";
 import { 
   ArrowRight, 
@@ -53,7 +53,10 @@ const AllChambers = () => {
     axios
       .get(`${API_URL}/api/cabins`)
       .then((res) => {
-        setCabins(res.data);
+        // ✅ ONLY FILTER isChamber === true
+        const allCabins = res.data;
+        const chamberCabins = allCabins.filter(c => c.isChamber === true);
+        setCabins(chamberCabins);
         setLoading(false);
       })
       .catch((err) => {
@@ -62,6 +65,7 @@ const AllChambers = () => {
       });
   }, []);
 
+  // ✅ Only active chambers (isChamber: true already filtered)
   const activeCabins = cabins.filter(c => c.isActive === true);
 
   const newlyAdded = activeCabins
@@ -167,6 +171,12 @@ const AllChambers = () => {
                 Premium
               </span>
             )}
+            {/* ✅ Chamber Badge */}
+            {cabin.isChamber && isActive && (
+              <span className="bg-gradient-to-r from-rose-500 to-pink-500 text-white px-2 py-0.5 rounded-full text-[8px] font-bold flex items-center gap-0.5 shadow-lg">
+                🏛️ Chamber
+              </span>
+            )}
             <span className={`${
               isActive 
                 ? 'bg-emerald-500 text-white' 
@@ -211,9 +221,21 @@ const AllChambers = () => {
             <span className="truncate">{cabin.address?.split(',')[0] || 'Location'}</span>
           </div>
 
+          {/* Timing */}
+          <div className="flex items-center gap-1 text-[9px] text-slate-400">
+            <Clock size={10} className="text-indigo-400 flex-shrink-0" />
+            {cabin.is24x7 ? (
+              <span className="text-emerald-600 font-medium">24×7</span>
+            ) : (
+              <span>
+                {cabin.openTime ? formatTimeDisplay(cabin.openTime) : 'N/A'} - {cabin.closeTime ? formatTimeDisplay(cabin.closeTime) : 'N/A'}
+              </span>
+            )}
+          </div>
+
           <div className="overflow-hidden max-h-0 group-hover:max-h-16 transition-all duration-500 ease-in-out">
             <p className="text-[10px] text-slate-500 font-light line-clamp-2 leading-relaxed">
-              {cabin.description || "Premium workspace with modern amenities and high-speed internet."}
+              {cabin.description || "Premium chamber with modern amenities."}
             </p>
           </div>
 
@@ -232,6 +254,16 @@ const AllChambers = () => {
     );
   };
 
+  // Format time for display
+  const formatTimeDisplay = (time) => {
+    if (!time) return 'N/A';
+    const [hours, minutes] = time.split(':');
+    const h = parseInt(hours);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 || 12;
+    return `${h12}:${minutes} ${ampm}`;
+  };
+
   return (
     <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
       <DoctorNavbar />
@@ -243,20 +275,27 @@ const AllChambers = () => {
             <h1 className="admin-dash__greeting">
               All <span>Chambers</span>
             </h1>
-            <p className="admin-dash__subtitle">
-              Discover professionally equipped chambers and consultation rooms for your practice.
-            </p>
           </div>
-          <div className="admin-dash__date-pill">
-            <Calendar size={16} />
-            <span>
-              {new Date().toLocaleDateString("en-US", {
-                weekday: "short",
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-              })}
-            </span>
+        
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
+            <p className="text-xs text-gray-500 font-medium">Total Chambers</p>
+            <p className="text-xl sm:text-2xl font-bold text-indigo-600">{cabins.length}</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
+            <p className="text-xs text-gray-500 font-medium">Active</p>
+            <p className="text-xl sm:text-2xl font-bold text-emerald-600">{activeCabins.length}</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
+            <p className="text-xs text-gray-500 font-medium">Inactive</p>
+            <p className="text-xl sm:text-2xl font-bold text-gray-600">{cabins.length - activeCabins.length}</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
+            <p className="text-xs text-gray-500 font-medium">Premium</p>
+            <p className="text-xl sm:text-2xl font-bold text-amber-600">{cabins.filter(c => c.cabinType === 'exclusive').length}</p>
           </div>
         </div>
 
@@ -524,6 +563,12 @@ const AllChambers = () => {
                   <span className="text-gray-500">Capacity</span>
                   <span className="font-medium text-gray-700">{selectedCabin.capacity} seats</span>
                 </div>
+                {selectedCabin.isChamber && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Type</span>
+                    <span className="font-medium text-rose-600">🏛️ Chamber</span>
+                  </div>
+                )}
               </div>
 
               <div className="bg-red-50 rounded-xl p-3 text-xs text-red-700 flex items-start gap-2 border border-red-200">

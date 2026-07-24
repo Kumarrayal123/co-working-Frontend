@@ -17,6 +17,7 @@ import {
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import logo from "../assets/logo.png"; // Import logo
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -111,11 +112,16 @@ function Login() {
           {/* Decorative Top Line */}
           <div className="w-16 h-0.5 bg-gradient-to-r from-emerald-400 via-blue-500 to-purple-500 rounded-full mx-auto mb-6"></div>
 
-          {/* Header */}
+          {/* Header with Logo */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-400/20 to-blue-500/20 rounded-2xl mb-4 shadow-lg shadow-emerald-500/10 border border-white/10 backdrop-blur-sm relative group transition-all duration-300 hover:scale-105">
-              <span className="text-2xl font-light tracking-wider text-white/90 group-hover:text-white transition-colors">IG</span>
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full blur-sm animate-pulse"></div>
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-20 h-20 rounded-full bg-white/5 backdrop-blur-sm border border-white/10 p-2 shadow-lg shadow-emerald-500/10 transition-all duration-300 hover:scale-105 hover:shadow-emerald-500/20">
+                <img 
+                  src={logo} 
+                  alt="IRYAX Space Logo" 
+                  className="w-full h-full object-contain rounded-full"
+                />
+              </div>
             </div>
             
             <h2 className="text-2xl font-light text-white tracking-wide mb-1">

@@ -59,7 +59,6 @@ const CabinBookings = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDate, setFilterDate] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
     status: 'all',
     paymentStatus: 'all',
@@ -825,21 +824,8 @@ const CabinBookings = () => {
             <h1 className="admin-dash__greeting">
               Cabin <span>Bookings</span>
             </h1>
-            <p className="admin-dash__subtitle">
-              A live overview of reservations across your listed cabins.
-            </p>
           </div>
-          <div className="admin-dash__date-pill">
-            <Calendar size={16} />
-            <span>
-              {new Date().toLocaleDateString("en-US", {
-                weekday: "short",
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-              })}
-            </span>
-          </div>
+         
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
@@ -925,7 +911,8 @@ const CabinBookings = () => {
               </span>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <div className="relative w-full sm:w-56">
+              {/* Search Bar */}
+              <div className="relative w-full sm:w-48">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
@@ -936,16 +923,73 @@ const CabinBookings = () => {
                 />
               </div>
 
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${showFilters ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-              >
-                <Filter size={14} />
-                Filters
-                {(filters.status !== 'all' || filters.paymentStatus !== 'all' || filters.paymentMethod !== 'all' || filterDate) && (
-                  <span className="w-2 h-2 rounded-full bg-red-500"></span>
-                )}
-              </button>
+              {/* Date Filter */}
+              <div className="min-w-[140px]">
+                <input
+                  type="date"
+                  value={filterDate}
+                  onChange={(e) => setFilterDate(e.target.value)}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  placeholder="Filter by date"
+                />
+              </div>
+
+              {/* Status Filter */}
+              <div className="min-w-[130px]">
+                <select
+                  value={filters.status}
+                  onChange={(e) => setFilters({...filters, status: e.target.value})}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                >
+                  <option value="all">All Status</option>
+                  <option value="pending">Pending</option>
+                  <option value="confirmed">Confirmed</option>
+                  <option value="active">Active</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+
+              {/* Payment Status Filter */}
+              <div className="min-w-[140px]">
+                <select
+                  value={filters.paymentStatus}
+                  onChange={(e) => setFilters({...filters, paymentStatus: e.target.value})}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                >
+                  <option value="all">Payment Status</option>
+                  <option value="pending">Pending</option>
+                  <option value="paid">Paid</option>
+                  <option value="failed">Failed</option>
+                  <option value="refunded">Refunded</option>
+                </select>
+              </div>
+
+              {/* Payment Method Filter */}
+              <div className="min-w-[140px]">
+                <select
+                  value={filters.paymentMethod}
+                  onChange={(e) => setFilters({...filters, paymentMethod: e.target.value})}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                >
+                  <option value="all">Payment Method</option>
+                  <option value="online">Online</option>
+                  <option value="cash">Cash</option>
+                  <option value="counter">Counter</option>
+                  <option value="upi">UPI</option>
+                  <option value="card">Card</option>
+                </select>
+              </div>
+
+              {/* Clear Filters Button */}
+              {(filters.status !== 'all' || filters.paymentStatus !== 'all' || filters.paymentMethod !== 'all' || filterDate || searchTerm) && (
+                <button
+                  onClick={clearFilters}
+                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                >
+                  <XCircleIcon size={14} /> Clear
+                </button>
+              )}
 
               {filteredBookings.length > 0 && (
                 <button onClick={exportToExcel} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200">
@@ -964,52 +1008,6 @@ const CabinBookings = () => {
               </button>
             </div>
           </div>
-
-          {showFilters && (
-            <div className="px-4 pt-4 pb-3 border-b border-gray-100" style={{ backgroundColor: '#fafafa' }}>
-              <div className="flex flex-wrap items-end gap-3">
-                <div className="min-w-[130px]">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Date</label>
-                  <input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" />
-                </div>
-                <div className="min-w-[130px]">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</label>
-                  <select value={filters.status} onChange={(e) => setFilters({...filters, status: e.target.value})} className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
-                    <option value="all">All</option>
-                    <option value="pending">Pending</option>
-                    <option value="confirmed">Confirmed</option>
-                    <option value="active">Active</option>
-                    <option value="completed">Completed</option>
-                    <option value="cancelled">Cancelled</option>
-                  </select>
-                </div>
-                <div className="min-w-[130px]">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Payment Status</label>
-                  <select value={filters.paymentStatus} onChange={(e) => setFilters({...filters, paymentStatus: e.target.value})} className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
-                    <option value="all">All</option>
-                    <option value="pending">Pending</option>
-                    <option value="paid">Paid</option>
-                    <option value="failed">Failed</option>
-                    <option value="refunded">Refunded</option>
-                  </select>
-                </div>
-                <div className="min-w-[130px]">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Payment Method</label>
-                  <select value={filters.paymentMethod} onChange={(e) => setFilters({...filters, paymentMethod: e.target.value})} className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
-                    <option value="all">All</option>
-                    <option value="online">Online</option>
-                    <option value="cash">Cash</option>
-                    <option value="counter">Counter</option>
-                    <option value="upi">UPI</option>
-                    <option value="card">Card</option>
-                  </select>
-                </div>
-                <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-red-600 transition-colors">
-                  <XCircleIcon size={14} /> Clear
-                </button>
-              </div>
-            </div>
-          )}
 
           <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
             {filteredBookings.length === 0 ? (

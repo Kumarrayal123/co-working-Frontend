@@ -60,7 +60,6 @@ const MyCabinPayments = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterCabinName, setFilterCabinName] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   const navigate = useNavigate();
 
   const getAuthHeader = () => {
@@ -417,21 +416,8 @@ const MyCabinPayments = () => {
             <h1 className="admin-dash__greeting">
               My <span>Payments</span>
             </h1>
-            <p className="admin-dash__subtitle">
-              Track all your cabin registration payments and orders.
-            </p>
           </div>
-          <div className="admin-dash__date-pill">
-            <Calendar size={16} />
-            <span>
-              {new Date().toLocaleDateString("en-US", {
-                weekday: "short",
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-              })}
-            </span>
-          </div>
+         
         </div>
 
         {/* Stats Cards */}
@@ -508,20 +494,44 @@ const MyCabinPayments = () => {
                   className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                 />
               </div>
-              
-              {/* Filter Toggle Button */}
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${showFilters ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-              >
-                <Filter size={14} />
-                Filters
-                {(filterStatus !== 'all' || filterCabinName) && (
-                  <span className="w-2 h-2 rounded-full bg-red-500"></span>
-                )}
-              </button>
 
-              {/* Export Button - Excel Download */}
+              {/* Cabin Name Filter */}
+              <div className="min-w-[140px]">
+                <input
+                  type="text"
+                  placeholder="Filter by cabin..."
+                  value={filterCabinName}
+                  onChange={(e) => setFilterCabinName(e.target.value)}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                />
+              </div>
+
+              {/* Status Filter */}
+              <div className="min-w-[130px]">
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                >
+                  <option value="all">All Status</option>
+                  <option value="active">Active</option>
+                  <option value="expired">Expired</option>
+                  <option value="pending">Pending</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+
+              {/* Clear Filters Button */}
+              {(filterStatus !== 'all' || filterCabinName || searchTerm) && (
+                <button
+                  onClick={clearFilters}
+                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                >
+                  <X size={14} /> Clear
+                </button>
+              )}
+
+              {/* Export Button */}
               {filteredOrders.length > 0 && (
                 <button
                   onClick={exportToExcel}
@@ -541,7 +551,7 @@ const MyCabinPayments = () => {
               </button>
 
               <button
-                onClick={() => navigate("/my-cabins")}
+                onClick={() => navigate("/mycabin")}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
               >
                 <Building2 size={14} className="text-indigo-600" />
@@ -549,44 +559,6 @@ const MyCabinPayments = () => {
               </button>
             </div>
           </div>
-
-          {/* Filter Panel */}
-          {showFilters && (
-            <div className="px-4 pt-4 pb-3 border-b border-gray-100" style={{ backgroundColor: '#fafafa' }}>
-              <div className="flex flex-wrap items-end gap-3">
-                <div className="min-w-[150px]">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Cabin Name</label>
-                  <input
-                    type="text"
-                    placeholder="Filter by cabin name..."
-                    value={filterCabinName}
-                    onChange={(e) => setFilterCabinName(e.target.value)}
-                    className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  />
-                </div>
-                <div className="min-w-[150px]">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</label>
-                  <select
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
-                    className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  >
-                    <option value="all">All</option>
-                    <option value="active">Active</option>
-                    <option value="expired">Expired</option>
-                    <option value="pending">Pending</option>
-                    <option value="cancelled">Cancelled</option>
-                  </select>
-                </div>
-                <button
-                  onClick={clearFilters}
-                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-red-600 transition-colors"
-                >
-                  <X size={14} /> Clear
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* Table Container */}
           <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
@@ -686,7 +658,6 @@ const MyCabinPayments = () => {
                         </td>
                         <td className="p-4">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            {/* View Button with Label */}
                             <button
                               onClick={() => handleViewDetails(order)}
                               className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors whitespace-nowrap"
@@ -694,8 +665,6 @@ const MyCabinPayments = () => {
                             >
                               <Eye size={13} /> View
                             </button>
-                            
-                            {/* Download Invoice Button with Label */}
                             <button
                               onClick={() => downloadInvoice(order)}
                               className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors whitespace-nowrap"
@@ -703,8 +672,6 @@ const MyCabinPayments = () => {
                             >
                               <FileDown size={13} /> Invoice
                             </button>
-                            
-                            {/* Renew Button with Label */}
                             <button
                               onClick={() => { setRenewOrder(order); setShowRenewModal(true); }}
                               className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${isExpired ? 'bg-red-50 text-red-700 hover:bg-red-100' : 'bg-orange-50 text-orange-700 hover:bg-orange-100'}`}

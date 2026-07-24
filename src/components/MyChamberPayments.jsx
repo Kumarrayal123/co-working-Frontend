@@ -1,4 +1,4 @@
-// MyChamberPayments.jsx - Complete with All Data and Professional Invoice (Redesigned)
+// MyChamberPayments.jsx - Complete with Multi-Filters (Chamber Name, Date Range, Status)
 import axios from "axios";
 import {
   CreditCard,
@@ -57,8 +57,15 @@ const MyChamberPayments = () => {
   const [renewOrder, setRenewOrder] = useState(null);
   const [renewing, setRenewing] = useState(false);
   const [countdowns, setCountdowns] = useState({});
+  
+  // ✅ MULTI-FILTERS
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterChamberName, setFilterChamberName] = useState("");
+  const [filterDateFrom, setFilterDateFrom] = useState("");
+  const [filterDateTo, setFilterDateTo] = useState("");
+  const [filterMinAmount, setFilterMinAmount] = useState("");
+  const [filterMaxAmount, setFilterMaxAmount] = useState("");
+  
   const navigate = useNavigate();
 
   const getAuthHeader = () => {
@@ -126,17 +133,47 @@ const MyChamberPayments = () => {
     fetchPayments();
   }, []);
 
-  // Filter orders - No search, only status and chamber name filters
+  // ✅ FILTER LOGIC WITH ALL FILTERS
   const filteredOrders = orders.filter(order => {
+    // Status filter
     const matchStatus = filterStatus === 'all' || order.status === filterStatus;
-    const matchChamberName = filterChamberName === "" || order.cabin?.name?.toLowerCase().includes(filterChamberName.toLowerCase());
-    return matchStatus && matchChamberName;
+    
+    // Chamber name filter
+    const matchChamberName = filterChamberName === "" || 
+      order.cabin?.name?.toLowerCase().includes(filterChamberName.toLowerCase());
+    
+    // Date range filter
+    let matchDate = true;
+    if (filterDateFrom) {
+      const fromDate = new Date(filterDateFrom);
+      const orderDate = new Date(order.createdAt);
+      if (orderDate < fromDate) matchDate = false;
+    }
+    if (filterDateTo && matchDate) {
+      const toDate = new Date(filterDateTo);
+      toDate.setHours(23, 59, 59, 999);
+      const orderDate = new Date(order.createdAt);
+      if (orderDate > toDate) matchDate = false;
+    }
+    
+    // Amount range filter
+    let matchAmount = true;
+    const amount = order.amount || 0;
+    if (filterMinAmount && amount < Number(filterMinAmount)) matchAmount = false;
+    if (filterMaxAmount && amount > Number(filterMaxAmount)) matchAmount = false;
+    
+    return matchStatus && matchChamberName && matchDate && matchAmount;
   });
+
+  // ✅ SORT BY DATE (Latest first)
+  const sortedOrders = [...filteredOrders].sort((a, b) => 
+    new Date(b.createdAt) - new Date(a.createdAt)
+  );
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentOrders = filteredOrders.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+  const currentOrders = sortedOrders.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(sortedOrders.length / itemsPerPage);
 
   const getStatusBadge = (status, expiryDate) => {
     if (status === 'active') {
@@ -255,15 +292,14 @@ const MyChamberPayments = () => {
   // ======================
   const exportToExcel = () => {
     try {
-      if (filteredOrders.length === 0) {
+      if (sortedOrders.length === 0) {
         toast.warning("No data to export");
         return;
       }
 
-      // Dynamically import xlsx
       const XLSX = require('xlsx');
 
-      const exportData = filteredOrders.map((order, index) => ({
+      const exportData = sortedOrders.map((order, index) => ({
         'S.No': index + 1,
         'Chamber Name': getChamberName(order),
         'Address': getChamberAddress(order),
@@ -285,11 +321,36 @@ const MyChamberPayments = () => {
       const date = new Date().toISOString().split('T')[0];
       XLSX.writeFile(wb, `chamber_payments_${date}.xlsx`);
       
-      toast.success(`Exported ${filteredOrders.length} payments to Excel!`);
+      toast.success(`Exported ${sortedOrders.length} payments to Excel!`);
     } catch (error) {
       console.error("Export error:", error);
       toast.error("Failed to export payments");
     }
+  };
+
+  // ======================
+  // CLEAR ALL FILTERS
+  // ======================
+  const clearFilters = () => {
+    setFilterStatus("all");
+    setFilterChamberName("");
+    setFilterDateFrom("");
+    setFilterDateTo("");
+    setFilterMinAmount("");
+    setFilterMaxAmount("");
+    setCurrentPage(1);
+  };
+
+  // ======================
+  // CHECK IF ANY FILTER ACTIVE
+  // ======================
+  const hasActiveFilters = () => {
+    return filterStatus !== 'all' || 
+           filterChamberName !== "" || 
+           filterDateFrom !== "" || 
+           filterDateTo !== "" || 
+           filterMinAmount !== "" || 
+           filterMaxAmount !== "";
   };
 
   // ======================
@@ -397,12 +458,6 @@ const MyChamberPayments = () => {
     }
   };
 
-  const clearFilters = () => {
-    setFilterStatus("all");
-    setFilterChamberName("");
-    setCurrentPage(1);
-  };
-
   return (
     <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
       <DoctorNavbar />
@@ -414,21 +469,8 @@ const MyChamberPayments = () => {
             <h1 className="admin-dash__greeting">
               My <span>Chamber Payments</span>
             </h1>
-            <p className="admin-dash__subtitle">
-              Track all your chamber registration payments and orders.
-            </p>
           </div>
-          <div className="admin-dash__date-pill">
-            <Calendar size={16} />
-            <span>
-              {new Date().toLocaleDateString("en-US", {
-                weekday: "short",
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-              })}
-            </span>
-          </div>
+         
         </div>
 
         {/* Stats Cards */}
@@ -490,21 +532,18 @@ const MyChamberPayments = () => {
             <div className="flex items-center gap-3">
               <h3 className="admin-dash__card-title">Payment History</h3>
               <span className="px-2.5 py-0.5 text-xs font-bold text-indigo-700 bg-indigo-100 rounded-full">
-                {filteredOrders.length}
+                {sortedOrders.length}
               </span>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {/* Chamber Name Filter */}
-              <div className="flex items-center gap-1">
-                <span className="text-xs text-gray-500 font-medium">Chamber:</span>
-                <input
-                  type="text"
-                  placeholder="Filter by chamber..."
-                  value={filterChamberName}
-                  onChange={(e) => setFilterChamberName(e.target.value)}
-                  className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700 w-40"
-                />
-              </div>
+              <input
+                type="text"
+                placeholder="Filter by chamber..."
+                value={filterChamberName}
+                onChange={(e) => setFilterChamberName(e.target.value)}
+                className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700 w-32 sm:w-40"
+              />
 
               {/* Status Filter */}
               <select
@@ -519,8 +558,44 @@ const MyChamberPayments = () => {
                 <option value="cancelled">Cancelled</option>
               </select>
 
+              {/* Date From */}
+              <input
+                type="date"
+                value={filterDateFrom}
+                onChange={(e) => setFilterDateFrom(e.target.value)}
+                className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700 w-32"
+                title="From Date"
+              />
+
+              {/* Date To */}
+              <input
+                type="date"
+                value={filterDateTo}
+                onChange={(e) => setFilterDateTo(e.target.value)}
+                className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700 w-32"
+                title="To Date"
+              />
+
+              {/* Min Amount */}
+              <input
+                type="number"
+                placeholder="Min ₹"
+                value={filterMinAmount}
+                onChange={(e) => setFilterMinAmount(e.target.value)}
+                className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700 w-20"
+              />
+
+              {/* Max Amount */}
+              <input
+                type="number"
+                placeholder="Max ₹"
+                value={filterMaxAmount}
+                onChange={(e) => setFilterMaxAmount(e.target.value)}
+                className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700 w-20"
+              />
+
               {/* Clear Filters */}
-              {(filterStatus !== 'all' || filterChamberName) && (
+              {hasActiveFilters() && (
                 <button
                   onClick={clearFilters}
                   className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -529,8 +604,8 @@ const MyChamberPayments = () => {
                 </button>
               )}
 
-              {/* Export Button - Excel Download */}
-              {filteredOrders.length > 0 && (
+              {/* Export Button */}
+              {sortedOrders.length > 0 && (
                 <button
                   onClick={exportToExcel}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-medium hover:bg-emerald-100 transition-colors border border-emerald-200"
@@ -540,21 +615,7 @@ const MyChamberPayments = () => {
                 </button>
               )}
 
-              <button
-                onClick={fetchPayments}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200"
-              >
-                <RefreshCw size={14} />
-                <span className="hidden xs:inline">Refresh</span>
-              </button>
-
-              <button
-                onClick={() => navigate("/my-cabins")}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
-              >
-                <Building2 size={14} className="text-indigo-600" />
-                <span className="hidden xs:inline">Chambers</span>
-              </button>
+             
             </div>
           </div>
 
@@ -565,7 +626,7 @@ const MyChamberPayments = () => {
                 <div className="w-12 h-12 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin" />
                 <p className="text-gray-500">Loading payments...</p>
               </div>
-            ) : filteredOrders.length === 0 ? (
+            ) : sortedOrders.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-3 py-20 text-gray-400">
                 <CreditCard size={48} className="opacity-20" />
                 <p className="text-lg font-medium">No payments found</p>
@@ -656,7 +717,6 @@ const MyChamberPayments = () => {
                         </td>
                         <td className="p-4">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            {/* View Button with Label */}
                             <button
                               onClick={() => handleViewDetails(order)}
                               className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors whitespace-nowrap"
@@ -665,7 +725,6 @@ const MyChamberPayments = () => {
                               <Eye size={13} /> View
                             </button>
                             
-                            {/* Download Invoice Button with Label */}
                             <button
                               onClick={() => downloadInvoice(order)}
                               className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors whitespace-nowrap"
@@ -674,7 +733,6 @@ const MyChamberPayments = () => {
                               <FileDown size={13} /> Invoice
                             </button>
                             
-                            {/* Renew Button with Label */}
                             <button
                               onClick={() => { setRenewOrder(order); setShowRenewModal(true); }}
                               className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${isExpired ? 'bg-red-50 text-red-700 hover:bg-red-100' : 'bg-orange-50 text-orange-700 hover:bg-orange-100'}`}
@@ -693,10 +751,10 @@ const MyChamberPayments = () => {
           </div>
 
           {/* Footer with stats */}
-          {!loading && filteredOrders.length > 0 && (
+          {!loading && sortedOrders.length > 0 && (
             <div className="px-4 py-3 border-t border-gray-100 rounded-b-2xl flex flex-wrap items-center justify-between gap-2" style={{ backgroundColor: '#fafafa' }}>
               <span className="text-xs text-gray-500">
-                Showing <strong>{filteredOrders.length}</strong> of <strong>{orders.length}</strong> payments
+                Showing <strong>{sortedOrders.length}</strong> of <strong>{orders.length}</strong> payments
               </span>
               <div className="flex items-center gap-3 text-xs text-gray-500">
                 <span className="flex items-center gap-1">
@@ -716,10 +774,10 @@ const MyChamberPayments = () => {
           )}
 
           {/* Pagination */}
-          {!loading && filteredOrders.length > 0 && totalPages > 1 && (
+          {!loading && sortedOrders.length > 0 && totalPages > 1 && (
             <div className="px-4 py-3 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#fafafa' }}>
               <p className="text-xs text-gray-500">
-                Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredOrders.length)} of {filteredOrders.length} entries
+                Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, sortedOrders.length)} of {sortedOrders.length} entries
               </p>
               <div className="flex items-center gap-1.5">
                 <button

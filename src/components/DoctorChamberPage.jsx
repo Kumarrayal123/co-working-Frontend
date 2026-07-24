@@ -1,6 +1,7 @@
 // DoctorChamber.jsx - Complete Doctor's Chamber Landing Page with IRYAX SPACE FOR MEDICAL Branding
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import {
   Stethoscope,
   Layout,
@@ -43,107 +44,17 @@ import {
   Home,
   Zap,
   TrendingUp,
-  Smile
+  Smile,
+  Loader2,
+  Play,
+  Pause,
+  Video as VideoIcon
 } from "lucide-react";
 import logo from "../assets/logo.png";
 import doctorChamber from "../assets/doctorchamber.png";
 
-// ─── IMAGES ───
-const DOCTOR_HERO_IMAGE = doctorChamber;
-
-// ─── CHAMBER DATA WITH MULTIPLE IMAGES ───
-const CHAMBERS = [
-  { 
-    id: 1, 
-    name: "Chamber 101 - Premium", 
-    floor: "1st Floor", 
-    size: "200 sq ft", 
-    equipment: "Full Medical Setup", 
-    price: "₹2,500", 
-    images: [
-      "https://images.unsplash.com/photo-1582750433449-648ed127bb54?auto=format&fit=crop&q=80&w=800&h=600",
-      "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=800&h=600",
-      "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=800&h=600",
-      "https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?auto=format&fit=crop&q=80&w=800&h=600"
-    ],
-    available: true 
-  },
-  { 
-    id: 2, 
-    name: "Chamber 102 - Standard", 
-    floor: "1st Floor", 
-    size: "150 sq ft", 
-    equipment: "Basic Medical Setup", 
-    price: "₹1,800", 
-    images: [
-      "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=800&h=600",
-      "https://images.unsplash.com/photo-1582750433449-648ed127bb54?auto=format&fit=crop&q=80&w=800&h=600",
-      "https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?auto=format&fit=crop&q=80&w=800&h=600",
-      "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=800&h=600"
-    ],
-    available: true 
-  },
-  { 
-    id: 3, 
-    name: "Chamber 201 - Premium Plus", 
-    floor: "2nd Floor", 
-    size: "250 sq ft", 
-    equipment: "Advanced Medical Setup", 
-    price: "₹3,200", 
-    images: [
-      "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=800&h=600",
-      "https://images.unsplash.com/photo-1582750433449-648ed127bb54?auto=format&fit=crop&q=80&w=800&h=600",
-      "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=800&h=600",
-      "https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?auto=format&fit=crop&q=80&w=800&h=600"
-    ],
-    available: false 
-  },
-  { 
-    id: 4, 
-    name: "Chamber 202 - Executive", 
-    floor: "2nd Floor", 
-    size: "180 sq ft", 
-    equipment: "Full Medical Setup", 
-    price: "₹2,200", 
-    images: [
-      "https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?auto=format&fit=crop&q=80&w=800&h=600",
-      "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=800&h=600",
-      "https://images.unsplash.com/photo-1582750433449-648ed127bb54?auto=format&fit=crop&q=80&w=800&h=600",
-      "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=800&h=600"
-    ],
-    available: true 
-  },
-  { 
-    id: 5, 
-    name: "Chamber 301 - Deluxe", 
-    floor: "3rd Floor", 
-    size: "220 sq ft", 
-    equipment: "Premium Medical Setup", 
-    price: "₹2,800", 
-    images: [
-      "https://images.unsplash.com/photo-1582750433449-648ed127bb54?auto=format&fit=crop&q=80&w=800&h=600",
-      "https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?auto=format&fit=crop&q=80&w=800&h=600",
-      "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=800&h=600",
-      "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=800&h=600"
-    ],
-    available: true 
-  },
-  { 
-    id: 6, 
-    name: "Chamber 302 - Compact", 
-    floor: "3rd Floor", 
-    size: "120 sq ft", 
-    equipment: "Basic Medical Setup", 
-    price: "₹1,500", 
-    images: [
-      "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=800&h=600",
-      "https://images.unsplash.com/photo-1582750433449-648ed127bb54?auto=format&fit=crop&q=80&w=800&h=600",
-      "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=800&h=600",
-      "https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?auto=format&fit=crop&q=80&w=800&h=600"
-    ],
-    available: true 
-  },
-];
+const API_URL = "http://localhost:5003";
+const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
 
 // ─── SPECIALTIES DATA ───
 const MEDICAL_SPECIALTIES = [
@@ -155,6 +66,15 @@ const MEDICAL_SPECIALTIES = [
   { name: "Paramedical Camouflage", icon: Eye, desc: "Advanced skin camouflage techniques to conceal scars and pigmentation." },
   { name: "Implantologist", icon: Stethoscope, desc: "Modern dental implant solutions to restore function and confident smiles." },
   { name: "Hypnotherapist", icon: Brain, desc: "Professional hypnotherapy sessions to manage stress, habits, and anxiety." }
+];
+
+// ─── FAQ DATA ───
+const FAQ_DATA = [
+  { category: "IRYAX SPACE", q: "What types of consultation rooms are available?", a: "We offer fully-equipped private consultation rooms, examination rooms, and collaborative medical spaces." },
+  { category: "Flexibility", q: "Do I need to sign a long-term lease?", a: "No! Our model is completely flexible. You can book by hour, day, or month." },
+  { category: "Facilities", q: "What medical facilities are included?", a: "All spaces include state-of-the-art medical equipment, high-speed WiFi, comfortable patient areas, and 24/7 security." },
+  { category: "Payment", q: "What payment methods are accepted?", a: "We accept credit/debit cards, UPI, net banking, and offer flexible payment plans." },
+  { category: "Support", q: "What administrative support do you provide?", a: "We provide full administrative support including reception services, billing assistance, and patient management." }
 ];
 
 // ─── STYLES ───
@@ -1026,7 +946,7 @@ const styles = `
   }
 
   .chamber-card .chamber-image {
-    height: 180px;
+    height: 200px;
     overflow: hidden;
     position: relative;
     flex-shrink: 0;
@@ -1111,7 +1031,7 @@ const styles = `
     color: #94a3b8;
   }
 
-  /* Chamber Popup with Slider */
+  /* Chamber Popup with Slider - BIGGER HEIGHT */
   .chamber-popup-overlay {
     position: fixed;
     inset: 0;
@@ -1128,9 +1048,9 @@ const styles = `
   .chamber-popup {
     background: white;
     border-radius: 28px;
-    max-width: 580px;
+    max-width: 620px;
     width: 100%;
-    max-height: 95vh;
+    max-height: 92vh;
     overflow-y: auto;
     animation: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     box-shadow: 0 40px 80px rgba(0,0,0,0.3);
@@ -1138,24 +1058,29 @@ const styles = `
 
   .chamber-popup .popup-slider {
     position: relative;
-    height: 280px;
+    height: 400px;
     overflow: hidden;
-    background: #f1f5f9;
+    background: #0f172a;
   }
 
-  .chamber-popup .popup-slider .slider-image {
+  .chamber-popup .popup-slider .slider-image,
+  .chamber-popup .popup-slider .slider-video {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     transition: opacity 0.5s ease;
+  }
+
+  .chamber-popup .popup-slider .slider-video {
+    background: #0f172a;
   }
 
   .chamber-popup .popup-slider .slider-btn {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     background: rgba(0,0,0,0.5);
     backdrop-filter: blur(4px);
@@ -1190,6 +1115,8 @@ const styles = `
     display: flex;
     gap: 8px;
     z-index: 5;
+    flex-wrap: wrap;
+    justify-content: center;
   }
 
   .chamber-popup .popup-slider .slider-dots .dot {
@@ -1210,6 +1137,25 @@ const styles = `
 
   .chamber-popup .popup-slider .slider-dots .dot:hover {
     background: rgba(255,255,255,0.8);
+  }
+
+  .chamber-popup .popup-slider .slider-type-badge {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    padding: 4px 12px;
+    border-radius: 9999px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+    color: white;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
 
   .chamber-popup .popup-close {
@@ -1237,7 +1183,7 @@ const styles = `
   }
 
   .chamber-popup .popup-content {
-    padding: 28px 30px 30px;
+    padding: 24px 28px 28px;
   }
 
   .chamber-popup .popup-content h3 {
@@ -1407,7 +1353,7 @@ const styles = `
       grid-template-columns: 1fr;
     }
     .chamber-popup .popup-slider {
-      height: 200px;
+      height: 280px;
     }
     .hero-features-list {
       gap: 4px 12px;
@@ -1434,7 +1380,7 @@ const styles = `
       font-size: 1.3rem !important;
     }
     .chamber-popup .popup-slider {
-      height: 180px;
+      height: 220px;
     }
     .chamber-popup .popup-slider .slider-btn {
       width: 30px;
@@ -1499,6 +1445,28 @@ const BrandWithIcon = () => (
   </span>
 );
 
+// ─── FAQ COMPONENT ───
+const FAQItem = ({ faq, index }) => {
+  const [openFaq, setOpenFaq] = useState(false);
+  
+  return (
+    <RevealSection key={index} delay={index * 0.06}>
+      <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden transition hover:shadow-lg hover:border-blue-200">
+        <button onClick={() => setOpenFaq(!openFaq)} className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition">
+          <div>
+            <span className="text-[10px] text-blue-600 uppercase tracking-wider font-extrabold">{faq.category}</span>
+            <p className="text-base font-extrabold text-gray-900 mt-0.5">{faq.q}</p>
+          </div>
+          <ChevronDown size={18} className={`text-gray-500 transition-all duration-300 ${openFaq ? 'rotate-180' : ''}`} />
+        </button>
+        <div className={`overflow-hidden transition-all duration-500 ${openFaq ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+          <div className="px-6 pb-4 text-sm text-gray-600 leading-relaxed border-t border-gray-100 pt-3 font-bold">{faq.a}</div>
+        </div>
+      </div>
+    </RevealSection>
+  );
+};
+
 // ─── MAIN DOCTOR CHAMBER PAGE ───
 const DoctorChamberPage = () => {
   const navigate = useNavigate();
@@ -1509,11 +1477,92 @@ const DoctorChamberPage = () => {
   const [submitError, setSubmitError] = useState(null);
   const [showThankYouPopup, setShowThankYouPopup] = useState(false);
   
-  // Chamber state
+  // ─── API DATA STATE ───
+  const [chambers, setChambers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
+  
+  // Chamber popup state
   const [selectedChamber, setSelectedChamber] = useState(null);
   const [showChamberPopup, setShowChamberPopup] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
+  const [mediaItems, setMediaItems] = useState([]);
+
+  // ─── GET IMAGE URL ───
+  const getImageUrl = (img) => {
+    if (!img) return PLACEHOLDER_IMAGE;
+    if (img.startsWith("http")) return img;
+    const cleanPath = img.replace(/\\/g, "/").replace(/^\/+/, "");
+    return `${API_URL}/${cleanPath}`;
+  };
+
+  // ─── GET MEDIA ITEMS (Images + Videos) ───
+  const getMediaItems = (cabin) => {
+    const items = [];
+    
+    // Add images
+    if (cabin.images && cabin.images.length > 0) {
+      cabin.images.forEach(img => {
+        items.push({ type: 'image', url: getImageUrl(img) });
+      });
+    }
+    
+    // Add videos (from rawData)
+    if (cabin.rawData && cabin.rawData.videos && cabin.rawData.videos.length > 0) {
+      cabin.rawData.videos.forEach(video => {
+        items.push({ type: 'video', url: getImageUrl(video) });
+      });
+    }
+    
+    // If no items, add placeholder
+    if (items.length === 0) {
+      items.push({ type: 'image', url: PLACEHOLDER_IMAGE });
+    }
+    
+    return items;
+  };
+
+  // ─── FETCH CHAMBERS FROM API ───
+  useEffect(() => {
+    const fetchChambers = async () => {
+      setLoading(true);
+      setFetchError(null);
+      try {
+        const res = await axios.get(`${API_URL}/api/cabins`);
+        const data = res.data.cabins || res.data;
+        const allCabins = Array.isArray(data) ? data : [];
+        
+        // ✅ FILTER: Only show chambers where isChamber === true
+        const chamberCabins = allCabins.filter(cabin => cabin.isChamber === true);
+        
+        // Transform data to match chamber format
+        const formattedChambers = chamberCabins.map((cabin, index) => ({
+          id: cabin._id,
+          name: cabin.name || `Chamber ${index + 1}`,
+          floor: cabin.address?.split(',')[0] || 'Ground Floor',
+          size: `${cabin.capacity || 1} Seats`,
+          equipment: cabin.cabinType === 'exclusive' ? 'Premium Medical Setup' : 'Basic Medical Setup',
+          price: `₹${cabin.price || 0}`,
+          images: cabin.images && cabin.images.length > 0 
+            ? cabin.images.map(img => getImageUrl(img))
+            : [PLACEHOLDER_IMAGE],
+          available: cabin.isActive === true,
+          description: cabin.description || '',
+          rawData: cabin
+        }));
+        
+        setChambers(formattedChambers);
+      } catch (err) {
+        console.error("Error fetching chambers:", err);
+        setFetchError("Failed to load chambers. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchChambers();
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -1529,8 +1578,10 @@ const DoctorChamberPage = () => {
   };
 
   const handleChamberClick = (chamber) => {
+    const media = getMediaItems(chamber);
+    setMediaItems(media);
     setSelectedChamber(chamber);
-    setCurrentImageIndex(0);
+    setCurrentMediaIndex(0);
     setShowChamberPopup(true);
     document.body.style.overflow = 'hidden';
   };
@@ -1538,7 +1589,10 @@ const DoctorChamberPage = () => {
   const closeChamberPopup = () => {
     setShowChamberPopup(false);
     document.body.style.overflow = 'auto';
-    setTimeout(() => setSelectedChamber(null), 300);
+    setTimeout(() => {
+      setSelectedChamber(null);
+      setMediaItems([]);
+    }, 300);
   };
 
   const handleBookChamber = () => {
@@ -1551,18 +1605,18 @@ const DoctorChamberPage = () => {
     }, 1500);
   };
 
-  const handlePrevImage = () => {
-    if (selectedChamber) {
-      setCurrentImageIndex((prev) => 
-        prev === 0 ? selectedChamber.images.length - 1 : prev - 1
+  const handlePrevMedia = () => {
+    if (mediaItems.length > 0) {
+      setCurrentMediaIndex((prev) => 
+        prev === 0 ? mediaItems.length - 1 : prev - 1
       );
     }
   };
 
-  const handleNextImage = () => {
-    if (selectedChamber) {
-      setCurrentImageIndex((prev) => 
-        prev === selectedChamber.images.length - 1 ? 0 : prev + 1
+  const handleNextMedia = () => {
+    if (mediaItems.length > 0) {
+      setCurrentMediaIndex((prev) => 
+        prev === mediaItems.length - 1 ? 0 : prev + 1
       );
     }
   };
@@ -1619,6 +1673,54 @@ const DoctorChamberPage = () => {
     { icon: Sparkles, title: "Modern Infrastructure", desc: "Fully-equipped with state-of-the-art medical tools.", glassClass: "glass-rose" }
   ];
 
+  // ─── STATIC STATS ───
+  const statsData = [
+    { number: `${chambers.length}+`, label: "Chambers" },
+    { number: "24/7", label: "Access" },
+    { number: "100+", label: "Doctors" },
+    { number: "100%", label: "Satisfaction" }
+  ];
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 size={48} className="text-indigo-600 animate-spin mx-auto" />
+          <p className="mt-4 text-gray-600 font-bold">Loading chambers...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── RENDER MEDIA IN POPUP ───
+  const renderMedia = () => {
+    if (!mediaItems.length) return null;
+    
+    const item = mediaItems[currentMediaIndex];
+    
+    if (item.type === 'video') {
+      return (
+        <video
+          src={item.url}
+          className="slider-video"
+          controls
+          autoPlay={false}
+          playsInline
+          controlsList="nodownload"
+        />
+      );
+    }
+    
+    return (
+      <img 
+        src={item.url} 
+        alt={selectedChamber?.name || "Chamber"}
+        className="slider-image"
+        onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
+      />
+    );
+  };
+
   return (
     <>
       <style>{styles}</style>
@@ -1652,39 +1754,52 @@ const DoctorChamberPage = () => {
           </div>
         )}
 
-        {/* ─── CHAMBER POPUP WITH SLIDER ─── */}
+        {/* ─── CHAMBER POPUP WITH SLIDER - IMAGES + VIDEOS ─── */}
         {showChamberPopup && selectedChamber && (
           <div className="chamber-popup-overlay" onClick={closeChamberPopup}>
             <div className="chamber-popup" onClick={(e) => e.stopPropagation()}>
               <div className="popup-slider">
-                <img 
-                  src={selectedChamber.images[currentImageIndex]} 
-                  alt={selectedChamber.name}
-                  className="slider-image"
-                />
+                {renderMedia()}
+                
                 <button className="popup-close" onClick={closeChamberPopup}>
                   <X size={22} />
                 </button>
+                
+                <span className="slider-type-badge">
+                  {mediaItems[currentMediaIndex]?.type === 'video' ? (
+                    <><VideoIcon size={12} /> Video</>
+                  ) : (
+                    <><Layout size={12} /> Photo</>
+                  )}
+                </span>
+                
                 <span className={`chamber-status ${selectedChamber.available ? 'available' : 'unavailable'}`} style={{ position: 'absolute', top: '16px', left: '16px', right: 'auto', zIndex: 5 }}>
                   {selectedChamber.available ? 'Available' : 'Booked'}
                 </span>
                 
-                {selectedChamber.images.length > 1 && (
+                {mediaItems.length > 1 && (
                   <>
-                    <button className="slider-btn prev" onClick={handlePrevImage}>
+                    <button className="slider-btn prev" onClick={handlePrevMedia}>
                       <ChevronLeft size={20} />
                     </button>
-                    <button className="slider-btn next" onClick={handleNextImage}>
+                    <button className="slider-btn next" onClick={handleNextMedia}>
                       <ChevronRight size={20} />
                     </button>
                     <div className="slider-dots">
-                      {selectedChamber.images.map((_, idx) => (
-                        <button
-                          key={idx}
-                          className={`dot ${idx === currentImageIndex ? 'active' : ''}`}
-                          onClick={() => setCurrentImageIndex(idx)}
-                        />
-                      ))}
+                      {mediaItems.map((_, idx) => {
+                        const isVideo = mediaItems[idx].type === 'video';
+                        return (
+                          <button
+                            key={idx}
+                            className={`dot ${idx === currentMediaIndex ? 'active' : ''}`}
+                            onClick={() => setCurrentMediaIndex(idx)}
+                            style={{ 
+                              width: isVideo ? '14px' : '10px',
+                              borderRadius: isVideo ? '4px' : '50%'
+                            }}
+                          />
+                        );
+                      })}
                     </div>
                   </>
                 )}
@@ -1696,7 +1811,13 @@ const DoctorChamberPage = () => {
                   <span className="detail-item"><Building2 size={16} /> {selectedChamber.floor}</span>
                   <span className="detail-item"><Layout size={16} /> {selectedChamber.size}</span>
                   <span className="detail-item"><Stethoscope size={16} /> {selectedChamber.equipment}</span>
-                  <span className="detail-item"><CheckCircle size={16} /> {selectedChamber.available ? 'Available Now' : 'Currently Booked'}</span>
+                  <span className="detail-item">
+                    {selectedChamber.available ? (
+                      <><CheckCircle size={16} className="text-emerald-500" /> Available Now</>
+                    ) : (
+                      <><X size={16} className="text-red-500" /> Currently Booked</>
+                    )}
+                  </span>
                 </div>
                 <div className="popup-price">
                   {selectedChamber.price} <small>/ hour</small>
@@ -1791,7 +1912,7 @@ const DoctorChamberPage = () => {
         {/* ─── HERO SECTION - ALL WHITE TEXT ─── */}
         <section className="doctor-hero-section">
           <div className="doctor-hero-bg">
-            <img src={DOCTOR_HERO_IMAGE} alt="IRYAX SPACE FOR MEDICAL" />
+            <img src={doctorChamber} alt="IRYAX SPACE FOR MEDICAL" />
           </div>
           <div className="doctor-hero-overlay"></div>
           <div className="doctor-hero-content">
@@ -1840,22 +1961,12 @@ const DoctorChamberPage = () => {
 
               <RevealSection delay={0.3}>
                 <div className="doctor-stats">
-                  <div className="doctor-stat-item">
-                    <div className="number">50+</div>
-                    <div className="label">Chambers</div>
-                  </div>
-                  <div className="doctor-stat-item">
-                    <div className="number">24/7</div>
-                    <div className="label">Access</div>
-                  </div>
-                  <div className="doctor-stat-item">
-                    <div className="number">100+</div>
-                    <div className="label">Doctors</div>
-                  </div>
-                  <div className="doctor-stat-item">
-                    <div className="number">100%</div>
-                    <div className="label">Satisfaction</div>
-                  </div>
+                  {statsData.map((stat, idx) => (
+                    <div key={idx} className="doctor-stat-item">
+                      <div className="number">{stat.number}</div>
+                      <div className="label">{stat.label}</div>
+                    </div>
+                  ))}
                 </div>
               </RevealSection>
             </div>
@@ -1927,7 +2038,7 @@ const DoctorChamberPage = () => {
           </div>
         </section>
 
-        {/* ─── CHAMBERS SECTION ─── */}
+        {/* ─── CHAMBERS SECTION - FROM API ─── */}
         <section id="chambers" className="py-20 px-6 bg-gradient-to-b from-white via-blue-50 to-white">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-14">
@@ -1942,38 +2053,48 @@ const DoctorChamberPage = () => {
                 </h2>
               </RevealSection>
               <RevealSection delay={0.2}>
-                <p className="mt-3 text-base text-gray-600 font-bold max-w-2xl mx-auto">Click on any chamber to view details and book instantly.</p>
+                <p className="mt-3 text-base text-gray-600 font-bold max-w-2xl mx-auto">
+                  {chambers.length > 0 ? `Click on any chamber to view details and book instantly.` : 'No chambers available at the moment.'}
+                </p>
               </RevealSection>
             </div>
 
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {CHAMBERS.map((chamber, i) => (
-                <RevealSection key={chamber.id} delay={i * 0.08}>
-                  <div className="chamber-card" onClick={() => handleChamberClick(chamber)}>
-                    <div className="chamber-image">
-                      <img src={chamber.images[0]} alt={chamber.name} />
-                      <span className={`chamber-status ${chamber.available ? 'available' : 'unavailable'}`}>
-                        {chamber.available ? 'Available' : 'Booked'}
-                      </span>
-                    </div>
-                    <div className="chamber-body">
-                      <h4>{chamber.name}</h4>
-                      <div className="chamber-details">
-                        <span><Building2 size={14} /> {chamber.floor}</span>
-                        <span><Layout size={14} /> {chamber.size}</span>
+            {chambers.length === 0 ? (
+              <div className="text-center py-12">
+                <Building2 size={64} className="mx-auto text-gray-300 mb-4" />
+                <p className="text-gray-500 font-bold text-lg">No Medical Chambers Available</p>
+                <p className="text-gray-400 text-sm">Please check back later.</p>
+              </div>
+            ) : (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {chambers.map((chamber, i) => (
+                  <RevealSection key={chamber.id || i} delay={i * 0.08}>
+                    <div className="chamber-card" onClick={() => handleChamberClick(chamber)}>
+                      <div className="chamber-image">
+                        <img src={chamber.images[0]} alt={chamber.name} />
+                        <span className={`chamber-status ${chamber.available ? 'available' : 'unavailable'}`}>
+                          {chamber.available ? 'Available' : 'Booked'}
+                        </span>
                       </div>
-                      <div className="chamber-price">
-                        {chamber.price} <small>/ hour</small>
+                      <div className="chamber-body">
+                        <h4>{chamber.name}</h4>
+                        <div className="chamber-details">
+                          <span><Building2 size={14} /> {chamber.floor}</span>
+                          <span><Layout size={14} /> {chamber.size}</span>
+                        </div>
+                        <div className="chamber-price">
+                          {chamber.price} <small>/ hour</small>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </RevealSection>
-              ))}
-            </div>
+                  </RevealSection>
+                ))}
+              </div>
+            )}
           </div>
         </section>
 
-        {/* ─── SPECIALTIES SECTION - Medical Specializations ─── */}
+        {/* ─── SPECIALTIES SECTION ─── */}
         <section id="specialties" className="py-20 px-6 bg-white">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-14">
@@ -2115,31 +2236,9 @@ const DoctorChamberPage = () => {
             </div>
 
             <div className="space-y-3">
-              {[
-                { category: "IRYAX SPACE", q: "What types of consultation rooms are available?", a: "We offer fully-equipped private consultation rooms, examination rooms, and collaborative medical spaces." },
-                { category: "Flexibility", q: "Do I need to sign a long-term lease?", a: "No! Our model is completely flexible. You can book by hour, day, or month." },
-                { category: "Facilities", q: "What medical facilities are included?", a: "All spaces include state-of-the-art medical equipment, high-speed WiFi, comfortable patient areas, and 24/7 security." },
-                { category: "Payment", q: "What payment methods are accepted?", a: "We accept credit/debit cards, UPI, net banking, and offer flexible payment plans." },
-                { category: "Support", q: "What administrative support do you provide?", a: "We provide full administrative support including reception services, billing assistance, and patient management." }
-              ].map((faq, i) => {
-                const [openFaq, setOpenFaq] = useState(false);
-                return (
-                  <RevealSection key={i} delay={i * 0.06}>
-                    <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden transition hover:shadow-lg hover:border-blue-200">
-                      <button onClick={() => setOpenFaq(!openFaq)} className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition">
-                        <div>
-                          <span className="text-[10px] text-blue-600 uppercase tracking-wider font-extrabold">{faq.category}</span>
-                          <p className="text-base font-extrabold text-gray-900 mt-0.5">{faq.q}</p>
-                        </div>
-                        <ChevronDown size={18} className={`text-gray-500 transition-all duration-300 ${openFaq ? 'rotate-180' : ''}`} />
-                      </button>
-                      <div className={`overflow-hidden transition-all duration-500 ${openFaq ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-                        <div className="px-6 pb-4 text-sm text-gray-600 leading-relaxed border-t border-gray-100 pt-3 font-bold">{faq.a}</div>
-                      </div>
-                    </div>
-                  </RevealSection>
-                );
-              })}
+              {FAQ_DATA.map((faq, index) => (
+                <FAQItem key={index} faq={faq} index={index} />
+              ))}
             </div>
           </div>
         </section>

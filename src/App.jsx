@@ -51,6 +51,7 @@ import DoctorWallet from "./components/DoctorWallet";
 import DoctorProfile from "./components/DoctorProfile";
 import RevenueAnalytics from "./components/RevenueAnalytics";
 import CabinRevenue from "./components/CabinRevenue";
+import AdminWallet from "./components/AdminWallet";
 
 function App() {
   return (
@@ -104,6 +105,7 @@ function App() {
         <Route path ="/userqueries" element={<AdminRoute><AllQueries /></AdminRoute>}></Route>
         <Route path ="/booking-revenue" element={<AdminRoute><RevenueAnalytics /></AdminRoute>}></Route>
         <Route path ="/space-revenue" element={<AdminRoute><CabinRevenue /></AdminRoute>}></Route>
+        <Route path ="/adminwallet" element={<AdminRoute><AdminWallet /></AdminRoute>}></Route>
       
 
       </Routes>

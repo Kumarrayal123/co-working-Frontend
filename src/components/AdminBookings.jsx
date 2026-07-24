@@ -1,4 +1,4 @@
-// AdminBookings.jsx - Complete with Full Features (Same as CabinBookings)
+// AdminBookings.jsx - Complete with Full Features (Date & Time split into From and To)
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -58,8 +58,8 @@ const AdminBookings = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterDate, setFilterDate] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
+  const [filterDateFrom, setFilterDateFrom] = useState("");
+  const [filterDateTo, setFilterDateTo] = useState("");
   const [filters, setFilters] = useState({
     status: 'all',
     paymentStatus: 'all',
@@ -189,7 +189,6 @@ const AdminBookings = () => {
         const res = await axios.get(`${API_URL}/api/bookings`);
         const allBookings = res.data.bookings || [];
         
-        // Filter bookings where cabin owner is admin OR owner is null
         const adminBookings = allBookings.filter(booking => {
           const owner = booking.cabin?.owner || booking.cabinId?.owner;
           return owner === ADMIN_ID || owner === null || owner === undefined;
@@ -459,8 +458,11 @@ const AdminBookings = () => {
           'S.No': index + 1, 'Booking Type': booking.bookingBasis === 'plan' ? 'Plan Booking' : 'Hourly Booking',
           'Cabin Name': booking.cabin?.name || 'Unknown Cabin', 'Address': booking.cabin?.address || 'No Address',
           'Customer Name': booking.name || booking.user?.name || 'Unknown Guest', 'Mobile': booking.mobile || booking.user?.mobile || 'N/A',
-          'Email': booking.email || booking.user?.email || 'N/A', 'Start Date': booking.startDate || 'N/A',
-          'Start Time': booking.startTime || 'N/A', 'End Date': booking.endDate || 'N/A', 'End Time': booking.endTime || 'N/A',
+          'Email': booking.email || booking.user?.email || 'N/A', 
+          'From Date': booking.startDate || 'N/A',
+          'From Time': booking.startTime || 'N/A', 
+          'To Date': booking.endDate || 'N/A', 
+          'To Time': booking.endTime || 'N/A',
           'Duration (Hours)': booking.totalHours || 0, 'Subtotal (₹)': booking.subtotal || 0,
           'GST (18%)': booking.gstAmount || 0, 'Total (₹)': booking.totalPrice || 0,
           'Seats': booking.seatCount || 0, 'Extra Charge': booking.extraCharge || 0,
@@ -553,8 +555,8 @@ const AdminBookings = () => {
         <div style="border-top:1px dashed #000;margin:4px 0;"></div>
 
         <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-top:4px;margin-bottom:2px;color:#000;border-bottom:1px solid #000;padding-bottom:2px;">Booking Details</div>
-        <div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">Date</span><span style="font-weight:600;">${startDate}</span></div>
-        <div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">Time</span><span style="font-weight:600;">${startTime} - ${endTime}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">From</span><span style="font-weight:600;">${startDate} ${startTime}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">To</span><span style="font-weight:600;">${endDate} ${endTime}</span></div>
         <div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">Duration</span><span style="font-weight:600;">${totalHours} Hrs</span></div>
         <div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">Type</span><span style="font-weight:600;">${booking.bookingBasis === 'plan' ? 'PLAN' : 'HOURLY'}</span></div>
         ${booking.bookingBasis === 'plan' && booking.selectedPlan ? `<div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">Plan</span><span style="font-weight:600;">${booking.selectedPlan.label || 'Subscription'}</span></div>` : ''}
@@ -775,7 +777,8 @@ const AdminBookings = () => {
   const clearFilters = () => {
     setFilters({ status: 'all', paymentStatus: 'all', paymentMethod: 'all' });
     setSearchTerm('');
-    setFilterDate('');
+    setFilterDateFrom('');
+    setFilterDateTo('');
   };
 
   const filteredBookings = bookings.filter((b) => {
@@ -785,11 +788,14 @@ const AdminBookings = () => {
       b.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       b.mobile?.includes(searchTerm) ||
       b.user?.mobile?.includes(searchTerm);
-    const matchesDate = filterDate ? b.startDate === filterDate : true;
+    
+    const matchesDateFrom = filterDateFrom ? b.startDate >= filterDateFrom : true;
+    const matchesDateTo = filterDateTo ? b.startDate <= filterDateTo : true;
+    
     const matchesStatus = filters.status === 'all' || b.status === filters.status;
     const matchesPaymentStatus = filters.paymentStatus === 'all' || b.paymentStatus === filters.paymentStatus;
     const matchesPaymentMethod = filters.paymentMethod === 'all' || b.paymentMethod === filters.paymentMethod;
-    return matchesSearch && matchesDate && matchesStatus && matchesPaymentStatus && matchesPaymentMethod;
+    return matchesSearch && matchesDateFrom && matchesDateTo && matchesStatus && matchesPaymentStatus && matchesPaymentMethod;
   });
 
   if (loading) {
@@ -813,21 +819,9 @@ const AdminBookings = () => {
             <h1 className="admin-dash__greeting">
               Admin <span>Bookings</span>
             </h1>
-            <p className="admin-dash__subtitle">
-              Manage all bookings across the platform.
-            </p>
+           
           </div>
-          <div className="admin-dash__date-pill">
-            <Calendar size={16} />
-            <span>
-              {new Date().toLocaleDateString("en-US", {
-                weekday: "short",
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-              })}
-            </span>
-          </div>
+        
         </div>
 
         {/* Stats Cards */}
@@ -905,7 +899,7 @@ const AdminBookings = () => {
           </div>
         </div>
 
-        {/* Table Section */}
+        {/* Table Section - Filters Always Visible */}
         <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
           <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
             <div className="flex items-center gap-3">
@@ -915,7 +909,8 @@ const AdminBookings = () => {
               </span>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <div className="relative w-full sm:w-56">
+              {/* Search Bar */}
+              <div className="relative w-full sm:w-44">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
@@ -926,76 +921,97 @@ const AdminBookings = () => {
                 />
               </div>
 
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${showFilters ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-              >
-                <Filter size={14} />
-                Filters
-                {(filters.status !== 'all' || filters.paymentStatus !== 'all' || filters.paymentMethod !== 'all' || filterDate) && (
-                  <span className="w-2 h-2 rounded-full bg-red-500"></span>
-                )}
-              </button>
+              {/* Date From Filter */}
+              <div className="min-w-[150px]">
+                <label className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">From</label>
+                <input
+                  type="date"
+                  value={filterDateFrom}
+                  onChange={(e) => setFilterDateFrom(e.target.value)}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                />
+              </div>
+
+              {/* Date To Filter */}
+              <div className="min-w-[150px]">
+                <label className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">To</label>
+                <input
+                  type="date"
+                  value={filterDateTo}
+                  onChange={(e) => setFilterDateTo(e.target.value)}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                />
+              </div>
+
+              {/* Status Filter */}
+              <div className="min-w-[130px]">
+                <label className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">Status</label>
+                <select
+                  value={filters.status}
+                  onChange={(e) => setFilters({...filters, status: e.target.value})}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                >
+                  <option value="all">All</option>
+                  <option value="pending">Pending</option>
+                  <option value="confirmed">Confirmed</option>
+                  <option value="active">Active</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+
+              {/* Payment Status Filter */}
+              <div className="min-w-[140px]">
+                <label className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">Payment Status</label>
+                <select
+                  value={filters.paymentStatus}
+                  onChange={(e) => setFilters({...filters, paymentStatus: e.target.value})}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                >
+                  <option value="all">All</option>
+                  <option value="pending">Pending</option>
+                  <option value="paid">Paid</option>
+                  <option value="failed">Failed</option>
+                  <option value="refunded">Refunded</option>
+                </select>
+              </div>
+
+              {/* Payment Method Filter */}
+              <div className="min-w-[140px]">
+                <label className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">Payment Method</label>
+                <select
+                  value={filters.paymentMethod}
+                  onChange={(e) => setFilters({...filters, paymentMethod: e.target.value})}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                >
+                  <option value="all">All</option>
+                  <option value="online">Online</option>
+                  <option value="cash">Cash</option>
+                  <option value="counter">Counter</option>
+                  <option value="upi">UPI</option>
+                  <option value="card">Card</option>
+                </select>
+              </div>
+
+              {/* Clear Filters Button */}
+              {(filters.status !== 'all' || filters.paymentStatus !== 'all' || filters.paymentMethod !== 'all' || filterDateFrom || filterDateTo || searchTerm) && (
+                <button
+                  onClick={clearFilters}
+                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors mt-auto"
+                >
+                  <XCircleIcon size={14} /> Clear
+                </button>
+              )}
 
               {filteredBookings.length > 0 && (
-                <button onClick={exportToExcel} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200">
+                <button onClick={exportToExcel} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200 mt-auto">
                   <Download size={14} />
                   <span className="hidden xs:inline">Export</span>
                 </button>
               )}
 
-              <button onClick={() => navigate("/my-cabins")} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors">
-                <Building2 size={14} />
-                <span className="hidden xs:inline">Cabins</span>
-              </button>
             </div>
           </div>
-
-          {showFilters && (
-            <div className="px-4 pt-4 pb-3 border-b border-gray-100" style={{ backgroundColor: '#fafafa' }}>
-              <div className="flex flex-wrap items-end gap-3">
-                <div className="min-w-[130px]">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Date</label>
-                  <input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" />
-                </div>
-                <div className="min-w-[130px]">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</label>
-                  <select value={filters.status} onChange={(e) => setFilters({...filters, status: e.target.value})} className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
-                    <option value="all">All</option>
-                    <option value="pending">Pending</option>
-                    <option value="confirmed">Confirmed</option>
-                    <option value="active">Active</option>
-                    <option value="completed">Completed</option>
-                    <option value="cancelled">Cancelled</option>
-                  </select>
-                </div>
-                <div className="min-w-[130px]">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Payment Status</label>
-                  <select value={filters.paymentStatus} onChange={(e) => setFilters({...filters, paymentStatus: e.target.value})} className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
-                    <option value="all">All</option>
-                    <option value="pending">Pending</option>
-                    <option value="paid">Paid</option>
-                    <option value="failed">Failed</option>
-                    <option value="refunded">Refunded</option>
-                  </select>
-                </div>
-                <div className="min-w-[130px]">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Payment Method</label>
-                  <select value={filters.paymentMethod} onChange={(e) => setFilters({...filters, paymentMethod: e.target.value})} className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
-                    <option value="all">All</option>
-                    <option value="online">Online</option>
-                    <option value="cash">Cash</option>
-                    <option value="counter">Counter</option>
-                    <option value="upi">UPI</option>
-                    <option value="card">Card</option>
-                  </select>
-                </div>
-                <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-red-600 transition-colors">
-                  <XCircleIcon size={14} /> Clear
-                </button>
-              </div>
-            </div>
-          )}
 
           <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
             {filteredBookings.length === 0 ? (
@@ -1011,7 +1027,8 @@ const AdminBookings = () => {
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Customer</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Period</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">From</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">To</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Hours</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Seats</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
@@ -1036,34 +1053,30 @@ const AdminBookings = () => {
                       <tr key={booking._id} className="transition-colors group hover:bg-gray-50/80">
                         <td className="p-4"><span className="text-sm font-semibold text-gray-400">#{idx + 1}</span></td>
                         <td className="p-4">
-                          <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
-                              <Building2 size={18} className="text-indigo-600" />
-                            </div>
-                            <div>
-                              <p className="font-semibold text-gray-900 text-sm">{booking.cabin?.name || "Unknown"}</p>
-                              <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-1">
-                                <MapPin size={12} className="text-indigo-500" />
-                                {booking.cabin?.address?.split(",")[0] || "No Address"}
-                              </div>
+                          <div>
+                            <p className="font-semibold text-gray-900 text-sm">{booking.cabin?.name || "Unknown"}</p>
+                            <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-1">
+                              <MapPin size={12} className="text-indigo-500" />
+                              {booking.cabin?.address?.split(",")[0] || "No Address"}
                             </div>
                           </div>
                         </td>
                         <td className="p-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                              <User size={18} className="text-gray-600" />
-                            </div>
-                            <div>
-                              <p className="font-medium text-gray-800 text-sm">{booking.name || booking.user?.name || "Unknown"}</p>
-                              <p className="text-xs text-gray-400">{booking.mobile || booking.user?.mobile || "N/A"}</p>
-                            </div>
+                          <div>
+                            <p className="font-medium text-gray-800 text-sm">{booking.name || booking.user?.name || "Unknown"}</p>
+                            <p className="text-xs text-gray-400">{booking.mobile || booking.user?.mobile || "N/A"}</p>
                           </div>
                         </td>
                         <td className="p-4">
                           <div className="space-y-1">
-                            <p className="text-sm text-gray-900 font-medium">{booking.startDate} · {booking.startTime}</p>
-                            <p className="text-sm text-gray-500">{booking.endDate} · {booking.endTime}</p>
+                            <p className="text-sm text-gray-900 font-medium">{booking.startDate}</p>
+                            <p className="text-xs text-gray-500">{booking.startTime}</p>
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <div className="space-y-1">
+                            <p className="text-sm text-gray-900 font-medium">{booking.endDate}</p>
+                            <p className="text-xs text-gray-500">{booking.endTime}</p>
                           </div>
                         </td>
                         <td className="p-4">
@@ -1115,7 +1128,7 @@ const AdminBookings = () => {
                           </div>
                         </td>
                         <td className="p-4">
-                          <div className="flex items-center gap-1.5 flex-wrap">
+                          <div className="flex items-center gap-1.5 flex-wrap" style={{ flexWrap: 'nowrap' }}>
                             <button onClick={() => handleViewBooking(booking)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors whitespace-nowrap">
                               <Eye size={13} /> View
                             </button>
@@ -1218,7 +1231,10 @@ const AdminBookings = () => {
 
               <div className="p-4 bg-gray-50 rounded-xl">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Schedule</p>
-                <p className="mt-1 font-semibold text-gray-800">{viewBooking.startDate} {viewBooking.startTime} - {viewBooking.endDate} {viewBooking.endTime}</p>
+                <div className="mt-1 space-y-1">
+                  <p className="font-semibold text-gray-800">From: {viewBooking.startDate} {viewBooking.startTime}</p>
+                  <p className="font-semibold text-gray-800">To: {viewBooking.endDate} {viewBooking.endTime}</p>
+                </div>
                 <p className="text-xs text-gray-500 mt-0.5">{viewBooking.totalHours}h • {viewBooking.bookingBasis === 'plan' ? 'Plan' : 'Hourly'}</p>
               </div>
 

@@ -1,4 +1,4 @@
-// MyChamber.jsx - Complete My Chambers Component with Always Visible Filters (No Search Bar)
+// MyChamber.jsx - Complete My Chambers Component with isChamber Checkbox & Image Popup
 import axios from "axios";
 import {
   Building2,
@@ -44,9 +44,15 @@ import {
   XCircle,
   Timer,
   List as ListIcon,
-  Grid as GridIcon
+  Grid as GridIcon,
+  Video,
+  Play,
+  FileVideo,
+  Sun,
+  Moon,
+  Clock as ClockIcon
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import DoctorNavbar from "./DoctorNavbar";
@@ -114,15 +120,17 @@ const MyChamber = () => {
   const [countdowns, setCountdowns] = useState({});
   const navigate = useNavigate();
 
-  // Seat management state
-  const [seats, setSeats] = useState([]);
-  const [seatInput, setSeatInput] = useState({ name: '', number: '' });
-  const [showSeatModal, setShowSeatModal] = useState(false);
-  const [editingSeatIndex, setEditingSeatIndex] = useState(null);
-  const [seatGenerationMode, setSeatGenerationMode] = useState(false);
-  const [seatGenerationCount, setSeatGenerationCount] = useState(0);
-  const [seatBatchMode, setSeatBatchMode] = useState(false);
-  const [batchSeatNumber, setBatchSeatNumber] = useState(1);
+  // ✅ IMAGE POPUP STATE
+  const [showImagePopup, setShowImagePopup] = useState(false);
+  const [selectedImage, setSelectedImage] = useState('');
+
+  // Open/Close Time state
+  const [openTime, setOpenTime] = useState('09:00');
+  const [closeTime, setCloseTime] = useState('21:00');
+  const [is24x7, setIs24x7] = useState(false);
+  
+  // isChamber state
+  const [isChamber, setIsChamber] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -148,6 +156,20 @@ const MyChamber = () => {
     },
   });
   const [images, setImages] = useState([]);
+  const [videos, setVideos] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
+  const [videoPreviews, setVideoPreviews] = useState([]);
+
+  // ✅ IMAGE POPUP FUNCTIONS
+  const openImagePopup = (imageUrl) => {
+    setSelectedImage(imageUrl);
+    setShowImagePopup(true);
+  };
+
+  const closeImagePopup = () => {
+    setShowImagePopup(false);
+    setSelectedImage('');
+  };
 
   const getAmenitiesForType = (type) => {
     return type === 'exclusive' ? EXCLUSIVE_AMENITIES : NORMAL_AMENITIES;
@@ -200,12 +222,19 @@ const MyChamber = () => {
     return `${API_URL}/${cleanPath}`;
   };
 
+  const getMediaUrl = (media) => {
+    if (!media) return null;
+    if (media.startsWith("http")) return media;
+    const cleanPath = media.replace(/\\/g, "/").replace(/^\/+/, "");
+    return `${API_URL}/${cleanPath}`;
+  };
+
   const getAuthHeader = () => {
     const token = localStorage.getItem("token");
     return { headers: { Authorization: `Bearer ${token}` } };
   };
 
-  // ─── USING OLD CABINS ENDPOINT ───
+  // ─── FETCH CHAMBERS ───
   const fetchChambers = async () => {
     setLoading(true);
     try {
@@ -216,14 +245,12 @@ const MyChamber = () => {
         return;
       }
 
-      // OLD ENDPOINT: /api/cabins/user
       const res = await axios.get(`${API_URL}/api/cabins/user`, getAuthHeader());
       const data = res.data.cabins || res.data;
       const chamberList = Array.isArray(data) ? data : [];
       setChambers(chamberList);
       setChamberCount(chamberList.length);
       
-      // Initialize countdowns for chambers with expiry date
       const initialCountdowns = {};
       chamberList.forEach(chamber => {
         if (chamber.expiryDate) {
@@ -247,13 +274,12 @@ const MyChamber = () => {
     fetchChambers();
   }, []);
 
-  // ─── USING OLD DELETE ENDPOINT ───
+  // ─── DELETE ───
   const handleDelete = async (e, id) => {
     e.stopPropagation();
     if (!window.confirm("Are you sure you want to delete this chamber?")) return;
 
     try {
-      // OLD ENDPOINT: /api/cabins/${id}
       await axios.delete(`${API_URL}/api/cabins/${id}`, getAuthHeader());
       setChambers(chambers.filter(c => c._id !== id));
       setChamberCount(prev => prev - 1);
@@ -284,144 +310,54 @@ const MyChamber = () => {
     }));
   };
 
+  // Image handling
   const handleImageChange = (e) => {
-    setImages(Array.from(e.target.files));
+    const files = Array.from(e.target.files);
+    setImages(files);
+    const previews = files.map(file => URL.createObjectURL(file));
+    setImagePreviews(previews);
   };
 
   const removeImage = (index) => {
     setImages(images.filter((_, i) => i !== index));
+    setImagePreviews(imagePreviews.filter((_, i) => i !== index));
   };
 
-  // Open seat modal with batch mode
-  const openSeatModal = () => {
-    setSeatInput({ name: '', number: '' });
-    setEditingSeatIndex(null);
-    setSeatBatchMode(false);
-    setShowSeatModal(true);
+  // Video handling
+  const handleVideoChange = (e) => {
+    const files = Array.from(e.target.files);
+    setVideos(files);
+    const previews = files.map(file => URL.createObjectURL(file));
+    setVideoPreviews(previews);
   };
 
-  // Open seat modal in batch mode with starting number
-  const openBatchSeatModal = () => {
-    const capacity = parseInt(formData.capacity);
-    if (!capacity || capacity < 1) {
-      toast.error("Please enter number of seats first");
-      return;
-    }
-    
-    // Check if we already have seats
-    if (seats.length >= capacity) {
-      toast.error(`Already added ${seats.length} seats. Capacity is ${capacity}`);
-      return;
-    }
-    
-    // Set batch mode with next seat number
-    const nextNumber = seats.length + 1;
-    setBatchSeatNumber(nextNumber);
-    setSeatBatchMode(true);
-    setSeatInput({ name: `Seat ${nextNumber}`, number: nextNumber.toString() });
-    setEditingSeatIndex(null);
-    setShowSeatModal(true);
+  const removeVideo = (index) => {
+    setVideos(videos.filter((_, i) => i !== index));
+    setVideoPreviews(videoPreviews.filter((_, i) => i !== index));
   };
 
-  // Seat Management Functions
-  const addSeat = () => {
-    if (!seatInput.name.trim()) {
-      toast.error("Please enter a seat name");
-      return;
-    }
-    if (!seatInput.number || seatInput.number < 1) {
-      toast.error("Please enter a valid seat number");
-      return;
-    }
+  // Open/Close Time handlers
+  const handleOpenTimeChange = (e) => {
+    setOpenTime(e.target.value);
+  };
 
-    const seatNumber = parseInt(seatInput.number);
-    
-    // Check for duplicate seat number
-    if (seats.some(s => s.number === seatNumber)) {
-      toast.error(`Seat #${seatNumber} already exists`);
-      return;
-    }
+  const handleCloseTimeChange = (e) => {
+    setCloseTime(e.target.value);
+  };
 
-    // Check capacity
-    const capacity = parseInt(formData.capacity);
-    if (capacity && seats.length >= capacity) {
-      toast.error(`Cannot add more than ${capacity} seats`);
-      return;
-    }
-
-    if (editingSeatIndex !== null) {
-      // Update existing seat
-      const updatedSeats = [...seats];
-      updatedSeats[editingSeatIndex] = {
-        name: seatInput.name.trim(),
-        number: seatNumber
-      };
-      setSeats(updatedSeats);
-      setEditingSeatIndex(null);
-      toast.success("Seat updated successfully");
+  const toggle24x7 = () => {
+    setIs24x7(!is24x7);
+    if (!is24x7) {
+      setOpenTime('00:00');
+      setCloseTime('23:59');
     } else {
-      // Add new seat
-      setSeats([...seats, {
-        name: seatInput.name.trim(),
-        number: seatNumber
-      }]);
-      toast.success(`Seat #${seatNumber} added successfully`);
-    }
-
-    setSeatInput({ name: '', number: '' });
-    setShowSeatModal(false);
-    setSeatBatchMode(false);
-    
-    // Check if all seats are added
-    if (capacity && seats.length + 1 >= capacity) {
-      toast.success(`✅ All ${capacity} seats added!`);
+      setOpenTime('09:00');
+      setCloseTime('21:00');
     }
   };
 
-  const editSeat = (index) => {
-    setSeatInput({
-      name: seats[index].name,
-      number: seats[index].number.toString()
-    });
-    setEditingSeatIndex(index);
-    setSeatBatchMode(false);
-    setShowSeatModal(true);
-  };
-
-  const removeSeat = (index) => {
-    if (window.confirm(`Remove seat "${seats[index].name}"?`)) {
-      setSeats(seats.filter((_, i) => i !== index));
-      if (editingSeatIndex === index) {
-        setEditingSeatIndex(null);
-        setSeatInput({ name: '', number: '' });
-      }
-      toast.success("Seat removed");
-    }
-  };
-
-  // Auto-generate all seats based on capacity
-  const generateAllSeats = () => {
-    const capacity = parseInt(formData.capacity);
-    if (!capacity || capacity < 1) {
-      toast.error("Please enter a valid number of seats");
-      return;
-    }
-
-    if (seats.length > 0) {
-      if (!window.confirm(`This will replace all ${seats.length} existing seats. Continue?`)) {
-        return;
-      }
-    }
-
-    const newSeats = [];
-    for (let i = 1; i <= capacity; i++) {
-      newSeats.push({
-        name: `Seat ${i}`,
-        number: i
-      });
-    }
-    setSeats(newSeats);
-    toast.success(`✅ Generated ${capacity} seats`);
+  const toggleIsChamber = () => {
+    setIsChamber(!isChamber);
   };
 
   const calculateGST = (amount) => {
@@ -436,7 +372,7 @@ const MyChamber = () => {
     return { baseFee, gstAmount, totalWithGST };
   };
 
-  // ─── USING OLD PAYMENT ENDPOINTS ───
+  // ─── PAYMENT ───
   const initiateRazorpayPayment = async (chamberId, orderData) => {
     setPaymentProcessing(true);
     try {
@@ -457,7 +393,6 @@ const MyChamber = () => {
         order_id: orderData.order.razorpayOrderId,
         handler: async function(response) {
           try {
-            // OLD ENDPOINT: /api/cabins/verify-cabin-payment
             const verifyRes = await axios.post(
               `${API_URL}/api/cabins/verify-cabin-payment`,
               {
@@ -512,9 +447,14 @@ const MyChamber = () => {
                 },
               });
               setImages([]);
+              setImagePreviews([]);
+              setVideos([]);
+              setVideoPreviews([]);
               setPricingPlans([]);
-              setSeats([]);
-              setSeatBatchMode(false);
+              setOpenTime('09:00');
+              setCloseTime('21:00');
+              setIs24x7(false);
+              setIsChamber(false);
               await fetchChambers();
             } else {
               toast.error('Payment verification failed');
@@ -551,7 +491,7 @@ const MyChamber = () => {
     }
   };
 
-  // ─── USING OLD CREATE ENDPOINT ───
+  // ─── CREATE CHAMBER ───
   const createChamberAndOrder = async () => {
     setSubmitting(true);
     const data = new FormData();
@@ -564,13 +504,18 @@ const MyChamber = () => {
     data.append("cabinType", formData.cabinType);
     data.append("pricingPlans", JSON.stringify(pricingPlans));
     data.append("amenities", JSON.stringify(formData.amenities));
-    data.append("seats", JSON.stringify(seats));
+    
+    data.append("openTime", openTime);
+    data.append("closeTime", closeTime);
+    data.append("is24x7", is24x7 ? "true" : "false");
+    data.append("isChamber", isChamber ? "true" : "false");
+    
     images.forEach((img) => data.append("images", img));
+    videos.forEach((video) => data.append("videos", video));
 
     try {
       const token = localStorage.getItem("token");
       
-      // OLD ENDPOINT: /api/cabins
       const chamberRes = await axios.post(`${API_URL}/api/cabins`, data, {
         headers: { 
           Authorization: `Bearer ${token}`,
@@ -581,7 +526,6 @@ const MyChamber = () => {
       const newChamber = chamberRes.data.cabin;
       toast.success("Chamber created successfully!");
 
-      // OLD ENDPOINT: /api/cabins/createcabinorder
       const orderRes = await axios.post(
         `${API_URL}/api/cabins/createcabinorder`,
         { cabinId: newChamber._id },
@@ -611,22 +555,21 @@ const MyChamber = () => {
       return;
     }
 
-    // Validate seats
-    if (seats.length === 0) {
-      toast.error("Please add at least one seat to the chamber");
-      return;
-    }
-
-    // Validate seat count matches capacity
-    if (seats.length !== parseInt(formData.capacity)) {
-      toast.error(`Number of seats (${seats.length}) does not match capacity (${formData.capacity})`);
-      return;
+    if (!is24x7) {
+      if (!openTime || !closeTime) {
+        toast.error("Please set both opening and closing times");
+        return;
+      }
+      if (openTime >= closeTime) {
+        toast.error("Opening time must be before closing time");
+        return;
+      }
     }
     
     setShowConfirmModal(true);
   };
 
-  // Filter chambers based on all filters
+  // Filter chambers
   const filteredChambers = chambers.filter(chamber => {
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch = chamber.name?.toLowerCase().includes(searchLower) ||
@@ -713,7 +656,20 @@ const MyChamber = () => {
   const activeCount = chambers.filter(c => c.isActive === true).length;
   const inactiveCount = chambers.filter(c => c.isActive !== true).length;
   const exclusiveCount = chambers.filter(c => c.cabinType === 'exclusive').length;
+  const chamberCountFilter = chambers.filter(c => c.isChamber === true).length;
 
+  const formatTimeDisplay = (time) => {
+    if (!time) return 'N/A';
+    const [hours, minutes] = time.split(':');
+    const h = parseInt(hours);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 || 12;
+    return `${h12}:${minutes} ${ampm}`;
+  };
+
+  // ============================================================
+  // RETURN - JSX
+  // ============================================================
   return (
     <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
       <DoctorNavbar />
@@ -725,25 +681,12 @@ const MyChamber = () => {
             <h1 className="admin-dash__greeting">
               My <span>Chambers</span>
             </h1>
-            <p className="admin-dash__subtitle">
-              Manage and view all your registered chambers.
-            </p>
           </div>
-          <div className="admin-dash__date-pill">
-            <Calendar size={16} />
-            <span>
-              {new Date().toLocaleDateString("en-US", {
-                weekday: "short",
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-              })}
-            </span>
-          </div>
+          
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4 mb-6">
           <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
             <p className="text-xs text-gray-500 font-medium">Total Chambers</p>
             <p className="text-xl sm:text-2xl font-bold text-indigo-600">{chambers.length}</p>
@@ -760,12 +703,16 @@ const MyChamber = () => {
             <p className="text-xs text-gray-500 font-medium">Exclusive</p>
             <p className="text-xl sm:text-2xl font-bold text-amber-600">{exclusiveCount}</p>
           </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
+            <p className="text-xs text-gray-500 font-medium">Chambers</p>
+            <p className="text-xl sm:text-2xl font-bold text-rose-600">{chamberCountFilter}</p>
+          </div>
         </div>
 
         <div className="space-y-6">
           {/* Chambers Table Section */}
           <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
-            {/* Header with Filters - Always Visible */}
+            {/* Header with Filters */}
             <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
               <div className="flex items-center gap-3">
                 <h3 className="admin-dash__card-title">Registered Chambers</h3>
@@ -774,7 +721,6 @@ const MyChamber = () => {
                 </span>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                {/* Name Filter */}
                 <input
                   type="text"
                   placeholder="Filter by name..."
@@ -782,8 +728,6 @@ const MyChamber = () => {
                   onChange={(e) => setFilters({...filters, name: e.target.value})}
                   className="w-28 sm:w-36 px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                 />
-
-                {/* Address Filter */}
                 <input
                   type="text"
                   placeholder="Filter by address..."
@@ -791,8 +735,6 @@ const MyChamber = () => {
                   onChange={(e) => setFilters({...filters, address: e.target.value})}
                   className="w-28 sm:w-36 px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                 />
-
-                {/* Price Range */}
                 <div className="flex items-center gap-1">
                   <input
                     type="number"
@@ -810,8 +752,6 @@ const MyChamber = () => {
                     className="w-16 sm:w-20 px-2 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                   />
                 </div>
-
-                {/* Status Filter */}
                 <select
                   value={filters.status}
                   onChange={(e) => setFilters({...filters, status: e.target.value})}
@@ -821,8 +761,6 @@ const MyChamber = () => {
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
                 </select>
-
-                {/* Clear Filters */}
                 {(filters.name || filters.address || filters.priceMin || filters.priceMax || filters.status !== 'all') && (
                   <button
                     onClick={clearFilters}
@@ -832,8 +770,6 @@ const MyChamber = () => {
                     Clear
                   </button>
                 )}
-
-                {/* Payments Button */}
                 <button
                   onClick={() => navigate("/mychamberpayments")}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200"
@@ -841,8 +777,6 @@ const MyChamber = () => {
                   <CreditCard size={14} />
                   <span>Payments</span>
                 </button>
-
-                {/* Bookings Button */}
                 <button
                   onClick={() => navigate("/chamberbookings")}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
@@ -850,13 +784,15 @@ const MyChamber = () => {
                   <FileText size={14} className="text-indigo-600" />
                   <span>Bookings</span>
                 </button>
-
-                {/* Add Chamber Button */}
                 <button
                   onClick={() => {
                     setIsModalOpen(true);
-                    setSeats([]);
-                    setSeatBatchMode(false);
+                    setImagePreviews([]);
+                    setVideoPreviews([]);
+                    setOpenTime('09:00');
+                    setCloseTime('21:00');
+                    setIs24x7(false);
+                    setIsChamber(false);
                   }}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors"
                 >
@@ -866,7 +802,7 @@ const MyChamber = () => {
               </div>
             </div>
 
-            {/* Table Container */}
+            {/* Table */}
             <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
               {loading ? (
                 <div className="flex flex-col items-center justify-center gap-3 py-20">
@@ -882,7 +818,7 @@ const MyChamber = () => {
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Address</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Type</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Price</th>
-                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Seats</th>
+                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Timing</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Expiry</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Joined</th>
@@ -897,7 +833,9 @@ const MyChamber = () => {
                         const countdown = countdowns[chamber._id] || 0;
                         const hasExpiry = chamber.expiryDate ? true : false;
                         const isExpired = chamber.expiryDate && new Date(chamber.expiryDate) < new Date();
-                        const seatCount = chamber.seats?.length || 0;
+                        const is24x7 = chamber.is24x7 === true;
+                        const openTimeDisplay = chamber.openTime ? formatTimeDisplay(chamber.openTime) : 'N/A';
+                        const closeTimeDisplay = chamber.closeTime ? formatTimeDisplay(chamber.closeTime) : 'N/A';
                         
                         return (
                           <tr key={chamber._id} className="transition-colors group hover:bg-gray-50/80">
@@ -938,11 +876,22 @@ const MyChamber = () => {
                               <span className="text-xs text-gray-400 ml-0.5">/hr</span>
                             </td>
                             <td className="p-4">
-                              <div className="flex items-center gap-1.5">
-                                <Armchair size={14} className="text-gray-400" />
-                                <span className="text-sm font-medium text-gray-700">{seatCount}</span>
-                                <span className="text-xs text-gray-400">seats</span>
-                              </div>
+                              {is24x7 ? (
+                                <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-medium flex items-center gap-1.5 w-fit">
+                                  <ClockIcon size={12} /> 24×7
+                                </span>
+                              ) : (
+                                <div className="flex flex-col gap-0.5 text-xs">
+                                  <span className="flex items-center gap-1 text-gray-600">
+                                    <Sun size={12} className="text-amber-500" />
+                                    {openTimeDisplay}
+                                  </span>
+                                  <span className="flex items-center gap-1 text-gray-600">
+                                    <Moon size={12} className="text-indigo-500" />
+                                    {closeTimeDisplay}
+                                  </span>
+                                </div>
+                              )}
                             </td>
                             <td className="p-4">
                               <span className={`px-3 py-1 text-xs font-bold rounded-full ${
@@ -1030,6 +979,10 @@ const MyChamber = () => {
                     <span className="w-2 h-2 rounded-full bg-amber-500"></span>
                     Exclusive: {exclusiveCount}
                   </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+                    Chambers: {chamberCountFilter}
+                  </span>
                 </div>
               </div>
             )}
@@ -1037,7 +990,9 @@ const MyChamber = () => {
         </div>
       </div>
 
-      {/* View Chamber Modal */}
+      {/* ============================================================ */}
+      {/* VIEW CHAMBER MODAL */}
+      {/* ============================================================ */}
       {showViewModal && selectedChamber && (
         <div 
           className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
@@ -1048,9 +1003,10 @@ const MyChamber = () => {
           }}
         >
           <div 
-            className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
+            className="bg-white rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Header */}
             <div className={`p-6 ${
               selectedChamber.cabinType === 'exclusive' 
                 ? 'bg-gradient-to-br from-amber-500 to-amber-600' 
@@ -1070,7 +1026,14 @@ const MyChamber = () => {
                     )}
                   </div>
                   <div>
-                    <h3 className="text-2xl font-bold">{selectedChamber.name || 'N/A'}</h3>
+                    <h3 className="text-2xl font-bold flex items-center gap-2">
+                      {selectedChamber.name || 'N/A'}
+                      {selectedChamber.isChamber && (
+                        <span className="text-xs bg-rose-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          🏛️ Chamber
+                        </span>
+                      )}
+                    </h3>
                     <p className="text-sm opacity-80 flex items-center gap-2">
                       <MapPin size={14} />
                       {selectedChamber.address || 'No address'}
@@ -1086,34 +1049,106 @@ const MyChamber = () => {
               </div>
             </div>
 
+            {/* Content */}
             <div className="p-6 space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Type</p>
+              {/* Images Gallery */}
+              {selectedChamber.images && selectedChamber.images.length > 0 && (
+                <div>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <Building2 size={14} /> Photos ({selectedChamber.images.length})
+                  </p>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                    {selectedChamber.images.map((img, idx) => (
+                      <div 
+                        key={idx} 
+                        className="aspect-square rounded-lg overflow-hidden border border-gray-200 cursor-pointer group relative"
+                        onClick={() => openImagePopup(getImageUrl(img))}
+                      >
+                        <img 
+                          src={getImageUrl(img)} 
+                          alt={`Chamber ${idx + 1}`}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                          onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 flex items-center justify-center">
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/90 rounded-full p-2">
+                            <Eye size={20} className="text-indigo-600" />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Videos */}
+              {selectedChamber.videos && selectedChamber.videos.length > 0 && (
+                <div>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <Video size={14} /> Videos ({selectedChamber.videos.length})
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {selectedChamber.videos.map((video, idx) => (
+                      <div key={idx} className="bg-black/5 rounded-lg border border-gray-200 overflow-hidden">
+                        <video 
+                          src={getMediaUrl(video)} 
+                          controls 
+                          className="w-full h-40 object-cover"
+                          poster={selectedChamber.images?.[0] ? getImageUrl(selectedChamber.images[0]) : undefined}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Info Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="p-3 bg-gray-50 rounded-xl">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Type</p>
                   <p className="mt-1 font-medium text-gray-700 flex items-center gap-2">
                     {selectedChamber.cabinType === 'exclusive' ? (
                       <><Crown size={16} className="text-amber-500" /> Exclusive</>
-                    ) : 'Normal'}
+                    ) : (
+                      <Building2 size={16} className="text-indigo-500" />
+                    )}
+                    {selectedChamber.cabinType || 'Normal'}
                   </p>
                 </div>
-                <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Price</p>
+
+                <div className="p-3 bg-gray-50 rounded-xl">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Price</p>
                   <p className="mt-1 font-bold text-gray-700 flex items-center gap-1">
                     ₹{selectedChamber.price || 0}
                     <span className="text-sm font-normal text-gray-400">/hr</span>
                   </p>
                 </div>
-                <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Seats</p>
+
+                <div className="p-3 bg-gray-50 rounded-xl">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Capacity</p>
                   <p className="mt-1 font-medium text-gray-700 flex items-center gap-2">
-                    <Armchair size={16} className="text-gray-400" />
-                    {selectedChamber.seats?.length || 0} seats
+                    <Users size={16} className="text-gray-400" />
+                    {selectedChamber.capacity || 0} people
                   </p>
                 </div>
-                <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Status</p>
+
+                <div className="p-3 bg-gray-50 rounded-xl">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Chamber</p>
                   <p className="mt-1 font-medium">
-                    <span className={`px-3 py-1 text-xs font-bold rounded-full ${
+                    {selectedChamber.isChamber ? (
+                      <span className="text-rose-600 flex items-center gap-1.5">
+                        <CheckCircle size={16} className="text-rose-500" /> Yes
+                      </span>
+                    ) : (
+                      <span className="text-gray-400">No</span>
+                    )}
+                  </p>
+                </div>
+
+                <div className="p-3 bg-gray-50 rounded-xl">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Status</p>
+                  <p className="mt-1 font-medium">
+                    <span className={`px-2.5 py-0.5 text-xs font-bold rounded-full ${
                       selectedChamber.isActive === true 
                         ? 'bg-emerald-100 text-emerald-700' 
                         : 'bg-gray-100 text-gray-600'
@@ -1122,35 +1157,41 @@ const MyChamber = () => {
                     </span>
                   </p>
                 </div>
+
+                <div className="p-3 bg-gray-50 rounded-xl">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Timing</p>
+                  {selectedChamber.is24x7 ? (
+                    <p className="mt-1 font-medium text-emerald-600 flex items-center gap-2">
+                      <ClockIcon size={16} className="text-emerald-500" />
+                      24×7
+                    </p>
+                  ) : (
+                    <div className="mt-1 space-y-0.5">
+                      <p className="text-xs text-gray-700 flex items-center gap-1.5">
+                        <Sun size={12} className="text-amber-500" />
+                        {selectedChamber.openTime ? formatTimeDisplay(selectedChamber.openTime) : 'N/A'}
+                      </p>
+                      <p className="text-xs text-gray-700 flex items-center gap-1.5">
+                        <Moon size={12} className="text-indigo-500" />
+                        {selectedChamber.closeTime ? formatTimeDisplay(selectedChamber.closeTime) : 'N/A'}
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Seats List */}
-              {selectedChamber.seats && selectedChamber.seats.length > 0 && (
-                <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Seats</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mt-2">
-                    {selectedChamber.seats.map((seat, idx) => (
-                      <div key={idx} className="bg-white p-2 rounded-lg border border-gray-200 text-center">
-                        <Armchair size={14} className="mx-auto text-indigo-500 mb-1" />
-                        <p className="text-xs font-medium text-gray-700">{seat.name}</p>
-                        <p className="text-[10px] text-gray-400">#{seat.number}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="p-4 bg-gray-50 rounded-xl">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Expiry Date</p>
+              {/* Expiry Date */}
+              <div className="p-3 bg-gray-50 rounded-xl">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Expiry Date</p>
                 <p className="mt-1 font-medium text-gray-700 flex items-center gap-2">
                   <Calendar size={16} className="text-gray-400" />
                   {selectedChamber.expiryDate ? (
-                    <span>
+                    <span className="flex items-center gap-2">
                       {formatDate(selectedChamber.expiryDate)}
                       {new Date(selectedChamber.expiryDate) < new Date() ? (
-                        <span className="ml-2 px-2 py-0.5 text-[10px] font-bold bg-red-100 text-red-700 rounded-full">Expired</span>
+                        <span className="px-2 py-0.5 text-[10px] font-bold bg-red-100 text-red-700 rounded-full">Expired</span>
                       ) : (
-                        <span className="ml-2 px-2 py-0.5 text-[10px] font-bold bg-emerald-100 text-emerald-700 rounded-full">Valid</span>
+                        <span className="px-2 py-0.5 text-[10px] font-bold bg-emerald-100 text-emerald-700 rounded-full">Valid</span>
                       )}
                     </span>
                   ) : (
@@ -1159,16 +1200,20 @@ const MyChamber = () => {
                 </p>
               </div>
 
+              {/* Description */}
               {selectedChamber.description && (
-                <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Description</p>
-                  <p className="mt-1 text-gray-700">{selectedChamber.description}</p>
+                <div className="p-3 bg-gray-50 rounded-xl">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Description</p>
+                  <p className="mt-1 text-gray-700 text-sm">{selectedChamber.description}</p>
                 </div>
               )}
 
+              {/* Amenities */}
               {selectedChamber.amenities && Object.values(selectedChamber.amenities).some(v => v) && (
-                <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Amenities</p>
+                <div className="p-3 bg-gray-50 rounded-xl">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                    <Star size={14} /> Amenities
+                  </p>
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     {Object.entries(selectedChamber.amenities)
                       .filter(([key, value]) => value)
@@ -1187,9 +1232,12 @@ const MyChamber = () => {
                 </div>
               )}
 
+              {/* Pricing Plans */}
               {selectedChamber.pricingPlans && selectedChamber.pricingPlans.length > 0 && (
-                <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Pricing Plans</p>
+                <div className="p-3 bg-gray-50 rounded-xl">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                    <CreditCard size={14} /> Pricing Plans
+                  </p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
                     {selectedChamber.pricingPlans.map((plan, idx) => (
                       <div key={idx} className="bg-white p-2 rounded-lg border border-gray-200 text-center">
@@ -1202,6 +1250,24 @@ const MyChamber = () => {
                 </div>
               )}
 
+              {/* Room/Suite */}
+              {selectedChamber.cabin && (
+                <div className="p-3 bg-gray-50 rounded-xl">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Room/Suite</p>
+                  <p className="mt-1 font-medium text-gray-700">{selectedChamber.cabin}</p>
+                </div>
+              )}
+
+              {/* Joined Date */}
+              <div className="p-3 bg-gray-50 rounded-xl">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Joined</p>
+                <p className="mt-1 font-medium text-gray-700 flex items-center gap-2">
+                  <Clock size={14} className="text-gray-400" />
+                  {formatDate(selectedChamber.createdAt)}
+                </p>
+              </div>
+
+              {/* Action Buttons */}
               <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-200">
                 <button
                   onClick={() => {
@@ -1229,7 +1295,43 @@ const MyChamber = () => {
         </div>
       )}
 
-      {/* Add Chamber Modal - SAME AS MyCabin */}
+      {/* ============================================================ */}
+      {/* IMAGE FULLSCREEN POPUP */}
+      {/* ============================================================ */}
+      {showImagePopup && (
+        <div 
+          className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 backdrop-blur-md"
+          onClick={closeImagePopup}
+        >
+          <div 
+            className="relative max-w-[90vw] max-h-[90vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={closeImagePopup}
+              className="absolute -top-12 right-0 text-white/70 hover:text-white transition-colors p-2"
+            >
+              <X size={32} />
+            </button>
+            <img 
+              src={selectedImage} 
+              alt="Full size"
+              className="max-w-[90vw] max-h-[85vh] object-contain rounded-lg shadow-2xl"
+              onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
+            />
+            <button
+              onClick={closeImagePopup}
+              className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/50 hover:text-white transition-colors text-sm bg-black/50 px-6 py-2 rounded-full backdrop-blur-sm"
+            >
+              Click anywhere to close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* ADD CHAMBER MODAL */}
+      {/* ============================================================ */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[1100] flex items-end sm:items-center justify-center p-2 sm:p-4 bg-slate-900/50 backdrop-blur-sm">
           <div
@@ -1251,7 +1353,11 @@ const MyChamber = () => {
                 </div>
               </div>
               <button
-                onClick={() => setIsModalOpen(false)}
+                onClick={() => {
+                  setIsModalOpen(false);
+                  setImagePreviews([]);
+                  setVideoPreviews([]);
+                }}
                 className="w-8 h-8 rounded-xl bg-white/15 hover:bg-white/25 transition-colors flex items-center justify-center text-white"
               >
                 <X size={18} />
@@ -1309,110 +1415,114 @@ const MyChamber = () => {
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Number of Seats *</label>
-                    <div className="flex items-center gap-2 mt-1">
-                      <input
-                        className="flex-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
-                        type="number" name="capacity" min="1"
-                        placeholder="e.g. 5"
-                        value={formData.capacity}
-                        onChange={handleChange}
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={openBatchSeatModal}
-                        disabled={!formData.capacity || parseInt(formData.capacity) < 1}
-                        className={`px-3 py-2.5 sm:py-3 rounded-xl text-xs font-bold transition-colors whitespace-nowrap ${
-                          !formData.capacity || parseInt(formData.capacity) < 1
-                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                            : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                        }`}
-                      >
-                        <Plus size={14} className="inline mr-1" /> Add
-                      </button>
+                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Capacity *</label>
+                    <input
+                      className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                      type="number" name="capacity" min="1"
+                      placeholder="e.g. 5"
+                      value={formData.capacity}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* isChamber Checkbox */}
+                <div>
+                  <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Chamber Type</label>
+                  <div className="mt-2 flex items-center gap-4">
+                    <div 
+                      className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border-2 cursor-pointer transition-all ${
+                        isChamber 
+                          ? 'border-rose-500 bg-rose-50' 
+                          : 'border-slate-200 hover:border-slate-300'
+                      }`}
+                      onClick={toggleIsChamber}
+                    >
+                      <div className={`w-5 h-5 rounded-md flex items-center justify-center transition-all ${
+                        isChamber ? 'bg-rose-500' : 'bg-slate-200'
+                      }`}>
+                        {isChamber && <Check size={14} className="text-white" />}
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium text-slate-700">This is a Chamber</span>
+                        <p className="text-[10px] text-slate-400">Mark as dedicated chamber space</p>
+                      </div>
                     </div>
-                    {formData.capacity && parseInt(formData.capacity) > 0 && (
-                      <p className="text-[10px] text-slate-400 mt-0.5">
-                        {seats.length} of {formData.capacity} seats added
-                        {seats.length > 0 && seats.length === parseInt(formData.capacity) && (
-                          <span className="text-emerald-600 font-bold ml-1">✅ Complete!</span>
-                        )}
-                        {seats.length > 0 && seats.length < parseInt(formData.capacity) && (
-                          <span className="text-amber-600 ml-1">⚠️ {parseInt(formData.capacity) - seats.length} more needed</span>
-                        )}
-                      </p>
+                    {isChamber && (
+                      <span className="text-xs font-bold text-rose-600 bg-rose-100 px-3 py-1 rounded-full">
+                        ✅ Chamber
+                      </span>
                     )}
                   </div>
                 </div>
 
-                {/* Seat Management Section */}
+                {/* Open/Close Time */}
                 <div>
-                  <div className="flex justify-between items-center mb-1.5">
-                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">
-                      Seat List ({seats.length} / {formData.capacity || '0'})
-                    </label>
-                    <div className="flex gap-1.5">
-                      {formData.capacity && parseInt(formData.capacity) > 0 && seats.length === 0 && (
-                        <button
-                          type="button"
-                          onClick={generateAllSeats}
-                          className="text-[10px] sm:text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 sm:px-3 py-1 rounded-lg hover:bg-emerald-100 transition-colors flex items-center gap-1"
-                        >
-                          <GridIcon size={12} /> Generate All
-                        </button>
-                      )}
+                  <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Operating Hours *</label>
+                  <div className="mt-1 space-y-3">
+                    <div className="flex items-center gap-3">
                       <button
                         type="button"
-                        onClick={openSeatModal}
-                        className="text-[10px] sm:text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 sm:px-3 py-1 rounded-lg hover:bg-indigo-100 transition-colors flex items-center gap-1"
+                        onClick={toggle24x7}
+                        className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${
+                          is24x7 ? 'bg-indigo-600' : 'bg-gray-300'
+                        }`}
                       >
-                        <Plus size={12} /> Add Manual
+                        <span
+                          className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
+                            is24x7 ? 'translate-x-5' : 'translate-x-0'
+                          }`}
+                        />
                       </button>
+                      <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                        <ClockIcon size={16} className="text-indigo-500" />
+                        24×7 Open
+                      </span>
+                      {is24x7 && (
+                        <span className="text-xs text-emerald-600 font-bold">✅ Always Open</span>
+                      )}
                     </div>
-                  </div>
-                  
-                  {seats.length > 0 ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                      {seats.map((seat, idx) => (
-                        <div key={idx} className="bg-slate-50 rounded-lg border border-slate-200 p-2 text-center relative group">
-                          <Armchair size={14} className="mx-auto text-indigo-500 mb-1" />
-                          <p className="text-xs font-medium text-gray-700 truncate">{seat.name}</p>
-                          <p className="text-[10px] text-gray-400">#{seat.number}</p>
-                          <div className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
-                              type="button"
-                              onClick={() => editSeat(idx)}
-                              className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-[8px] hover:bg-indigo-200 transition-colors"
-                            >
-                              ✎
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => removeSeat(idx)}
-                              className="w-5 h-5 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-[8px] hover:bg-red-200 transition-colors"
-                            >
-                              ×
-                            </button>
+
+                    {!is24x7 && (
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Opening Time</label>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Sun size={16} className="text-amber-500" />
+                            <input
+                              type="time"
+                              value={openTime}
+                              onChange={handleOpenTimeChange}
+                              className="flex-1 px-3 py-2 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                              required={!is24x7}
+                            />
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center">
-                      <p className="text-xs text-slate-400">
-                        {formData.capacity && parseInt(formData.capacity) > 0 ? (
-                          <>Click <strong>"Add"</strong> next to seats field to add seats one by one, or <strong>"Generate All"</strong> to create all at once.</>
-                        ) : (
-                          <>Enter number of seats first, then click <strong>"Add"</strong> to add seats.</>
-                        )}
-                      </p>
-                    </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Closing Time</label>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Moon size={16} className="text-indigo-500" />
+                            <input
+                              type="time"
+                              value={closeTime}
+                              onChange={handleCloseTimeChange}
+                              className="flex-1 px-3 py-2 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                              required={!is24x7}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  {!is24x7 && openTime && closeTime && openTime >= closeTime && (
+                    <p className="text-[10px] text-red-500 mt-1">⚠️ Opening time must be before closing time</p>
                   )}
                 </div>
 
+                {/* Cabin Type */}
                 <div>
-                  <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Chamber Type</label>
+                  <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Cabin Type</label>
                   <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-1">
                     <button
                       type="button"
@@ -1441,6 +1551,7 @@ const MyChamber = () => {
                   </div>
                 </div>
 
+                {/* Amenities */}
                 <div>
                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Amenities</label>
                   <div className="grid grid-cols-2 xs:grid-cols-3 gap-1.5 sm:gap-2 mt-1">
@@ -1469,6 +1580,7 @@ const MyChamber = () => {
                   </div>
                 </div>
 
+                {/* Pricing Plans */}
                 <div>
                   <div className="flex justify-between items-center mb-1.5">
                     <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Pricing Plans</label>
@@ -1515,6 +1627,7 @@ const MyChamber = () => {
                   )}
                 </div>
 
+                {/* Description */}
                 <div>
                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Description</label>
                   <textarea
@@ -1527,6 +1640,7 @@ const MyChamber = () => {
                   />
                 </div>
 
+                {/* Image Upload */}
                 <div>
                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Photos</label>
                   <div className="mt-1 border-2 border-dashed border-indigo-200 rounded-xl p-4 sm:p-6 text-center hover:border-indigo-400 transition-colors relative">
@@ -1539,11 +1653,11 @@ const MyChamber = () => {
                     <p className="text-[10px] sm:text-xs text-slate-500 mt-1">Click to upload photos</p>
                     <p className="text-[8px] sm:text-[10px] text-slate-400">PNG, JPG, WEBP</p>
                   </div>
-                  {images.length > 0 && (
+                  {imagePreviews.length > 0 && (
                     <div className="grid grid-cols-3 xs:grid-cols-4 sm:grid-cols-5 gap-2 mt-2">
-                      {images.map((file, index) => (
+                      {imagePreviews.map((preview, index) => (
                         <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-slate-200">
-                          <img src={URL.createObjectURL(file)} alt="preview" className="w-full h-full object-cover" />
+                          <img src={preview} alt="preview" className="w-full h-full object-cover" />
                           <button
                             type="button"
                             onClick={() => removeImage(index)}
@@ -1557,6 +1671,47 @@ const MyChamber = () => {
                   )}
                 </div>
 
+                {/* Video Upload */}
+                <div>
+                  <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                    <Video size={14} /> Videos (Optional)
+                  </label>
+                  <div className="mt-1 border-2 border-dashed border-purple-200 rounded-xl p-4 sm:p-6 text-center hover:border-purple-400 transition-colors relative">
+                    <input
+                      type="file" multiple accept="video/*"
+                      onChange={handleVideoChange}
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                    />
+                    <FileVideo size={24} className="mx-auto text-purple-400 sm:w-7 sm:h-7" />
+                    <p className="text-[10px] sm:text-xs text-slate-500 mt-1">Click to upload videos</p>
+                    <p className="text-[8px] sm:text-[10px] text-slate-400">MP4, WEBM, MOV</p>
+                  </div>
+                  {videoPreviews.length > 0 && (
+                    <div className="grid grid-cols-2 xs:grid-cols-3 gap-2 mt-2">
+                      {videoPreviews.map((preview, index) => (
+                        <div key={index} className="relative rounded-lg overflow-hidden border border-slate-200 bg-black/5">
+                          <video 
+                            src={preview} 
+                            className="w-full h-28 object-cover"
+                            controls
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeVideo(index)}
+                            className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs z-10"
+                          >
+                            ×
+                          </button>
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <Play size={24} className="text-white/60 drop-shadow-lg" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Fee Summary */}
                 <div className={`p-3 sm:p-4 rounded-xl ${
                   formData.cabinType === 'exclusive' ? 'bg-amber-50 border border-amber-200' : 'bg-emerald-50 border border-emerald-200'
                 }`}>
@@ -1569,6 +1724,7 @@ const MyChamber = () => {
                     <div className="flex-1 min-w-0">
                       <p className="text-[10px] sm:text-xs font-bold text-slate-700">
                         Chamber #{chamberCount + 1} {formData.cabinType === 'exclusive' ? '⭐ Exclusive' : 'Normal'}
+                        {isChamber && ' 🏛️ Chamber'}
                       </p>
                       <p className="text-[8px] sm:text-[10px] text-slate-600 truncate">
                         Base: ₹{baseFee} | GST: ₹{gstAmount.toFixed(2)} | Total: ₹{totalWithGST.toFixed(2)}
@@ -1577,10 +1733,15 @@ const MyChamber = () => {
                   </div>
                 </div>
 
+                {/* Submit Buttons */}
                 <div className="grid grid-cols-2 gap-2 sm:gap-3 pt-2">
                   <button
                     type="button"
-                    onClick={() => setIsModalOpen(false)}
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      setImagePreviews([]);
+                      setVideoPreviews([]);
+                    }}
                     className="py-2.5 sm:py-3 rounded-xl border border-slate-200 text-slate-600 font-semibold text-xs sm:text-sm hover:bg-slate-50 transition-colors"
                   >
                     Cancel
@@ -1607,83 +1768,9 @@ const MyChamber = () => {
         </div>
       )}
 
-      {/* Seat Add/Edit Modal */}
-      {showSeatModal && (
-        <div className="fixed inset-0 z-[1150] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-slate-900">
-                  {editingSeatIndex !== null ? 'Edit Seat' : seatBatchMode ? `Add Seat ${batchSeatNumber}` : 'Add Seat'}
-                </h3>
-                <button
-                  onClick={() => {
-                    setShowSeatModal(false);
-                    setSeatInput({ name: '', number: '' });
-                    setEditingSeatIndex(null);
-                    setSeatBatchMode(false);
-                  }}
-                  className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors flex items-center justify-center text-slate-600"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Seat Name *</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Seat A1, Desk 1, CEO Chair"
-                    value={seatInput.name}
-                    onChange={(e) => setSeatInput({ ...seatInput, name: e.target.value })}
-                    className="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
-                    autoFocus
-                  />
-                  {seatBatchMode && (
-                    <p className="text-[10px] text-indigo-500 mt-0.5">💡 Seat {batchSeatNumber} of {formData.capacity}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Seat Number *</label>
-                  <input
-                    type="number"
-                    min="1"
-                    placeholder="e.g. 1"
-                    value={seatInput.number}
-                    onChange={(e) => setSeatInput({ ...seatInput, number: e.target.value })}
-                    className="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
-                  />
-                  <p className="text-[10px] text-slate-400 mt-0.5">Each seat must have a unique number</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 pt-2">
-                  <button
-                    onClick={() => {
-                      setShowSeatModal(false);
-                      setSeatInput({ name: '', number: '' });
-                      setEditingSeatIndex(null);
-                      setSeatBatchMode(false);
-                    }}
-                    className="py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold text-sm hover:bg-slate-50 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={addSeat}
-                    className="py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition-colors"
-                  >
-                    {editingSeatIndex !== null ? 'Update' : seatBatchMode ? 'Add & Next' : 'Add'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Confirm Modal */}
+      {/* ============================================================ */}
+      {/* CONFIRM MODAL */}
+      {/* ============================================================ */}
       {showConfirmModal && (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm">
           <div className="bg-white w-full max-w-sm sm:max-w-md rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
@@ -1701,9 +1788,11 @@ const MyChamber = () => {
               </div>
               <h3 className="text-white font-bold text-base sm:text-lg mt-2">
                 {formData.cabinType === 'exclusive' ? '⭐ Exclusive Chamber' : 'Confirm Chamber'}
+                {isChamber && ' 🏛️'}
               </h3>
               <p className="text-white/80 text-xs sm:text-sm">
                 {formData.cabinType === 'exclusive' ? 'Premium exclusive chamber' : 'Review details below'}
+                {isChamber && ' (Marked as Chamber)'}
               </p>
             </div>
 
@@ -1715,14 +1804,27 @@ const MyChamber = () => {
                     {formData.cabinType === 'exclusive' ? '⭐ Exclusive' : 'Normal'}
                   </span>
                 </div>
-                <div className="flex justify-between"><span className="text-slate-500">Capacity</span>
-                  <span className="font-semibold">{formData.capacity} seats</span>
+                <div className="flex justify-between"><span className="text-slate-500">Chamber</span>
+                  <span className={`font-semibold ${isChamber ? 'text-rose-600' : 'text-slate-400'}`}>
+                    {isChamber ? '✅ Yes' : 'No'}
+                  </span>
                 </div>
-                <div className="flex justify-between"><span className="text-slate-500">Seats Added</span>
-                  <span className="font-semibold">{seats.length} seats</span>
+                <div className="flex justify-between"><span className="text-slate-500">Capacity</span>
+                  <span className="font-semibold">{formData.capacity} people</span>
+                </div>
+                <div className="flex justify-between"><span className="text-slate-500">Timing</span>
+                  <span className="font-semibold">
+                    {is24x7 ? '24×7' : `${formatTimeDisplay(openTime)} - ${formatTimeDisplay(closeTime)}`}
+                  </span>
                 </div>
                 <div className="flex justify-between"><span className="text-slate-500">Amenities</span>
                   <span className="font-semibold">{Object.values(formData.amenities).filter(v => v).length} / {currentAmenities.length}</span>
+                </div>
+                <div className="flex justify-between"><span className="text-slate-500">Images</span>
+                  <span className="font-semibold">{images.length} images</span>
+                </div>
+                <div className="flex justify-between"><span className="text-slate-500">Videos</span>
+                  <span className="font-semibold">{videos.length} videos</span>
                 </div>
                 <div className="border-t border-slate-200 pt-2 flex justify-between"><span className="text-slate-500">Base Fee</span><span>₹{baseFee}</span></div>
                 <div className="flex justify-between"><span className="text-slate-500">GST (18%)</span><span>₹{gstAmount.toFixed(2)}</span></div>
@@ -1766,6 +1868,7 @@ const MyChamber = () => {
           </div>
         </div>
       )}
+
     </div>
   );
 };

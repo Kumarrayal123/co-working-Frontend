@@ -110,15 +110,17 @@ function AdminNavbar() {
   const bookingsLinks = [
     { name: "All Bookings", path: "/allbookings", icon: Ticket },
     { name: "My Bookings", path: "/mybookings", icon: Calendar },
+    { name: "My Space Bookings", path: "/adminbookings", icon: Calendar },
   ];
 
   const paymentsLinks = [
-    { name: "Users Payments", path: "/cabinpayments", icon: CreditCard },
+    { name: "Reg. Payments", path: "/cabinpayments", icon: CreditCard },
   ];
 
   const walletLinks = [
     { name: "Users Wallet", path: "/userwallets", icon: Wallet },
     { name: "Withdrawals", path: "/withdrawals", icon: Banknote },
+    { name: "My Wallet", path: "/adminwallet", icon: Wallet }, // ✅ Added My Wallet
   ];
 
   const revenueLinks = [
@@ -326,7 +328,7 @@ function AdminNavbar() {
               )}
             </li>
 
-            {/* User Support - Renamed from Queries */}
+            {/* User Support */}
             <li>
               <Link
                 to="/userqueries"
@@ -363,6 +365,18 @@ function AdminNavbar() {
                     </div>
                   </div>
                   <div className="an-nav__dd-divider" />
+                  
+                  {/* ✅ My Wallet in Profile Dropdown */}
+                  <button 
+                    className="an-nav__dd-item" 
+                    onClick={() => { 
+                      setProfileOpen(false); 
+                      navigate("/adminwallet"); 
+                    }}
+                  >
+                    <Wallet size={16} /> My Wallet
+                  </button>
+                  
                   <button className="an-nav__dd-logout" onClick={handleLogout}>
                     <LogOut size={16} /> Sign Out
                   </button>
@@ -527,6 +541,15 @@ function AdminNavbar() {
           </div>
 
           <div className="an-mobile__footer">
+            {/* ✅ My Wallet in Mobile Footer */}
+            <button
+              onClick={() => { setOpen(false); navigate("/adminwallet"); }}
+              className="an-mobile__footer-btn"
+            >
+              <Wallet size={17} />
+              <span>My Wallet</span>
+            </button>
+
             <button className="an-mobile__logout" onClick={handleLogout}>
               <LogOut size={17} />
               Sign Out

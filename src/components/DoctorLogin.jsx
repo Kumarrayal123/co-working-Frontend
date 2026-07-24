@@ -38,44 +38,25 @@ function DoctorLogin() {
     setError("");
 
     try {
-      // First try admin login with hardcoded credentials
-      if (email === "saidulureddy@gmail.com" && password === "reddy123") {
-        const token = "mocked-admin-token-for-saidulu";
-        const adminData = {
-          _id: "68ebe9ee8f06d33ee022d665",
-          name: "Saidulu Reddy",
-          email: "saidulureddy@gmail.com",
-          role: "admin",
-          isDoctor: true
-        };
+      // ✅ REMOVED: Admin hardcode login
 
-        localStorage.setItem("token", token);
-        localStorage.setItem("admin", JSON.stringify(adminData));
-        
-        setUserName(adminData.name);
-        setShowSuccessPopup(true);
-        setLoading(false);
-        
-        setTimeout(() => {
-          setShowSuccessPopup(false);
-          navigate("/admindashboard");
-        }, 2000);
-        return;
-      }
-
-      // If not admin, try user login with backend API
+      // ✅ ONLY USE BACKEND API LOGIN
       const res = await axios.post("http://localhost:5003/api/auth/login", {
         email,
         password,
-        isDoctor: true  // Added isDoctor: true to identify doctor login
+        isDoctor: true
       });
 
       const { token, user } = res.data;
+      
+      // ✅ Store in localStorage
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
-      
-      // Store isDoctor flag in localStorage
       localStorage.setItem("isDoctor", "true");
+      
+      // ✅ User ID from login response
+      console.log("✅ Logged in User ID:", user._id);
+      console.log("✅ User Data:", user);
       
       setUserName(user.name || "User");
       setShowSuccessPopup(true);

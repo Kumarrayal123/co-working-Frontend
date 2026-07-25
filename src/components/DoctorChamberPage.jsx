@@ -1,5 +1,10 @@
-// DoctorChamber.jsx - Complete Doctor's Chamber Landing Page with IRYAX SPACE FOR MEDICAL Branding
-import React, { useEffect, useState } from "react";
+// DoctorChamber.jsx
+// IRYAX SPACE FOR MEDICAL — redesigned to match the calm "boutique directory"
+// look used on PromotionalPage.jsx. All original functionality preserved:
+// live chamber fetch (filtered by isChamber), image/video chamber popup,
+// simulated booking flow, contact form -> /api/cabins/sendquery, FAQ, nav.
+
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import {
@@ -24,1400 +29,321 @@ import {
   HelpCircle,
   Send,
   Building2,
-  Calendar,
-  HeartPulse,
-  Brain,
-  Activity,
   Eye,
-  EyeOff,
-  Bone,
-  Microscope,
-  TestTube,
-  UsersRound,
+  Brain,
   Heart,
-  ShieldCheck,
-  Target,
-  Flag,
-  ArrowLeft,
+  Microscope,
+  Home as HomeIcon,
   ChevronLeft,
   ChevronRight,
-  Home,
-  Zap,
-  TrendingUp,
-  Smile,
+  Maximize2,
+  Video as VideoIcon,
   Loader2,
-  Play,
-  Pause,
-  Video as VideoIcon
+  Gauge,
+  ShieldCheck,
+  BadgeCheck,
+  Target
 } from "lucide-react";
 import logo from "../assets/logo.png";
 import doctorChamber from "../assets/doctorchamber.png";
 
 const API_URL = "https://spaceapi.iryax.com";
-const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
+const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?auto=format&fit=crop&q=80&w=1000&h=750";
 
 // ─── SPECIALTIES DATA ───
 const MEDICAL_SPECIALTIES = [
-  { name: "Permanent Makeup Artist", icon: Eye, desc: "Advanced clinical spaces suitable for cardiac consultations and care." },
-  { name: "Consulting Periodontist", icon: Users, desc: "Specialized care for gum health, periodontal disease management, and advanced gum treatments." },
-  { name: "RDI Consultant", icon: Brain, desc: "Expert guidance and diagnostic insight to support accurate treatment planning." },
-  { name: "Psychotherapist", icon: Heart, desc: "Advanced clinical spaces suitable for cardiac consultations and care." },
-  { name: "Psychiatric", icon: Shield, desc: "Compassionate mental health support for emotional well-being and psychiatric care." },
+  { name: "Permanent Makeup Artist", icon: Eye, desc: "Precision spaces suited for detailed cosmetic and clinical work." },
+  { name: "Consulting Periodontist", icon: Users, desc: "Specialized care for gum health and advanced periodontal treatment." },
+  { name: "RDI Consultant", icon: Brain, desc: "Expert guidance and diagnostic insight for accurate treatment planning." },
+  { name: "Psychotherapist", icon: Heart, desc: "Calm, private rooms suited for one-on-one therapeutic sessions." },
+  { name: "Psychiatric", icon: Shield, desc: "Compassionate mental health support in a discreet setting." },
   { name: "Paramedical Camouflage", icon: Eye, desc: "Advanced skin camouflage techniques to conceal scars and pigmentation." },
-  { name: "Implantologist", icon: Stethoscope, desc: "Modern dental implant solutions to restore function and confident smiles." },
-  { name: "Hypnotherapist", icon: Brain, desc: "Professional hypnotherapy sessions to manage stress, habits, and anxiety." }
+  { name: "Implantologist", icon: Stethoscope, desc: "Modern dental implant solutions to restore function and confidence." },
+  { name: "Hypnotherapist", icon: Brain, desc: "Professional sessions to manage stress, habits, and anxiety." }
 ];
 
 // ─── FAQ DATA ───
 const FAQ_DATA = [
-  { category: "IRYAX SPACE", q: "What types of consultation rooms are available?", a: "We offer fully-equipped private consultation rooms, examination rooms, and collaborative medical spaces." },
-  { category: "Flexibility", q: "Do I need to sign a long-term lease?", a: "No! Our model is completely flexible. You can book by hour, day, or month." },
-  { category: "Facilities", q: "What medical facilities are included?", a: "All spaces include state-of-the-art medical equipment, high-speed WiFi, comfortable patient areas, and 24/7 security." },
-  { category: "Payment", q: "What payment methods are accepted?", a: "We accept credit/debit cards, UPI, net banking, and offer flexible payment plans." },
-  { category: "Support", q: "What administrative support do you provide?", a: "We provide full administrative support including reception services, billing assistance, and patient management." }
+  { category: "Chambers", q: "What types of consultation rooms are available?", a: "Fully-equipped private consultation rooms, examination rooms, and collaborative medical spaces." },
+  { category: "Flexibility", q: "Do I need to sign a long-term lease?", a: "No. Our model is fully flexible — book by the hour, day, or month." },
+  { category: "Facilities", q: "What medical facilities are included?", a: "Every chamber includes clinical equipment, high-speed WiFi, comfortable patient areas, and 24/7 security." },
+  { category: "Payment", q: "What payment methods are accepted?", a: "We accept credit and debit cards, UPI, net banking, and offer flexible payment plans." },
+  { category: "Support", q: "What administrative support do you provide?", a: "Full administrative support, including reception, billing assistance, and patient management." }
 ];
 
-// ─── STYLES ───
+// ═══════════════════════════════════════════════════════════════
+// DESIGN TOKENS — shared with PromotionalPage.jsx
+// Palette   — ink #12181F · paper #FBF9F5 · paper-dim #F1EDE3
+//             brass #B08947 (signature) · teal #23474B · brick #8B4433 (medical)
+// Type      — display: 'Fraunces' · body/UI: 'Inter'
+// Signature — chamber media card doubles as a compact clinical dossier:
+//             a status ribbon + spec row, echoing how a chart is read.
+// ═══════════════════════════════════════════════════════════════
 const styles = `
-  @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-20px); }
-  }
-  @keyframes gradient {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
-  @keyframes heartbeat {
-    0%, 100% { transform: scale(1); }
-    14% { transform: scale(1.05); }
-    28% { transform: scale(1); }
-    42% { transform: scale(1.05); }
-    70% { transform: scale(1); }
-  }
-  @keyframes slide-up {
-    from { opacity: 0; transform: translateY(60px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-  @keyframes float-glass {
-    0%, 100% { transform: translateY(0px) rotate(0deg); }
-    50% { transform: translateY(-10px) rotate(2deg); }
-  }
-  @keyframes scale-in {
-    from { opacity: 0; transform: scale(0.8); }
-    to { opacity: 1; transform: scale(1); }
-  }
-  @keyframes spin-slow {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-  @keyframes shimmer {
-    0% { background-position: -200% center; }
-    100% { background-position: 200% center; }
-  }
-
-  .animate-float { animation: float 6s ease-in-out infinite; }
-  .animate-heartbeat { animation: heartbeat 1.5s ease-in-out infinite; }
-  .animate-slide-up { animation: slide-up 0.8s ease-out; }
-  .animate-gradient { background-size: 200% 200%; animation: gradient 3s ease infinite; }
-  .animate-spin-slow { animation: spin-slow 4s linear infinite; }
-  .animate-scale-in { animation: scale-in 0.6s ease-out; }
-  .animate-float-glass { animation: float-glass 6s ease-in-out infinite; }
-  .animate-shimmer { background-size: 200% center; animation: shimmer 3s ease-in-out infinite; }
-
-  .reveal {
-    opacity: 0;
-    transform: translateY(40px);
-    transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-  .reveal.visible {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-  .footer-heart {
-    color: #ef4444;
-    display: inline-block;
-    animation: heartbeat 1.5s ease-in-out infinite;
-  }
-
-  .navbar-custom {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    z-index: 50 !important;
-    height: 72px !important;
-    padding: 0 24px !important;
-    background: transparent !important;
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
-    display: flex !important;
-    align-items: center !important;
-  }
-
-  .navbar-custom .navbar-inner {
-    width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 72px;
-  }
-
-  .navbar-custom .nav-links {
-    display: flex !important;
-    align-items: center !important;
-    gap: 4px !important;
-    flex-wrap: nowrap !important;
-    white-space: nowrap !important;
-  }
-
-  .navbar-custom .navbar-link {
-    font-size: 0.88rem !important;
-    font-weight: 400 !important;
-    padding: 8px 14px !important;
-    color: #ffffff !important;
-    cursor: pointer;
-    transition: all 0.3s;
-    border-radius: 9999px;
-    background: none;
-    border: none;
-    font-family: inherit;
-    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    letter-spacing: 0.5px;
-    white-space: nowrap !important;
-  }
-
-  .navbar-custom .navbar-link:hover {
-    color: #93c5fd !important;
-    background: rgba(255, 255, 255, 0.15) !important;
-  }
-
-  .navbar-custom .navbar-brand {
-    font-size: 1.2rem !important;
-    font-weight: 300 !important;
-    color: #ffffff !important;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    white-space: nowrap !important;
-    letter-spacing: 0.5px;
-  }
-
-  .navbar-custom .navbar-brand .brand-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(8px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    flex-shrink: 0;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-  }
-
-  .navbar-custom .navbar-btn {
-    font-size: 0.82rem !important;
-    font-weight: 400 !important;
-    padding: 8px 18px !important;
-    background: rgba(255, 255, 255, 0.15) !important;
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #ffffff !important;
-    border-radius: 9999px;
-    transition: all 0.3s;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    white-space: nowrap !important;
-  }
-
-  .navbar-custom .navbar-btn:hover {
-    background: rgba(255, 255, 255, 0.25) !important;
-    transform: scale(1.05);
-  }
-
-  .navbar-custom .navbar-signin {
-    font-size: 0.85rem !important;
-    font-weight: 400 !important;
-    color: #ffffff !important;
-    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    background: none;
-    border: none;
-    padding: 8px 14px;
-    border-radius: 9999px;
-    cursor: pointer;
-    transition: all 0.3s;
-    white-space: nowrap !important;
-  }
-
-  .navbar-custom .navbar-signin:hover {
-    color: #93c5fd !important;
-    background: rgba(255, 255, 255, 0.1);
-  }
-
-  .navbar-custom .navbar-logo {
-    width: 44px !important;
-    height: 44px !important;
-    border: 2px solid rgba(255, 255, 255, 0.3) !important;
-    border-radius: 50% !important;
-    padding: 3px !important;
-    background: rgba(255, 255, 255, 0.05) !important;
-    overflow: hidden !important;
-    flex-shrink: 0 !important;
-    transition: all 0.3s !important;
-  }
-
-  .navbar-custom .navbar-logo img {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: contain !important;
-  }
-
-  .navbar-custom .navbar-logo:hover {
-    transform: scale(1.1);
-    border-color: rgba(255, 255, 255, 0.5) !important;
-  }
-
-  .navbar-menu-btn {
-    display: none !important;
-    color: #ffffff !important;
-    padding: 8px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    cursor: pointer;
-    transition: all 0.3s;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .navbar-menu-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-  }
-
-  .navbar-scrolled {
-    background: rgba(10, 22, 40, 0.92) !important;
-    backdrop-filter: blur(16px) !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.15) !important;
-    height: 72px !important;
-  }
-
-  .navbar-scrolled .navbar-link {
-    color: #e2e8f0 !important;
-    text-shadow: none !important;
-  }
-
-  .navbar-scrolled .navbar-link:hover {
-    color: #ffffff !important;
-    background: rgba(255, 255, 255, 0.08) !important;
-  }
-
-  .navbar-scrolled .navbar-brand {
-    color: #ffffff !important;
-    text-shadow: none !important;
-  }
-
-  .navbar-scrolled .navbar-brand .brand-icon {
-    background: linear-gradient(135deg, #4f46e5, #7c3aed);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  .navbar-scrolled .navbar-btn {
-    background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #ffffff !important;
-  }
-
-  .navbar-scrolled .navbar-btn:hover {
-    background: linear-gradient(135deg, #5b4fd6, #8b5cf6) !important;
-  }
-
-  .navbar-scrolled .navbar-signin {
-    color: #cbd5e1 !important;
-    text-shadow: none !important;
-  }
-
-  .navbar-scrolled .navbar-signin:hover {
-    color: #ffffff !important;
-  }
-
-  .navbar-scrolled .navbar-logo {
-    border-color: rgba(255, 255, 255, 0.15) !important;
-    background: rgba(255, 255, 255, 0.05) !important;
-  }
-
-  .navbar-scrolled .navbar-menu-btn {
-    color: #e2e8f0 !important;
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.05);
-  }
-
-  .navbar-scrolled .navbar-menu-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #ffffff !important;
-  }
-
-  @media (max-width: 992px) {
-    .navbar-custom .nav-links {
-      display: none !important;
-    }
-    .navbar-menu-btn {
-      display: flex !important;
-    }
-  }
-
-  @media (max-width: 640px) {
-    .navbar-custom {
-      padding: 0 16px !important;
-      height: 64px !important;
-    }
-    .navbar-custom .navbar-inner {
-      height: 64px !important;
-    }
-    .navbar-scrolled {
-      height: 64px !important;
-    }
-    .navbar-custom .navbar-logo {
-      width: 38px !important;
-      height: 38px !important;
-    }
-    .navbar-custom .navbar-brand {
-      font-size: 0.9rem !important;
-    }
-    .navbar-custom .navbar-brand .brand-icon {
-      width: 28px;
-      height: 28px;
-    }
-    .navbar-custom .navbar-brand .brand-icon svg {
-      width: 14px !important;
-      height: 14px !important;
-    }
-    .navbar-custom .navbar-btn {
-      font-size: 0.7rem !important;
-      padding: 6px 14px !important;
-    }
-    .navbar-custom .navbar-signin {
-      font-size: 0.7rem !important;
-    }
-  }
-
-  .mobile-menu-close {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    padding: 8px;
-    border-radius: 50%;
-    background: #f1f5f9;
-    border: none;
-    cursor: pointer;
-    transition: all 0.3s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .mobile-menu-close:hover {
-    background: #e2e8f0;
-    transform: rotate(90deg);
-  }
-
-  /* Hero Section - IRYAX SPACE FOR MEDICAL */
-  .doctor-hero-section {
-    position: relative;
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    padding: 80px 24px 60px;
-    overflow: hidden;
-  }
-
-  .doctor-hero-bg {
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    overflow: hidden;
-  }
-
-  .doctor-hero-bg img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .doctor-hero-overlay {
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    background: rgba(0, 0, 0, 0.35);
-    backdrop-filter: blur(2px);
-    -webkit-backdrop-filter: blur(2px);
-  }
-
-  .doctor-hero-content {
-    position: relative;
-    z-index: 10;
-    width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-
-  .doctor-hero-text-box {
-    max-width: 750px;
-    margin-left: 0;
-    margin-right: auto;
-  }
-
-  /* Hero Badge - India's 1st Medical Co-working Space */
-  .hero-badge-top {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    padding: 6px 18px 6px 10px;
-    background: rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 9999px;
-    font-size: 12px;
-    font-weight: 700;
-    color: #ffffff !important;
-    margin-bottom: 16px;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  }
-
-  .hero-badge-top .badge-icon {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #1a3a6b, #4f46e5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-  }
-
-  .hero-badge-top .badge-text {
-    font-weight: 600;
-    color: #ffffff !important;
-  }
-
-  .hero-badge-top .badge-highlight {
-    background: linear-gradient(135deg, #fbbf24, #f59e0b);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    font-weight: 800;
-  }
-
-  /* Main Hero Title - WHITE TEXT */
-  .doctor-hero-title {
-    font-size: 3.5rem !important;
-    font-weight: 800 !important;
-    line-height: 1.1 !important;
-    color: #ffffff !important;
-    margin-bottom: 4px;
-    text-shadow: 0 2px 30px rgba(0, 0, 0, 0.4);
-  }
-
-  .doctor-hero-title .brand-name {
-    font-size: 3.5rem !important;
-    font-weight: 900 !important;
-    color: #ffffff !important;
-    text-shadow: 0 2px 30px rgba(0, 0, 0, 0.4);
-    display: inline-block;
-  }
-
-  .doctor-hero-title .brand-sub {
-    font-size: 2.5rem !important;
-    font-weight: 700 !important;
-    color: #ffffff !important;
-    display: block;
-    margin-top: -4px;
-    text-shadow: 0 2px 30px rgba(0, 0, 0, 0.4);
-  }
-
-  .doctor-hero-title .brand-sub span {
-    color: #ffffff !important;
-    text-shadow: 0 2px 30px rgba(0, 0, 0, 0.4);
-  }
-
-  /* Hero Description - WHITE TEXT */
-  .doctor-hero-desc {
-    font-size: 1rem !important;
-    line-height: 1.6 !important;
-    color: #ffffff !important;
-    max-width: 520px;
-    margin-top: 8px;
-    font-weight: 600 !important;
-    text-shadow: 0 2px 20px rgba(0, 0, 0, 0.4);
-  }
-
-  .doctor-hero-desc strong {
-    color: #ffffff;
-    font-weight: 700;
-  }
-
-  /* Hero Features List - WHITE TEXT */
-  .hero-features-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px 18px;
-    margin-top: 12px;
-    max-width: 480px;
-  }
-
-  .hero-features-list .feature-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    color: #ffffff !important;
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-shadow: 0 2px 15px rgba(0, 0, 0, 0.4);
-  }
-
-  .hero-features-list .feature-item svg {
-    color: #93c5fd !important;
-    flex-shrink: 0;
-    width: 16px;
-    height: 16px;
-  }
-
-  /* Buttons */
-  .btn-primary {
-    padding: 14px 32px !important;
-    font-size: 0.95rem !important;
-    font-weight: 700 !important;
-    color: white;
-    background: linear-gradient(135deg, #0a1628, #1a3a6b);
-    border-radius: 14px;
-    border: none;
-    transition: all 0.3s;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    letter-spacing: 0.5px;
-    box-shadow: 0 4px 20px rgba(26, 58, 107, 0.3);
-  }
-
-  .btn-primary:hover {
-    transform: scale(1.05);
-    box-shadow: 0 8px 40px rgba(26, 58, 107, 0.4);
-  }
-
-  .btn-secondary {
-    padding: 14px 32px !important;
-    font-size: 0.95rem !important;
-    font-weight: 700 !important;
-    color: #1a3a6b;
-    background: rgba(255, 255, 255, 0.7);
-    border: 1px solid rgba(26, 58, 107, 0.2);
-    border-radius: 14px;
-    backdrop-filter: blur(4px);
-    transition: all 0.3s;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-  }
-
-  .btn-secondary:hover {
-    transform: scale(1.05);
-    background: rgba(255, 255, 255, 0.9);
-  }
-
-  .btn-hero-group {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 14px;
-    margin-top: 16px;
-  }
-
-  /* Stats - WHITE TEXT */
-  .doctor-stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-    margin-top: 20px;
-    background: rgba(255,255,255,0.12);
-    backdrop-filter: blur(12px);
-    border-radius: 16px;
-    padding: 16px 20px;
-    border: 1px solid rgba(255,255,255,0.15);
-  }
-
-  .doctor-stat-item {
-    text-align: center;
-  }
-
-  .doctor-stat-item .number {
-    font-size: 1.6rem;
-    font-weight: 800;
-    color: #ffffff !important;
-    text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
-  }
-
-  .doctor-stat-item .label {
-    font-size: 0.7rem;
-    font-weight: 700;
-    color: #e2e8f0 !important;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin-top: 2px;
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-  }
-
-  .doctor-features-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 24px;
-    margin-top: 40px;
-  }
-
-  .doctor-feature-card {
-    background: rgba(255,255,255,0.12);
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 20px;
-    padding: 28px 20px;
-    text-align: center;
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.04);
-  }
-
-  .doctor-feature-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 20px 60px rgba(79, 70, 229, 0.15);
-    border-color: rgba(255,255,255,0.25);
-  }
-
-  .doctor-feature-card .icon-wrap {
-    width: 56px;
-    height: 56px;
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.12);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 14px;
-    color: #ffffff;
-    font-size: 24px;
-    border: 1px solid rgba(255,255,255,0.12);
-  }
-
-  .doctor-feature-card h4 {
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: #ffffff;
-    margin-bottom: 4px;
-    text-shadow: 0 2px 8px rgba(0,0,0,0.3);
-    letter-spacing: 0.5px;
-  }
-
-  .doctor-feature-card p {
-    font-size: 0.8rem;
-    font-weight: 500;
-    color: #cbd5e1;
-    line-height: 1.5;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-  }
-
-  .doctor-cta-section {
-    background: linear-gradient(135deg, #0a1628, #1a3a6b);
-    border-radius: 24px;
-    padding: 48px 40px;
-    margin-top: 60px;
-    text-align: center;
-    color: white;
-    position: relative;
-    overflow: hidden;
-    border: 1px solid rgba(255,255,255,0.1);
-  }
-
-  .doctor-cta-section::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    right: -20%;
-    width: 60%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 70%);
-    pointer-events: none;
-  }
-
-  .doctor-cta-section h2 {
-    font-size: 2.2rem;
-    font-weight: 800;
-    margin-bottom: 8px;
-    position: relative;
-    letter-spacing: 0.5px;
-  }
-
-  .doctor-cta-section p {
-    font-size: 1rem;
-    font-weight: 500;
-    opacity: 0.9;
-    max-width: 500px;
-    margin: 0 auto 24px;
-    position: relative;
-    color: #cbd5e1;
-  }
-
-  .doctor-cta-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    padding: 14px 36px;
-    background: rgba(255,255,255,0.15);
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255,255,255,0.2);
-    color: #ffffff;
-    border-radius: 14px;
-    font-size: 1rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s;
-    position: relative;
-    letter-spacing: 0.5px;
-  }
-
-  .doctor-cta-btn:hover {
-    transform: scale(1.05);
-    background: rgba(255,255,255,0.25);
-    box-shadow: 0 8px 30px rgba(0,0,0,0.2);
-  }
-
-  .glass-card {
-    border-radius: 28px !important;
-    padding: 32px 28px;
-    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-    position: relative;
-    overflow: hidden;
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-    background: rgba(255, 255, 255, 0.15) !important;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    min-height: 240px;
-  }
-
-  .glass-card::before {
-    content: '';
-    position: absolute;
-    top: -60%;
-    left: -60%;
-    width: 220%;
-    height: 220%;
-    background: radial-gradient(
-      circle at 30% 25%,
-      rgba(255, 255, 255, 0.4) 0%,
-      rgba(255, 255, 255, 0.05) 40%,
-      transparent 70%
-    );
-    pointer-events: none;
-    z-index: 0;
-    animation: float-glass 8s ease-in-out infinite;
-  }
-
-  .glass-card .icon-wrapper {
-    width: 60px;
-    height: 60px;
-    border-radius: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 18px;
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    background: rgba(255, 255, 255, 0.2) !important;
-    color: white !important;
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    position: relative;
-    z-index: 1;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
-    flex-shrink: 0;
-  }
-
-  .glass-card:hover .icon-wrapper {
-    transform: scale(1.08) rotate(-4deg);
-    background: rgba(255, 255, 255, 0.3) !important;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-  }
-
-  .glass-card h3 {
-    position: relative;
-    z-index: 1;
-    color: #0a1628 !important;
-    font-weight: 800;
-    font-size: 1.15rem;
-    letter-spacing: 0.5px;
-    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
-    margin-bottom: 6px;
-  }
-
-  .glass-card p {
-    position: relative;
-    z-index: 1;
-    color: #1a2a4a !important;
-    font-weight: 600;
-    font-size: 0.9rem;
-    line-height: 1.7;
-    opacity: 0.9;
-    flex: 1;
-  }
-
-  .glass-blue {
-    background: rgba(79, 70, 229, 0.15) !important;
-    border-color: rgba(79, 70, 229, 0.2);
-  }
-  .glass-blue:hover {
-    background: rgba(79, 70, 229, 0.25) !important;
-  }
-
-  .glass-purple {
-    background: rgba(124, 58, 237, 0.15) !important;
-    border-color: rgba(124, 58, 237, 0.2);
-  }
-  .glass-purple:hover {
-    background: rgba(124, 58, 237, 0.25) !important;
-  }
-
-  .glass-rose {
-    background: rgba(220, 38, 38, 0.15) !important;
-    border-color: rgba(220, 38, 38, 0.2);
-  }
-  .glass-rose:hover {
-    background: rgba(220, 38, 38, 0.25) !important;
-  }
-
-  .glass-teal {
-    background: rgba(13, 148, 136, 0.15) !important;
-    border-color: rgba(13, 148, 136, 0.2);
-  }
-  .glass-teal:hover {
-    background: rgba(13, 148, 136, 0.25) !important;
-  }
-
-  .specialties-gradient-heading {
-    background: linear-gradient(135deg, #0a1628, #1a3a6b, #0a1628);
-    background-size: 200% 200%;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    font-weight: 900 !important;
-    animation: gradient 3s ease infinite;
-  }
-
-  /* Chamber Card Styles */
-  .chamber-card {
-    cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    border-radius: 20px;
-    overflow: hidden;
-    background: white;
-    border: 1px solid rgba(0,0,0,0.06);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.04);
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .chamber-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 20px 60px rgba(0,0,0,0.1);
-    border-color: rgba(79, 70, 229, 0.2);
-  }
-
-  .chamber-card .chamber-image {
-    height: 200px;
-    overflow: hidden;
-    position: relative;
-    flex-shrink: 0;
-  }
-
-  .chamber-card .chamber-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.6s;
-  }
-
-  .chamber-card:hover .chamber-image img {
-    transform: scale(1.05);
-  }
-
-  .chamber-card .chamber-status {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    padding: 4px 14px;
-    border-radius: 9999px;
-    font-size: 0.7rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    backdrop-filter: blur(4px);
-  }
-
-  .chamber-card .chamber-status.available {
-    background: rgba(34, 197, 94, 0.9);
-    color: white;
-  }
-
-  .chamber-card .chamber-status.unavailable {
-    background: rgba(239, 68, 68, 0.9);
-    color: white;
-  }
-
-  .chamber-card .chamber-body {
-    padding: 18px 20px 20px;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .chamber-card .chamber-body h4 {
-    font-size: 1rem;
-    font-weight: 800;
-    color: #0a1628;
-    margin-bottom: 4px;
-  }
-
-  .chamber-card .chamber-body .chamber-details {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4px 12px;
-    font-size: 0.78rem;
-    color: #64748b;
-    margin: 8px 0 10px;
-  }
-
-  .chamber-card .chamber-body .chamber-details span {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-weight: 600;
-  }
-
-  .chamber-card .chamber-body .chamber-price {
-    font-size: 1.1rem;
-    font-weight: 800;
-    color: #1a3a6b;
-    margin-top: auto;
-    padding-top: 10px;
-    border-top: 1px solid rgba(0,0,0,0.05);
-  }
-
-  .chamber-card .chamber-body .chamber-price small {
-    font-size: 0.7rem;
-    font-weight: 600;
-    color: #94a3b8;
-  }
-
-  /* Chamber Popup with Slider - BIGGER HEIGHT */
-  .chamber-popup-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 200;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(8px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    animation: fadeIn 0.3s ease;
-  }
-
-  .chamber-popup {
-    background: white;
-    border-radius: 28px;
-    max-width: 620px;
-    width: 100%;
-    max-height: 92vh;
-    overflow-y: auto;
-    animation: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 0 40px 80px rgba(0,0,0,0.3);
-  }
-
-  .chamber-popup .popup-slider {
-    position: relative;
-    height: 400px;
-    overflow: hidden;
-    background: #0f172a;
-  }
-
-  .chamber-popup .popup-slider .slider-image,
-  .chamber-popup .popup-slider .slider-video {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    transition: opacity 0.5s ease;
-  }
-
-  .chamber-popup .popup-slider .slider-video {
-    background: #0f172a;
-  }
-
-  .chamber-popup .popup-slider .slider-btn {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: rgba(0,0,0,0.5);
-    backdrop-filter: blur(4px);
-    border: none;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s;
-    z-index: 5;
-  }
-
-  .chamber-popup .popup-slider .slider-btn:hover {
-    background: rgba(0,0,0,0.7);
-    transform: translateY(-50%) scale(1.1);
-  }
-
-  .chamber-popup .popup-slider .slider-btn.prev {
-    left: 12px;
-  }
-
-  .chamber-popup .popup-slider .slider-btn.next {
-    right: 12px;
-  }
-
-  .chamber-popup .popup-slider .slider-dots {
-    position: absolute;
-    bottom: 16px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 8px;
-    z-index: 5;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .chamber-popup .popup-slider .slider-dots .dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.4);
-    border: none;
-    cursor: pointer;
-    transition: all 0.3s;
-    padding: 0;
-  }
-
-  .chamber-popup .popup-slider .slider-dots .dot.active {
-    background: white;
-    transform: scale(1.2);
-  }
-
-  .chamber-popup .popup-slider .slider-dots .dot:hover {
-    background: rgba(255,255,255,0.8);
-  }
-
-  .chamber-popup .popup-slider .slider-type-badge {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    padding: 4px 12px;
-    border-radius: 9999px;
-    font-size: 0.65rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    background: rgba(0,0,0,0.6);
-    backdrop-filter: blur(4px);
-    color: white;
-    z-index: 5;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-
-  .chamber-popup .popup-close {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: rgba(0,0,0,0.5);
-    backdrop-filter: blur(4px);
-    border: none;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s;
-    z-index: 10;
-  }
-
-  .chamber-popup .popup-close:hover {
-    background: rgba(0,0,0,0.7);
-    transform: rotate(90deg);
-  }
-
-  .chamber-popup .popup-content {
-    padding: 24px 28px 28px;
-  }
-
-  .chamber-popup .popup-content h3 {
-    font-size: 1.4rem;
-    font-weight: 800;
-    color: #0a1628;
-    margin-bottom: 2px;
-  }
-
-  .chamber-popup .popup-content .popup-sub {
-    font-size: 0.85rem;
-    color: #64748b;
-    margin-bottom: 12px;
-    font-weight: 600;
-  }
-
-  .chamber-popup .popup-content .popup-details {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px 16px;
-    background: #f8fafc;
-    padding: 14px 18px;
-    border-radius: 14px;
-    margin: 10px 0 16px;
-  }
-
-  .chamber-popup .popup-content .popup-details .detail-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.85rem;
-    color: #334155;
-    font-weight: 600;
-  }
-
-  .chamber-popup .popup-content .popup-details .detail-item svg {
-    color: #4f46e5;
-    flex-shrink: 0;
-  }
-
-  .chamber-popup .popup-content .popup-price {
-    font-size: 1.5rem;
-    font-weight: 800;
-    color: #1a3a6b;
-    margin: 8px 0 16px;
-  }
-
-  .chamber-popup .popup-content .popup-price small {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #94a3b8;
-  }
-
-  .chamber-popup .popup-book-btn {
-    width: 100%;
-    padding: 14px;
-    background: linear-gradient(135deg, #0a1628, #1a3a6b);
-    color: white;
-    border: none;
-    border-radius: 14px;
-    font-size: 1rem;
-    font-weight: 800;
-    cursor: pointer;
-    transition: all 0.3s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-  }
-
-  .chamber-popup .popup-book-btn:hover {
-    transform: scale(1.02);
-    box-shadow: 0 8px 30px rgba(26, 58, 107, 0.3);
-  }
-
-  .chamber-popup .popup-book-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-  }
-
-  /* Medical Specialties Cards */
-  .specialty-card {
-    padding: 20px 18px;
-    border-radius: 16px;
-    background: white;
-    border: 1px solid rgba(0,0,0,0.04);
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 0 2px 12px rgba(0,0,0,0.02);
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .specialty-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 40px rgba(26, 58, 107, 0.08);
-    border-color: rgba(26, 58, 107, 0.1);
-  }
-
-  .specialty-card .spec-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #eef2ff, #e0e7ff);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #1a3a6b;
-    margin-bottom: 10px;
-    flex-shrink: 0;
-  }
-
-  .specialty-card h4 {
-    font-size: 0.9rem;
-    font-weight: 800;
-    color: #0a1628;
-    margin-bottom: 4px;
-  }
-
-  .specialty-card p {
-    font-size: 0.75rem;
-    color: #64748b;
-    line-height: 1.6;
-    font-weight: 500;
-    flex: 1;
-  }
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap');
+
+  :root {
+    --ink: #12181F;
+    --ink-soft: #4A5160;
+    --ink-faint: #8A8F99;
+    --paper: #FBF9F5;
+    --paper-dim: #F1EDE3;
+    --line: #E3DDCE;
+    --brass: #B08947;
+    --brass-deep: #8C6C31;
+    --teal: #23474B;
+    --teal-tint: #E9EFEE;
+    --brick: #8B4433;
+    --brick-tint: #F3E9E3;
+  }
+
+  * { box-sizing: border-box; }
+
+  .ix-root { font-family: 'Inter', -apple-system, sans-serif; color: var(--ink); background: var(--paper); }
+  .ix-serif { font-family: 'Fraunces', Georgia, serif; }
+
+  @keyframes ix-fade-up { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes ix-fade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes ix-scale-in { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+  @keyframes ix-pulse-dot { 0% { box-shadow: 0 0 0 0 rgba(139,68,51,0.35); } 70% { box-shadow: 0 0 0 7px rgba(139,68,51,0); } 100% { box-shadow: 0 0 0 0 rgba(139,68,51,0); } }
+  @keyframes ix-spin { to { transform: rotate(360deg); } }
+
+  .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.7s cubic-bezier(0.16,1,0.3,1), transform 0.7s cubic-bezier(0.16,1,0.3,1); }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+  @media (prefers-reduced-motion: reduce) { .reveal { transition: none; opacity: 1; transform: none; } }
+
+  .line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+  .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 10px; }
+
+  /* ─── EYEBROW ─── */
+  .ix-eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--brass-deep); padding-bottom: 2px; border-bottom: 1px solid var(--line); }
+  .ix-eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--brass); flex-shrink: 0; }
+  .ix-eyebrow.med { color: #A85A3F; }
+  .ix-eyebrow.med .dot { background: var(--brick); }
+
+  /* ─── NAVBAR ─── */
+  .navbar-custom { position: fixed !important; top: 0; left: 0; right: 0; z-index: 50; height: 82px; padding: 0 32px; background: rgba(251, 249, 245, 0.0); border-bottom: 1px solid transparent; transition: all 0.35s cubic-bezier(0.16,1,0.3,1); display: flex; align-items: center; }
+  .navbar-custom .navbar-inner { width: 100%; max-width: 1240px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; }
+  .navbar-scrolled { background: rgba(251, 249, 245, 0.92) !important; backdrop-filter: blur(14px); border-bottom: 1px solid var(--line) !important; height: 72px !important; }
+  .navbar-custom .navbar-brand { font-family: 'Fraunces', serif; font-size: 1.15rem; font-weight: 600; color: var(--ink); display: flex; align-items: center; gap: 10px; letter-spacing: 0.01em; }
+  .navbar-custom .navbar-logo { width: 42px; height: 42px; border: 1px solid var(--line); border-radius: 50%; padding: 3px; background: white; overflow: hidden; flex-shrink: 0; transition: border-color 0.3s; }
+  .navbar-custom .navbar-logo:hover { border-color: var(--brick); }
+  .navbar-custom .navbar-logo img { width: 100%; height: 100%; object-fit: contain; }
+  .navbar-custom .nav-links { display: flex; align-items: center; gap: 2px; }
+  .navbar-custom .navbar-link { font-size: 0.86rem; font-weight: 500; padding: 9px 15px; color: var(--ink-soft); background: none; border: none; cursor: pointer; border-radius: 999px; transition: all 0.25s; font-family: inherit; }
+  .navbar-custom .navbar-link:hover { color: var(--ink); background: var(--paper-dim); }
+  .navbar-custom .navbar-signin { font-size: 0.85rem; font-weight: 500; color: var(--ink-soft); background: none; border: none; padding: 9px 14px; cursor: pointer; }
+  .navbar-custom .navbar-signin:hover { color: var(--ink); }
+  .navbar-custom .navbar-btn { font-size: 0.82rem; font-weight: 600; padding: 10px 20px; background: var(--brick); color: var(--paper) !important; border: none; border-radius: 999px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.3s; }
+  .navbar-custom .navbar-btn:hover { background: #723627; transform: translateY(-1px); }
+  .navbar-menu-btn { display: none; color: var(--ink); padding: 8px; border-radius: 50%; background: var(--paper-dim); border: 1px solid var(--line); cursor: pointer; align-items: center; justify-content: center; }
+  @media (max-width: 992px) { .navbar-custom .nav-links { display: none; } .navbar-menu-btn { display: flex; } }
+  @media (max-width: 640px) { .navbar-custom { padding: 0 18px; height: 66px; } .navbar-scrolled { height: 66px !important; } }
+
+  .mobile-menu-close { position: absolute; top: 18px; right: 18px; padding: 8px; border-radius: 50%; background: var(--paper-dim); border: 1px solid var(--line); cursor: pointer; }
+
+  /* ─── HERO ─── */
+  .hero-section { padding: 168px 32px 90px; background: var(--paper); }
+  .hero-grid { max-width: 1240px; margin: 0 auto; display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 64px; align-items: center; }
+  .hero-title { font-family: 'Fraunces', serif; font-weight: 400; font-size: clamp(2.6rem, 4.6vw, 3.9rem); line-height: 1.08; color: var(--ink); letter-spacing: -0.01em; margin: 18px 0 20px; }
+  .hero-title em { font-style: italic; font-weight: 500; color: var(--brick); }
+  .hero-desc { font-size: 1.05rem; line-height: 1.75; color: var(--ink-soft); max-width: 480px; font-weight: 400; }
+  .hero-feature-list { display: flex; flex-wrap: wrap; gap: 10px 20px; margin-top: 22px; }
+  .hero-feature-list .item { display: flex; align-items: center; gap: 7px; font-size: 0.84rem; font-weight: 600; color: var(--ink-soft); }
+  .hero-feature-list .item svg { color: var(--brick); flex-shrink: 0; }
+  .hero-buttons { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 30px; }
+
+  .btn-primary { padding: 14px 28px; font-size: 0.92rem; font-weight: 600; color: var(--paper); background: var(--brick); border-radius: 10px; border: none; transition: all 0.3s; display: inline-flex; align-items: center; gap: 9px; cursor: pointer; }
+  .btn-primary:hover { background: #723627; transform: translateY(-2px); }
+  .btn-secondary { padding: 14px 28px; font-size: 0.92rem; font-weight: 600; color: var(--ink); background: transparent; border: 1px solid var(--line); border-radius: 10px; transition: all 0.3s; display: inline-flex; align-items: center; gap: 9px; cursor: pointer; }
+  .btn-secondary:hover { border-color: var(--ink); background: var(--paper-dim); }
+
+  .hero-figure { position: relative; border-radius: 20px; overflow: hidden; border: 1px solid var(--line); box-shadow: 0 30px 60px -30px rgba(18, 24, 31, 0.28); }
+  .hero-figure img { width: 100%; height: 480px; object-fit: cover; display: block; }
+  .hero-figure-tag { position: absolute; left: 18px; bottom: 18px; background: rgba(251, 249, 245, 0.94); backdrop-filter: blur(6px); border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; gap: 10px; border: 1px solid var(--line); }
+  .hero-figure-tag .num { font-family: 'Fraunces', serif; font-size: 1.3rem; font-weight: 600; color: var(--ink); line-height: 1; }
+  .hero-figure-tag .lbl { font-size: 0.68rem; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.06em; }
+
+  @media (max-width: 992px) { .hero-grid { grid-template-columns: 1fr; gap: 40px; } .hero-figure img { height: 340px; } }
+  @media (max-width: 640px) { .hero-section { padding: 130px 20px 60px; } .hero-title { font-size: 2.1rem; } .btn-primary, .btn-secondary { padding: 12px 20px; font-size: 0.85rem; } }
+
+  /* ─── STATS STRIP ─── */
+  .stats-strip { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--paper-dim); }
+  .stats-strip .stat-num { font-family: 'Fraunces', serif; font-size: 2.1rem; font-weight: 500; color: var(--ink); }
+  .stats-strip .stat-label { font-size: 0.76rem; color: var(--ink-faint); margin-top: 4px; font-weight: 500; }
+
+  /* ─── SECTION HEADERS ─── */
+  .section-head { max-width: 640px; }
+  .section-head h2 { font-family: 'Fraunces', serif; font-weight: 400; font-size: clamp(1.9rem, 3vw, 2.6rem); line-height: 1.18; color: var(--ink); margin-top: 10px; }
+  .section-head p { margin-top: 12px; font-size: 1rem; color: var(--ink-soft); line-height: 1.7; }
+  .section-toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 22px; }
+  .toolbar-pill { display: inline-flex; align-items: center; gap: 7px; padding: 7px 14px; border-radius: 999px; background: white; border: 1px solid var(--line); font-size: 0.76rem; font-weight: 600; color: var(--ink-soft); }
+  .toolbar-pill.med svg { color: var(--brick); }
+
+  /* ─── CHAMBER CARD ─── */
+  .chamber-card { background: white; border: 1px solid var(--line); border-radius: 18px; overflow: hidden; cursor: pointer; display: flex; flex-direction: column; height: 100%; transition: transform 0.4s cubic-bezier(0.16,1,0.3,1), box-shadow 0.4s cubic-bezier(0.16,1,0.3,1), border-color 0.4s; }
+  .chamber-card:hover { transform: translateY(-6px); box-shadow: 0 26px 50px -22px rgba(18, 24, 31, 0.22); border-color: var(--ink); }
+  .chamber-media { position: relative; height: 208px; flex-shrink: 0; overflow: hidden; }
+  .chamber-media img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s; }
+  .chamber-card:hover .chamber-media img { transform: scale(1.045); }
+
+  .chamber-badge-row { position: absolute; top: 12px; left: 12px; right: 12px; display: flex; align-items: flex-start; justify-content: space-between; z-index: 3; pointer-events: none; }
+  .chamber-type-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.03em; color: white; background: var(--brick); }
+  .chamber-avail-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--ink); background: rgba(251,249,245,0.94); }
+  .chamber-avail-chip.unavailable { color: var(--brick); }
+  .avail-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--brick); animation: ix-pulse-dot 1.8s infinite; }
+
+  .chamber-quickview { position: absolute; bottom: 12px; left: 12px; z-index: 3; width: 34px; height: 34px; border-radius: 50%; background: rgba(251,249,245,0.94); display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; opacity: 0; transform: translateY(6px); transition: all 0.3s; }
+  .chamber-card:hover .chamber-quickview { opacity: 1; transform: translateY(0); }
+
+  .chamber-price-float { position: absolute; bottom: 12px; right: 12px; z-index: 3; background: rgba(18, 24, 31, 0.82); border-radius: 10px; padding: 7px 13px; text-align: right; }
+  .chamber-price-float .amt { color: white; font-size: 1rem; font-weight: 700; line-height: 1; }
+  .chamber-price-float .per { color: rgba(255,255,255,0.6); font-size: 9px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .chamber-body { padding: 20px 20px 18px; display: flex; flex-direction: column; flex: 1; }
+  .chamber-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
+  .chamber-body h3 { font-family: 'Fraunces', serif; font-size: 1.08rem; font-weight: 600; color: var(--ink); line-height: 1.28; }
+  .chamber-verified { flex-shrink: 0; display: inline-flex; align-items: center; gap: 3px; font-size: 0.7rem; font-weight: 700; color: var(--brick); background: var(--brick-tint); border-radius: 8px; padding: 3px 7px; }
+
+  .chamber-loc { display: flex; align-items: center; gap: 5px; font-size: 0.8rem; color: var(--ink-faint); margin-bottom: 14px; }
+
+  .chamber-specs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+  .chamber-spec-chip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 9px; border-radius: 8px; background: var(--paper-dim); border: 1px solid var(--line); font-size: 0.7rem; font-weight: 600; color: var(--ink-soft); }
+  .chamber-spec-chip svg { color: var(--brick); }
+
+  .chamber-footer { margin-top: auto; display: flex; align-items: center; justify-content: space-between; padding-top: 15px; border-top: 1px dashed var(--line); }
+  .chamber-footer .amount { font-family: 'Fraunces', serif; font-size: 1.28rem; font-weight: 600; color: var(--ink); }
+  .chamber-footer .unit { font-size: 0.68rem; color: var(--ink-faint); font-weight: 600; }
+
+  .chamber-cta { display: inline-flex; align-items: center; gap: 6px; padding: 10px 15px; border-radius: 9px; border: none; font-size: 0.8rem; font-weight: 700; color: white; cursor: pointer; transition: all 0.3s; background: var(--brick); }
+  .chamber-cta:hover { transform: translateX(2px); filter: brightness(1.1); }
+
+  @media (max-width: 640px) { .chamber-media { height: 176px; } .chamber-body { padding: 16px 16px 14px; } }
+
+  /* ─── CARD IMAGE SLIDER ─── */
+  .card-image-slider { position: relative; height: 100%; width: 100%; overflow: hidden; }
+  .card-image-slider img { width: 100%; height: 100%; object-fit: cover; }
+
+  /* ─── PLAIN CARDS (benefits / specialties) ─── */
+  .plain-card { background: white; border: 1px solid var(--line); border-radius: 16px; padding: 28px 24px; height: 100%; display: flex; flex-direction: column; transition: all 0.35s cubic-bezier(0.16,1,0.3,1); }
+  .plain-card:hover { transform: translateY(-5px); border-color: var(--ink); box-shadow: 0 20px 40px -24px rgba(18,24,31,0.2); }
+  .plain-card .icon-wrapper { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; background: var(--brick-tint); color: var(--brick); }
+  .plain-card h3 { font-family: 'Fraunces', serif; font-size: 1.05rem; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+  .plain-card p { font-size: 0.86rem; color: var(--ink-soft); line-height: 1.65; flex: 1; }
+
+  /* ─── ABOUT TILE GRID ─── */
+  .about-tile { padding: 16px 12px; border-radius: 14px; background: white; border: 1px solid var(--line); text-align: center; transition: all 0.3s; }
+  .about-tile:hover { border-color: var(--brick); transform: translateY(-3px); }
+  .about-tile .icon-wrap { width: 40px; height: 40px; margin: 0 auto; border-radius: 10px; background: var(--brick-tint); display: flex; align-items: center; justify-content: center; color: var(--brick); }
+  .about-tile p { font-size: 0.72rem; color: var(--ink-soft); margin-top: 9px; font-weight: 600; line-height: 1.4; }
+
+  /* ─── SPECIALTY TILE ─── */
+  .specialty-tile { padding: 18px 14px; border-radius: 14px; background: white; border: 1px solid var(--line); text-align: center; transition: all 0.35s; }
+  .specialty-tile:hover { border-color: var(--ink); transform: translateY(-4px); box-shadow: 0 18px 30px -22px rgba(18,24,31,0.25); }
+  .specialty-tile .icon-wrap { width: 46px; height: 46px; margin: 0 auto; border-radius: 12px; background: var(--brick-tint); display: flex; align-items: center; justify-content: center; color: var(--brick); }
+  .specialty-tile h4 { font-size: 0.82rem; font-weight: 700; color: var(--ink); margin-top: 12px; }
+  .specialty-tile p { font-size: 0.74rem; color: var(--ink-faint); margin-top: 5px; line-height: 1.5; }
+
+  /* ─── DARK FEATURE BAND ─── */
+  .feature-band { background: var(--ink); color: var(--paper); }
+  .feature-card { border-radius: 16px; padding: 28px 24px; border: 1px solid rgba(251,249,245,0.12); background: rgba(251,249,245,0.04); height: 100%; display: flex; flex-direction: column; transition: all 0.35s; }
+  .feature-card:hover { background: rgba(251,249,245,0.08); border-color: rgba(251,249,245,0.25); }
+  .feature-card .feature-icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: rgba(251,249,245,0.1); color: var(--brass); margin-bottom: 16px; }
+  .feature-card h3 { font-family: 'Fraunces', serif; font-size: 1.05rem; font-weight: 600; margin-bottom: 6px; }
+  .feature-card p { font-size: 0.85rem; color: rgba(251,249,245,0.65); line-height: 1.6; }
+
+  /* ─── CTA ─── */
+  .doctor-cta-section { background: var(--ink); border-radius: 22px; padding: 52px 40px; text-align: center; color: var(--paper); }
+  .doctor-cta-section h2 { font-family: 'Fraunces', serif; font-size: 2rem; font-weight: 500; margin-bottom: 10px; }
+  .doctor-cta-section p { font-size: 0.98rem; opacity: 0.75; max-width: 480px; margin: 0 auto 26px; }
+  .doctor-cta-btn { display: inline-flex; align-items: center; gap: 10px; padding: 14px 32px; background: var(--brass); color: var(--ink); border: none; border-radius: 12px; font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: all 0.3s; }
+  .doctor-cta-btn:hover { background: white; }
+  @media (max-width: 640px) { .doctor-cta-section { padding: 32px 20px; } }
+
+  /* ─── FAQ ─── */
+  .faq-item { border-radius: 14px; border: 1px solid var(--line); background: white; overflow: hidden; transition: border-color 0.3s; }
+  .faq-item:hover { border-color: var(--ink); }
+  .faq-item button { width: 100%; padding: 20px 22px; display: flex; align-items: center; justify-content: space-between; text-align: left; background: none; border: none; cursor: pointer; }
+  .faq-item .faq-cat { font-size: 10px; color: var(--brick); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; }
+  .faq-item .faq-q { font-family: 'Fraunces', serif; font-size: 1rem; font-weight: 500; color: var(--ink); margin-top: 3px; }
+  .faq-item .faq-a { padding: 0 22px 20px; font-size: 0.9rem; color: var(--ink-soft); line-height: 1.7; border-top: 1px solid var(--line); padding-top: 14px; }
+
+  /* ─── CONTACT ─── */
+  .contact-band { background: var(--paper-dim); }
+  .contact-info-item { display: flex; align-items: flex-start; gap: 14px; padding: 16px; border-radius: 14px; background: white; border: 1px solid var(--line); transition: all 0.3s; }
+  .contact-info-item:hover { border-color: var(--ink); }
+  .contact-info-item .icon-wrap { width: 40px; height: 40px; border-radius: 10px; background: var(--ink); color: var(--paper); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .contact-form { background: white; border: 1px solid var(--line); border-radius: 18px; padding: 28px; }
+  .contact-form input, .contact-form textarea { width: 100%; padding: 13px 15px; border-radius: 10px; background: var(--paper-dim); border: 1px solid var(--line); color: var(--ink); font-size: 0.9rem; transition: all 0.25s; }
+  .contact-form input::placeholder, .contact-form textarea::placeholder { color: var(--ink-faint); }
+  .contact-form input:focus, .contact-form textarea:focus { outline: none; border-color: var(--ink); background: white; }
+  .contact-submit { width: 100%; padding: 14px; font-size: 0.92rem; font-weight: 700; color: var(--paper); background: var(--brick); border: none; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s; }
+  .contact-submit:hover:not(:disabled) { background: #723627; }
+  .contact-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  /* ─── MODAL (thank-you + chamber detail) ─── */
+  .modal-overlay { position: fixed; inset: 0; z-index: 9999; background: rgba(18, 24, 31, 0.55); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; padding: 20px; animation: ix-fade 0.25s ease; }
+  .modal-content { background: var(--paper); border-radius: 24px; max-width: 940px; width: 100%; max-height: 90vh; overflow-y: auto; position: relative; animation: ix-scale-in 0.3s cubic-bezier(0.16,1,0.3,1); box-shadow: 0 40px 100px rgba(18,24,31,0.35); scrollbar-width: none; }
+  .modal-content::-webkit-scrollbar { width: 0; }
+  .modal-content.small { max-width: 460px; }
+  .modal-close { position: sticky; top: 12px; float: right; width: 34px; height: 34px; border-radius: 50%; background: white; border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 20; margin: 12px 12px 0 0; transition: all 0.3s; }
+  .modal-close:hover { background: var(--paper-dim); }
+
+  .chamber-detail-modal { display: flex; flex-direction: column; }
+  .chamber-detail-modal .modal-body { display: grid; grid-template-columns: 1fr 1fr; gap: 0; min-height: 460px; }
+  .chamber-detail-modal .modal-image-section { position: relative; background: #0f1216; min-height: 380px; overflow: hidden; }
+  .chamber-detail-modal .media-slider { width: 100%; height: 100%; position: relative; display: flex; align-items: center; justify-content: center; }
+  .chamber-detail-modal .slider-image, .chamber-detail-modal .slider-video { width: 100%; height: 100%; object-fit: cover; min-height: 380px; }
+  .chamber-detail-modal .slider-video { object-fit: contain; background: #0f1216; }
+  .chamber-detail-modal .slider-btn { position: absolute; top: 50%; transform: translateY(-50%); width: 38px; height: 38px; border-radius: 50%; background: rgba(18,24,31,0.6); border: 1px solid rgba(255,255,255,0.2); color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 5; }
+  .chamber-detail-modal .slider-btn.prev { left: 12px; }
+  .chamber-detail-modal .slider-btn.next { right: 12px; }
+  .chamber-detail-modal .media-dots { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 5; }
+  .chamber-detail-modal .media-dots .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.4); border: none; cursor: pointer; padding: 0; }
+  .chamber-detail-modal .media-dots .dot.video { width: 14px; border-radius: 4px; }
+  .chamber-detail-modal .media-dots .dot.active { background: white; }
+  .chamber-detail-modal .media-type-badge { position: absolute; top: 16px; right: 16px; background: rgba(18,24,31,0.65); color: white; padding: 5px 12px; border-radius: 999px; font-size: 10.5px; font-weight: 700; z-index: 5; display: flex; align-items: center; gap: 5px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .chamber-detail-modal .chamber-type-badge { position: absolute; top: 16px; left: 16px; padding: 6px 16px; border-radius: 999px; font-size: 11px; font-weight: 700; color: white; background: var(--brick); z-index: 5; }
+
+  .chamber-detail-modal .modal-content-section { padding: 32px 28px; display: flex; flex-direction: column; overflow-y: auto; background: var(--paper); }
+  .chamber-detail-modal .chamber-title { font-family: 'Fraunces', serif; font-size: 1.5rem; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+  .chamber-detail-modal .chamber-sub { font-size: 0.86rem; color: var(--ink-faint); margin-bottom: 16px; }
+  .chamber-detail-modal .chamber-desc { font-size: 0.9rem; color: var(--ink-soft); line-height: 1.7; margin-bottom: 16px; flex: 1; }
+  .chamber-detail-modal .chamber-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 16px; }
+  .chamber-detail-modal .detail-item { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--ink-soft); padding: 7px 10px; background: var(--paper-dim); border-radius: 8px; }
+  .chamber-detail-modal .detail-item svg { color: var(--brick); flex-shrink: 0; }
+  .chamber-detail-modal .chamber-price { display: flex; align-items: baseline; gap: 8px; padding-top: 16px; border-top: 1px solid var(--line); margin-bottom: 16px; }
+  .chamber-detail-modal .chamber-price .amount { font-family: 'Fraunces', serif; font-size: 1.7rem; font-weight: 600; color: var(--ink); }
+  .chamber-detail-modal .chamber-price .period { font-size: 0.86rem; color: var(--ink-faint); }
+  .btn-book-now-modal { width: 100%; padding: 15px; background: var(--brick); color: var(--paper); border: none; border-radius: 12px; font-size: 0.95rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: auto; transition: all 0.3s; }
+  .btn-book-now-modal:hover:not(:disabled) { background: #723627; }
+  .btn-book-now-modal:disabled { opacity: 0.55; cursor: not-allowed; }
 
   @media (max-width: 768px) {
-    .doctor-stats {
-      grid-template-columns: 1fr 1fr 1fr;
-      padding: 16px;
-      gap: 12px;
-    }
-    .doctor-stat-item .number {
-      font-size: 1.4rem;
-    }
-    .doctor-features-grid {
-      grid-template-columns: 1fr 1fr;
-    }
-    .doctor-hero-title {
-      font-size: 2.8rem !important;
-    }
-    .doctor-hero-title .brand-name {
-      font-size: 2.6rem !important;
-    }
-    .doctor-hero-title .brand-sub {
-      font-size: 2rem !important;
-    }
-    .doctor-cta-section {
-      padding: 32px 20px;
-    }
-    .doctor-cta-section h2 {
-      font-size: 1.6rem;
-    }
-    .glass-card {
-      padding: 20px 16px;
-    }
-    .chamber-popup {
-      max-width: 100%;
-      margin: 10px;
-    }
-    .chamber-popup .popup-content {
-      padding: 20px;
-    }
-    .chamber-popup .popup-content .popup-details {
-      grid-template-columns: 1fr;
-    }
-    .chamber-popup .popup-slider {
-      height: 280px;
-    }
-    .hero-features-list {
-      gap: 4px 12px;
-    }
-    .hero-features-list .feature-item {
-      font-size: 0.75rem;
-    }
+    .chamber-detail-modal .modal-body { grid-template-columns: 1fr; }
+    .chamber-detail-modal .modal-image-section, .chamber-detail-modal .slider-image, .chamber-detail-modal .slider-video { min-height: 260px; }
+    .chamber-detail-modal .modal-content-section { padding: 22px 18px; }
   }
 
-  @media (max-width: 480px) {
-    .doctor-features-grid {
-      grid-template-columns: 1fr;
-    }
-    .doctor-stats {
-      grid-template-columns: 1fr 1fr;
-    }
-    .doctor-hero-title {
-      font-size: 2rem !important;
-    }
-    .doctor-hero-title .brand-name {
-      font-size: 1.8rem !important;
-    }
-    .doctor-hero-title .brand-sub {
-      font-size: 1.3rem !important;
-    }
-    .chamber-popup .popup-slider {
-      height: 220px;
-    }
-    .chamber-popup .popup-slider .slider-btn {
-      width: 30px;
-      height: 30px;
-    }
-    .hero-badge-top {
-      font-size: 10px;
-      padding: 4px 12px 4px 6px;
-    }
-    .hero-badge-top .badge-icon {
-      width: 22px;
-      height: 22px;
-      font-size: 11px;
-    }
-    .btn-primary, .btn-secondary {
-      padding: 12px 24px !important;
-      font-size: 0.85rem !important;
-    }
-    .doctor-hero-desc {
-      font-size: 0.9rem !important;
-    }
-    .hero-features-list .feature-item {
-      font-size: 0.7rem;
-    }
-  }
+  /* ─── FOOTER ─── */
+  .site-footer { background: var(--ink); color: rgba(251,249,245,0.7); }
+  .site-footer h4 { color: var(--paper); font-family: 'Fraunces', serif; font-weight: 600; font-size: 0.95rem; margin-bottom: 16px; }
+  .site-footer a, .site-footer button { color: rgba(251,249,245,0.62); font-size: 0.87rem; transition: all 0.25s; }
+  .site-footer a:hover, .site-footer button:hover { color: var(--brass); transform: translateX(3px); }
 `;
 
 // ─── HOOKS ───
 const useScrollReveal = () => {
   const [isVisible, setIsVisible] = useState(false);
-  const ref = React.useRef(null);
+  const ref = useRef(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !isVisible) setIsVisible(true);
-      },
+      ([entry]) => { if (entry.isIntersecting && !isVisible) setIsVisible(true); },
       { threshold: 0.15, rootMargin: "0px 0px -50px 0px" }
     );
     if (ref.current) observer.observe(ref.current);
@@ -1430,66 +356,133 @@ const useScrollReveal = () => {
 const RevealSection = ({ children, delay = 0, className = "" }) => {
   const { ref, isVisible } = useScrollReveal();
   return (
-    <div ref={ref} className={`reveal ${isVisible ? 'visible' : ''} ${className}`} style={{ transitionDelay: `${delay}s` }}>
+    <div ref={ref} className={`reveal ${isVisible ? "visible" : ""} ${className}`} style={{ transitionDelay: `${delay}s` }}>
       {children}
     </div>
   );
 };
 
-const BrandWithIcon = () => (
-  <span className="navbar-brand hidden sm:block transition flex items-center gap-2">
-    IRYAX SPACE
-    <span className="brand-icon flex items-center justify-center">
-      <Layout size={18} />
-    </span>
-  </span>
-);
+// ─── COUNTER ───
+const Counter = ({ target, suffix = "", duration = 1400 }) => {
+  const [count, setCount] = useState(0);
+  const [isVisible, setIsVisible] = useState(false);
+  const ref = useRef(null);
 
-// ─── FAQ COMPONENT ───
-const FAQItem = ({ faq, index }) => {
-  const [openFaq, setOpenFaq] = useState(false);
-  
-  return (
-    <RevealSection key={index} delay={index * 0.06}>
-      <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden transition hover:shadow-lg hover:border-blue-200">
-        <button onClick={() => setOpenFaq(!openFaq)} className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition">
-          <div>
-            <span className="text-[10px] text-blue-600 uppercase tracking-wider font-extrabold">{faq.category}</span>
-            <p className="text-base font-extrabold text-gray-900 mt-0.5">{faq.q}</p>
-          </div>
-          <ChevronDown size={18} className={`text-gray-500 transition-all duration-300 ${openFaq ? 'rotate-180' : ''}`} />
-        </button>
-        <div className={`overflow-hidden transition-all duration-500 ${openFaq ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-          <div className="px-6 pb-4 text-sm text-gray-600 leading-relaxed border-t border-gray-100 pt-3 font-bold">{faq.a}</div>
-        </div>
-      </div>
-    </RevealSection>
-  );
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !isVisible) setIsVisible(true);
+    }, { threshold: 0.3 });
+    if (ref.current) observer.observe(ref.current);
+    return () => { if (ref.current) observer.unobserve(ref.current); };
+  }, [isVisible]);
+
+  useEffect(() => {
+    if (!isVisible) return;
+    let startTime;
+    const update = (timestamp) => {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.floor(eased * target));
+      if (progress < 1) requestAnimationFrame(update);
+    };
+    requestAnimationFrame(update);
+  }, [isVisible, target, duration]);
+
+  return <span ref={ref}>{count}{suffix}</span>;
 };
 
-// ─── MAIN DOCTOR CHAMBER PAGE ───
+// ─── CARD IMAGE SLIDER (thumbnail — images only) ───
+const CardImage = ({ src, alt }) => (
+  <div className="card-image-slider">
+    <img src={src} alt={alt || "Chamber"} loading="lazy" onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }} />
+  </div>
+);
+
+// ─── FAQ ITEM ───
+const FAQItem = ({ faq, index, isOpen, onToggle }) => (
+  <RevealSection delay={index * 0.05}>
+    <div className="faq-item">
+      <button onClick={onToggle}>
+        <div>
+          <span className="faq-cat">{faq.category}</span>
+          <p className="faq-q">{faq.q}</p>
+        </div>
+        <ChevronDown size={17} style={{ transition: "transform 0.3s", transform: isOpen ? "rotate(180deg)" : "none", color: "#8A8F99", flexShrink: 0 }} />
+      </button>
+      <div style={{ maxHeight: isOpen ? 300 : 0, opacity: isOpen ? 1 : 0, overflow: "hidden", transition: "all 0.4s" }}>
+        <div className="faq-a">{faq.a}</div>
+      </div>
+    </div>
+  </RevealSection>
+);
+
+// ─── CHAMBER CARD ───
+const ChamberCard = ({ chamber, index, onClick }) => (
+  <div className="chamber-card" onClick={() => onClick(chamber)}>
+    <div className="chamber-media">
+      <CardImage src={chamber.images[0]} alt={chamber.name} />
+      <div className="chamber-badge-row">
+        <span className="chamber-type-chip"><Stethoscope size={11} /> Medical Chamber</span>
+        <span className={`chamber-avail-chip ${chamber.available ? "" : "unavailable"}`}>
+          {chamber.available ? <><span className="avail-dot" /> Available</> : "Booked"}
+        </span>
+      </div>
+      <button className="chamber-quickview" onClick={(e) => { e.stopPropagation(); onClick(chamber); }} aria-label="Quick view">
+        <Maximize2 size={14} color="#8B4433" />
+      </button>
+      <div className="chamber-price-float">
+        <div className="amt">{chamber.price}</div>
+        <div className="per">per hour</div>
+      </div>
+    </div>
+
+    <div className="chamber-body">
+      <div className="chamber-title-row">
+        <h3 className="line-clamp-2">{chamber.name}</h3>
+        <span className="chamber-verified"><BadgeCheck size={11} /> Verified</span>
+      </div>
+      <div className="chamber-loc"><MapPin size={13} /><span className="line-clamp-1">{chamber.floor}</span></div>
+      <div className="chamber-specs">
+        <span className="chamber-spec-chip"><Layout size={12} /> {chamber.size}</span>
+        <span className="chamber-spec-chip"><Stethoscope size={12} /> {chamber.equipment}</span>
+      </div>
+      <div className="chamber-footer">
+        <div>
+          <div className="amount">{chamber.price}</div>
+          <div className="unit">per hour</div>
+        </div>
+        <button className="chamber-cta" onClick={(e) => { e.stopPropagation(); onClick(chamber); }}>
+          View details <ArrowRight size={14} />
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
+// ─── MAIN PAGE ───
 const DoctorChamberPage = () => {
   const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [openFaq, setOpenFaq] = useState(null);
+
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", address: "", message: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [showThankYouPopup, setShowThankYouPopup] = useState(false);
-  
-  // ─── API DATA STATE ───
+  const [thankYouText, setThankYouText] = useState({ title: "Message sent", body: "Thanks for reaching out. We'll get back to you shortly." });
+
   const [chambers, setChambers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
-  
-  // Chamber popup state
+
   const [selectedChamber, setSelectedChamber] = useState(null);
-  const [showChamberPopup, setShowChamberPopup] = useState(false);
+  const [showChamberModal, setShowChamberModal] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [mediaItems, setMediaItems] = useState([]);
 
-  // ─── GET IMAGE URL ───
   const getImageUrl = (img) => {
     if (!img) return PLACEHOLDER_IMAGE;
     if (img.startsWith("http")) return img;
@@ -1497,33 +490,18 @@ const DoctorChamberPage = () => {
     return `${API_URL}/${cleanPath}`;
   };
 
-  // ─── GET MEDIA ITEMS (Images + Videos) ───
-  const getMediaItems = (cabin) => {
+  const getMediaItems = (chamber) => {
     const items = [];
-    
-    // Add images
-    if (cabin.images && cabin.images.length > 0) {
-      cabin.images.forEach(img => {
-        items.push({ type: 'image', url: getImageUrl(img) });
-      });
+    if (chamber.images && chamber.images.length > 0) {
+      chamber.images.forEach((img) => items.push({ type: "image", url: img }));
     }
-    
-    // Add videos (from rawData)
-    if (cabin.rawData && cabin.rawData.videos && cabin.rawData.videos.length > 0) {
-      cabin.rawData.videos.forEach(video => {
-        items.push({ type: 'video', url: getImageUrl(video) });
-      });
+    if (chamber.rawData && chamber.rawData.videos && chamber.rawData.videos.length > 0) {
+      chamber.rawData.videos.forEach((video) => items.push({ type: "video", url: getImageUrl(video) }));
     }
-    
-    // If no items, add placeholder
-    if (items.length === 0) {
-      items.push({ type: 'image', url: PLACEHOLDER_IMAGE });
-    }
-    
+    if (items.length === 0) items.push({ type: "image", url: PLACEHOLDER_IMAGE });
     return items;
   };
 
-  // ─── FETCH CHAMBERS FROM API ───
   useEffect(() => {
     const fetchChambers = async () => {
       setLoading(true);
@@ -1532,27 +510,22 @@ const DoctorChamberPage = () => {
         const res = await axios.get(`${API_URL}/api/cabins`);
         const data = res.data.cabins || res.data;
         const allCabins = Array.isArray(data) ? data : [];
-        
-        // ✅ FILTER: Only show chambers where isChamber === true
-        const chamberCabins = allCabins.filter(cabin => cabin.isChamber === true);
-        
-        // Transform data to match chamber format
-        const formattedChambers = chamberCabins.map((cabin, index) => ({
+        const chamberCabins = allCabins.filter((c) => c.isChamber === true);
+
+        const formatted = chamberCabins.map((cabin, index) => ({
           id: cabin._id,
           name: cabin.name || `Chamber ${index + 1}`,
-          floor: cabin.address?.split(',')[0] || 'Ground Floor',
+          floor: cabin.address?.split(",")[0] || "Ground Floor",
           size: `${cabin.capacity || 1} Seats`,
-          equipment: cabin.cabinType === 'exclusive' ? 'Premium Medical Setup' : 'Basic Medical Setup',
+          equipment: cabin.cabinType === "exclusive" ? "Premium Medical Setup" : "Basic Medical Setup",
           price: `₹${cabin.price || 0}`,
-          images: cabin.images && cabin.images.length > 0 
-            ? cabin.images.map(img => getImageUrl(img))
-            : [PLACEHOLDER_IMAGE],
+          images: cabin.images && cabin.images.length > 0 ? cabin.images.map((img) => getImageUrl(img)) : [PLACEHOLDER_IMAGE],
           available: cabin.isActive === true,
-          description: cabin.description || '',
+          description: cabin.description || "",
           rawData: cabin
         }));
-        
-        setChambers(formattedChambers);
+
+        setChambers(formatted);
       } catch (err) {
         console.error("Error fetching chambers:", err);
         setFetchError("Failed to load chambers. Please try again.");
@@ -1560,7 +533,6 @@ const DoctorChamberPage = () => {
         setLoading(false);
       }
     };
-    
     fetchChambers();
   }, []);
 
@@ -1571,90 +543,64 @@ const DoctorChamberPage = () => {
   }, []);
 
   const scrollToSection = (id) => {
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: "smooth" });
   };
+  const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
+  const toggleFaq = (i) => setOpenFaq(openFaq === i ? null : i);
 
   const handleChamberClick = (chamber) => {
-    const media = getMediaItems(chamber);
-    setMediaItems(media);
+    setMediaItems(getMediaItems(chamber));
     setSelectedChamber(chamber);
     setCurrentMediaIndex(0);
-    setShowChamberPopup(true);
-    document.body.style.overflow = 'hidden';
+    setShowChamberModal(true);
   };
+  const closeChamberModal = () => { setShowChamberModal(false); setSelectedChamber(null); setMediaItems([]); };
 
-  const closeChamberPopup = () => {
-    setShowChamberPopup(false);
-    document.body.style.overflow = 'auto';
-    setTimeout(() => {
-      setSelectedChamber(null);
-      setMediaItems([]);
-    }, 300);
-  };
+  const handlePrevMedia = () => setCurrentMediaIndex((p) => (p === 0 ? mediaItems.length - 1 : p - 1));
+  const handleNextMedia = () => setCurrentMediaIndex((p) => (p === mediaItems.length - 1 ? 0 : p + 1));
 
   const handleBookChamber = () => {
     setIsBooking(true);
     setTimeout(() => {
       setIsBooking(false);
-      closeChamberPopup();
+      closeChamberModal();
+      setThankYouText({ title: "Chamber booked", body: "We've reserved your slot. Our team will confirm the details shortly." });
       setShowThankYouPopup(true);
       setTimeout(() => setShowThankYouPopup(false), 5000);
-    }, 1500);
-  };
-
-  const handlePrevMedia = () => {
-    if (mediaItems.length > 0) {
-      setCurrentMediaIndex((prev) => 
-        prev === 0 ? mediaItems.length - 1 : prev - 1
-      );
-    }
-  };
-
-  const handleNextMedia = () => {
-    if (mediaItems.length > 0) {
-      setCurrentMediaIndex((prev) => 
-        prev === mediaItems.length - 1 ? 0 : prev + 1
-      );
-    }
+    }, 1400);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitError(null);
-    
+
     if (!formData.name || !formData.email || !formData.phone || !formData.message) {
       setSubmitError("Please fill in all required fields");
       return;
     }
 
     setIsSubmitting(true);
-
     try {
-      const response = await fetch("https://spaceapi.iryax.com/api/cabins/sendquery", {
+      const response = await fetch(`${API_URL}/api/cabins/sendquery`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: formData.name,
           email: formData.email,
           phone: formData.phone,
           address: formData.address || "",
           message: formData.message
-        }),
+        })
       });
 
       const data = await response.json();
 
       if (response.ok && data.success) {
+        setThankYouText({ title: "Message sent", body: "Thanks for reaching out. We'll get back to you shortly." });
         setShowThankYouPopup(true);
         setFormData({ name: "", email: "", phone: "", address: "", message: "" });
-        setTimeout(() => {
-          setShowThankYouPopup(false);
-        }, 5000);
+        setTimeout(() => setShowThankYouPopup(false), 5000);
       } else {
         setSubmitError(data.message || "Failed to submit query. Please try again.");
       }
@@ -1667,86 +613,76 @@ const DoctorChamberPage = () => {
   };
 
   const doctorBenefits = [
-    { icon: Shield, title: "No Long Leases", desc: "Avoid long-term commitments and heavy deposits.", glassClass: "glass-blue" },
-    { icon: Wallet, title: "Low Operational Costs", desc: "Pay only for what you use. No hidden charges.", glassClass: "glass-teal" },
-    { icon: Users, title: "Admin Hassle-Free", desc: "We manage staff, billing, and daily operations for you.", glassClass: "glass-purple" },
-    { icon: Sparkles, title: "Modern Infrastructure", desc: "Fully-equipped with state-of-the-art medical tools.", glassClass: "glass-rose" }
+    { icon: Shield, title: "No long leases", desc: "Avoid multi-year commitments and heavy deposits." },
+    { icon: Wallet, title: "Lower running costs", desc: "Pay for what you use — no hidden charges." },
+    { icon: Users, title: "Admin, handled", desc: "We manage staff, billing, and patient scheduling." },
+    { icon: Sparkles, title: "Modern infrastructure", desc: "Fully-equipped chambers with clinical tools ready." }
   ];
 
-  // ─── STATIC STATS ───
-  const statsData = [
-    { number: `${chambers.length}+`, label: "Chambers" },
-    { number: "24/7", label: "Access" },
-    { number: "100+", label: "Doctors" },
-    { number: "100%", label: "Satisfaction" }
+  const features = [
+    { icon: Stethoscope, title: "Medical equipment", desc: "Examination essentials and clinical tools on site." },
+    { icon: UserCheck, title: "Admin support", desc: "Reception, billing, and patient scheduling handled for you." },
+    { icon: Clock, title: "Flexible hours", desc: "Book by the hour, day, or a standing weekly slot." },
+    { icon: Award, title: "Premium locations", desc: "High-visibility chambers in established medical areas." }
   ];
+
+  const aboutTiles = [
+    { icon: HomeIcon, label: "Flexible practice spaces" },
+    { icon: Wallet, label: "Cost-effective solutions" },
+    { icon: Stethoscope, label: "Fully-equipped clinics" },
+    { icon: Users, label: "Administrative support" },
+    { icon: Shield, label: "Stress-free management" },
+    { icon: Layout, label: "Modern interiors" },
+    { icon: Microscope, label: "State-of-the-art tools" },
+    { icon: Star, label: "Trusted by 100+ doctors" }
+  ];
+
+  const stats = [
+    { label: "Chambers", value: chambers.length || 50, suffix: "+" },
+    { label: "Doctors", value: 100, suffix: "+" },
+    { label: "Support", value: 24, suffix: "/7" },
+    { label: "Satisfaction", value: 100, suffix: "%" }
+  ];
+
+  const renderModalMedia = () => {
+    if (!mediaItems.length) return null;
+    const item = mediaItems[currentMediaIndex];
+    if (item.type === "video") {
+      return <video src={item.url} className="slider-video" controls playsInline controlsList="nodownload" />;
+    }
+    return <img src={item.url} alt={selectedChamber?.name || "Chamber"} className="slider-image" onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }} />;
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "#FBF9F5" }}>
         <div className="text-center">
-          <Loader2 size={48} className="text-indigo-600 animate-spin mx-auto" />
-          <p className="mt-4 text-gray-600 font-bold">Loading chambers...</p>
+          <div className="w-12 h-12 border-2 rounded-full mx-auto" style={{ borderColor: "#E3DDCE", borderTopColor: "#8B4433", animation: "ix-spin 0.8s linear infinite" }} />
+          <p className="mt-4" style={{ color: "#4A5160" }}>Loading chambers…</p>
         </div>
       </div>
     );
   }
 
-  // ─── RENDER MEDIA IN POPUP ───
-  const renderMedia = () => {
-    if (!mediaItems.length) return null;
-    
-    const item = mediaItems[currentMediaIndex];
-    
-    if (item.type === 'video') {
-      return (
-        <video
-          src={item.url}
-          className="slider-video"
-          controls
-          autoPlay={false}
-          playsInline
-          controlsList="nodownload"
-        />
-      );
-    }
-    
-    return (
-      <img 
-        src={item.url} 
-        alt={selectedChamber?.name || "Chamber"}
-        className="slider-image"
-        onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
-      />
-    );
-  };
-
   return (
     <>
       <style>{styles}</style>
-      <div className="min-h-screen bg-white text-gray-900 font-light antialiased">
+      <div className="ix-root min-h-screen">
 
-        {/* ─── THANK YOU POPUP ─── */}
+        {/* Thank you popup */}
         {showThankYouPopup && (
-          <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-            <div className="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl border border-gray-100 animate-slide-up relative">
-              <button
-                onClick={() => setShowThankYouPopup(false)}
-                className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors group"
-              >
-                <X size={20} className="text-gray-400 group-hover:text-gray-600" />
+          <div className="modal-overlay" style={{ zIndex: 300 }} onClick={() => setShowThankYouPopup(false)}>
+            <div className="modal-content small" onClick={(e) => e.stopPropagation()} style={{ padding: "36px 32px" }}>
+              <button onClick={() => setShowThankYouPopup(false)} className="absolute" style={{ position: "absolute", top: 16, right: 16 }} aria-label="Close">
+                <span style={{ display: "inline-flex", padding: 8, borderRadius: 999, background: "#F1EDE3" }}><X size={18} /></span>
               </button>
               <div className="text-center">
-                <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle size={40} className="text-green-600" />
+                <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: "#F3E9E3" }}>
+                  <CheckCircle size={32} color="#8B4433" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Thank You! 🎉</h3>
-                <p className="text-gray-600 mb-2 font-bold">Thanks for your interest in IRYAX SPACE!</p>
-                <p className="text-gray-500 text-sm font-bold">We will contact you soon.</p>
-                <button
-                  onClick={() => setShowThankYouPopup(false)}
-                  className="mt-6 px-6 py-2 bg-gradient-to-r from-blue-900 to-blue-700 text-white rounded-xl hover:shadow-lg transition font-bold"
-                >
+                <h3 className="ix-serif text-2xl font-semibold mb-2">{thankYouText.title}</h3>
+                <p style={{ color: "#4A5160" }}>{thankYouText.body}</p>
+                <button onClick={() => setShowThankYouPopup(false)} className="mt-6 px-6 py-2.5 rounded-xl text-white" style={{ background: "#12181F" }}>
                   Got it
                 </button>
               </div>
@@ -1754,339 +690,244 @@ const DoctorChamberPage = () => {
           </div>
         )}
 
-        {/* ─── CHAMBER POPUP WITH SLIDER - IMAGES + VIDEOS ─── */}
-        {showChamberPopup && selectedChamber && (
-          <div className="chamber-popup-overlay" onClick={closeChamberPopup}>
-            <div className="chamber-popup" onClick={(e) => e.stopPropagation()}>
-              <div className="popup-slider">
-                {renderMedia()}
-                
-                <button className="popup-close" onClick={closeChamberPopup}>
-                  <X size={22} />
-                </button>
-                
-                <span className="slider-type-badge">
-                  {mediaItems[currentMediaIndex]?.type === 'video' ? (
-                    <><VideoIcon size={12} /> Video</>
-                  ) : (
-                    <><Layout size={12} /> Photo</>
-                  )}
-                </span>
-                
-                <span className={`chamber-status ${selectedChamber.available ? 'available' : 'unavailable'}`} style={{ position: 'absolute', top: '16px', left: '16px', right: 'auto', zIndex: 5 }}>
-                  {selectedChamber.available ? 'Available' : 'Booked'}
-                </span>
-                
-                {mediaItems.length > 1 && (
-                  <>
-                    <button className="slider-btn prev" onClick={handlePrevMedia}>
-                      <ChevronLeft size={20} />
-                    </button>
-                    <button className="slider-btn next" onClick={handleNextMedia}>
-                      <ChevronRight size={20} />
-                    </button>
-                    <div className="slider-dots">
-                      {mediaItems.map((_, idx) => {
-                        const isVideo = mediaItems[idx].type === 'video';
-                        return (
-                          <button
-                            key={idx}
-                            className={`dot ${idx === currentMediaIndex ? 'active' : ''}`}
-                            onClick={() => setCurrentMediaIndex(idx)}
-                            style={{ 
-                              width: isVideo ? '14px' : '10px',
-                              borderRadius: isVideo ? '4px' : '50%'
-                            }}
-                          />
-                        );
-                      })}
+        {/* Chamber detail modal */}
+        {showChamberModal && selectedChamber && (
+          <div className="modal-overlay" onClick={closeChamberModal}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <button className="modal-close" onClick={closeChamberModal}><X size={17} /></button>
+
+              <div className="chamber-detail-modal">
+                <div className="modal-body">
+                  <div className="modal-image-section">
+                    <div className="media-slider">
+                      {renderModalMedia()}
+                      {mediaItems.length > 1 && (
+                        <>
+                          <button className="slider-btn prev" onClick={handlePrevMedia} aria-label="Previous"><ChevronLeft size={18} /></button>
+                          <button className="slider-btn next" onClick={handleNextMedia} aria-label="Next"><ChevronRight size={18} /></button>
+                          <div className="media-dots">
+                            {mediaItems.map((m, idx) => (
+                              <button key={idx} className={`dot ${m.type === "video" ? "video" : ""} ${idx === currentMediaIndex ? "active" : ""}`} onClick={() => setCurrentMediaIndex(idx)} aria-label={`Go to ${idx + 1}`} />
+                            ))}
+                          </div>
+                        </>
+                      )}
+                      <span className="media-type-badge">
+                        {mediaItems[currentMediaIndex]?.type === "video" ? <><VideoIcon size={11} /> Video</> : <><Layout size={11} /> Photo</>}
+                      </span>
                     </div>
-                  </>
-                )}
-              </div>
-              <div className="popup-content">
-                <h3>{selectedChamber.name}</h3>
-                <p className="popup-sub">{selectedChamber.floor} • {selectedChamber.size}</p>
-                <div className="popup-details">
-                  <span className="detail-item"><Building2 size={16} /> {selectedChamber.floor}</span>
-                  <span className="detail-item"><Layout size={16} /> {selectedChamber.size}</span>
-                  <span className="detail-item"><Stethoscope size={16} /> {selectedChamber.equipment}</span>
-                  <span className="detail-item">
-                    {selectedChamber.available ? (
-                      <><CheckCircle size={16} className="text-emerald-500" /> Available Now</>
-                    ) : (
-                      <><X size={16} className="text-red-500" /> Currently Booked</>
-                    )}
-                  </span>
+                    <span className="chamber-type-badge">Medical Chamber</span>
+                  </div>
+
+                  <div className="modal-content-section">
+                    <h3 className="chamber-title">{selectedChamber.name}</h3>
+                    <p className="chamber-sub">{selectedChamber.floor} · {selectedChamber.size}</p>
+                    <p className="chamber-desc">
+                      {selectedChamber.description || "A fully-equipped medical consultation chamber designed for healthcare professionals to practice with confidence."}
+                    </p>
+
+                    <div className="chamber-detail-grid">
+                      <div className="detail-item"><Building2 size={15} /><span>{selectedChamber.floor}</span></div>
+                      <div className="detail-item"><Layout size={15} /><span>{selectedChamber.size}</span></div>
+                      <div className="detail-item"><Stethoscope size={15} /><span>{selectedChamber.equipment}</span></div>
+                      <div className="detail-item">
+                        {selectedChamber.available ? <><CheckCircle size={15} color="#23474B" /><span>Available now</span></> : <><X size={15} color="#8B4433" /><span>Currently booked</span></>}
+                      </div>
+                    </div>
+
+                    <div className="chamber-price">
+                      <span className="amount">{selectedChamber.price}</span>
+                      <span className="period">/ hour</span>
+                    </div>
+
+                    <button className="btn-book-now-modal" onClick={handleBookChamber} disabled={!selectedChamber.available || isBooking}>
+                      {isBooking ? (
+                        <>
+                          <svg className="h-4 w-4" style={{ animation: "ix-spin 0.8s linear infinite" }} viewBox="0 0 24 24" fill="none">
+                            <circle opacity="0.25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path opacity="0.75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                          </svg>
+                          Booking…
+                        </>
+                      ) : selectedChamber.available ? (
+                        <>Book this chamber <ArrowRight size={18} /></>
+                      ) : (
+                        "Not available"
+                      )}
+                    </button>
+                  </div>
                 </div>
-                <div className="popup-price">
-                  {selectedChamber.price} <small>/ hour</small>
-                </div>
-                <button 
-                  className="popup-book-btn" 
-                  onClick={handleBookChamber}
-                  disabled={!selectedChamber.available || isBooking}
-                >
-                  {isBooking ? (
-                    <>
-                      <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Booking...
-                    </>
-                  ) : (
-                    selectedChamber.available ? (
-                      <>Book This Chamber <ArrowRight size={18} /></>
-                    ) : (
-                      <>Not Available</>
-                    )
-                  )}
-                </button>
               </div>
             </div>
           </div>
         )}
 
-        {/* ─── NAVBAR ─── */}
-        <nav className={`navbar-custom ${scrolled ? 'navbar-scrolled' : ''}`}>
+        {/* Navbar */}
+        <nav className={`navbar-custom ${scrolled ? "navbar-scrolled" : ""}`}>
           <div className="navbar-inner">
-            <button onClick={() => navigate('/')} className="flex items-center gap-3 group">
-              <div className="navbar-logo">
-                <img src={logo} alt="Logo" />
-              </div>
-              <BrandWithIcon />
+            <button onClick={() => navigate("/")} className="flex items-center gap-3">
+              <div className="navbar-logo"><img src={logo} alt="Logo" /></div>
+              <span className="navbar-brand hidden sm:flex">IRYAX SPACE</span>
             </button>
 
             <div className="nav-links">
-              <button onClick={() => scrollToSection('chambers')} className="navbar-link">Chambers</button>
-              <button onClick={() => scrollToSection('benefits')} className="navbar-link">Benefits</button>
-              <button onClick={() => scrollToSection('specialties')} className="navbar-link">Specialties</button>
-              <button onClick={() => scrollToSection('about')} className="navbar-link">About</button>
-              <button onClick={() => scrollToSection('faq')} className="navbar-link">FAQ</button>
-              <button onClick={() => scrollToSection('contact')} className="navbar-link">Contact</button>
+              <button onClick={() => scrollToSection("chambers")} className="navbar-link">Chambers</button>
+              <button onClick={() => scrollToSection("benefits")} className="navbar-link">Benefits</button>
+              <button onClick={() => scrollToSection("specialties")} className="navbar-link">Specialties</button>
+              <button onClick={() => scrollToSection("about")} className="navbar-link">About</button>
+              <button onClick={() => scrollToSection("faq")} className="navbar-link">FAQ</button>
+              <button onClick={() => scrollToSection("contact")} className="navbar-link">Contact</button>
             </div>
 
             <div className="flex items-center gap-2">
-              <button onClick={() => navigate("/doctorlogin")} className="navbar-signin hidden sm:block">
-                Sign In
-              </button>
-              <button onClick={() => navigate("/doctorlogin")} className="navbar-btn">
-                <Stethoscope size={14} /> Book Chamber
-              </button>
-              <button 
-                onClick={() => setMobileOpen(!mobileOpen)} 
-                className="navbar-menu-btn"
-                aria-label="Toggle menu"
-              >
-                {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+              <button onClick={() => navigate("/doctorlogin")} className="navbar-signin hidden sm:block">Sign in</button>
+              <button onClick={() => navigate("/doctorlogin")} className="navbar-btn"><Stethoscope size={14} /> Book chamber</button>
+              <button onClick={() => setMobileOpen(!mobileOpen)} className="navbar-menu-btn" aria-label="Toggle menu">
+                {mobileOpen ? <X size={20} /> : <Menu size={20} />}
               </button>
             </div>
           </div>
         </nav>
 
-        {/* ─── MOBILE MENU ─── */}
-        <div className={`fixed inset-0 z-40 bg-white pt-20 px-6 transition-all duration-500 ${mobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
-          <button 
-            onClick={() => setMobileOpen(false)} 
-            className="mobile-menu-close"
-            aria-label="Close menu"
-          >
-            <X size={22} className="text-gray-700" />
-          </button>
-          
-          <div className="flex flex-col gap-2 max-w-sm mx-auto mt-8">
-            <button onClick={() => { setMobileOpen(false); scrollToSection('chambers'); }} className="px-4 py-3 text-base text-gray-700 hover:text-blue-800 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-bold text-left">Chambers</button>
-            <button onClick={() => { setMobileOpen(false); scrollToSection('benefits'); }} className="px-4 py-3 text-base text-gray-700 hover:text-blue-800 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-bold text-left">Benefits</button>
-            <button onClick={() => { setMobileOpen(false); scrollToSection('specialties'); }} className="px-4 py-3 text-base text-gray-700 hover:text-blue-800 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-bold text-left">Specialties</button>
-            <button onClick={() => { setMobileOpen(false); scrollToSection('about'); }} className="px-4 py-3 text-base text-gray-700 hover:text-blue-800 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-bold text-left">About</button>
-            <button onClick={() => { setMobileOpen(false); scrollToSection('faq'); }} className="px-4 py-3 text-base text-gray-700 hover:text-blue-800 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-bold text-left">FAQ</button>
-            <button onClick={() => { setMobileOpen(false); scrollToSection('contact'); }} className="px-4 py-3 text-base text-gray-700 hover:text-blue-800 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-bold text-left">Contact</button>
-            <div className="h-px bg-gray-200 my-1" />
-            <button onClick={() => { navigate("/doctorlogin"); setMobileOpen(false); }} className="px-4 py-3 text-base text-center text-white bg-gradient-to-r from-blue-900 to-blue-700 rounded-lg font-extrabold">
-              Book Chamber
+        {/* Mobile drawer */}
+        <div
+          className="fixed inset-0 z-40 pt-24 px-6 transition-all duration-400"
+          style={{ background: "#FBF9F5", opacity: mobileOpen ? 1 : 0, pointerEvents: mobileOpen ? "auto" : "none" }}
+        >
+          <button onClick={() => setMobileOpen(false)} className="mobile-menu-close" aria-label="Close menu"><X size={20} /></button>
+          <div className="flex flex-col gap-2 max-w-sm mx-auto mt-6">
+            {[["Chambers", "chambers"], ["Benefits", "benefits"], ["Specialties", "specialties"], ["About", "about"], ["FAQ", "faq"], ["Contact", "contact"]].map(([label, id]) => (
+              <button key={id} onClick={() => { setMobileOpen(false); scrollToSection(id); }} className="px-4 py-3.5 text-left rounded-xl font-medium" style={{ background: "#F1EDE3" }}>
+                {label}
+              </button>
+            ))}
+            <div className="h-px my-1" style={{ background: "#E3DDCE" }} />
+            <button onClick={() => { navigate("/doctorlogin"); setMobileOpen(false); }} className="px-4 py-3.5 text-center text-white rounded-xl font-semibold" style={{ background: "#8B4433" }}>
+              Book chamber
             </button>
           </div>
         </div>
 
-        {/* ─── HERO SECTION - ALL WHITE TEXT ─── */}
-        <section className="doctor-hero-section">
-          <div className="doctor-hero-bg">
-            <img src={doctorChamber} alt="IRYAX SPACE FOR MEDICAL" />
-          </div>
-          <div className="doctor-hero-overlay"></div>
-          <div className="doctor-hero-content">
-            <div className="doctor-hero-text-box">
+        {/* Hero */}
+        <section className="hero-section">
+          <div className="hero-grid">
+            <div>
               <RevealSection>
-                <div className="hero-badge-top">
-                  <span className="badge-icon">🇮🇳</span>
-                  <span className="badge-text">IRYAX MEDICAL CO-WORKING SPACE</span>
-                </div>
+                <span className="ix-eyebrow med"><span className="dot" />India&rsquo;s medical co-working space</span>
               </RevealSection>
-
               <RevealSection delay={0.1}>
-                <h1 className="doctor-hero-title">
-                  <span className="brand-name">IRYAX SPACE</span>
-                  <span className="brand-sub">Medical <span>Co-working Space</span></span>
-                </h1>
+                <h1 className="hero-title ix-serif">A consultation room<br /><em>ready before you arrive.</em></h1>
               </RevealSection>
-
-              <RevealSection delay={0.15}>
-                <p className="doctor-hero-desc">
-                  <strong>Premium medical co-working</strong> with flexible spaces, no long leases, and <strong>stress-free</strong> practice management.
+              <RevealSection delay={0.2}>
+                <p className="hero-desc">
+                  Fully-equipped chambers with reception support, flexible hours, and complete admin handling — so you can walk in and see patients, nothing else to set up.
                 </p>
               </RevealSection>
-
-              <RevealSection delay={0.2}>
-                <div className="hero-features-list">
-                  <span className="feature-item"><CheckCircle size={14} /> Flexible Spaces</span>
-                  <span className="feature-item"><CheckCircle size={14} /> Fully-Equipped</span>
-                  <span className="feature-item"><CheckCircle size={14} /> Admin Support</span>
-                  <span className="feature-item"><CheckCircle size={14} /> Zero Deposit</span>
-                </div>
-              </RevealSection>
-
               <RevealSection delay={0.25}>
-                <div className="btn-hero-group">
-                  <button onClick={() => navigate("/doctorlogin")} className="btn-primary">
-                    <Stethoscope size={18} />
-                    Get Your Space Now
-                    <ArrowRight size={18} className="group-hover:translate-x-1 transition" />
-                  </button>
-                  <button onClick={() => scrollToSection('chambers')} className="btn-secondary">
-                    <Building2 size={18} /> View Chambers
-                  </button>
+                <div className="hero-feature-list">
+                  <span className="item"><CheckCircle size={14} /> Flexible spaces</span>
+                  <span className="item"><CheckCircle size={14} /> Fully-equipped</span>
+                  <span className="item"><CheckCircle size={14} /> Admin support</span>
+                  <span className="item"><CheckCircle size={14} /> Zero deposit</span>
                 </div>
               </RevealSection>
-
               <RevealSection delay={0.3}>
-                <div className="doctor-stats">
-                  {statsData.map((stat, idx) => (
-                    <div key={idx} className="doctor-stat-item">
-                      <div className="number">{stat.number}</div>
-                      <div className="label">{stat.label}</div>
-                    </div>
-                  ))}
+                <div className="hero-buttons">
+                  <button onClick={() => navigate("/doctorlogin")} className="btn-primary">
+                    <Stethoscope size={16} /> Get your space now <ArrowRight size={16} />
+                  </button>
+                  <button onClick={() => scrollToSection("chambers")} className="btn-secondary">
+                    <Eye size={16} /> View chambers
+                  </button>
                 </div>
               </RevealSection>
             </div>
+
+            <RevealSection delay={0.15}>
+              <div className="hero-figure">
+                <img src={doctorChamber} alt="IRYAX SPACE medical chamber" />
+               
+              </div>
+            </RevealSection>
           </div>
         </section>
 
-        {/* ─── ABOUT SECTION ─── */}
-        <section id="about" className="py-20 px-6 bg-gradient-to-br from-blue-50 via-white to-purple-50">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-14">
-              <RevealSection>
-                <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/80 backdrop-blur-sm border border-gray-200 text-gray-700 text-xs rounded-full mb-4 tracking-widest uppercase font-extrabold shadow-sm">
-                  <Flag size={12} className="text-blue-700" /> About IRYAX SPACE
-                </span>
+        {/* Stats */}
+        <section className="stats-strip py-14 px-8">
+          <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6">
+            {stats.map((stat, i) => (
+              <RevealSection key={i} delay={i * 0.06}>
+                <div className="text-center">
+                  <div className="stat-num ix-serif">
+                    {stat.label === "Chambers" ? <>{chambers.length || 50}+</> : <Counter target={stat.value} suffix={stat.suffix} />}
+                  </div>
+                  <div className="stat-label">{stat.label}</div>
+                </div>
               </RevealSection>
-              <RevealSection delay={0.1}>
-                <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900">
-                  We Provide <span className="bg-gradient-to-r from-blue-900 to-purple-700 bg-clip-text text-transparent">Modern Medical Spaces</span> & Seamless Practice Solutions
-                </h2>
-              </RevealSection>
+            ))}
+          </div>
+        </section>
+
+        {/* About */}
+        <section id="about" className="py-24 px-6">
+          <div className="max-w-5xl mx-auto">
+            <div className="section-head mx-auto text-center">
+              <RevealSection><span className="ix-eyebrow med"><span className="dot" />About IRYAX SPACE</span></RevealSection>
+              <RevealSection delay={0.1}><h2>Modern medical spaces, without the overhead</h2></RevealSection>
               <RevealSection delay={0.2}>
-                <p className="mt-4 text-base text-gray-600 font-bold max-w-3xl mx-auto leading-relaxed">
-                  IRYAX SPACE offers a flexible clinic space for doctors that empowers healthcare professionals to start or expand their independent practice without the burden of long leases, high operational costs, or administrative stress. Experience a fully-equipped, modern healthcare workspace designed for seamless and stress-free medical practice.
+                <p className="mx-auto">
+                  IRYAX SPACE gives healthcare professionals a flexible clinic space to start or expand an independent practice, without the burden of long leases, high operational costs, or administrative stress.
                 </p>
               </RevealSection>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-4xl mx-auto">
-              {[
-                { icon: Home, label: "Flexible Practice Spaces" },
-                { icon: Wallet, label: "Cost-Effective Solutions" },
-                { icon: Stethoscope, label: "Fully-Equipped Clinics" },
-                { icon: Users, label: "Administrative Support" },
-                { icon: Shield, label: "Stress-Free Management" },
-                { icon: Layout, label: "Modern Interiors & Comfort" },
-                { icon: Microscope, label: "State-of-the-Art Tools" },
-                { icon: Star, label: "Positive Feedback" }
-              ].map((item, i) => (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-14">
+              {aboutTiles.map((item, i) => (
                 <RevealSection key={i} delay={i * 0.05}>
-                  <div className="p-4 rounded-xl bg-white border border-gray-100 hover:border-blue-300 transition hover:shadow-md text-center group">
-                    <div className="w-10 h-10 mx-auto rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center text-blue-700 group-hover:scale-110 transition">
-                      <item.icon size={18} />
-                    </div>
-                    <p className="text-[10px] font-extrabold text-gray-700 mt-2 leading-tight">{item.label}</p>
+                  <div className="about-tile">
+                    <div className="icon-wrap"><item.icon size={18} /></div>
+                    <p>{item.label}</p>
                   </div>
                 </RevealSection>
               ))}
             </div>
-
-            <RevealSection delay={0.3}>
-              <div className="mt-10 text-center">
-                <div className="inline-flex items-center gap-4 px-6 py-3 bg-white rounded-2xl shadow-md border border-gray-100">
-                  <span className="text-2xl font-extrabold text-blue-900">100+</span>
-                  <span className="text-sm font-bold text-gray-600">DOCTOR'S REVIEWS</span>
-                  <div className="flex text-yellow-400">
-                    {[...Array(5)].map((_, i) => <Star key={i} size={16} fill="currentColor" />)}
-                  </div>
-                </div>
-              </div>
-            </RevealSection>
-
-            <RevealSection delay={0.35}>
-              <div className="mt-8 text-center">
-                <button onClick={() => scrollToSection('chambers')} className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-blue-900 to-blue-700 text-white rounded-xl font-extrabold hover:shadow-lg hover:shadow-blue-900/25 transition hover:scale-105">
-                  Discover Our Spaces <ArrowRight size={18} />
-                </button>
-              </div>
-            </RevealSection>
           </div>
         </section>
 
-        {/* ─── CHAMBERS SECTION - FROM API ─── */}
-        <section id="chambers" className="py-20 px-6 bg-gradient-to-b from-white via-blue-50 to-white">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-14">
-              <RevealSection>
-                <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-blue-50 border border-blue-200 text-blue-800 text-xs rounded-full mb-4 tracking-widest uppercase font-extrabold">
-                  <Building2 size={12} /> Our Chambers
-                </span>
-              </RevealSection>
-              <RevealSection delay={0.1}>
-                <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900">
-                  Choose Your <span className="bg-gradient-to-r from-blue-900 to-blue-600 bg-clip-text text-transparent">Perfect Chamber</span>
-                </h2>
-              </RevealSection>
-              <RevealSection delay={0.2}>
-                <p className="mt-3 text-base text-gray-600 font-bold max-w-2xl mx-auto">
-                  {chambers.length > 0 ? `Click on any chamber to view details and book instantly.` : 'No chambers available at the moment.'}
-                </p>
-              </RevealSection>
+        {/* Chambers */}
+        <section id="chambers" className="py-8 px-6" style={{ background: "#FBF6F4" }}>
+          <div className="max-w-6xl mx-auto py-8">
+            <div className="section-head mx-auto text-center">
+              <RevealSection><span className="ix-eyebrow med"><span className="dot" />Our chambers</span></RevealSection>
+              <RevealSection delay={0.1}><h2>Choose your consultation room</h2></RevealSection>
+              <RevealSection delay={0.2}><p className="mx-auto">Click on any chamber to view details, media, and book instantly.</p></RevealSection>
             </div>
 
-            {chambers.length === 0 ? (
-              <div className="text-center py-12">
-                <Building2 size={64} className="mx-auto text-gray-300 mb-4" />
-                <p className="text-gray-500 font-bold text-lg">No Medical Chambers Available</p>
-                <p className="text-gray-400 text-sm">Please check back later.</p>
+            {chambers.length > 0 && (
+              <RevealSection delay={0.15}>
+                <div className="section-toolbar justify-center">
+                  <span className="toolbar-pill med"><Stethoscope size={14} /> {chambers.length} chambers</span>
+                  <span className="toolbar-pill med"><ShieldCheck size={14} /> Hygiene certified</span>
+                  <span className="toolbar-pill med"><Clock size={14} /> 24/7 access</span>
+                </div>
+              </RevealSection>
+            )}
+
+            {fetchError ? (
+              <div className="text-center py-16">
+                <Stethoscope size={44} className="mx-auto mb-4" color="#D9C3BA" />
+                <p style={{ color: "#8A8F99" }}>{fetchError}</p>
+              </div>
+            ) : chambers.length === 0 ? (
+              <div className="text-center py-16">
+                <Building2 size={44} className="mx-auto mb-4" color="#D9C3BA" />
+                <p style={{ color: "#8A8F99" }}>No medical chambers available right now.</p>
               </div>
             ) : (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mt-12">
                 {chambers.map((chamber, i) => (
                   <RevealSection key={chamber.id || i} delay={i * 0.08}>
-                    <div className="chamber-card" onClick={() => handleChamberClick(chamber)}>
-                      <div className="chamber-image">
-                        <img src={chamber.images[0]} alt={chamber.name} />
-                        <span className={`chamber-status ${chamber.available ? 'available' : 'unavailable'}`}>
-                          {chamber.available ? 'Available' : 'Booked'}
-                        </span>
-                      </div>
-                      <div className="chamber-body">
-                        <h4>{chamber.name}</h4>
-                        <div className="chamber-details">
-                          <span><Building2 size={14} /> {chamber.floor}</span>
-                          <span><Layout size={14} /> {chamber.size}</span>
-                        </div>
-                        <div className="chamber-price">
-                          {chamber.price} <small>/ hour</small>
-                        </div>
-                      </div>
-                    </div>
+                    <ChamberCard chamber={chamber} index={i} onClick={handleChamberClick} />
                   </RevealSection>
                 ))}
               </div>
@@ -2094,68 +935,43 @@ const DoctorChamberPage = () => {
           </div>
         </section>
 
-        {/* ─── SPECIALTIES SECTION ─── */}
-        <section id="specialties" className="py-20 px-6 bg-white">
+        {/* Specialties */}
+        <section id="specialties" className="py-24 px-6">
           <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-14">
-              <RevealSection>
-                <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-blue-50 border border-blue-200 text-blue-800 text-xs rounded-full mb-4 tracking-widest uppercase font-extrabold">
-                  <UsersRound size={12} /> Specialties
-                </span>
-              </RevealSection>
-              <RevealSection delay={0.1}>
-                <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900">
-                  We Serve Across <span className="specialties-gradient-heading">Multiple Medical Specializations</span>
-                </h2>
-              </RevealSection>
-              <RevealSection delay={0.2}>
-                <p className="mt-3 text-base text-gray-600 font-bold max-w-2xl mx-auto">Modern consultation rooms designed for every medical specialty.</p>
-              </RevealSection>
+            <div className="section-head mx-auto text-center">
+              <RevealSection><span className="ix-eyebrow med"><span className="dot" />Specialties</span></RevealSection>
+              <RevealSection delay={0.1}><h2>Serving professionals across every specialty</h2></RevealSection>
+              <RevealSection delay={0.2}><p className="mx-auto">Modern consultation rooms designed for every medical specialty.</p></RevealSection>
             </div>
 
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {MEDICAL_SPECIALTIES.map((spec, i) => {
-                const Icon = spec.icon;
-                return (
-                  <RevealSection key={i} delay={i * 0.06}>
-                    <div className="specialty-card">
-                      <div className="spec-icon"><Icon size={22} /></div>
-                      <h4>{spec.name}</h4>
-                      <p>{spec.desc}</p>
-                    </div>
-                  </RevealSection>
-                );
-              })}
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-14">
+              {MEDICAL_SPECIALTIES.map((spec, i) => (
+                <RevealSection key={i} delay={i * 0.05}>
+                  <div className="specialty-tile">
+                    <div className="icon-wrap"><spec.icon size={20} /></div>
+                    <h4>{spec.name}</h4>
+                    <p>{spec.desc}</p>
+                  </div>
+                </RevealSection>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* ─── BENEFITS ─── */}
-        <section id="benefits" className="py-20 px-6 bg-gradient-to-b from-gray-100 via-white to-gray-50">
+        {/* Benefits */}
+        <section id="benefits" className="py-24 px-6" style={{ background: "#F1EDE3" }}>
           <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-14">
-              <RevealSection>
-                <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/60 backdrop-blur-sm border border-white/30 text-blue-800 text-xs rounded-full mb-4 tracking-widest uppercase font-extrabold shadow-sm">
-                  <Star size={12} className="fill-blue-800 text-blue-800" /> Benefits
-                </span>
-              </RevealSection>
-              <RevealSection delay={0.1}>
-                <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900">
-                  Helping Doctors <span className="bg-gradient-to-r from-blue-900 to-blue-600 bg-clip-text text-transparent">Focus on Patients</span> Not Admin
-                </h2>
-              </RevealSection>
-              <RevealSection delay={0.2}>
-                <p className="mt-3 text-base text-gray-600 font-bold max-w-2xl mx-auto">We handle everything so you can focus on what matters most.</p>
-              </RevealSection>
+            <div className="section-head mx-auto text-center">
+              <RevealSection><span className="ix-eyebrow med"><span className="dot" />Benefits</span></RevealSection>
+              <RevealSection delay={0.1}><h2>Helping doctors focus on patients, not admin</h2></RevealSection>
+              <RevealSection delay={0.2}><p className="mx-auto">We handle everything else so you can focus on what matters.</p></RevealSection>
             </div>
 
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-14">
               {doctorBenefits.map((benefit, i) => (
-                <RevealSection key={i} delay={i * 0.1}>
-                  <div className={`glass-card ${benefit.glassClass}`}>
-                    <div className="icon-wrapper">
-                      <benefit.icon size={24} />
-                    </div>
+                <RevealSection key={i} delay={i * 0.08}>
+                  <div className="plain-card">
+                    <div className="icon-wrapper"><benefit.icon size={22} /></div>
                     <h3>{benefit.title}</h3>
                     <p>{benefit.desc}</p>
                   </div>
@@ -2165,36 +981,21 @@ const DoctorChamberPage = () => {
           </div>
         </section>
 
-        {/* ─── FEATURES ─── */}
-        <section className="py-20 px-6 bg-gradient-to-b from-blue-900 via-blue-800 to-blue-900 text-white">
+        {/* Features (dark band) */}
+        <section className="feature-band py-24 px-6">
           <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-14">
-              <RevealSection>
-                <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 border border-white/20 text-white/80 text-xs rounded-full mb-4 tracking-widest uppercase font-extrabold">
-                  <Sparkles size={12} /> Why Choose Us
-                </span>
-              </RevealSection>
-              <RevealSection delay={0.1}>
-                <h2 className="text-3xl sm:text-4xl font-extrabold">
-                  Built for <span className="font-extrabold bg-gradient-to-r from-blue-200 to-cyan-200 bg-clip-text text-transparent">Modern Healthcare</span>
-                </h2>
-              </RevealSection>
-              <RevealSection delay={0.2}>
-                <p className="mt-3 text-base text-blue-200 font-bold max-w-2xl mx-auto">Everything you need to start and grow your medical practice.</p>
-              </RevealSection>
+            <div className="section-head mx-auto text-center">
+              <RevealSection><span className="ix-eyebrow" style={{ color: "#D9B77A", borderColor: "rgba(251,249,245,0.15)" }}><span className="dot" style={{ background: "#B08947" }} />Why practice here</span></RevealSection>
+              <RevealSection delay={0.1}><h2 className="ix-serif" style={{ color: "#FBF9F5" }}>Everything a clinical practice needs, already in place</h2></RevealSection>
+              <RevealSection delay={0.2}><p className="mx-auto" style={{ color: "rgba(251,249,245,0.6)" }}>Move in and start seeing patients within 24 hours.</p></RevealSection>
             </div>
 
-            <div className="doctor-features-grid">
-              {[
-                { icon: Stethoscope, title: "Medical Equipment", desc: "State-of-the-art medical tools and equipment" },
-                { icon: UserCheck, title: "Admin Support", desc: "Reception, billing, and patient management" },
-                { icon: Clock, title: "Flexible Hours", desc: "24/7 access with flexible scheduling" },
-                { icon: Award, title: "Premium Location", desc: "High-visibility prime medical locations" }
-              ].map((feature, i) => (
-                <RevealSection key={i} delay={i * 0.1}>
-                  <div className="doctor-feature-card">
-                    <div className="icon-wrap"><feature.icon size={24} /></div>
-                    <h4>{feature.title}</h4>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-14">
+              {features.map((feature, i) => (
+                <RevealSection key={i} delay={i * 0.08}>
+                  <div className="feature-card">
+                    <div className="feature-icon"><feature.icon size={20} /></div>
+                    <h3>{feature.title}</h3>
                     <p>{feature.desc}</p>
                   </div>
                 </RevealSection>
@@ -2203,77 +1004,57 @@ const DoctorChamberPage = () => {
           </div>
         </section>
 
-        {/* ─── CTA ─── */}
-        <section className="py-20 px-6">
+        {/* CTA */}
+        <section className="py-24 px-6">
           <div className="max-w-6xl mx-auto">
             <RevealSection>
               <div className="doctor-cta-section">
-                <h2>Start Your Practice Today</h2>
-                <p>Join 100+ healthcare professionals who've transformed their practice with IRYAX SPACE</p>
-                <button onClick={() => navigate("/doctorlogin")} className="doctor-cta-btn">
-                  Get Started Now <ArrowRight size={18} />
-                </button>
+                <h2>Start seeing patients this week</h2>
+                <p>Join 100+ healthcare professionals who moved their practice into a chamber that was ready on day one.</p>
+                <button onClick={() => navigate("/doctorlogin")} className="doctor-cta-btn">Get started <ArrowRight size={18} /></button>
               </div>
             </RevealSection>
           </div>
         </section>
 
-        {/* ─── FAQ ─── */}
-        <section id="faq" className="py-20 px-6 bg-gray-50">
+        {/* FAQ */}
+        <section id="faq" className="py-24 px-6">
           <div className="max-w-3xl mx-auto">
-            <div className="text-center mb-12">
-              <RevealSection>
-                <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-gray-100 border border-gray-200 text-gray-700 text-xs rounded-full mb-4 tracking-widest uppercase font-extrabold">
-                  <HelpCircle size={12} /> FAQ
-                </span>
-              </RevealSection>
-              <RevealSection delay={0.1}>
-                <h2 className="text-3xl font-extrabold text-gray-900">Frequently Asked <span className="bg-gradient-to-r from-blue-900 to-blue-600 bg-clip-text text-transparent">Questions</span></h2>
-              </RevealSection>
-              <RevealSection delay={0.2}>
-                <p className="mt-2 text-base text-gray-600 font-bold">Find answers about IRYAX SPACE Doctor's Chamber.</p>
-              </RevealSection>
+            <div className="section-head mx-auto text-center">
+              <RevealSection><span className="ix-eyebrow med"><span className="dot" />FAQ</span></RevealSection>
+              <RevealSection delay={0.1}><h2>Answers about the doctor&rsquo;s chamber</h2></RevealSection>
             </div>
 
-            <div className="space-y-3">
-              {FAQ_DATA.map((faq, index) => (
-                <FAQItem key={index} faq={faq} index={index} />
+            <div className="space-y-3 mt-12">
+              {FAQ_DATA.map((faq, i) => (
+                <FAQItem key={i} faq={faq} index={i} isOpen={openFaq === i} onToggle={() => toggleFaq(i)} />
               ))}
             </div>
           </div>
         </section>
 
-        {/* ─── CONTACT ─── */}
-        <section id="contact" className="py-20 px-6 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50" />
-          <div className="relative max-w-4xl mx-auto">
-            <div className="text-center mb-12">
-              <RevealSection>
-                <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/80 border border-gray-200 text-gray-700 text-xs rounded-full mb-4 tracking-widest uppercase font-extrabold">Get in Touch</span>
-              </RevealSection>
-              <RevealSection delay={0.1}>
-                <h2 className="text-3xl font-extrabold text-gray-900">Ready to <span className="bg-gradient-to-r from-blue-900 to-blue-600 bg-clip-text text-transparent">Start Your Practice?</span></h2>
-              </RevealSection>
-              <RevealSection delay={0.2}>
-                <p className="mt-2 text-base text-gray-600 font-bold">Connect with us and transform your medical practice today.</p>
-              </RevealSection>
+        {/* Contact */}
+        <section id="contact" className="contact-band py-24 px-6">
+          <div className="max-w-4xl mx-auto">
+            <div className="section-head mx-auto text-center">
+              <RevealSection><span className="ix-eyebrow med"><span className="dot" />Get in touch</span></RevealSection>
+              <RevealSection delay={0.1}><h2>Ready to start your practice?</h2></RevealSection>
+              <RevealSection delay={0.2}><p className="mx-auto">Connect with us and book your chamber today.</p></RevealSection>
             </div>
 
-            <div className="grid md:grid-cols-5 gap-8">
-              <div className="md:col-span-2 space-y-5">
+            <div className="grid md:grid-cols-5 gap-8 mt-12">
+              <div className="md:col-span-2 space-y-4">
                 {[
                   { icon: Mail, label: "Email", value: "info@iriax.com" },
                   { icon: Phone, label: "Phone", value: "+91-9010481048" },
                   { icon: MapPin, label: "Address", value: "Iryax Global, Flat No: 301, 3rd Floor, Sri Sai Balaji Avenue, H. No: 1-98/9/25/p, VIP Hills, near Bank of Baroda, Arunodaya Colony, Madhapur, Hyderabad, Telangana 500081" }
                 ].map((item, i) => (
                   <RevealSection key={i} delay={i * 0.1}>
-                    <div className="flex items-start gap-4 group p-4 rounded-xl bg-white/70 backdrop-blur-sm hover:bg-white transition shadow-sm hover:shadow-md">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center text-blue-700 flex-shrink-0 mt-0.5 transition group-hover:scale-110">
-                        <item.icon size={18} />
-                      </div>
+                    <div className="contact-info-item">
+                      <div className="icon-wrap"><item.icon size={17} /></div>
                       <div>
-                        <p className="text-sm font-extrabold text-gray-900">{item.label}</p>
-                        <p className={`text-sm text-gray-600 group-hover:text-blue-700 transition font-bold ${item.label === 'Address' ? 'text-xs leading-relaxed' : ''}`}>{item.value}</p>
+                        <p className="text-sm font-semibold" style={{ color: "#12181F" }}>{item.label}</p>
+                        <p className={`text-sm mt-0.5 ${item.label === "Address" ? "text-xs" : ""}`} style={{ color: "#4A5160", lineHeight: 1.55 }}>{item.value}</p>
                       </div>
                     </div>
                   </RevealSection>
@@ -2282,70 +1063,30 @@ const DoctorChamberPage = () => {
 
               <div className="md:col-span-3">
                 <RevealSection delay={0.3}>
-                  <form onSubmit={handleSubmit} className="space-y-4 bg-white/70 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/50">
+                  <form onSubmit={handleSubmit} className="contact-form space-y-4">
                     <div className="grid sm:grid-cols-2 gap-4">
-                      <input 
-                        type="text" 
-                        placeholder="Your Name" 
-                        value={formData.name} 
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })} 
-                        className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-sm focus:outline-none transition font-bold" 
-                        required 
-                      />
-                      <input 
-                        type="email" 
-                        placeholder="Your Email" 
-                        value={formData.email} 
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })} 
-                        className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-sm focus:outline-none transition font-bold" 
-                        required 
-                      />
+                      <input type="text" placeholder="Your name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
+                      <input type="email" placeholder="Your email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required />
                     </div>
                     <div className="grid sm:grid-cols-2 gap-4">
-                      <input 
-                        type="tel" 
-                        placeholder="Phone Number" 
-                        value={formData.phone} 
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })} 
-                        className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-sm focus:outline-none transition font-bold" 
-                        required 
-                      />
-                      <input 
-                        type="text" 
-                        placeholder="Address" 
-                        value={formData.address} 
-                        onChange={(e) => setFormData({ ...formData, address: e.target.value })} 
-                        className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-sm focus:outline-none transition font-bold" 
-                      />
+                      <input type="tel" placeholder="Phone number" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} required />
+                      <input type="text" placeholder="Address" value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} />
                     </div>
-                    <textarea 
-                      placeholder="Your Message" 
-                      rows="4" 
-                      value={formData.message} 
-                      onChange={(e) => setFormData({ ...formData, message: e.target.value })} 
-                      className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-sm focus:outline-none transition resize-none font-bold" 
-                      required 
-                    />
+                    <textarea placeholder="Your message" rows="4" value={formData.message} onChange={(e) => setFormData({ ...formData, message: e.target.value })} required />
                     {submitError && (
-                      <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-sm font-bold">
-                        {submitError}
-                      </div>
+                      <div className="p-3 rounded-xl text-sm" style={{ background: "#F3E9E3", color: "#8B4433", border: "1px solid #E3C3B4" }}>{submitError}</div>
                     )}
-                    <button 
-                      type="submit" 
-                      disabled={isSubmitting}
-                      className="w-full px-4 py-3 text-sm font-extrabold text-white bg-gradient-to-r from-blue-900 to-blue-700 rounded-xl hover:shadow-lg hover:shadow-blue-900/25 transition hover:scale-105 flex items-center justify-center gap-2 group disabled:opacity-70 disabled:cursor-not-allowed"
-                    >
+                    <button type="submit" disabled={isSubmitting} className="contact-submit">
                       {isSubmitting ? (
                         <>
-                          <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          <svg className="h-4 w-4" style={{ animation: "ix-spin 0.8s linear infinite" }} viewBox="0 0 24 24" fill="none">
+                            <circle opacity="0.25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path opacity="0.75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                           </svg>
-                          Submitting...
+                          Sending…
                         </>
                       ) : (
-                        <>Book Your Chamber <Send size={16} className="group-hover:translate-x-1 transition" /></>
+                        <>Send message <Send size={16} /></>
                       )}
                     </button>
                   </form>
@@ -2355,67 +1096,58 @@ const DoctorChamberPage = () => {
           </div>
         </section>
 
-        {/* ─── FOOTER ─── */}
-        <footer className="py-12 px-6 border-t border-gray-200 bg-gray-900 text-white">
+        {/* Footer */}
+        <footer className="site-footer py-16 px-6">
           <div className="max-w-6xl mx-auto">
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10">
               <RevealSection>
                 <div>
-                  <button onClick={() => navigate('/')} className="flex items-center gap-3 mb-4 group">
-                    <div className="w-10 h-10 rounded-full overflow-hidden border border-blue-400/30 shadow-lg shadow-blue-500/20 flex-shrink-0 bg-white/10 group-hover:scale-110 transition">
+                  <button onClick={scrollToTop} className="flex items-center gap-3 mb-4">
+                    <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0" style={{ background: "rgba(251,249,245,0.08)", border: "1px solid rgba(251,249,245,0.15)" }}>
                       <img src={logo} alt="Logo" className="w-full h-full object-contain p-1.5" />
                     </div>
-                    <span className="text-base font-extrabold text-white group-hover:text-blue-400 transition flex items-center gap-2">
-                      IRYAX SPACE
-                      <Stethoscope size={16} className="text-blue-400" />
-                    </span>
+                    <span className="ix-serif font-semibold" style={{ color: "#FBF9F5" }}>IRYAX SPACE</span>
                   </button>
-                  <p className="text-sm text-gray-400 font-bold">India's 1st Medical Co-working Space</p>
+                  <p className="text-sm" style={{ color: "rgba(251,249,245,0.55)" }}>India&rsquo;s medical co-working space.</p>
                 </div>
               </RevealSection>
               <RevealSection delay={0.1}>
                 <div>
-                  <h4 className="text-sm font-extrabold text-white mb-4">Explore</h4>
-                  <div className="space-y-2">
-                    <button onClick={() => scrollToSection('chambers')} className="block text-sm text-gray-400 hover:text-blue-400 transition hover:translate-x-1 text-left font-bold">Chambers</button>
-                    <button onClick={() => scrollToSection('benefits')} className="block text-sm text-gray-400 hover:text-blue-400 transition hover:translate-x-1 text-left font-bold">Benefits</button>
-                    <button onClick={() => scrollToSection('specialties')} className="block text-sm text-gray-400 hover:text-blue-400 transition hover:translate-x-1 text-left font-bold">Specialties</button>
-                    <button onClick={() => scrollToSection('about')} className="block text-sm text-gray-400 hover:text-blue-400 transition hover:translate-x-1 text-left font-bold">About</button>
-                    <button onClick={() => scrollToSection('faq')} className="block text-sm text-gray-400 hover:text-blue-400 transition hover:translate-x-1 text-left font-bold">FAQ</button>
+                  <h4>Explore</h4>
+                  <div className="space-y-2.5">
+                    <button onClick={() => scrollToSection("chambers")} className="block text-left">Chambers</button>
+                    <button onClick={() => scrollToSection("benefits")} className="block text-left">Benefits</button>
+                    <button onClick={() => scrollToSection("specialties")} className="block text-left">Specialties</button>
+                    <button onClick={() => scrollToSection("about")} className="block text-left">About</button>
+                    <button onClick={() => scrollToSection("faq")} className="block text-left">FAQ</button>
                   </div>
                 </div>
               </RevealSection>
               <RevealSection delay={0.2}>
                 <div>
-                  <h4 className="text-sm font-extrabold text-white mb-4">Company</h4>
-                  <div className="space-y-2">
-                    <button className="block text-sm text-gray-400 hover:text-blue-400 transition hover:translate-x-1 text-left font-bold">About Us</button>
-                    <button onClick={() => scrollToSection('contact')} className="block text-sm text-gray-400 hover:text-blue-400 transition hover:translate-x-1 text-left font-bold">Contact</button>
+                  <h4>Company</h4>
+                  <div className="space-y-2.5">
+                    <button onClick={() => navigate("/")} className="block text-left">Home</button>
+                    <button onClick={() => scrollToSection("contact")} className="block text-left">Contact</button>
                   </div>
                 </div>
               </RevealSection>
               <RevealSection delay={0.3}>
                 <div>
-                  <h4 className="text-sm font-extrabold text-white mb-4">Legal</h4>
-                  <div className="space-y-2">
+                  <h4>Legal</h4>
+                  <div className="space-y-2.5">
                     {["Privacy Policy", "Terms & Conditions", "Refund Policy", "Cookie Policy"].map((item) => (
-                      <button key={item} className="block text-sm text-gray-400 hover:text-blue-400 transition hover:translate-x-1 text-left font-bold">{item}</button>
+                      <button key={item} className="block text-left">{item}</button>
                     ))}
                   </div>
                 </div>
               </RevealSection>
             </div>
-            
+
             <RevealSection delay={0.4}>
-              <div className="mt-10 pt-6 border-t border-gray-800 text-center">
-                <div className="flex flex-col items-center gap-3">
-                  <p className="text-sm text-gray-400 font-bold">
-                    © IRYAX SPACE All Rights Reserved. | Made with 
-                    <span className="footer-heart mx-1">❤️</span> 
-                    by IRYAX
-                  </p>
-                  <p className="text-xs text-gray-500 tracking-wider uppercase font-extrabold">IRYAX SPACE FOR MEDICAL</p>
-                </div>
+              <div className="mt-12 pt-6 text-center" style={{ borderTop: "1px solid rgba(251,249,245,0.1)" }}>
+                <p className="text-sm">© IRYAX SPACE. All rights reserved.</p>
+                <p className="text-xs mt-2 tracking-wider uppercase" style={{ opacity: 0.4 }}>IRYAX SPACE FOR MEDICAL</p>
               </div>
             </RevealSection>
           </div>

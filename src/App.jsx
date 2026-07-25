@@ -52,6 +52,11 @@ import DoctorProfile from "./components/DoctorProfile";
 import RevenueAnalytics from "./components/RevenueAnalytics";
 import CabinRevenue from "./components/CabinRevenue";
 import AdminWallet from "./components/AdminWallet";
+import SimpleUserNavbar from "./components/SimpleUserNavbar";
+import SimpleUserDashboard from "./components/SimpleUserDashboard";
+import SpacesPage from "./components/SpacesPage";
+import SimpleUserBookings from "./components/SimpleUserBookings";
+import SimpleUserProfile from "./components/SimpleUserProfile";
 
 function App() {
   return (
@@ -62,6 +67,11 @@ function App() {
         <Route path="/doctor-chamber" element={<DoctorChamberPage />} />
         <Route path="/doctordashbaord" element={<DoctorDashboard />} />
         <Route path="/doctorwallet" element={<DoctorWallet />} />
+        <Route path="/user" element={<SimpleUserNavbar />} />
+        <Route path="/userdashboard" element={<SimpleUserDashboard />} />
+        <Route path="/spaceforusers" element={<SpacesPage />} />
+        <Route path="/userbooking" element={<SimpleUserBookings />} />
+        <Route path="/userprofile" element={<SimpleUserProfile />} />
         <Route path="/allchambers" element={<AllChambers />} />
         <Route path="/mychambers" element={<MyChamber />} />
         <Route path="/doctorbookings" element={<BookingDoctor />} />
@@ -97,7 +107,7 @@ function App() {
         {/* <Route path="/doctorbookings" element={<UserRoute><CabinBookings /></UserRoute>}></Route> */}
         <Route path="/cabin-bookings" element={<UserRoute><CabinBookings /></UserRoute>}></Route>
         <Route path="/dashboard" element={<AdminRoute><Dashboard /></AdminRoute>}></Route>
-        <Route path="/userdashboard" element={<UserRoute><UserDashboard /></UserRoute>}></Route>
+        <Route path="/ownerdashboard" element={<UserRoute><UserDashboard /></UserRoute>}></Route>
         <Route path ="/admincabin" element={<AdminRoute><AdminCabins /></AdminRoute>}></Route>
         <Route path ="/cabinpayments" element={<AdminRoute><AllCabinPayments /></AdminRoute>}></Route>
         <Route path ="/userwallets" element={<AdminRoute><AllWallets /></AdminRoute>}></Route>

@@ -76,7 +76,12 @@ function Login() {
       
       setTimeout(() => {
         setShowSuccessPopup(false);
-        navigate("/userdashboard");
+        // ✅ Redirect based on role
+        if (user.role === "cabinOwner") {
+          navigate("/ownerdashboard");
+        } else {
+          navigate("/userdashboard");
+        }
       }, 2000);
       
     } catch (err) {

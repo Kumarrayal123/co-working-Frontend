@@ -53,7 +53,7 @@ import {
 } from "recharts";
 import "./Dashboard.css";
 
-const API_URL = "http://localhost:5003";
+const API_URL = "https://spaceapi.iryax.com";
 
 const RevenueAnalytics = () => {
   const navigate = useNavigate();

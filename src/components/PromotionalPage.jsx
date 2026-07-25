@@ -2020,7 +2020,7 @@ const SpaceDetailModal = ({ isOpen, onClose, space, onBookClick }) => {
 
   const images = space.images || [space.image];
   const imageUrls = images.map(img => 
-    img && img.startsWith('http') ? img : `http://localhost:5003/${img}`
+    img && img.startsWith('http') ? img : `https://spaceapi.iryax.com/${img}`
   );
 
   const nextImage = (e) => {
@@ -2383,7 +2383,7 @@ const PromotionalPage = () => {
     const fetchCabins = async () => {
       try {
         setLoading(true);
-        const response = await fetch("http://localhost:5003/api/cabins");
+        const response = await fetch("https://spaceapi.iryax.com/api/cabins");
         if (!response.ok) throw new Error("Failed to fetch");
         const data = await response.json();
         setCabins(Array.isArray(data) ? data : []);
@@ -2420,7 +2420,7 @@ const PromotionalPage = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("http://localhost:5003/api/cabins/sendquery", {
+      const response = await fetch("https://spaceapi.iryax.com/api/cabins/sendquery", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -2461,7 +2461,7 @@ const PromotionalPage = () => {
 
   const handleSpaceClick = (space) => {
     const images = space.images && space.images.length > 0 
-      ? space.images.map(img => `http://localhost:5003/${img}`)
+      ? space.images.map(img => `https://spaceapi.iryax.com/${img}`)
       : [IRYAX_SPACE_IMAGES[0]];
     
     const formattedSpace = {
@@ -2795,7 +2795,7 @@ const PromotionalPage = () => {
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {coworkingCabins.map((cabin, i) => {
                   const cabinImages = cabin.images && cabin.images.length > 0 
-                    ? cabin.images.map(img => `http://localhost:5003/${img}`)
+                    ? cabin.images.map(img => `https://spaceapi.iryax.com/${img}`)
                     : [IRYAX_SPACE_IMAGES[0]];
 
                   return (

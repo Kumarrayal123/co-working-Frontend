@@ -38,7 +38,7 @@ import { toast } from "react-toastify";
 import DoctorNavbar from "./DoctorNavbar";
 import "./Dashboard.css";
 
-const API_URL = "http://localhost:5003";
+const API_URL = "https://spaceapi.iryax.com";
 
 const MyChamberPayments = () => {
   const [orders, setOrders] = useState([]);

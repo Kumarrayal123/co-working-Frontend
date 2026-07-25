@@ -51,7 +51,7 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import "./Dashboard.css";
 
-const API_URL = "http://localhost:5003";
+const API_URL = "https://spaceapi.iryax.com";
 const ADMIN_ID = "68ebe9ee8f06d33ee022d665";
 
 const AdminBookings = () => {

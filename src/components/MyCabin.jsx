@@ -63,7 +63,7 @@ const loadRazorpayScript = () => {
   });
 };
 
-const API_URL = "http://localhost:5003";
+const API_URL = "https://spaceapi.iryax.com";
 const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
 const GST_RATE = 0.18;
 

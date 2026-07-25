@@ -53,7 +53,7 @@ import {
 import logo from "../assets/logo.png";
 import doctorChamber from "../assets/doctorchamber.png";
 
-const API_URL = "http://localhost:5003";
+const API_URL = "https://spaceapi.iryax.com";
 const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
 
 // ─── SPECIALTIES DATA ───
@@ -1633,7 +1633,7 @@ const DoctorChamberPage = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("http://localhost:5003/api/cabins/sendquery", {
+      const response = await fetch("https://spaceapi.iryax.com/api/cabins/sendquery", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

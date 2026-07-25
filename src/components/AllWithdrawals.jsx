@@ -39,7 +39,7 @@ import AdminNavbar from "./AdminNavbar";
 import * as XLSX from 'xlsx';
 import "./Dashboard.css";
 
-const API_URL = "http://localhost:5003";
+const API_URL = "https://spaceapi.iryax.com";
 
 const AllWithdrawals = () => {
   const [withdrawals, setWithdrawals] = useState([]);

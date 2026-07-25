@@ -34,7 +34,7 @@ import AdminNavbar from "./AdminNavbar";
 import { useNavigate } from "react-router-dom";
 import "./Dashboard.css";
 
-const API_URL = "http://localhost:5003";
+const API_URL = "https://spaceapi.iryax.com";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();

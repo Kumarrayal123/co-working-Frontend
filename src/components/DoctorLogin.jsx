@@ -41,7 +41,7 @@ function DoctorLogin() {
       // ✅ REMOVED: Admin hardcode login
 
       // ✅ ONLY USE BACKEND API LOGIN
-      const res = await axios.post("http://localhost:5003/api/auth/login", {
+      const res = await axios.post("https://spaceapi.iryax.com/api/auth/login", {
         email,
         password,
         isDoctor: true

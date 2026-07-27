@@ -23,6 +23,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import UsersNavbar from "./UsersNavbar";
 import AdminNavbar from "./AdminNavbar";
+import SimpleUserNavbar from "./SimpleUserNavbar";
 import "./Dashboard.css";
 
 const API_URL = "https://spaceapi.iryax.com";
@@ -33,7 +34,34 @@ const SEAT_EXTRA_CHARGE = 100; // ₹100 per seat
 const BookCabin = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const isAdmin = localStorage.getItem("admin") !== null;
+  
+  // Check user role from localStorage
+  const userStr = localStorage.getItem("user");
+  const adminStr = localStorage.getItem("admin");
+  
+  let userRole = "user"; // default
+  let currentUser = null;
+  
+  if (userStr) {
+    currentUser = JSON.parse(userStr);
+    userRole = currentUser?.role || "user";
+  } else if (adminStr) {
+    currentUser = JSON.parse(adminStr);
+    userRole = "admin";
+  }
+
+  const isAdmin = userRole === "admin";
+
+  // Select navbar based on role
+  const renderNavbar = () => {
+    if (isAdmin) {
+      return <AdminNavbar />;
+    } else if (userRole === "user") {
+      return <SimpleUserNavbar />;
+    } else {
+      return <UsersNavbar />;
+    }
+  };
 
   const [cabin, setCabin] = useState(null);
   const [relatedCabins, setRelatedCabins] = useState([]);
@@ -210,6 +238,7 @@ const BookCabin = () => {
     else if (adminStr) currentUser = JSON.parse(adminStr);
 
     const userId = currentUser?._id || currentUser?.id;
+    const userRole = currentUser?.role || "user";
 
     if (!userId) {
       toast.error("Please log in to book a cabin.");
@@ -254,7 +283,15 @@ const BookCabin = () => {
           toast.info(`Selected ${selectedSeats.length} seat(s). Extra charge: ₹${extraCharge}`);
         }
         toast.info("Please pay cash at the counter.");
-        navigate("/mybookings");
+        
+        // ✅ Navigate based on user role
+        if (userRole === "admin") {
+          navigate("/mybookings");
+        } else if (userRole === "user") {
+          navigate("/userbooking");
+        } else {
+          navigate("/mybookings");
+        }
       }
     } catch (err) {
       const errorMsg = err.response?.data?.error || "Booking failed. Please try again.";
@@ -272,7 +309,7 @@ const BookCabin = () => {
   if (!cabin) {
     return (
       <div className="admin-dash">
-        {isAdmin ? <AdminNavbar /> : <UsersNavbar />}
+        {renderNavbar()}
         <div className="admin-dash__loading">
           <div className="admin-dash__spinner" />
           <p className="admin-dash__loading-text">Preparing workspace...</p>
@@ -283,7 +320,7 @@ const BookCabin = () => {
 
   return (
     <div className="admin-dash">
-      {isAdmin ? <AdminNavbar /> : <UsersNavbar />}
+      {renderNavbar()}
 
       <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-16">
         <button

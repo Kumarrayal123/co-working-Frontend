@@ -227,13 +227,36 @@ const AdminCabins = () => {
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [cabinCount, setCabinCount] = useState(0);
   
+  // ✅ Get admin ID from localStorage
+  const getAdminId = () => {
+    const admin = localStorage.getItem("admin");
+    if (admin) {
+      const adminData = JSON.parse(admin);
+      return adminData._id;
+    }
+    return null;
+  };
+
+  // ✅ GET TOKEN
+  const getToken = () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      console.warn("⚠️ No token found in localStorage");
+      toast.error("Please login again");
+      return null;
+    }
+    console.log("🔑 Token found, length:", token.length);
+    return token;
+  };
+
   const [filters, setFilters] = useState({
     search: "",
     cabinType: "all",
     status: "all",
     priceMin: "",
     priceMax: "",
-    address: ""
+    address: "",
+    spaceType: "all"  // ✅ NEW: Space Type filter
   });
   
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -386,12 +409,20 @@ const AdminCabins = () => {
   const fetchCabins = async () => {
     setLoading(true);
     try {
+      const adminId = getAdminId();
+      if (!adminId) {
+        console.warn("No admin ID found");
+        setLoading(false);
+        return;
+      }
+
       const res = await axios.get(`${API_URL}/api/cabins`);
       const data = res.data.cabins || res.data;
       const allCabins = Array.isArray(data) ? data : [];
 
+      // ✅ Filter cabins by admin ID from localStorage
       const adminCabins = allCabins.filter(cabin =>
-        cabin.owner === "68ebe9ee8f06d33ee022d665"
+        cabin.owner === adminId
       );
 
       setCabins(adminCabins);
@@ -424,13 +455,25 @@ const AdminCabins = () => {
     if (!window.confirm("Are you sure you want to delete this cabin?")) return;
 
     try {
-      await axios.delete(`${API_URL}/api/cabins/${id}`);
+      const token = getToken();
+      if (!token) return;
+
+      await axios.delete(`${API_URL}/api/cabins/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       setCabins(cabins.filter(c => c._id !== id));
       setCabinCount(prev => prev - 1);
       toast.success("Cabin deleted successfully");
     } catch (error) {
       console.error("Error deleting cabin", error);
-      toast.error("Failed to delete cabin");
+      if (error.response?.status === 401) {
+        toast.error("Unauthorized! Please login again.");
+        navigate("/login");
+      } else {
+        toast.error("Failed to delete cabin");
+      }
     }
   };
 
@@ -446,10 +489,12 @@ const AdminCabins = () => {
       status: "all",
       priceMin: "",
       priceMax: "",
-      address: ""
+      address: "",
+      spaceType: "all"  // ✅ Reset space type
     });
   };
 
+  // ✅ UPDATED: Filter with Space Type
   const filteredCabins = cabins.filter(cabin => {
     if (filters.search && !cabin.name?.toLowerCase().includes(filters.search.toLowerCase())) {
       return false;
@@ -466,6 +511,11 @@ const AdminCabins = () => {
     if (filters.address && !cabin.address?.toLowerCase().includes(filters.address.toLowerCase())) {
       return false;
     }
+    // ✅ NEW: Space Type filter
+    if (filters.spaceType !== "all") {
+      if (filters.spaceType === "medical" && cabin.isChamber !== true) return false;
+      if (filters.spaceType === "coworking" && cabin.isChamber !== false) return false;
+    }
     return true;
   });
 
@@ -474,6 +524,8 @@ const AdminCabins = () => {
   const exclusiveCount = cabins.filter(c => c.cabinType === 'exclusive').length;
   const normalCount = cabins.filter(c => c.cabinType === 'normal').length;
   const withExpiryCount = cabins.filter(c => c.expiryDate).length;
+  const medicalCount = cabins.filter(c => c.isChamber === true).length;
+  const coworkingCount = cabins.filter(c => c.isChamber === false).length;
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -746,6 +798,12 @@ const AdminCabins = () => {
     setSubmitting(true);
 
     try {
+      const token = getToken();
+      if (!token) {
+        setSubmitting(false);
+        return;
+      }
+
       const formData = new FormData();
       
       if (editFormData.name) {
@@ -781,6 +839,7 @@ const AdminCabins = () => {
       await axios.put(`${API_URL}/api/cabins/${editingCabin._id}`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${token}`
         }
       });
 
@@ -790,7 +849,12 @@ const AdminCabins = () => {
       fetchCabins();
     } catch (err) {
       console.error("Update Cabin Error:", err);
-      toast.error("Failed to update cabin");
+      if (err.response?.status === 401) {
+        toast.error("Unauthorized! Please login again.");
+        navigate("/login");
+      } else {
+        toast.error("Failed to update cabin");
+      }
     } finally {
       setSubmitting(false);
     }
@@ -851,11 +915,6 @@ const AdminCabins = () => {
     setPricingPlans(pricingPlans.filter((_, i) => i !== index));
   };
 
-  // ─── GET TOKEN ───
-  const getToken = () => {
-    return localStorage.getItem("token");
-  };
-
   // ─── INITIATE RAZORPAY PAYMENT ───
   const initiateRazorpayPayment = (orderData, cabinId) => {
     setPaymentProcessing(true);
@@ -878,6 +937,12 @@ const AdminCabins = () => {
         handler: async function(response) {
           try {
             const token = getToken();
+            if (!token) {
+              toast.error("Please login again");
+              setPaymentProcessing(false);
+              return;
+            }
+
             const verifyRes = await axios.post(
               `${API_URL}/api/cabins/verify-cabin-payment`,
               {
@@ -887,7 +952,9 @@ const AdminCabins = () => {
                 cabinId: cabinId
               },
               {
-                headers: { Authorization: `Bearer ${token}` }
+                headers: { 
+                  'Authorization': `Bearer ${token}`
+                }
               }
             );
 
@@ -948,7 +1015,12 @@ const AdminCabins = () => {
             }
           } catch (error) {
             console.error("Payment verification error:", error);
-            toast.error(error.response?.data?.error || "Payment verification failed");
+            if (error.response?.status === 401) {
+              toast.error("Session expired! Please login again.");
+              navigate("/login");
+            } else {
+              toast.error(error.response?.data?.error || "Payment verification failed");
+            }
             setPaymentProcessing(false);
           }
         },
@@ -982,6 +1054,12 @@ const AdminCabins = () => {
     setSubmitting(true);
 
     try {
+      const token = getToken();
+      if (!token) {
+        setSubmitting(false);
+        return;
+      }
+
       const data = new FormData();
       const cabinName = formData.cabin ? `${formData.name} - ${formData.cabin}` : formData.name;
       data.append("name", cabinName);
@@ -1004,10 +1082,11 @@ const AdminCabins = () => {
       images.forEach((img) => data.append("images", img));
       videos.forEach((video) => data.append("videos", video));
 
-      const token = getToken();
+      // ✅ CREATE CABIN WITH AUTH TOKEN
       const cabinRes = await axios.post(`${API_URL}/api/cabins`, data, {
         headers: {
-          'Content-Type': 'multipart/form-data'
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${token}`
         }
       });
 
@@ -1015,12 +1094,14 @@ const AdminCabins = () => {
         const newCabin = cabinRes.data.cabin;
         toast.success("Cabin created successfully!");
 
-        // ─── CREATE ORDER ───
+        // ✅ CREATE ORDER WITH AUTH TOKEN
         const orderRes = await axios.post(
           `${API_URL}/api/cabins/createcabinorder`,
           { cabinId: newCabin._id },
           {
-            headers: { Authorization: `Bearer ${token}` }
+            headers: { 
+              'Authorization': `Bearer ${token}`
+            }
           }
         );
 
@@ -1034,8 +1115,17 @@ const AdminCabins = () => {
         }
       }
     } catch (err) {
-      console.error("Error:", err);
-      toast.error(err.response?.data?.error || "Failed to create cabin and order");
+      console.error("❌ Error:", err);
+      console.error("❌ Response:", err.response?.data);
+      
+      if (err.response?.status === 401) {
+        toast.error("Unauthorized! Please login again.");
+        localStorage.removeItem("token");
+        localStorage.removeItem("admin");
+        navigate("/login");
+      } else {
+        toast.error(err.response?.data?.error || "Failed to create cabin");
+      }
       setSubmitting(false);
     } finally {
       setSubmitting(false);
@@ -1123,8 +1213,8 @@ const AdminCabins = () => {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-6 gap-3 sm:gap-4 mb-6">
+        {/* Stats Cards - Updated with Space Type stats */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
           <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
             <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Total Cabins</p>
             <p className="text-2xl font-bold text-indigo-600 mt-1">{cabins.length}</p>
@@ -1138,16 +1228,24 @@ const AdminCabins = () => {
             <p className="text-2xl font-bold text-gray-600 mt-1">{inactiveCount}</p>
           </div>
           <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Exclusive</p>
-            <p className="text-2xl font-bold text-amber-600 mt-1">{exclusiveCount}</p>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-blue-600">Normal</p>
-            <p className="text-2xl font-bold text-blue-600 mt-1">{normalCount}</p>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
             <p className="text-[10px] font-bold uppercase tracking-wider text-purple-600">With Expiry</p>
             <p className="text-2xl font-bold text-purple-600 mt-1">{withExpiryCount}</p>
+          </div>
+        </div>
+
+        {/* ─── SPACE TYPE STATS ─── */}
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          <div className="bg-emerald-50 rounded-xl border border-emerald-200 p-3 text-center">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 flex items-center justify-center gap-1">
+              <Stethoscope size={14} /> Medical Chambers
+            </p>
+            <p className="text-2xl font-bold text-emerald-700">{medicalCount}</p>
+          </div>
+          <div className="bg-blue-50 rounded-xl border border-blue-200 p-3 text-center">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-blue-600 flex items-center justify-center gap-1">
+              <Briefcase size={14} /> Co-Working Spaces
+            </p>
+            <p className="text-2xl font-bold text-blue-700">{coworkingCount}</p>
           </div>
         </div>
 
@@ -1164,7 +1262,7 @@ const AdminCabins = () => {
 
           {/* ─── MULTI FILTER PANEL ─── */}
           <div className="px-4 pt-4 pb-3 border-b border-gray-100" style={{ backgroundColor: '#fafafa' }}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
               <div>
                 <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Search</label>
                 <div className="relative">
@@ -1202,6 +1300,20 @@ const AdminCabins = () => {
                   <option value="all">All Status</option>
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
+                </select>
+              </div>
+
+              {/* ✅ NEW: Space Type Filter */}
+              <div>
+                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Space Type</label>
+                <select
+                  value={filters.spaceType}
+                  onChange={(e) => handleFilterChange('spaceType', e.target.value)}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                >
+                  <option value="all">All Spaces</option>
+                  <option value="medical">🏥 Medical Chamber</option>
+                  <option value="coworking">💼 Co-Working</option>
                 </select>
               </div>
 
@@ -1258,7 +1370,7 @@ const AdminCabins = () => {
                 <p className="text-sm">Try adjusting your filters or add a new cabin.</p>
               </div>
             ) : (
-              <table className="w-full min-w-[1300px] text-left">
+              <table className="w-full min-w-[1400px] text-left">
                 <thead>
                   <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
@@ -1266,6 +1378,7 @@ const AdminCabins = () => {
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Images</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Address</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Type</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Space</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Price</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Capacity</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
@@ -1277,6 +1390,7 @@ const AdminCabins = () => {
                   {filteredCabins.map((cabin, idx) => {
                     const isActive = cabin.isActive === true;
                     const isExclusive = cabin.cabinType === 'exclusive';
+                    const isChamber = cabin.isChamber || false;
                     const hasExpiry = cabin.expiryDate ? true : false;
                     const countdown = countdowns[cabin._id] || 0;
                     const isExpired = cabin.expiryDate && new Date(cabin.expiryDate) < new Date();
@@ -1323,6 +1437,23 @@ const AdminCabins = () => {
                                 Exclusive
                               </>
                             ) : 'Normal'}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <span className={`px-3 py-1 text-xs font-bold rounded-full inline-flex items-center gap-1 ${
+                            isChamber 
+                              ? 'bg-emerald-100 text-emerald-700' 
+                              : 'bg-blue-100 text-blue-700'
+                          }`}>
+                            {isChamber ? (
+                              <>
+                                <Stethoscope size={12} /> Medical
+                              </>
+                            ) : (
+                              <>
+                                <Briefcase size={12} /> Co-Working
+                              </>
+                            )}
                           </span>
                         </td>
                         <td className="p-4">
@@ -2318,8 +2449,7 @@ const AdminCabins = () => {
                       {editImages.map((file, index) => (
                         <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-slate-200">
                           <img src={URL.createObjectURL(file)} alt="preview" className="w-full h-full object-cover" />
-                          <button
-                            type="button"
+                          <button                            type="button"
                             onClick={() => removeEditImage(index)}
                             className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs"
                           >

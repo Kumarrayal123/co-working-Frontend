@@ -69,7 +69,6 @@ import "./Dashboard.css";
 
 const API_URL = "https://spaceapi.iryax.com";
 const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
-const GST_RATE = 0.18;
 
 // Normal Amenities
 const NORMAL_AMENITIES = [
@@ -139,13 +138,16 @@ const UserDashboard = () => {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   
-  // My Bookings data for table
-  const [myBookings, setMyBookings] = useState([]);
-  const [myCabinBookings, setMyCabinBookings] = useState([]);
-  
   // My Cabins data
   const [cabins, setCabins] = useState([]);
-  const [cabinCount, setCabinCount] = useState(0);
+  
+  // Cabin Payments data (for total spent)
+  const [cabinPayments, setCabinPayments] = useState({
+    totalAmount: 0,
+    totalOrders: 0,
+    activeOrders: 0,
+    expiredOrders: 0
+  });
   
   const navigate = useNavigate();
 
@@ -154,62 +156,36 @@ const UserDashboard = () => {
     if (userData) {
       setUser(JSON.parse(userData));
     }
-    fetchUserDashboard();
-    fetchMyBookings();
-    fetchMyCabinBookings();
-    fetchCabins();
+    fetchAllData();
   }, []);
 
-  // Fetch My Cabins
-  const fetchCabins = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) return;
-      const res = await axios.get(`${API_URL}/api/cabins/user`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = res.data.cabins || res.data;
-      const cabinList = Array.isArray(data) ? data : [];
-      setCabins(cabinList);
-      setCabinCount(cabinList.length);
-    } catch (err) {
-      console.error("Error fetching cabins:", err);
-    }
-  };
-
-  // Fetch My Bookings
-  const fetchMyBookings = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) return;
-      const res = await axios.get(
-        `${API_URL}/api/bookings/user`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setMyBookings(res.data.bookings || []);
-    } catch (error) {
-      console.error("Failed to fetch my bookings:", error);
-    }
-  };
-
-  // Fetch My Cabin Bookings
-  const fetchMyCabinBookings = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) return;
-      const res = await axios.get(
-        `${API_URL}/api/bookings/owner-bookings`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setMyCabinBookings(res.data.bookings || []);
-    } catch (error) {
-      console.error("Failed to fetch cabin bookings:", error);
-    }
-  };
-
-  const fetchUserDashboard = async () => {
+  // Fetch ALL data
+  const fetchAllData = async () => {
     setLoading(true);
     setError(null);
+    
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setError("Please login to view dashboard");
+        setLoading(false);
+        return;
+      }
+
+      await fetchUserDashboard();
+      await fetchCabins();
+      await fetchCabinPayments();
+      
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      setError("Failed to load dashboard data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // User Dashboard API Call
+  const fetchUserDashboard = async () => {
     try {
       const token = localStorage.getItem("token");
       const userData = localStorage.getItem("user");
@@ -224,7 +200,11 @@ const UserDashboard = () => {
       const data = await res.json();
 
       if (data.success) {
-        const bookings = data.data.recentBookings || [];
+        const apiData = data.data;
+        
+        const bookings = apiData.recentBookings || [];
+        const cabinBookings = apiData.recentCabinBookings || [];
+        
         const statusDist = {
           pending: 0,
           confirmed: 0,
@@ -233,52 +213,143 @@ const UserDashboard = () => {
           cancelled: 0
         };
         
-        bookings.forEach(booking => {
+        // Status distribution from cabin bookings
+        cabinBookings.forEach(booking => {
           const status = booking.status?.toLowerCase() || 'pending';
-          if (status === 'confirmed' && booking.paymentStatus === 'paid') {
-            statusDist.completed += 1;
+          if (status === 'active') {
+            statusDist.active += 1;
           } else if (status === 'confirmed') {
             statusDist.confirmed += 1;
           } else if (status === 'cancelled') {
             statusDist.cancelled += 1;
-          } else if (status === 'active') {
-            statusDist.active += 1;
+          } else if (status === 'completed') {
+            statusDist.completed += 1;
           } else {
             statusDist.pending += 1;
           }
         });
         
-        const today = new Date().toISOString().split('T')[0];
+        // Also add from recent bookings
         bookings.forEach(booking => {
-          if (booking.status === 'confirmed' && 
-              booking.startDate <= today && 
-              booking.endDate >= today) {
-            if (statusDist.confirmed > 0) {
-              statusDist.confirmed -= 1;
-              statusDist.active += 1;
-            }
+          const status = booking.status?.toLowerCase() || 'pending';
+          if (status === 'active') {
+            statusDist.active += 1;
+          } else if (status === 'confirmed') {
+            statusDist.confirmed += 1;
+          } else if (status === 'cancelled') {
+            statusDist.cancelled += 1;
+          } else if (status === 'completed') {
+            statusDist.completed += 1;
+          } else {
+            statusDist.pending += 1;
           }
         });
-
+        
+        const recentBookings = bookings.length > 0 ? bookings : cabinBookings;
+        
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+        
+        const bookingsThisMonth = [...bookings, ...cabinBookings].filter(b => {
+          const date = new Date(b.createdAt);
+          return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+        }).length;
+        
         setDashboardData({
-          ...data.data,
+          totalBookings: apiData.totalBookings || bookings.length + cabinBookings.length,
+          totalSpent: apiData.totalSpent || 0,
+          myCabinsCount: apiData.myCabinsCount || 0,
+          cabinBookingsCount: apiData.cabinBookingsCount || cabinBookings.length,
+          cabinRevenue: apiData.cabinRevenue || 0,
+          totalCabins: apiData.totalCabins || 0,
+          wallet: apiData.wallet || { balance: 0, totalEarned: 0, transactions: 0, withdrawals: 0 },
+          recentBookings: bookings, // ✅ YEH IMPORTANT HAI
+          recentCabinBookings: cabinBookings,
+          bookingChartData: apiData.bookingChartData || [],
+          monthlyStats: {
+            bookingsThisMonth: bookingsThisMonth,
+            spentThisMonth: apiData.totalSpent || 0,
+            earningsThisMonth: apiData.cabinRevenue || 0,
+            growth: 0
+          },
           statusDistribution: statusDist
         });
         
-        setOriginalBookings(bookings);
-        setFilteredBookings(bookings);
-        generateAvailableMonths(bookings);
+        setOriginalBookings(recentBookings);
+        setFilteredBookings(recentBookings);
+        generateAvailableMonths(recentBookings);
+        
       } else {
+        console.error("Dashboard API error:", data.error);
         setError(data.error || "Failed to fetch dashboard data");
       }
     } catch (err) {
-      console.error("Dashboard error:", err);
-      setError("Failed to fetch dashboard data. Please try again.");
-    } finally {
-      setLoading(false);
+      console.error("Dashboard fetch error:", err);
+      setError("Network error. Please check your connection.");
     }
   };
 
+  // Fetch My Cabins
+  const fetchCabins = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      const res = await axios.get(`${API_URL}/api/cabins/user`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = res.data.cabins || res.data;
+      const cabinList = Array.isArray(data) ? data : [];
+      setCabins(cabinList);
+      
+      setDashboardData(prev => ({
+        ...prev,
+        myCabinsCount: cabinList.length,
+        totalCabins: cabinList.reduce((sum, c) => sum + (parseInt(c.capacity) || 0), 0)
+      }));
+    } catch (err) {
+      console.error("Error fetching cabins:", err);
+      setCabins([]);
+    }
+  };
+
+  // Fetch Cabin Payments for Total Spent
+  const fetchCabinPayments = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      
+      const res = await axios.get(
+        `${API_URL}/api/cabins/my-cabinpayments`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      if (res.data.success) {
+        const stats = res.data.stats || {};
+        const totalAmount = stats.totalAmount || 0;
+        
+        setCabinPayments({
+          totalAmount,
+          totalOrders: stats.total || 0,
+          activeOrders: stats.active || 0,
+          expiredOrders: stats.expired || 0
+        });
+        
+        setDashboardData(prev => ({
+          ...prev,
+          totalSpent: totalAmount,
+          monthlyStats: {
+            ...prev.monthlyStats,
+            spentThisMonth: totalAmount
+          }
+        }));
+      }
+    } catch (error) {
+      console.error("Failed to fetch cabin payments:", error);
+    }
+  };
+
+  // Generate available months for filter
   const generateAvailableMonths = (bookings) => {
     const months = new Set();
     bookings.forEach(booking => {
@@ -298,6 +369,7 @@ const UserDashboard = () => {
     setAvailableMonths(Array.from(months).sort());
   };
 
+  // Apply filters
   const applyFilters = () => {
     let filtered = [...originalBookings];
     
@@ -346,6 +418,7 @@ const UserDashboard = () => {
     updateChartData(filtered);
   };
 
+  // Update chart data
   const updateChartData = (filtered) => {
     if (filtered.length === 0) {
       setDashboardData(prev => ({
@@ -374,6 +447,7 @@ const UserDashboard = () => {
     }));
   };
 
+  // Clear filters
   const clearFilters = () => {
     setSelectedMonth("all");
     setSelectedStatus("all");
@@ -402,18 +476,9 @@ const UserDashboard = () => {
     }
   };
 
+  // Helper functions
   const formatCurrency = (amount) => {
     return `₹${amount.toLocaleString('en-IN')}`;
-  };
-
-  const formatDate = (dateStr) => {
-    if (!dateStr) return "N/A";
-    const d = new Date(dateStr);
-    return d.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
   };
 
   const getStatusBadgeSimple = (status) => {
@@ -441,6 +506,7 @@ const UserDashboard = () => {
     return `${API_URL}/${cleanPath}`;
   };
 
+  // Loading state
   if (loading) {
     return (
       <div className="admin-dash">
@@ -453,6 +519,7 @@ const UserDashboard = () => {
     );
   }
 
+  // Error state
   if (error) {
     return (
       <div className="admin-dash">
@@ -460,11 +527,18 @@ const UserDashboard = () => {
         <div className="admin-dash__error">
           <p className="admin-dash__error-title">Oops!</p>
           <p className="admin-dash__error-message">{error}</p>
+          <button 
+            onClick={() => fetchAllData()}
+            className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+          >
+            Retry
+          </button>
         </div>
       </div>
     );
   }
 
+  // Destructure data
   const {
     totalBookings,
     totalSpent,
@@ -475,10 +549,12 @@ const UserDashboard = () => {
     wallet,
     bookingChartData,
     monthlyStats,
-    statusDistribution
+    statusDistribution,
+    recentCabinBookings,
+    recentBookings // ✅ ADDED
   } = dashboardData;
 
-  // ✅ STATS CARDS - Add Cabin Button REMOVED
+  // Stats Cards
   const statsCards = [
     {
       label: "My Bookings",
@@ -507,7 +583,7 @@ const UserDashboard = () => {
     {
       label: "Total Spent",
       value: formatCurrency(totalSpent),
-      meta: `₹${monthlyStats?.spentThisMonth || 0} this month`,
+      meta: `₹${monthlyStats?.spentThisMonth || 0} total spent`,
       icon: IndianRupee,
       iconBg: "bg-amber-100 text-amber-600"
     },
@@ -521,7 +597,7 @@ const UserDashboard = () => {
     }
   ];
 
-  // ✅ FOOTER STATS - 3 cards only (Add Cabin removed)
+  // Footer Stats
   const footerStats = [
     {
       label: "Cabin Bookings",
@@ -543,8 +619,12 @@ const UserDashboard = () => {
     }
   ];
 
-  const latestMyBookings = myBookings.slice(0, 5);
-  const latestCabinBookings = myCabinBookings.slice(0, 5);
+  // ✅ FIXED: Dashboard data se lo, NOT from myBookings
+  const latestMyBookings = recentBookings.slice(0, 5);
+  const latestCabinBookings = recentCabinBookings.slice(0, 5);
+
+  // Active bookings count
+  const activeBookingsCount = statusDistribution.active || 0;
 
   return (
     <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
@@ -556,11 +636,16 @@ const UserDashboard = () => {
           <div>
             <h1 className="admin-dash__greeting">
               <span>Dashboard</span>
+              {activeBookingsCount > 0 && (
+                <span className="ml-3 px-3 py-1 text-xs font-bold bg-green-100 text-green-700 rounded-full">
+                  {activeBookingsCount} Active Bookings
+                </span>
+              )}
             </h1>
           </div>
         </div>
 
-        {/* Row 1: 5 Stats Cards */}
+        {/* Row 1: Stats Cards */}
         <div className="admin-dash__stats">
           {statsCards.map((stat, index) => (
             <div
@@ -580,13 +665,10 @@ const UserDashboard = () => {
           ))}
         </div>
 
-        {/* Row 2: 3 Footer Stats Cards (Add Cabin REMOVED) */}
+        {/* Row 2: Footer Stats */}
         <div className="admin-dash__stats mt-4">
           {footerStats.map((stat, index) => (
-            <div
-              key={index}
-              className="admin-dash__stat"
-            >
+            <div key={index} className="admin-dash__stat">
               <div className="admin-dash__stat-top">
                 <span className="admin-dash__stat-label">{stat.label}</span>
                 <div className={`admin-dash__stat-icon ${stat.iconBg}`}>
@@ -596,10 +678,7 @@ const UserDashboard = () => {
               <div className="admin-dash__stat-value">{stat.value}</div>
             </div>
           ))}
-          {/* ❌ ADD CABIN BUTTON REMOVED - Empty space for consistency */}
-          <div className="admin-dash__stat" style={{ visibility: 'hidden' }}>
-            {/* Hidden placeholder to maintain grid layout */}
-          </div>
+          <div className="admin-dash__stat" style={{ visibility: 'hidden' }}></div>
         </div>
 
         {/* Row 3: Filter Section */}
@@ -612,7 +691,9 @@ const UserDashboard = () => {
                 </div>
                 <div>
                   <h4 className="text-xs font-bold text-gray-800">Filter Analytics</h4>
-                  <p className="text-[8px] text-gray-400 font-bold uppercase tracking-widest">Select Filters</p>
+                  <p className="text-[8px] text-gray-400 font-bold uppercase tracking-widest">
+                    {filteredBookings.length} bookings found
+                  </p>
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
@@ -711,7 +792,9 @@ const UserDashboard = () => {
                     );
                   })
                 ) : (
-                  <div className="w-full text-center text-slate-400 text-sm">No data available</div>
+                  <div className="w-full text-center text-slate-400 text-sm py-8">
+                    No booking data available
+                  </div>
                 )}
               </div>
               <div className="flex justify-between mt-3 text-[10px] text-slate-400 bg-slate-50 rounded-xl px-3 py-2">
@@ -737,14 +820,12 @@ const UserDashboard = () => {
                 {cabins.length}
               </span>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                onClick={() => navigate("/mycabin")}
-                className="text-xs font-medium text-indigo-600 hover:text-indigo-800 transition-colors flex items-center gap-1 bg-indigo-50 px-3 py-1.5 rounded-lg hover:bg-indigo-100"
-              >
-                View All <ArrowUpRight size={12} />
-              </button>
-            </div>
+            <button
+              onClick={() => navigate("/mycabin")}
+              className="text-xs font-medium text-indigo-600 hover:text-indigo-800 transition-colors flex items-center gap-1 bg-indigo-50 px-3 py-1.5 rounded-lg hover:bg-indigo-100"
+            >
+              View All <ArrowUpRight size={12} />
+            </button>
           </div>
           <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
             {cabins.length === 0 ? (
@@ -833,7 +914,7 @@ const UserDashboard = () => {
           </div>
         </div>
 
-        {/* Row 6: My Latest Bookings Table */}
+        {/* ✅ Row 6: My Latest Bookings - FIXED - Dashboard data use karo */}
         <div className="admin-dash__card mt-4" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
           <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
             <div className="flex items-center gap-3">
@@ -854,6 +935,7 @@ const UserDashboard = () => {
               <div className="flex flex-col items-center justify-center gap-3 py-12 text-gray-400">
                 <Calendar size={36} className="opacity-20" />
                 <p className="text-sm font-medium">No bookings found</p>
+                <p className="text-xs text-gray-400">You haven't made any bookings yet.</p>
               </div>
             ) : (
               <table className="w-full min-w-[700px] text-left">
@@ -876,21 +958,22 @@ const UserDashboard = () => {
                         </td>
                         <td className="p-3">
                           <div>
-                            <p className="font-semibold text-gray-900 text-sm">{b.cabinId?.name || 'Unknown'}</p>
+                            {/* ✅ Dashboard data mein cabinName already hai */}
+                            <p className="font-semibold text-gray-900 text-sm">{b.cabinName || 'Unknown'}</p>
                             <p className="text-[10px] text-gray-400 flex items-center gap-1">
-                              <MapPin size={10} /> {b.cabinId?.address?.split(',')[0] || 'N/A'}
+                              <MapPin size={10} /> {b.address || 'N/A'}
                             </p>
                           </div>
                         </td>
                         <td className="p-3">
-                          <p className="text-sm text-gray-700">{b.startDate}</p>
-                          <p className="text-[10px] text-gray-400">{b.startTime} - {b.endTime}</p>
+                          <p className="text-sm text-gray-700">{b.startDate || b.date}</p>
+                          <p className="text-[10px] text-gray-400">{b.startTime || ''} {b.endTime ? `- ${b.endTime}` : ''}</p>
                         </td>
                         <td className="p-3">
                           <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full ${status.color}`}>{status.label}</span>
                         </td>
                         <td className="p-3">
-                          <span className="text-sm font-bold text-indigo-600">₹{b.totalPrice}</span>
+                          <span className="text-sm font-bold text-indigo-600">₹{b.amount || b.totalPrice || 0}</span>
                         </td>
                       </tr>
                     );
@@ -901,13 +984,13 @@ const UserDashboard = () => {
           </div>
         </div>
 
-        {/* Row 7: My Cabin Bookings Table */}
+        {/* Row 7: My Cabin Bookings */}
         <div className="admin-dash__card mt-4" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
           <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
             <div className="flex items-center gap-3">
               <h3 className="admin-dash__card-title text-sm">My Cabin Bookings</h3>
               <span className="px-2.5 py-0.5 text-xs font-bold text-amber-700 bg-amber-100 rounded-full">
-                {latestCabinBookings.length}
+                {recentCabinBookings.length}
               </span>
             </div>
             <button
@@ -918,10 +1001,11 @@ const UserDashboard = () => {
             </button>
           </div>
           <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
-            {latestCabinBookings.length === 0 ? (
+            {recentCabinBookings.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-3 py-12 text-gray-400">
                 <Building2 size={36} className="opacity-20" />
                 <p className="text-sm font-medium">No cabin bookings found</p>
+                <p className="text-xs text-gray-400">No one has booked your cabins yet.</p>
               </div>
             ) : (
               <table className="w-full min-w-[700px] text-left">
@@ -936,7 +1020,7 @@ const UserDashboard = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {latestCabinBookings.map((b, idx) => {
+                  {recentCabinBookings.slice(0, 5).map((b, idx) => {
                     const status = getStatusBadgeSimple(b.status);
                     return (
                       <tr key={b._id} className="transition-colors hover:bg-gray-50/80 cursor-pointer" onClick={() => navigate("/cabin-bookings")}>
@@ -945,25 +1029,29 @@ const UserDashboard = () => {
                         </td>
                         <td className="p-3">
                           <div>
-                            <p className="font-semibold text-gray-900 text-sm">{b.cabinId?.name || 'Unknown'}</p>
+                            <p className="font-semibold text-gray-900 text-sm">{b.cabinName || 'Unknown Cabin'}</p>
                             <p className="text-[10px] text-gray-400 flex items-center gap-1">
-                              <MapPin size={10} /> {b.cabinId?.address?.split(',')[0] || 'N/A'}
+                              <MapPin size={10} /> {b.address || 'N/A'}
                             </p>
                           </div>
                         </td>
                         <td className="p-3">
-                          <p className="font-medium text-gray-800 text-sm">{b.name || b.userId?.name || 'Unknown'}</p>
-                          <p className="text-[10px] text-gray-400">{b.mobile || b.userId?.mobile || 'N/A'}</p>
+                          <p className="font-medium text-gray-800 text-sm">{b.name || 'Unknown'}</p>
+                          <p className="text-[10px] text-gray-400">{b.mobile || b.email || 'N/A'}</p>
                         </td>
                         <td className="p-3">
-                          <p className="text-sm text-gray-700">{b.startDate}</p>
-                          <p className="text-[10px] text-gray-400">{b.startTime} - {b.endTime}</p>
+                          <p className="text-sm text-gray-700">{b.startDate || 'N/A'}</p>
+                          <p className="text-[10px] text-gray-400">
+                            {b.startTime || ''} {b.endTime ? `- ${b.endTime}` : ''}
+                          </p>
                         </td>
                         <td className="p-3">
-                          <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full ${status.color}`}>{status.label}</span>
+                          <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full ${status.color}`}>
+                            {status.label}
+                          </span>
                         </td>
                         <td className="p-3">
-                          <span className="text-sm font-bold text-amber-600">₹{b.totalPrice}</span>
+                          <span className="text-sm font-bold text-amber-600">₹{b.amount || b.totalPrice || 0}</span>
                         </td>
                       </tr>
                     );

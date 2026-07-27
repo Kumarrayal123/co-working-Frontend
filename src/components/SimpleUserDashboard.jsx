@@ -15,7 +15,9 @@ import {
   ChevronDown,
   Filter,
   Search,
-  X as XIcon
+  X as XIcon,
+  RefreshCw,
+  FileDown
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -70,6 +72,8 @@ function SimpleUserDashboard() {
       );
 
       const bookingsData = res.data.bookings || [];
+      console.log("📦 Bookings Data:", bookingsData);
+      
       setBookings(bookingsData);
       setFilteredBookings(bookingsData);
       
@@ -127,8 +131,8 @@ function SimpleUserDashboard() {
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase().trim();
       filtered = filtered.filter(b => {
-        const cabinName = b.cabinId?.name?.toLowerCase() || '';
-        const address = b.cabinId?.address?.toLowerCase() || '';
+        const cabinName = b.cabin?.name?.toLowerCase() || '';
+        const address = b.cabin?.address?.toLowerCase() || '';
         const customerName = b.name?.toLowerCase() || '';
         return cabinName.includes(term) || address.includes(term) || customerName.includes(term);
       });
@@ -157,6 +161,18 @@ function SimpleUserDashboard() {
     });
   };
 
+  const formatDateTime = (dateStr) => {
+    if (!dateStr) return "N/A";
+    const d = new Date(dateStr);
+    return d.toLocaleString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   const getStatusBadge = (status, paymentStatus) => {
     const statusMap = {
       pending: { label: 'Pending', color: 'bg-yellow-100 text-yellow-700' },
@@ -172,8 +188,202 @@ function SimpleUserDashboard() {
     return statusMap[key] || { label: status || 'Unknown', color: 'bg-gray-100 text-gray-700' };
   };
 
+  const getPaymentMethodBadge = (method) => {
+    if (method === 'cash' || method === 'counter') {
+      return { label: 'Cash', color: 'bg-orange-100 text-orange-700' };
+    }
+    return { label: 'Online', color: 'bg-blue-100 text-blue-700' };
+  };
+
+  const getPaymentStatusBadge = (status) => {
+    if (status === 'paid') return { label: 'Paid', color: 'bg-emerald-100 text-emerald-700' };
+    if (status === 'failed') return { label: 'Failed', color: 'bg-red-100 text-red-700' };
+    if (status === 'refunded') return { label: 'Refunded', color: 'bg-purple-100 text-purple-700' };
+    return { label: 'Pending', color: 'bg-yellow-100 text-yellow-700' };
+  };
+
   const formatCurrency = (amount) => {
     return `₹${Number(amount).toLocaleString('en-IN')}`;
+  };
+
+  // ✅ Navigate to booking details
+  const handleViewBooking = (booking) => {
+    navigate(`/booking/${booking._id}`);
+  };
+
+  // ✅ Download invoice
+  const downloadInvoice = (booking) => {
+    try {
+      const cabin = booking.cabin || {};
+      const owner = cabin.owner || {};
+      
+      const win = window.open('', '_blank', 'width=900,height=700');
+      if (!win) {
+        toast.error('Please allow popups');
+        return;
+      }
+      
+      let seatListHtml = '';
+      if (booking.selectedSeats && booking.selectedSeats.length > 0) {
+        seatListHtml = booking.selectedSeats.map(s => 
+          `<span style="display:inline-block;background:#f0fdf4;padding:4px 12px;border-radius:12px;margin:3px;font-size:12px;border:1px solid #86efac;">${s.name} (#${s.number})</span>`
+        ).join('');
+      }
+
+      const status = getStatusBadge(booking.status, booking.paymentStatus);
+      const pmtMethod = getPaymentMethodBadge(booking.paymentMethod);
+      const pmtStatus = getPaymentStatusBadge(booking.paymentStatus);
+
+      win.document.write(`
+        <html><head><title>Invoice #${booking._id.slice(-8).toUpperCase()}</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: 'Segoe UI', Arial, sans-serif; padding: 30px; max-width: 900px; margin: auto; background: #f8fafc; }
+          .invoice-wrapper { background: white; border-radius: 16px; padding: 35px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+          .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; border-bottom: 3px solid #e2e8f0; margin-bottom: 25px; }
+          .header-left h1 { color: #4f46e5; font-size: 26px; margin: 0; }
+          .header-left p { color: #64748b; font-size: 13px; margin-top: 4px; }
+          .header-right { text-align: right; }
+          .header-right .invoice-no { font-size: 14px; font-weight: 700; color: #1e293b; }
+          .header-right .invoice-date { font-size: 12px; color: #64748b; }
+          .badge { display: inline-block; padding: 3px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+          .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; background: #f8fafc; padding: 20px; border-radius: 12px; margin-bottom: 25px; }
+          .info-item .label { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+          .info-item .value { font-size: 14px; font-weight: 600; color: #1e293b; margin-top: 3px; }
+          .seat-section { background: #f0fdf4; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #bbf7d0; }
+          .seat-section .seat-title { font-size: 12px; font-weight: 700; color: #166534; }
+          .breakdown-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+          .breakdown-table th { text-align: left; padding: 10px 12px; font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; }
+          .breakdown-table td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; color: #1e293b; }
+          .breakdown-table .amount { font-weight: 600; text-align: right; }
+          .breakdown-table .total-row td { font-weight: 700; font-size: 16px; border-top: 2px solid #4f46e5; padding-top: 15px; }
+          .breakdown-table .total-row .amount { font-size: 18px; color: #4f46e5; }
+          .payment-details { background: #f1f5f9; padding: 15px; border-radius: 12px; margin: 15px 0; }
+          .payment-details h4 { font-size: 12px; color: #64748b; margin-bottom: 8px; }
+          .payment-details .detail-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; }
+          .status-section { display: flex; gap: 15px; flex-wrap: wrap; margin: 20px 0; padding: 15px; background: #f8fafc; border-radius: 12px; }
+          .status-item { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+          .status-item .label { color: #64748b; font-weight: 500; }
+          .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 2px solid #e2e8f0; color: #94a3b8; font-size: 11px; }
+          .footer .brand { font-weight: 700; color: #4f46e5; }
+          @media print { body { background: white; padding: 20px; } .invoice-wrapper { box-shadow: none; padding: 20px; } }
+        </style>
+        </head><body>
+        <div class="invoice-wrapper">
+          <div class="header">
+            <div class="header-left">
+              <h1>${owner.organizationName || 'IRYAX SPACE'}</h1>
+              <p>${owner.address || 'Premium Workspaces'}</p>
+            </div>
+            <div class="header-right">
+              <div class="invoice-no">#${booking._id.slice(-8).toUpperCase()}</div>
+              <div class="invoice-date">${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+            </div>
+          </div>
+
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="label">Bill To</div>
+              <div class="value">${booking.name || 'Customer'}</div>
+              <div style="font-size:12px;color:#64748b;">${booking.mobile || 'N/A'}</div>
+              <div style="font-size:12px;color:#64748b;">${booking.email || 'N/A'}</div>
+            </div>
+            <div class="info-item">
+              <div class="label">Cabin Details</div>
+              <div class="value">${cabin.name || 'Unknown'}</div>
+              <div style="font-size:12px;color:#64748b;">${cabin.address || 'N/A'}</div>
+              <div style="font-size:12px;color:#64748b;">Type: ${cabin.cabinType || 'Normal'}</div>
+            </div>
+          </div>
+
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="label">Start</div>
+              <div class="value">${formatDate(booking.startDate)}</div>
+              <div style="font-size:12px;color:#4f46e5;font-weight:600;">${booking.startTime}</div>
+            </div>
+            <div class="info-item">
+              <div class="label">End</div>
+              <div class="value">${formatDate(booking.endDate)}</div>
+              <div style="font-size:12px;color:#4f46e5;font-weight:600;">${booking.endTime}</div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:20px;padding:10px;background:#f1f5f9;border-radius:8px;">
+            <div><strong>Total Hours:</strong> ${booking.totalHours}h</div>
+            <div><strong>Booking Type:</strong> ${booking.bookingBasis || 'Hourly'}</div>
+            ${booking.selectedPlan ? `<div><strong>Plan:</strong> ${booking.selectedPlan.label || 'N/A'}</div>` : ''}
+            <div><strong>Created:</strong> ${formatDateTime(booking.createdAt)}</div>
+          </div>
+
+          ${booking.selectedSeats && booking.selectedSeats.length > 0 ? `
+            <div class="seat-section">
+              <div class="seat-title">🪑 Selected Seats (${booking.seatCount})</div>
+              <div style="margin-top:8px;">${seatListHtml}</div>
+              <div style="margin-top:6px;font-size:12px;color:#166534;">Extra Charge: ₹${booking.extraCharge || 0}</div>
+            </div>
+          ` : ''}
+
+          <h3 style="font-size:14px;color:#1e293b;margin-bottom:10px;">Price Breakdown</h3>
+          <table class="breakdown-table">
+            <thead>
+              <tr><th>Description</th><th style="text-align:right;">Amount</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Subtotal (${booking.totalHours}h × ₹${cabin.price || 0})</td>
+                <td class="amount">₹${(booking.subtotal || 0).toFixed(2)}</td>
+              </tr>
+              ${booking.extraCharge > 0 ? `
+                <tr>
+                  <td>Seat Charges (${booking.seatCount} seats × ₹${booking.seatExtraChargePerSeat || 100})</td>
+                  <td class="amount">₹${(booking.extraCharge || 0).toFixed(2)}</td>
+                </tr>
+              ` : ''}
+              <tr>
+                <td>GST (${(booking.gstRate || 0.18) * 100}%)</td>
+                <td class="amount">₹${(booking.gstAmount || 0).toFixed(2)}</td>
+              </tr>
+              <tr class="total-row">
+                <td>Total Amount</td>
+                <td class="amount">₹${(booking.totalPrice || 0).toFixed(2)}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          ${booking.transactionId || booking.paymentDetails?.transactionId ? `
+            <div class="payment-details">
+              <h4>💳 Payment Details</h4>
+              <div class="detail-row"><span>Transaction ID:</span> <strong>${booking.transactionId || booking.paymentDetails?.transactionId || 'N/A'}</strong></div>
+              ${booking.paymentDetails?.upiId ? `<div class="detail-row"><span>UPI ID:</span> <strong>${booking.paymentDetails.upiId}</strong></div>` : ''}
+              ${booking.paymentDetails?.upiApp ? `<div class="detail-row"><span>UPI App:</span> <strong>${booking.paymentDetails.upiApp}</strong></div>` : ''}
+              ${booking.paymentDetails?.paymentDate ? `<div class="detail-row"><span>Payment Date:</span> <strong>${formatDate(booking.paymentDetails.paymentDate)}</strong></div>` : ''}
+              <div class="detail-row"><span>Payment Mode:</span> <strong>${pmtMethod.label}</strong></div>
+            </div>
+          ` : ''}
+
+          <div class="status-section">
+            <div class="status-item"><span class="label">Status:</span> <span class="badge ${status.color}">${status.label}</span></div>
+            <div class="status-item"><span class="label">Payment:</span> <span class="badge ${pmtMethod.color}">${pmtMethod.label}</span></div>
+            <div class="status-item"><span class="label">Payment Status:</span> <span class="badge ${pmtStatus.color}">${pmtStatus.label}</span></div>
+            ${booking.isPaidToOwner ? `<div class="status-item"><span class="label">Paid to Owner:</span> <span class="badge bg-emerald-100 text-emerald-700">✅ Yes</span></div>` : ''}
+          </div>
+
+          <div class="footer">
+            <span class="brand">IRYAX SPACE</span> — Premium Workspaces<br>
+            Created: ${formatDateTime(booking.createdAt)}<br>
+            This is a system generated invoice. Terms & Conditions apply.
+          </div>
+        </div>
+        </body></html>
+      `);
+      win.document.close();
+      win.focus();
+      toast.success('Invoice generated! Click Print to save as PDF.');
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to generate invoice');
+    }
   };
 
   if (loading) {
@@ -216,10 +426,9 @@ function SimpleUserDashboard() {
     <div className="min-h-screen bg-gray-50">
       <SimpleUserNavbar />
 
-      {/* Full width container - NO left/right padding restrictions */}
       <div className="pt-24 px-4 sm:px-6 md:px-8 max-w-full mx-auto pb-16">
         
-        {/* Header - Full Width */}
+        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">My Bookings</h1>
@@ -227,7 +436,7 @@ function SimpleUserDashboard() {
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => navigate("/spaces")}
+              onClick={() => navigate("/spaceforusers")}
               className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition flex items-center gap-2 shadow-sm shadow-indigo-200"
             >
               <Building2 size={16} />
@@ -236,7 +445,7 @@ function SimpleUserDashboard() {
           </div>
         </div>
 
-        {/* Stats Cards - Full width with proper spacing */}
+        {/* Stats Cards */}
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3 mb-4">
           <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-100 text-center">
             <p className="text-[9px] sm:text-[10px] text-gray-500 font-medium uppercase tracking-wider">Total</p>
@@ -264,7 +473,7 @@ function SimpleUserDashboard() {
           </div>
         </div>
 
-        {/* Filters - Full width */}
+        {/* Filters */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-3 mb-4">
           <div className="flex flex-col sm:flex-row gap-2">
             <div className="flex-1 relative">
@@ -306,7 +515,7 @@ function SimpleUserDashboard() {
           </div>
         </div>
 
-        {/* Bookings Table - Full width with no padding constraints */}
+        {/* Bookings Table */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
           {filteredBookings.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-gray-400">
@@ -317,7 +526,7 @@ function SimpleUserDashboard() {
               </p>
               {bookings.length === 0 && (
                 <button
-                  onClick={() => navigate("/spaces")}
+                  onClick={() => navigate("/spaceforusers")}
                   className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition"
                 >
                   Browse Spaces
@@ -334,7 +543,7 @@ function SimpleUserDashboard() {
                     <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Date &amp; Time</th>
                     <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Status</th>
                     <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Amount</th>
-                    <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase text-center">Action</th>
+                    <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -347,38 +556,64 @@ function SimpleUserDashboard() {
                         </td>
                         <td className="px-3 py-2.5">
                           <div>
+                            {/* ✅ FIXED: booking.cabin use karo, NOT booking.cabinId */}
                             <p className="font-semibold text-gray-900 text-sm">
-                              {booking.cabinId?.name || 'Unknown Cabin'}
+                              {booking.cabin?.name || 'Unknown Cabin'}
                             </p>
                             <p className="text-[9px] text-gray-400 flex items-center gap-0.5">
                               <MapPin size={9} />
-                              {booking.cabinId?.address?.split(',')[0] || 'N/A'}
+                              {booking.cabin?.address?.split(',')[0] || 'N/A'}
+                            </p>
+                            <p className="text-[8px] text-gray-400">
+                              Owner: {booking.cabin?.owner?.name || 'N/A'}
                             </p>
                           </div>
                         </td>
                         <td className="px-3 py-2.5">
                           <p className="text-sm text-gray-700">{formatDate(booking.startDate)}</p>
                           <p className="text-[9px] text-gray-400">
-                            {booking.startTime} - {booking.endTime}
+                            {booking.startTime} - {booking.endTime} ({booking.totalHours}h)
                           </p>
                         </td>
                         <td className="px-3 py-2.5">
                           <span className={`px-2.5 py-0.5 text-[9px] font-bold rounded-full ${status.color}`}>
                             {status.label}
                           </span>
+                          {booking.paymentStatus && (
+                            <span className={`ml-1 px-2 py-0.5 text-[8px] font-bold rounded-full ${
+                              booking.paymentStatus === 'paid' ? 'bg-emerald-100 text-emerald-700' : 
+                              booking.paymentStatus === 'failed' ? 'bg-red-100 text-red-700' : 
+                              'bg-yellow-100 text-yellow-700'
+                            }`}>
+                              {booking.paymentStatus}
+                            </span>
+                          )}
                         </td>
                         <td className="px-3 py-2.5">
                           <span className="text-sm font-bold text-indigo-600">
                             {formatCurrency(booking.totalPrice)}
                           </span>
+                          {booking.extraCharge > 0 && (
+                            <p className="text-[8px] text-amber-500">+₹{booking.extraCharge} seat</p>
+                          )}
                         </td>
                         <td className="px-3 py-2.5 text-center">
-                          <button
-                            onClick={() => navigate(`/booking/${booking._id}`)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-[9px] font-medium hover:bg-indigo-100 transition"
-                          >
-                            <Eye size={11} /> View
-                          </button>
+                          <div className="flex items-center justify-center gap-1">
+                            <button
+                              onClick={() => handleViewBooking(booking)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-[9px] font-medium hover:bg-indigo-100 transition"
+                              title="View Details"
+                            >
+                              <Eye size={11} /> View
+                            </button>
+                            <button
+                              onClick={() => downloadInvoice(booking)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-[9px] font-medium hover:bg-emerald-100 transition"
+                              title="Download Invoice"
+                            >
+                              <FileDown size={11} /> Invoice
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );

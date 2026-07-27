@@ -17,7 +17,7 @@ import {
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import logo from "../assets/logo.png"; // Import logo
+import logo from "../assets/logo.png";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -28,64 +28,140 @@ function Login() {
   const [rememberMe, setRememberMe] = useState(false);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [userName, setUserName] = useState("");
+  const [userRole, setUserRole] = useState("");
+  const [userId, setUserId] = useState("");
   const navigate = useNavigate();
+
+  // ✅ Log all localStorage data on page load
+  useEffect(() => {
+    console.log("========== LOGIN PAGE LOADED ==========");
+    const token = localStorage.getItem("token");
+    const user = localStorage.getItem("user");
+    const admin = localStorage.getItem("admin");
+    
+    console.log("🔑 Token:", token ? "✅ Present" : "❌ Not found");
+    console.log("👤 User data:", user ? JSON.parse(user) : "❌ Not found");
+    console.log("👑 Admin data:", admin ? JSON.parse(admin) : "❌ Not found");
+    
+    if (user) {
+      const userData = JSON.parse(user);
+      console.log("📋 User Details:");
+      console.log("  - ID:", userData._id);
+      console.log("  - Name:", userData.name);
+      console.log("  - Email:", userData.email);
+      console.log("  - Role:", userData.role);
+    }
+    console.log("========================================");
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
+    console.log("========================================");
+    console.log("🔐 LOGIN ATTEMPT");
+    console.log("📧 Email:", email);
+    console.log("========================================");
+
     try {
-      // First try admin login with hardcoded credentials
-      if (email === "saidulureddy@gmail.com" && password === "reddy123") {
-        const token = "mocked-admin-token-for-saidulu";
-        const adminData = {
-          _id: "68ebe9ee8f06d33ee022d665",
-          name: "Saidulu Reddy",
-          email: "saidulureddy@gmail.com",
-          role: "admin"
-        };
-
-        localStorage.setItem("token", token);
-        localStorage.setItem("admin", JSON.stringify(adminData));
-        
-        setUserName(adminData.name);
-        setShowSuccessPopup(true);
-        setLoading(false);
-        
-        setTimeout(() => {
-          setShowSuccessPopup(false);
-          navigate("/admindashboard");
-        }, 2000);
-        return;
-      }
-
-      // If not admin, try user login with backend API
+      // ✅ ALL LOGIN VIA API - NO HARDCODE
+      console.log("👤 Attempting login via API...");
       const res = await axios.post("https://spaceapi.iryax.com/api/auth/login", {
         email,
         password
       });
 
+      console.log("📡 Login API Response:", res.data);
+
       const { token, user } = res.data;
+      
+      console.log("📋 User Data from API:");
+      console.log("  - ID:", user._id);
+      console.log("  - Name:", user.name);
+      console.log("  - Email:", user.email);
+      console.log("  - Role:", user.role);
+      console.log("  - Mobile:", user.mobile);
+      console.log("  - Address:", user.address);
+
+      // ✅ Clear any existing data
+      localStorage.removeItem("admin");
+      localStorage.removeItem("user");
+      
+      // ✅ Store token
       localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user));
+      
+      // ✅ Store data based on role
+      if (user.role === "admin") {
+        const adminData = {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role
+        };
+        localStorage.setItem("admin", JSON.stringify(adminData));
+        console.log("👑 Admin data stored:", adminData);
+      } else {
+        // ✅ Regular user/cabinOwner data
+        localStorage.setItem("user", JSON.stringify(user));
+        console.log("👤 User data stored:", user);
+      }
+      
+      console.log("🆔 ID stored:", user._id);
+      console.log("👤 Role stored:", user.role);
       
       setUserName(user.name || "User");
+      setUserRole(user.role || "user");
+      setUserId(user._id);
       setShowSuccessPopup(true);
       setLoading(false);
       
+      // ✅ ROLE BASED REDIRECT - FIXED
+      let redirectPath = "/spaceforusers"; // default for regular users
+      let roleDisplay = "User";
+      
+      if (user.role === "admin") {
+        redirectPath = "/admindashboard";
+        roleDisplay = "Admin";
+        console.log("👑 ADMIN LOGIN! Redirecting to /admindashboard");
+      } else if (user.role === "cabinOwner") {
+        redirectPath = "/ownerdashboard";
+        roleDisplay = "Cabin Owner";
+        console.log("🏪 CABIN OWNER LOGIN! Redirecting to /ownerdashboard");
+      } else if (user.role === "user") {
+        redirectPath = "/spaceforusers";
+        roleDisplay = "User";
+        console.log("👤 USER LOGIN! Redirecting to /spaceforusers");
+      } else {
+        redirectPath = "/spaceforusers";
+        roleDisplay = "User";
+        console.log("👤 DEFAULT USER! Redirecting to /spaceforusers");
+      }
+      
+      console.log(`🔀 Redirecting to: ${redirectPath} (Role: ${roleDisplay})`);
+      console.log("========================================");
+      
+      // ✅ Show toast based on role
+      if (user.role === "admin") {
+        toast.success(`👑 Welcome Admin! ${user.name}`);
+      } else if (user.role === "cabinOwner") {
+        toast.success(`🏪 Welcome Cabin Owner! ${user.name}`);
+      } else {
+        toast.success(`👤 Welcome ${user.name}!`);
+      }
+      
+      // ✅ Navigate after 2 seconds
       setTimeout(() => {
         setShowSuccessPopup(false);
-        // ✅ Redirect based on role
-        if (user.role === "cabinOwner") {
-          navigate("/ownerdashboard");
-        } else {
-          navigate("/userdashboard");
-        }
+        console.log(`🚀 Navigating to: ${redirectPath}`);
+        navigate(redirectPath);
       }, 2000);
       
     } catch (err) {
-      console.error("Login Error:", err);
+      console.error("❌ LOGIN ERROR:", err);
+      console.error("❌ Error Response:", err.response?.data);
+      console.error("❌ Error Message:", err.message);
+      
       const errorMsg =
         err.response?.data?.message ||
         err.message ||
@@ -93,6 +169,7 @@ function Login() {
       setError(errorMsg);
       toast.error(errorMsg);
       setLoading(false);
+      console.log("========================================");
     }
   };
 
@@ -285,7 +362,6 @@ function Login() {
           }}
         >
           <div className="bg-gradient-to-br from-emerald-500/20 via-blue-500/20 to-indigo-500/20 backdrop-blur-xl border border-white/20 rounded-2xl p-8 max-w-sm w-full mx-4 shadow-2xl animate-in zoom-in-95 duration-300">
-            {/* Success Animation */}
             <div className="text-center">
               <div className="relative inline-flex items-center justify-center w-20 h-20 mb-4">
                 <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping"></div>
@@ -301,13 +377,29 @@ function Login() {
               <p className="text-white/60 text-sm font-light mt-1">
                 {userName || "User"}
               </p>
+              
+              {/* ✅ Show User Details in Popup */}
+              <div className="mt-2 bg-white/10 backdrop-blur-sm rounded-lg p-2 text-left text-xs">
+                <p className="text-white/50">
+                  <span className="text-white/70 font-medium">ID:</span> {userId || "N/A"}
+                </p>
+                <p className="text-white/50">
+                  <span className="text-white/70 font-medium">Role:</span> {userRole || "N/A"}
+                </p>
+                <p className="text-white/50">
+                  <span className="text-white/70 font-medium">Email:</span> {email || "N/A"}
+                </p>
+              </div>
+              
               <div className="mt-2 flex items-center justify-center gap-2">
                 <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce"></span>
                 <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce delay-150"></span>
                 <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce delay-300"></span>
               </div>
               <p className="text-white/30 text-xs font-light mt-3 tracking-wider">
-                Redirecting to dashboard...
+                {userRole === "admin" ? "👑 Redirecting to Admin Dashboard..." : 
+                 userRole === "cabinOwner" ? "🏪 Redirecting to Owner Dashboard..." : 
+                 "👤 Redirecting to User Dashboard..."}
               </p>
               
               {/* Loading Progress Bar */}

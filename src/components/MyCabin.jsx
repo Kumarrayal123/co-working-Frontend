@@ -205,19 +205,57 @@ const MyCabin = () => {
     return { headers: { Authorization: `Bearer ${token}` } };
   };
 
+  // ✅ LOGGING: Fetch cabins with user info
   const fetchCabins = async () => {
+    console.log("========================================");
+    console.log("📋 FETCHING CABINS");
+    
+    // Log current user from localStorage
+    const userStr = localStorage.getItem("user");
+    const adminStr = localStorage.getItem("admin");
+    
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      console.log("👤 Current User:", {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      });
+    } else if (adminStr) {
+      const admin = JSON.parse(adminStr);
+      console.log("👑 Current Admin:", {
+        id: admin._id,
+        name: admin.name,
+        role: admin.role
+      });
+    } else {
+      console.log("❌ No user or admin found in localStorage!");
+    }
+    console.log("========================================");
+    
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
       if (!token) {
+        console.log("❌ No token found, redirecting to login");
         setLoading(false);
         navigate("/login");
         return;
       }
 
+      console.log("🔑 Token found, fetching cabins...");
       const res = await axios.get(`${API_URL}/api/cabins/user`, getAuthHeader());
       const data = res.data.cabins || res.data;
       const cabinList = Array.isArray(data) ? data : [];
+      
+      console.log(`📦 Fetched ${cabinList.length} cabins`);
+      
+      // Log each cabin's owner
+      cabinList.forEach((cabin, index) => {
+        console.log(`  Cabin ${index + 1}: "${cabin.name}" - Owner: ${cabin.owner || 'No owner'}`);
+      });
+      
       setCabins(cabinList);
       setCabinCount(cabinList.length);
       
@@ -233,8 +271,12 @@ const MyCabin = () => {
       });
       setCountdowns(initialCountdowns);
       
+      console.log("✅ Cabin fetch complete");
+      console.log("========================================");
+      
     } catch (err) {
-      console.error("Error fetching cabins:", err);
+      console.error("❌ Error fetching cabins:", err);
+      console.error("❌ Error Response:", err.response?.data);
       toast.error("Failed to fetch cabins");
     } finally {
       setLoading(false);
@@ -545,7 +587,46 @@ const MyCabin = () => {
     }
   };
 
+  // ✅ LOGGING: Create cabin with detailed logs
   const createCabinAndOrder = async () => {
+    console.log("========================================");
+    console.log("🏪 CREATING NEW CABIN");
+    
+    // Get current user from localStorage
+    const userStr = localStorage.getItem("user");
+    const adminStr = localStorage.getItem("admin");
+    
+    let currentUser = null;
+    let userId = null;
+    let userRole = null;
+    
+    if (userStr) {
+      currentUser = JSON.parse(userStr);
+      userId = currentUser._id || currentUser.id;
+      userRole = currentUser.role;
+      console.log("👤 Current User from localStorage:");
+      console.log("  - ID:", userId);
+      console.log("  - Name:", currentUser.name);
+      console.log("  - Email:", currentUser.email);
+      console.log("  - Role:", userRole);
+    } else if (adminStr) {
+      currentUser = JSON.parse(adminStr);
+      userId = currentUser._id || currentUser.id;
+      userRole = currentUser.role;
+      console.log("👑 Current Admin from localStorage:");
+      console.log("  - ID:", userId);
+      console.log("  - Name:", currentUser.name);
+      console.log("  - Role:", userRole);
+    } else {
+      console.log("❌ No user or admin found in localStorage!");
+      toast.error("Please login again");
+      setSubmitting(false);
+      return;
+    }
+    
+    console.log("🆔 User ID to be used as owner:", userId);
+    console.log("========================================");
+    
     setSubmitting(true);
     const data = new FormData();
     const cabinName = formData.cabin ? `${formData.name} - ${formData.cabin}` : formData.name;
@@ -560,9 +641,21 @@ const MyCabin = () => {
     data.append("seats", JSON.stringify(seats));
     images.forEach((img) => data.append("images", img));
 
+    console.log("📋 Cabin Data being sent:");
+    console.log("  - Name:", cabinName);
+    console.log("  - Address:", formData.address);
+    console.log("  - Price:", formData.price);
+    console.log("  - Capacity:", formData.capacity);
+    console.log("  - Type:", formData.cabinType);
+    console.log("  - Seats:", seats.length);
+    console.log("  - Images:", images.length);
+    console.log("  - Pricing Plans:", pricingPlans.length);
+
     try {
       const token = localStorage.getItem("token");
+      console.log("🔑 Token present:", token ? "✅ Yes" : "❌ No");
       
+      console.log("📡 Sending POST request to create cabin...");
       const cabinRes = await axios.post(`${API_URL}/api/cabins`, data, {
         headers: { 
           Authorization: `Bearer ${token}`,
@@ -571,6 +664,26 @@ const MyCabin = () => {
       });
 
       const newCabin = cabinRes.data.cabin;
+      console.log("✅ Cabin created successfully!");
+      console.log("📦 New Cabin Data:");
+      console.log("  - ID:", newCabin._id);
+      console.log("  - Name:", newCabin.name);
+      console.log("  - Owner ID:", newCabin.owner);
+      console.log("  - Expected Owner ID:", userId);
+      
+      if (newCabin.owner === userId) {
+        console.log("✅✅✅ Owner ID MATCHES! ✅✅✅");
+      } else if (newCabin.owner === "68ebe9ee8f06d33ee022d665") {
+        console.log("⚠️⚠️⚠️ WARNING: Admin ID hardcoded! Owner is admin: 68ebe9ee8f06d33ee022d665");
+        console.log("⚠️ Expected owner:", userId);
+        console.log("⚠️ Actual owner:", newCabin.owner);
+      } else {
+        console.log("⚠️ Owner ID MISMATCH!");
+        console.log("  - Expected:", userId);
+        console.log("  - Actual:", newCabin.owner);
+      }
+      console.log("========================================");
+      
       toast.success("Cabin created successfully!");
 
       const orderRes = await axios.post(
@@ -586,7 +699,11 @@ const MyCabin = () => {
       }
       
     } catch (err) {
-      console.error("Error:", err);
+      console.error("❌ Error creating cabin:", err);
+      console.error("❌ Error Response:", err.response?.data);
+      console.error("❌ Error Status:", err.response?.status);
+      console.error("❌ Error Message:", err.message);
+      console.log("========================================");
       toast.error(err.response?.data?.error || "Failed to create cabin and order");
       setSubmitting(false);
     } finally {
@@ -596,6 +713,14 @@ const MyCabin = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    console.log("========================================");
+    console.log("📝 FORM SUBMITTED");
+    console.log("Form Data:", formData);
+    console.log("Seats:", seats.length);
+    console.log("Images:", images.length);
+    console.log("Pricing Plans:", pricingPlans.length);
+    console.log("========================================");
     
     if (!formData.name || !formData.address || !formData.capacity || !formData.price || !formData.cabin) {
       toast.error("Please fill all required fields");
@@ -651,6 +776,8 @@ const MyCabin = () => {
   const { baseFee, gstAmount, totalWithGST } = getFeeWithGST();
 
   const handleViewCabin = (cabin) => {
+    console.log("👁️ Viewing cabin:", cabin._id, cabin.name);
+    console.log("  Owner:", cabin.owner);
     setSelectedCabin(cabin);
     setShowViewModal(true);
   };
@@ -704,6 +831,31 @@ const MyCabin = () => {
   const activeCount = cabins.filter(c => c.isActive === true).length;
   const inactiveCount = cabins.filter(c => c.isActive !== true).length;
   const exclusiveCount = cabins.filter(c => c.cabinType === 'exclusive').length;
+
+  // ✅ LOGGING: Component mount
+  useEffect(() => {
+    console.log("========================================");
+    console.log("🏪 MY CABIN PAGE LOADED");
+    const userStr = localStorage.getItem("user");
+    const adminStr = localStorage.getItem("admin");
+    
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      console.log("👤 Logged in as USER:");
+      console.log("  - ID:", user._id);
+      console.log("  - Name:", user.name);
+      console.log("  - Role:", user.role);
+    } else if (adminStr) {
+      const admin = JSON.parse(adminStr);
+      console.log("👑 Logged in as ADMIN:");
+      console.log("  - ID:", admin._id);
+      console.log("  - Name:", admin.name);
+      console.log("  - Role:", admin.role);
+    } else {
+      console.log("❌ No user logged in!");
+    }
+    console.log("========================================");
+  }, []);
 
   return (
     <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
@@ -835,6 +987,7 @@ const MyCabin = () => {
 
                 <button
                   onClick={() => {
+                    console.log("🔄 Opening Add Cabin Modal");
                     setIsModalOpen(true);
                     setSeats([]);
                     setSeatBatchMode(false);

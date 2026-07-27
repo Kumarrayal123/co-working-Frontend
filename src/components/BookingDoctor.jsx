@@ -1,4 +1,4 @@
-// DoctorBookings.jsx - Complete Doctor Bookings Component
+// DoctorBookings.jsx - Complete Doctor Bookings Component with Indian Time Format
 import axios from "axios";
 import {
   Calendar,
@@ -28,7 +28,8 @@ import {
   XCircle as XCircleIcon,
   Users,
   Armchair,
-  Plus
+  Plus,
+  Calendar as CalendarIcon
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -107,6 +108,56 @@ const BookingDoctor = () => {
       month: 'short',
       day: 'numeric'
     });
+  };
+
+  // Format date only for Booked On column
+  const formatBookedDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
+  // Format time only for Booked On column
+  const formatBookedTime = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('en-IN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
+  // 🔥 NEW: Convert 24-hour time (e.g., "15:00") to 12-hour Indian time (e.g., "3:00 PM")
+  const convertToIndianTime = (timeStr) => {
+    if (!timeStr) return "N/A";
+    
+    // If already in 12-hour format with AM/PM, return as is
+    if (timeStr.includes('AM') || timeStr.includes('PM')) {
+      return timeStr;
+    }
+    
+    try {
+      // Try to parse as 24-hour format (HH:MM)
+      const parts = timeStr.split(':');
+      if (parts.length >= 2) {
+        let hours = parseInt(parts[0]);
+        const minutes = parts[1];
+        
+        if (isNaN(hours)) return timeStr;
+        
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        const hour12 = hours % 12 || 12;
+        return `${hour12}:${minutes} ${ampm}`;
+      }
+      return timeStr;
+    } catch (e) {
+      return timeStr;
+    }
   };
 
   // ─── OLD ENDPOINT: /api/bookings/user ───
@@ -222,8 +273,8 @@ const BookingDoctor = () => {
         'Mobile': b.patientMobile || b.mobile || 'N/A',
         'From': b.startDate || b.date,
         'To': b.endDate,
-        'From Time': b.startTime || b.time,
-        'To Time': b.endTime,
+        'From Time': convertToIndianTime(b.startTime || b.time),
+        'To Time': convertToIndianTime(b.endTime),
         'Hours': b.totalHours || 0,
         'Seats': b.seatCount || 0,
         'Extra Charge': b.extraCharge || 0,
@@ -232,7 +283,7 @@ const BookingDoctor = () => {
         'Payment': getPaymentMethodBadge(b.paymentMethod).label,
         'Pmt Status': getPaymentStatusBadge(b.paymentStatus).label,
         'Terms': b.termsAccepted ? 'Yes' : 'No',
-        'Created': b.createdAt ? formatDateTime(b.createdAt) : 'N/A'
+        'Booked On': b.createdAt ? formatDateTime(b.createdAt) : 'N/A'
       }));
       const ws = XLSX.utils.json_to_sheet(data);
       const wb = XLSX.utils.book_new();
@@ -398,7 +449,7 @@ const BookingDoctor = () => {
           <table>
             <tr><th>Description</th><th>Details</th><th>Amount</th></tr>
             <tr><td><strong>${cabin.name || booking.chamberName || 'Chamber Booking'}</strong></td>
-            <td>${booking.startDate || booking.date} ${booking.startTime || booking.time} - ${booking.endDate} ${booking.endTime}<br>${booking.totalHours}h • ${booking.bookingBasis === 'plan' ? 'Plan' : 'Hourly'}</td>
+            <td>${booking.startDate || booking.date} ${convertToIndianTime(booking.startTime || booking.time)} - ${booking.endDate} ${convertToIndianTime(booking.endTime)}<br>${booking.totalHours}h • ${booking.bookingBasis === 'plan' ? 'Plan' : 'Hourly'}</td>
             <td>₹${(booking.subtotal || 0).toFixed(2)}</td></tr>
             ${booking.extraCharge > 0 ? `
             <tr><td><strong>Seat Charges</strong></td>
@@ -413,7 +464,7 @@ const BookingDoctor = () => {
             <span><strong>Terms:</strong> <span class="badge ${getTermsBadge(booking.termsAccepted).color}">${booking.termsAccepted ? 'Accepted' : 'Not Accepted'}</span></span>
           </div>
           <div class="total">Subtotal: ₹${(booking.subtotal || 0).toFixed(2)}<br>${booking.extraCharge > 0 ? `Seat Charges: ₹${(booking.extraCharge || 0).toFixed(2)}<br>` : ''}GST (18%): ₹${(booking.gstAmount || 0).toFixed(2)}<br>Total: ₹${(booking.totalPrice || 0).toFixed(2)}</div>
-          <div class="footer">Powered by IRYAX SPACE<br>${formatDateTime(booking.createdAt)}</div>
+          <div class="footer">Powered by IRYAX SPACE<br>Booked On: ${formatDateTime(booking.createdAt)}</div>
         </body></html>
       `);
       win.document.close();
@@ -544,7 +595,7 @@ const BookingDoctor = () => {
         <div className="space-y-6">
           {/* Bookings Table Section */}
           <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
-            {/* Header with Filters - Updated */}
+            {/* Header with Filters */}
             <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
               <div className="flex items-center gap-3">
                 <h3 className="admin-dash__card-title">All Bookings</h3>
@@ -662,7 +713,7 @@ const BookingDoctor = () => {
               </div>
             </div>
 
-            {/* Table Container - Updated columns */}
+            {/* Table Container - Updated columns with Booked On & Indian Time */}
             <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
               {filteredBookings.length === 0 ? (
                 <div className="flex flex-col items-center justify-center gap-3 py-20 text-gray-400">
@@ -671,7 +722,7 @@ const BookingDoctor = () => {
                   <p className="text-sm">Try adjusting your filters.</p>
                 </div>
               ) : (
-                <table className="w-full min-w-[1400px] text-left">
+                <table className="w-full min-w-[1550px] text-left">
                   <thead>
                     <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
@@ -686,6 +737,7 @@ const BookingDoctor = () => {
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Payment</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Pmt Status</th>
+                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Booked On</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Amount</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Actions</th>
                     </tr>
@@ -698,6 +750,10 @@ const BookingDoctor = () => {
                       const isCashPending = (b.paymentMethod === 'cash' || b.paymentMethod === 'counter') && b.paymentStatus === 'pending';
                       const seatCount = b.seatCount || 0;
                       const seatNames = b.selectedSeats?.map(s => s.name).join(', ') || 'N/A';
+                      
+                      // Convert times to Indian format
+                      const fromTimeIndian = convertToIndianTime(b.startTime || b.time);
+                      const toTimeIndian = convertToIndianTime(b.endTime);
                       
                       return (
                         <tr key={b._id} className="transition-colors group hover:bg-gray-50/80">
@@ -723,10 +779,10 @@ const BookingDoctor = () => {
                             <p className="text-sm text-gray-700">{b.endDate || b.startDate || b.date || 'N/A'}</p>
                           </td>
                           <td className="p-4">
-                            <p className="text-sm text-gray-700">{b.startTime || b.time || 'N/A'}</p>
+                            <p className="text-sm font-medium text-gray-800">{fromTimeIndian}</p>
                           </td>
                           <td className="p-4">
-                            <p className="text-sm text-gray-700">{b.endTime || 'N/A'}</p>
+                            <p className="text-sm font-medium text-gray-800">{toTimeIndian}</p>
                           </td>
                           <td className="p-4">
                             <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-bold">{b.totalHours}h</span>
@@ -752,6 +808,12 @@ const BookingDoctor = () => {
                           </td>
                           <td className="p-4">
                             <span className={`px-3 py-1 text-xs font-bold rounded-full ${pmtStatus.color}`}>{pmtStatus.label}</span>
+                          </td>
+                          <td className="p-4">
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium text-gray-800">{formatBookedDate(b.createdAt)}</span>
+                              <span className="text-[11px] text-gray-400">{formatBookedTime(b.createdAt)}</span>
+                            </div>
                           </td>
                           <td className="p-4">
                             <div>
@@ -856,7 +918,7 @@ const BookingDoctor = () => {
         </div>
       </div>
 
-      {/* View Modal */}
+      {/* View Modal - Updated with Indian Time */}
       {showViewModal && viewBooking && (
         <div 
           className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
@@ -899,8 +961,12 @@ const BookingDoctor = () => {
 
               <div className="p-4 bg-gray-50 rounded-xl">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Schedule</p>
-                <p className="mt-1 font-semibold text-gray-800">From: {viewBooking.startDate || viewBooking.date} {viewBooking.startTime || viewBooking.time}</p>
-                <p className="mt-0.5 font-semibold text-gray-800">To: {viewBooking.endDate || viewBooking.startDate || viewBooking.date} {viewBooking.endTime}</p>
+                <p className="mt-1 font-semibold text-gray-800">
+                  From: {viewBooking.startDate || viewBooking.date} {convertToIndianTime(viewBooking.startTime || viewBooking.time)}
+                </p>
+                <p className="mt-0.5 font-semibold text-gray-800">
+                  To: {viewBooking.endDate || viewBooking.startDate || viewBooking.date} {convertToIndianTime(viewBooking.endTime)}
+                </p>
                 <p className="text-xs text-gray-500 mt-0.5">{viewBooking.totalHours}h • {viewBooking.bookingBasis === 'plan' ? 'Plan' : 'Hourly'}</p>
               </div>
 
@@ -952,7 +1018,7 @@ const BookingDoctor = () => {
                   </span>
                 </div>
                 <div className="p-3 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Created</p>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Booked On</p>
                   <p className="mt-1 font-semibold text-gray-800 text-sm">{formatDateTime(viewBooking.createdAt)}</p>
                 </div>
               </div>
@@ -1007,8 +1073,8 @@ const BookingDoctor = () => {
               <div className="bg-blue-50 rounded-xl p-4 text-sm">
                 <p className="font-bold text-blue-800">Current Booking</p>
                 <p className="text-slate-600 mt-1">{replaceBooking.cabin?.name || replaceBooking.chamberName}</p>
-                <p className="text-xs text-slate-500">From: {replaceBooking.startDate || replaceBooking.date} {replaceBooking.startTime || replaceBooking.time}</p>
-                <p className="text-xs text-slate-500">To: {replaceBooking.endDate || replaceBooking.startDate || replaceBooking.date} {replaceBooking.endTime}</p>
+                <p className="text-xs text-slate-500">From: {replaceBooking.startDate || replaceBooking.date} {convertToIndianTime(replaceBooking.startTime || replaceBooking.time)}</p>
+                <p className="text-xs text-slate-500">To: {replaceBooking.endDate || replaceBooking.startDate || replaceBooking.date} {convertToIndianTime(replaceBooking.endTime)}</p>
                 <p className="text-xs font-bold text-slate-700 mt-1">Total: ₹{replaceBooking.totalPrice || replaceBooking.amount}</p>
               </div>
 
@@ -1114,8 +1180,8 @@ const BookingDoctor = () => {
                 <p className="font-bold text-red-800">Are you sure you want to cancel this booking?</p>
                 <div className="mt-2 space-y-1 text-slate-600">
                   <p><span className="text-slate-500">Chamber:</span> {cancelBooking.cabin?.name || cancelBooking.chamberName}</p>
-                  <p><span className="text-slate-500">From:</span> {cancelBooking.startDate || cancelBooking.date} {cancelBooking.startTime || cancelBooking.time}</p>
-                  <p><span className="text-slate-500">To:</span> {cancelBooking.endDate || cancelBooking.startDate || cancelBooking.date} {cancelBooking.endTime}</p>
+                  <p><span className="text-slate-500">From:</span> {cancelBooking.startDate || cancelBooking.date} {convertToIndianTime(cancelBooking.startTime || cancelBooking.time)}</p>
+                  <p><span className="text-slate-500">To:</span> {cancelBooking.endDate || cancelBooking.startDate || cancelBooking.date} {convertToIndianTime(cancelBooking.endTime)}</p>
                   <p><span className="text-slate-500">Total:</span> ₹{cancelBooking.totalPrice || cancelBooking.amount}</p>
                 </div>
               </div>

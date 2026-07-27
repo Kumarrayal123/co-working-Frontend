@@ -1,4 +1,4 @@
-// ChamberBookings.jsx - Complete with Clean UI (No Icons, Single Row Actions)
+// ChamberBookings.jsx - Complete with Clean UI (No Icons, Single Row Actions) + CREATED AT COLUMN ADDED
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -43,7 +43,8 @@ import {
   QrCode,
   Smartphone,
   Printer,
-  Armchair
+  Armchair,
+  CalendarPlus
 } from "lucide-react";
 import { toast } from "react-toastify";
 import * as XLSX from 'xlsx';
@@ -226,10 +227,34 @@ const ChamberBookings = () => {
     fetchChambers();
   }, []);
 
+  // Format date only
   const formatDate = (dateStr) => {
     if (!dateStr) return "N/A";
     const d = new Date(dateStr);
     return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
+
+  // Format date with time
+  const formatDateTime = (dateStr) => {
+    if (!dateStr) return "N/A";
+    const d = new Date(dateStr);
+    return d.toLocaleString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  // Format time only (for Created At column)
+  const formatTimeOnly = (dateStr) => {
+    if (!dateStr) return "N/A";
+    const d = new Date(dateStr);
+    return d.toLocaleTimeString('en-IN', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   const formatCurrency = (amount) => {
@@ -475,17 +500,29 @@ const ChamberBookings = () => {
         const paymentMethod = getPaymentMethodBadge(booking.paymentMethod);
         const paymentStatus = getPaymentStatusBadge(booking.paymentStatus);
         return {
-          'S.No': index + 1, 'Booking Type': booking.bookingBasis === 'plan' ? 'Plan Booking' : 'Hourly Booking',
-          'Chamber Name': booking.cabin?.name || 'Unknown Chamber', 'Address': booking.cabin?.address || 'No Address',
-          'Customer Name': booking.name || booking.user?.name || 'Unknown Guest', 'Mobile': booking.mobile || booking.user?.mobile || 'N/A',
-          'Email': booking.email || booking.user?.email || 'N/A', 'Start Date': booking.startDate || 'N/A',
-          'Start Time': booking.startTime || 'N/A', 'End Date': booking.endDate || 'N/A', 'End Time': booking.endTime || 'N/A',
-          'Duration (Hours)': booking.totalHours || 0, 'Subtotal (₹)': booking.subtotal || 0,
-          'GST (18%)': booking.gstAmount || 0, 'Total (₹)': booking.totalPrice || 0,
-          'Seats': booking.seatCount || 0, 'Extra Charge': booking.extraCharge || 0,
-          'Status': statusBadge.label, 'Payment Method': paymentMethod.label,
-          'Payment Status': paymentStatus.label, 'Transaction ID': booking.transactionId || 'N/A',
-          'Visiting Days': booking.visitingTimings?.length || 0
+          'S.No': index + 1,
+          'Booking Type': booking.bookingBasis === 'plan' ? 'Plan Booking' : 'Hourly Booking',
+          'Chamber Name': booking.cabin?.name || 'Unknown Chamber',
+          'Address': booking.cabin?.address || 'No Address',
+          'Customer Name': booking.name || booking.user?.name || 'Unknown Guest',
+          'Mobile': booking.mobile || booking.user?.mobile || 'N/A',
+          'Email': booking.email || booking.user?.email || 'N/A',
+          'From Date': booking.startDate || 'N/A',
+          'To Date': booking.endDate || 'N/A',
+          'From Time': booking.startTime || 'N/A',
+          'To Time': booking.endTime || 'N/A',
+          'Duration (Hours)': booking.totalHours || 0,
+          'Subtotal (₹)': booking.subtotal || 0,
+          'GST (18%)': booking.gstAmount || 0,
+          'Total (₹)': booking.totalPrice || 0,
+          'Seats': booking.seatCount || 0,
+          'Extra Charge': booking.extraCharge || 0,
+          'Status': statusBadge.label,
+          'Payment Method': paymentMethod.label,
+          'Payment Status': paymentStatus.label,
+          'Transaction ID': booking.transactionId || 'N/A',
+          'Visiting Days': booking.visitingTimings?.length || 0,
+          'Created At': booking.createdAt ? formatDateTime(booking.createdAt) : 'N/A'
         };
       });
       const ws = XLSX.utils.json_to_sheet(exportData);
@@ -573,7 +610,8 @@ const ChamberBookings = () => {
         <div style="border-top:1px dashed #000;margin:4px 0;"></div>
 
         <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-top:4px;margin-bottom:2px;color:#000;border-bottom:1px solid #000;padding-bottom:2px;">Booking Details</div>
-        <div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">Date</span><span style="font-weight:600;">${startDate}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">From Date</span><span style="font-weight:600;">${startDate}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">To Date</span><span style="font-weight:600;">${endDate}</span></div>
         <div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">Time</span><span style="font-weight:600;">${startTime} - ${endTime}</span></div>
         <div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">Duration</span><span style="font-weight:600;">${totalHours} Hrs</span></div>
         <div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">Type</span><span style="font-weight:600;">${booking.bookingBasis === 'plan' ? 'PLAN' : 'HOURLY'}</span></div>
@@ -852,9 +890,7 @@ const ChamberBookings = () => {
             <h1 className="admin-dash__greeting">
               Chamber <span>Bookings</span>
             </h1>
-            
           </div>
-          
         </div>
 
         {/* Stats Cards */}
@@ -1050,8 +1086,8 @@ const ChamberBookings = () => {
           </div>
 
           <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
-            {/* Table */}
-            <table className="w-full min-w-[1200px] text-left">
+            {/* Table - Updated columns with proper ordering */}
+            <table className="w-full min-w-[1450px] text-left">
               <thead>
                 <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
                   <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
@@ -1059,7 +1095,8 @@ const ChamberBookings = () => {
                   <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Customer</th>
                   <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">From Date</th>
                   <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">To Date</th>
-                  <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Time</th>
+                  <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">From Time</th>
+                  <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">To Time</th>
                   <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Hours</th>
                   <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Seats</th>
                   <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
@@ -1067,13 +1104,14 @@ const ChamberBookings = () => {
                   <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Pmt Status</th>
                   <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Visits</th>
                   <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Amount</th>
+                  <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Created At</th>
                   <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {filteredBookings.length === 0 ? (
                   <tr>
-                    <td colSpan="14">
+                    <td colSpan="16">
                       <div className="flex flex-col items-center justify-center gap-3 py-20 text-gray-400">
                         <Calendar size={48} className="opacity-20" />
                         <p className="text-lg font-medium">No bookings found</p>
@@ -1113,7 +1151,10 @@ const ChamberBookings = () => {
                           <p className="text-sm text-gray-900 font-medium">{booking.endDate || booking.startDate || 'N/A'}</p>
                         </td>
                         <td className="p-3">
-                          <p className="text-sm text-gray-500">{booking.startTime || 'N/A'} - {booking.endTime || 'N/A'}</p>
+                          <p className="text-sm text-gray-700 font-medium">{booking.startTime || 'N/A'}</p>
+                        </td>
+                        <td className="p-3">
+                          <p className="text-sm text-gray-700 font-medium">{booking.endTime || 'N/A'}</p>
                         </td>
                         <td className="p-3">
                           <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-bold">{booking.totalHours}h</span>
@@ -1148,6 +1189,12 @@ const ChamberBookings = () => {
                         </td>
                         <td className="p-3">
                           <span className="text-indigo-600 font-bold text-sm">₹{booking.totalPrice?.toLocaleString("en-IN") || "0"}</span>
+                        </td>
+                        <td className="p-3">
+                          <div className="flex flex-col">
+                            <span className="text-xs font-medium text-gray-700">{formatDate(booking.createdAt)}</span>
+                            <span className="text-[10px] text-gray-400">{formatTimeOnly(booking.createdAt)}</span>
+                          </div>
                         </td>
                         <td className="p-3">
                           {/* ALL ACTIONS IN SINGLE ROW WITH SCROLL */}
@@ -1218,7 +1265,7 @@ const ChamberBookings = () => {
       </div>
 
       {/* ============================================================ */}
-      {/* VIEW BOOKING MODAL */}
+      {/* VIEW BOOKING MODAL - Updated with Created At */}
       {/* ============================================================ */}
       {showViewModal && viewBooking && (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setShowViewModal(false); }}>
@@ -1311,6 +1358,14 @@ const ChamberBookings = () => {
                 </div>
               </div>
 
+              {/* ✅ Created At in View Modal */}
+              <div className="p-3 bg-indigo-50 rounded-xl flex justify-between items-center border border-indigo-200">
+                <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider flex items-center gap-1">
+                  <CalendarPlus size={14} /> Created At
+                </p>
+                <p className="font-semibold text-gray-800 text-sm">{formatDateTime(viewBooking.createdAt)}</p>
+              </div>
+
               {viewBooking.visitingTimings && viewBooking.visitingTimings.length > 0 && (
                 <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
                   <p className="text-xs font-medium text-blue-600 uppercase tracking-wider flex items-center gap-1">
@@ -1339,8 +1394,8 @@ const ChamberBookings = () => {
                   <p className="text-xl font-bold text-indigo-600 mt-1">₹{viewBooking.totalPrice?.toLocaleString('en-IN') || 0}</p>
                 </div>
                 <div className="p-3 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Created</p>
-                  <p className="mt-1 font-semibold text-gray-800 text-sm">{formatDate(viewBooking.createdAt)}</p>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Booking Date</p>
+                  <p className="mt-1 font-semibold text-gray-800 text-sm">{formatDate(viewBooking.startDate)}</p>
                 </div>
               </div>
 

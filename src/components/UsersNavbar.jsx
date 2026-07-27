@@ -85,7 +85,7 @@ function UsersNavbar() {
       id: "dashboard",
       label: "Dashboard",
       icon: LayoutDashboard,
-      links: [{ name: "Dashboard", path: "/userdashboard", icon: LayoutDashboard, description: "Overview & stats" }],
+      links: [{ name: "Dashboard", path: "/ownerdashboard", icon: LayoutDashboard, description: "Overview & stats" }],
     },
     {
       id: "coworking",
@@ -143,7 +143,7 @@ function UsersNavbar() {
       >
         <div className="max-w-[1400px] mx-auto px-5 h-16 flex items-center justify-between gap-3">
           {/* Logo */}
-          <Link to="/userdashboard" className="flex items-center gap-2.5 no-underline flex-shrink-0">
+          <Link to="/ownerdashboard" className="flex items-center gap-2.5 no-underline flex-shrink-0">
             <div className="w-9 h-9 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-extrabold text-sm tracking-tight">I</span>
             </div>

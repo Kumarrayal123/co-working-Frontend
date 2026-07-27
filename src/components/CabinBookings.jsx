@@ -44,7 +44,8 @@ import {
   QrCode,
   Smartphone,
   Printer,
-  Armchair
+  Armchair,
+  CalendarPlus
 } from "lucide-react";
 import { toast } from "react-toastify";
 import * as XLSX from 'xlsx';
@@ -212,6 +213,18 @@ const CabinBookings = () => {
     if (!dateStr) return "N/A";
     const d = new Date(dateStr);
     return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
+
+  const formatDateTime = (dateStr) => {
+    if (!dateStr) return "N/A";
+    const d = new Date(dateStr);
+    return d.toLocaleString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   const formatCurrency = (amount) => {
@@ -462,6 +475,7 @@ const CabinBookings = () => {
           'Customer Name': booking.name || booking.user?.name || 'Unknown Guest', 'Mobile': booking.mobile || booking.user?.mobile || 'N/A',
           'Email': booking.email || booking.user?.email || 'N/A', 'Start Date': booking.startDate || 'N/A',
           'Start Time': booking.startTime || 'N/A', 'End Date': booking.endDate || 'N/A', 'End Time': booking.endTime || 'N/A',
+          'Created At': formatDateTime(booking.createdAt) || 'N/A',
           'Duration (Hours)': booking.totalHours || 0, 'Subtotal (₹)': booking.subtotal || 0,
           'GST (18%)': booking.gstAmount || 0, 'Total (₹)': booking.totalPrice || 0,
           'Seats': booking.seatCount || 0, 'Extra Charge': booking.extraCharge || 0,
@@ -555,8 +569,10 @@ const CabinBookings = () => {
         <div style="border-top:1px dashed #000;margin:4px 0;"></div>
 
         <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-top:4px;margin-bottom:2px;color:#000;border-bottom:1px solid #000;padding-bottom:2px;">Booking Details</div>
-        <div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">Date</span><span style="font-weight:600;">${startDate}</span></div>
-        <div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">Time</span><span style="font-weight:600;">${startTime} - ${endTime}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">Start Date</span><span style="font-weight:600;">${startDate}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">Start Time</span><span style="font-weight:600;">${startTime}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">End Date</span><span style="font-weight:600;">${endDate}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">End Time</span><span style="font-weight:600;">${endTime}</span></div>
         <div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">Duration</span><span style="font-weight:600;">${totalHours} Hrs</span></div>
         <div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">Type</span><span style="font-weight:600;">${booking.bookingBasis === 'plan' ? 'PLAN' : 'HOURLY'}</span></div>
         ${booking.bookingBasis === 'plan' && booking.selectedPlan ? `<div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">Plan</span><span style="font-weight:600;">${booking.selectedPlan.label || 'Subscription'}</span></div>` : ''}
@@ -1017,19 +1033,23 @@ const CabinBookings = () => {
                 <p className="text-sm">Try adjusting your filters.</p>
               </div>
             ) : (
-              <table className="w-full min-w-[1300px] text-left">
+              <table className="w-full min-w-[1400px] text-left">
                 <thead>
                   <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Customer</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Period</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Start Date</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Start Time</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">End Date</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">End Time</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Hours</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Seats</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Payment</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Pmt Status</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Visits</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Created At</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Amount</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Actions</th>
                   </tr>
@@ -1073,10 +1093,16 @@ const CabinBookings = () => {
                           </div>
                         </td>
                         <td className="p-4">
-                          <div className="space-y-1">
-                            <p className="text-sm text-gray-900 font-medium">{booking.startDate} · {booking.startTime}</p>
-                            <p className="text-sm text-gray-500">{booking.endDate} · {booking.endTime}</p>
-                          </div>
+                          <span className="text-sm font-medium text-gray-700">{booking.startDate || 'N/A'}</span>
+                        </td>
+                        <td className="p-4">
+                          <span className="text-sm font-medium text-gray-700">{booking.startTime || 'N/A'}</span>
+                        </td>
+                        <td className="p-4">
+                          <span className="text-sm font-medium text-gray-700">{booking.endDate || 'N/A'}</span>
+                        </td>
+                        <td className="p-4">
+                          <span className="text-sm font-medium text-gray-700">{booking.endTime || 'N/A'}</span>
                         </td>
                         <td className="p-4">
                           <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-bold">{booking.totalHours}h</span>
@@ -1116,6 +1142,9 @@ const CabinBookings = () => {
                           </div>
                         </td>
                         <td className="p-4">
+                          <span className="text-[10px] text-gray-500 font-medium">{formatDateTime(booking.createdAt)}</span>
+                        </td>
+                        <td className="p-4">
                           <div>
                             <span className="flex items-center gap-1 text-indigo-600 font-bold text-sm">
                               <IndianRupee size={14} />
@@ -1127,21 +1156,21 @@ const CabinBookings = () => {
                           </div>
                         </td>
                         <td className="p-4">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <button onClick={() => handleViewBooking(booking)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors whitespace-nowrap">
-                              <Eye size={13} /> View
+                          <div className="flex items-center gap-1 flex-wrap max-w-[180px]">
+                            <button onClick={() => handleViewBooking(booking)} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors whitespace-nowrap flex-shrink-0" title="View">
+                              <Eye size={12} /> View
                             </button>
-                            <button onClick={() => printReceipt(booking)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors whitespace-nowrap">
-                              <Printer size={13} /> Print
+                            <button onClick={() => printReceipt(booking)} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors whitespace-nowrap flex-shrink-0" title="Print Receipt">
+                              <Printer size={12} /> Print
                             </button>
-                            <button onClick={() => downloadPDF(booking)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors whitespace-nowrap">
-                              <FileDown size={13} /> PDF
+                            <button onClick={() => downloadPDF(booking)} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors whitespace-nowrap flex-shrink-0" title="Download PDF">
+                              <FileDown size={12} /> PDF
                             </button>
-                            <button onClick={() => { setTimingBooking(booking); setNewTiming({ date: "", checkIn: "", checkOut: "" }); setShowTimingModal(true); }} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors whitespace-nowrap">
-                              <Plus size={13} /> Timing
+                            <button onClick={() => { setTimingBooking(booking); setNewTiming({ date: "", checkIn: "", checkOut: "" }); setShowTimingModal(true); }} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-cyan-50 text-cyan-700 hover:bg-cyan-100 transition-colors whitespace-nowrap flex-shrink-0" title="Add Timing">
+                              <Plus size={12} /> Time
                             </button>
-                            <button onClick={() => { setSelectedBooking(booking); setNewStatus(booking.status || 'pending'); setShowStatusModal(true); }} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-orange-50 text-orange-700 hover:bg-orange-100 transition-colors whitespace-nowrap">
-                              <Edit size={13} /> Status
+                            <button onClick={() => { setSelectedBooking(booking); setNewStatus(booking.status || 'pending'); setShowStatusModal(true); }} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-orange-50 text-orange-700 hover:bg-orange-100 transition-colors whitespace-nowrap flex-shrink-0" title="Update Status">
+                              <Edit size={12} /> Status
                             </button>
                             {isCashPending && (
                               <button onClick={() => {
@@ -1163,8 +1192,8 @@ const CabinBookings = () => {
                                 setPaymentScreenshot(null);
                                 setPaymentScreenshotPreview(null);
                                 setShowPaymentModal(true);
-                              }} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-yellow-50 text-yellow-700 hover:bg-yellow-100 transition-colors whitespace-nowrap">
-                                <CreditCard size={13} /> Payment
+                              }} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-yellow-50 text-yellow-700 hover:bg-yellow-100 transition-colors whitespace-nowrap flex-shrink-0" title="Update Payment">
+                                <CreditCard size={12} /> Pay
                               </button>
                             )}
                           </div>
@@ -1226,10 +1255,33 @@ const CabinBookings = () => {
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Start</p>
+                  <p className="mt-1 font-semibold text-gray-800">{viewBooking.startDate || 'N/A'}</p>
+                  <p className="text-sm font-medium text-indigo-600">{viewBooking.startTime || 'N/A'}</p>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">End</p>
+                  <p className="mt-1 font-semibold text-gray-800">{viewBooking.endDate || 'N/A'}</p>
+                  <p className="text-sm font-medium text-indigo-600">{viewBooking.endTime || 'N/A'}</p>
+                </div>
+              </div>
+
               <div className="p-4 bg-gray-50 rounded-xl">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Schedule</p>
-                <p className="mt-1 font-semibold text-gray-800">{viewBooking.startDate} {viewBooking.startTime} - {viewBooking.endDate} {viewBooking.endTime}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{viewBooking.totalHours}h • {viewBooking.bookingBasis === 'plan' ? 'Plan' : 'Hourly'}</p>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Booking Info</p>
+                <div className="flex items-center gap-4 mt-1 flex-wrap">
+                  <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold">{viewBooking.totalHours}h Total</span>
+                  <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium capitalize">{viewBooking.bookingBasis || 'Hourly'}</span>
+                  {viewBooking.selectedPlan && <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-medium">Plan: {viewBooking.selectedPlan.label || 'N/A'}</span>}
+                </div>
+              </div>
+
+              <div className="p-4 bg-gray-50 rounded-xl">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
+                  <CalendarPlus size={14} /> Created At
+                </p>
+                <p className="mt-1 font-semibold text-gray-800">{formatDateTime(viewBooking.createdAt)}</p>
               </div>
 
               {/* Seats Section */}

@@ -181,16 +181,7 @@ function SimpleUserNavbar() {
                   </div>
                   <div className="h-px bg-slate-100 mx-2 my-1" />
 
-                  {/* My Wallet */}
-                  <button
-                    className="flex items-center gap-2.5 w-full px-3 py-1.75 border-none bg-transparent rounded-lg text-xs font-medium text-slate-600 cursor-pointer transition-all duration-150 hover:bg-slate-100 hover:text-slate-900 font-inherit"
-                    onClick={() => {
-                      setProfileOpen(false);
-                      navigate("/my-wallet");
-                    }}
-                  >
-                    <Wallet size={15} className="text-slate-400" /> My Wallet
-                  </button>
+               
 
                   {/* My Profile */}
                   <button

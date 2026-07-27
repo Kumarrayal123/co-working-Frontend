@@ -45,7 +45,9 @@ import {
   Printer,
   Armchair,
   Wallet as WalletIcon,
-  Banknote
+  Banknote,
+  Stethoscope,
+  Briefcase
 } from "lucide-react";
 import { toast } from "react-toastify";
 import * as XLSX from 'xlsx';
@@ -62,6 +64,7 @@ const AllBookings = () => {
   const [filterDateTo, setFilterDateTo] = useState("");
   const [filterCabinName, setFilterCabinName] = useState("");
   const [filterOwner, setFilterOwner] = useState("");
+  const [filterSpaceType, setFilterSpaceType] = useState("all"); // ✅ NEW: Space Type Filter
   const [showFilters, setShowFilters] = useState(true);
   const [filters, setFilters] = useState({
     status: 'all',
@@ -525,6 +528,7 @@ const AllBookings = () => {
         return {
           'S.No': index + 1, 'Booking Type': booking.bookingBasis === 'plan' ? 'Plan Booking' : 'Hourly Booking',
           'Cabin Name': booking.cabin?.name || 'Unknown Cabin', 'Address': booking.cabin?.address || 'No Address',
+          'Space Type': booking.cabin?.isChamber ? 'Medical Chamber' : 'Co-Working Space',
           'Customer Name': booking.name || booking.user?.name || 'Unknown Guest', 'Mobile': booking.mobile || booking.user?.mobile || 'N/A',
           'Email': booking.email || booking.user?.email || 'N/A', 'Start Date': formatDateIndian(booking.startDate),
           'Start Time': formatTime12(booking.startTime), 'End Date': formatDateIndian(booking.endDate),
@@ -843,8 +847,10 @@ const AllBookings = () => {
     setFilterDateTo('');
     setFilterCabinName('');
     setFilterOwner('');
+    setFilterSpaceType('all'); // ✅ Reset space type filter
   };
 
+  // ✅ UPDATED: Filter with Space Type
   const filteredBookings = bookings.filter((b) => {
     const matchesDateFrom = filterDateFrom ? b.startDate >= filterDateFrom : true;
     const matchesDateTo = filterDateTo ? b.endDate <= filterDateTo : true;
@@ -853,7 +859,17 @@ const AllBookings = () => {
     const matchesStatus = filters.status === 'all' || b.status === filters.status;
     const matchesPaymentStatus = filters.paymentStatus === 'all' || b.paymentStatus === filters.paymentStatus;
     const matchesPaymentMethod = filters.paymentMethod === 'all' || b.paymentMethod === filters.paymentMethod;
-    return matchesDateFrom && matchesDateTo && matchesCabinName && matchesOwner && matchesStatus && matchesPaymentStatus && matchesPaymentMethod;
+    
+    // ✅ NEW: Space Type filter
+    let matchesSpaceType = true;
+    if (filterSpaceType === 'medical') {
+      matchesSpaceType = b.cabin?.isChamber === true;
+    } else if (filterSpaceType === 'coworking') {
+      matchesSpaceType = b.cabin?.isChamber === false;
+    }
+    
+    return matchesDateFrom && matchesDateTo && matchesCabinName && matchesOwner && 
+           matchesStatus && matchesPaymentStatus && matchesPaymentMethod && matchesSpaceType;
   });
 
   if (loading) {
@@ -908,7 +924,7 @@ const AllBookings = () => {
           </div>
         </div>
 
-        {/* Filters - Always Expanded - No Clear Button */}
+        {/* Filters - Always Expanded */}
         <div className="bg-gray-50 rounded-xl p-3 mb-4 border border-gray-200">
           <div className="flex flex-wrap items-end gap-3">
             {/* From Date */}
@@ -939,6 +955,15 @@ const AllBookings = () => {
                 {owners.map((owner, i) => (
                   <option key={i} value={owner}>{owner}</option>
                 ))}
+              </select>
+            </div>
+            {/* ✅ NEW: Space Type Filter */}
+            <div className="min-w-[140px]">
+              <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Space Type</label>
+              <select value={filterSpaceType} onChange={(e) => setFilterSpaceType(e.target.value)} className="w-full px-3 py-1.5 text-xs border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                <option value="all">All Spaces</option>
+                <option value="medical">🏥 Medical Chamber</option>
+                <option value="coworking">💼 Co-Working Space</option>
               </select>
             </div>
             {/* Status */}
@@ -976,7 +1001,7 @@ const AllBookings = () => {
                 <option value="card">Card</option>
               </select>
             </div>
-            {/* Export Button - Only Export, No Clear Button */}
+            {/* Export Button */}
             {filteredBookings.length > 0 && (
               <button onClick={exportToExcel} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200 whitespace-nowrap">
                 <Download size={14} /> Export
@@ -1004,11 +1029,12 @@ const AllBookings = () => {
                 <p className="text-sm">Try adjusting your filters.</p>
               </div>
             ) : (
-              <table className="w-full min-w-[1000px] text-left text-xs">
+              <table className="w-full min-w-[1050px] text-left text-xs">
                 <thead>
                   <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
                     <th className="p-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
                     <th className="p-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
+                    <th className="p-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Space</th>
                     <th className="p-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Customer</th>
                     <th className="p-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">From</th>
                     <th className="p-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">To</th>
@@ -1029,6 +1055,7 @@ const AllBookings = () => {
                     const paymentStatusBadge = getPaymentStatusBadge(booking.paymentStatus);
                     const visitCount = booking.visitingTimings?.length || 0;
                     const seatCount = booking.seatCount || 0;
+                    const isChamber = booking.cabin?.isChamber || false;
 
                     return (
                       <tr key={booking._id} className="transition-colors group hover:bg-gray-50/80">
@@ -1038,6 +1065,23 @@ const AllBookings = () => {
                             <p className="font-semibold text-gray-800 text-xs">{booking.cabin?.name || "Unknown"}</p>
                             <p className="text-[10px] text-gray-400 truncate max-w-[120px]">{booking.cabin?.address?.split(",")[0] || "No Address"}</p>
                           </div>
+                        </td>
+                        <td className="p-2">
+                          <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full inline-flex items-center gap-1 ${
+                            isChamber 
+                              ? 'bg-emerald-100 text-emerald-700' 
+                              : 'bg-blue-100 text-blue-700'
+                          }`}>
+                            {isChamber ? (
+                              <>
+                                <Stethoscope size={10} /> Medical
+                              </>
+                            ) : (
+                              <>
+                                <Briefcase size={10} /> Co-Working
+                              </>
+                            )}
+                          </span>
                         </td>
                         <td className="p-2">
                           <div>
@@ -1194,6 +1238,15 @@ const AllBookings = () => {
                   <p><span className="text-gray-500">Address:</span> <span className="font-medium">{viewBooking.cabin?.address || 'N/A'}</span></p>
                   <p><span className="text-gray-500">Capacity:</span> <span className="font-medium">{viewBooking.cabin?.capacity || 'N/A'} people</span></p>
                   <p><span className="text-gray-500">Price per day:</span> <span className="font-medium">₹{viewBooking.cabin?.price || 0}</span></p>
+                  <p><span className="text-gray-500">Space Type:</span> 
+                    <span className={`ml-2 px-2 py-0.5 text-[10px] font-bold rounded-full ${
+                      viewBooking.cabin?.isChamber 
+                        ? 'bg-emerald-100 text-emerald-700' 
+                        : 'bg-blue-100 text-blue-700'
+                    }`}>
+                      {viewBooking.cabin?.isChamber ? '🏥 Medical Chamber' : '💼 Co-Working Space'}
+                    </span>
+                  </p>
                 </div>
               </div>
 

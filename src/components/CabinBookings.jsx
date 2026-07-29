@@ -1,4 +1,4 @@
-// CabinBookings.jsx - Complete with THERMAL PDF Download (NO EXTERNAL LIBRARY)
+// CabinBookings.jsx - Complete with THERMAL PDF Download + Tabs (All, Site Visits, Space Bookings)
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -45,7 +45,9 @@ import {
   Smartphone,
   Printer,
   Armchair,
-  CalendarPlus
+  CalendarPlus,
+  Stethoscope,
+  Briefcase
 } from "lucide-react";
 import { toast } from "react-toastify";
 import * as XLSX from 'xlsx';
@@ -60,6 +62,7 @@ const CabinBookings = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDate, setFilterDate] = useState("");
+  const [activeTab, setActiveTab] = useState('all'); // ✅ TAB STATE
   const [filters, setFilters] = useState({
     status: 'all',
     paymentStatus: 'all',
@@ -464,8 +467,8 @@ const CabinBookings = () => {
 
   const exportToExcel = () => {
     try {
-      if (filteredBookings.length === 0) { toast.warning("No bookings to export"); return; }
-      const exportData = filteredBookings.map((booking, index) => {
+      if (displayBookings.length === 0) { toast.warning("No bookings to export"); return; }
+      const exportData = displayBookings.map((booking, index) => {
         const statusBadge = getStatusBadge(booking.status);
         const paymentMethod = getPaymentMethodBadge(booking.paymentMethod);
         const paymentStatus = getPaymentStatusBadge(booking.paymentStatus);
@@ -489,7 +492,7 @@ const CabinBookings = () => {
       XLSX.utils.book_append_sheet(wb, ws, 'Cabin_Bookings');
       const date = new Date().toISOString().split('T')[0];
       XLSX.writeFile(wb, `cabin_bookings_${date}.xlsx`);
-      toast.success(`Exported ${filteredBookings.length} bookings to Excel!`);
+      toast.success(`Exported ${displayBookings.length} bookings to Excel!`);
     } catch (error) {
       console.error("Export error:", error);
       toast.error("Failed to export bookings");
@@ -540,7 +543,6 @@ const CabinBookings = () => {
       return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
     };
 
-    // Generate seat list HTML
     let seatListHtml = '';
     if (selectedSeats && selectedSeats.length > 0) {
       seatListHtml = selectedSeats.map(s => 
@@ -548,11 +550,15 @@ const CabinBookings = () => {
       ).join('');
     }
 
+    const isChamber = cabin.isChamber || false;
+    const spaceTypeLabel = isChamber ? '🏥 MEDICAL CHAMBER' : '💼 CO-WORKING SPACE';
+
     return `
       <div id="receipt-content" style="font-family:'Courier New',Courier,monospace;max-width:280px;margin:0 auto;padding:8px 6px;background:#fff;color:#000;font-size:11px;line-height:1.5;">
         <div style="text-align:center;border-bottom:1px dashed #000;padding-bottom:6px;margin-bottom:6px;">
           <h1 style="font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#000;margin:0;">${cabinName.toUpperCase()}</h1>
           <div style="font-size:9px;color:#444;margin-top:2px;">${cabinAddress}</div>
+          <div style="font-size:9px;color:#666;margin-top:2px;">${spaceTypeLabel}</div>
           <div style="font-size:9px;color:#666;margin-top:2px;">GST: 18%</div>
         </div>
 
@@ -805,6 +811,7 @@ const CabinBookings = () => {
     setFilterDate('');
   };
 
+  // ✅ FILTERED BOOKINGS
   const filteredBookings = bookings.filter((b) => {
     const matchesSearch = b.cabin?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       b.cabin?.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -818,6 +825,24 @@ const CabinBookings = () => {
     const matchesPaymentMethod = filters.paymentMethod === 'all' || b.paymentMethod === filters.paymentMethod;
     return matchesSearch && matchesDate && matchesStatus && matchesPaymentStatus && matchesPaymentMethod;
   });
+
+  // ✅ TAB BASED FILTERING
+  const getFilteredByTab = () => {
+    if (activeTab === 'visits') {
+      return filteredBookings.filter(b => b.bookingType === 'visit');
+    } else if (activeTab === 'spaces') {
+      return filteredBookings.filter(b => b.bookingType !== 'visit');
+    } else {
+      return filteredBookings;
+    }
+  };
+
+  const displayBookings = getFilteredByTab();
+
+  // Stats for counts
+  const totalCount = bookings.length;
+  const visitCount = bookings.filter(b => b.bookingType === 'visit').length;
+  const spaceCount = bookings.filter(b => b.bookingType !== 'visit').length;
 
   if (loading) {
     return (
@@ -841,12 +866,11 @@ const CabinBookings = () => {
               Cabin <span>Bookings</span>
             </h1>
           </div>
-         
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4 mb-6">
           <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-4 sm:p-5 text-white shadow-lg shadow-indigo-500/25">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-200">Total Bookings</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-200">Total</p>
             <p className="text-2xl sm:text-3xl font-bold mt-1">{stats.totalBookings}</p>
             <div className="mt-2 pt-2 border-t border-white/20 flex justify-between text-[10px]">
               <span className="text-indigo-200">Revenue</span>
@@ -901,6 +925,18 @@ const CabinBookings = () => {
               <span className="font-semibold text-gray-900">{formatCurrency(stats.completedRevenue)}</span>
             </div>
           </div>
+
+          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-purple-600">Visits</p>
+                <p className="text-2xl font-bold text-purple-600 mt-1">{visitCount}</p>
+              </div>
+              <div className="bg-purple-100 p-2.5 rounded-xl">
+                <Calendar size={20} className="text-purple-600" />
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-3 gap-3 mb-6">
@@ -921,9 +957,11 @@ const CabinBookings = () => {
         <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
           <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
             <div className="flex items-center gap-3">
-              <h3 className="admin-dash__card-title">All Bookings</h3>
+              <h3 className="admin-dash__card-title">
+                {activeTab === 'all' ? 'All Bookings' : activeTab === 'visits' ? 'Site Visits' : 'Space Bookings'}
+              </h3>
               <span className="px-2.5 py-0.5 text-xs font-bold text-indigo-700 bg-indigo-100 rounded-full">
-                {filteredBookings.length}
+                {displayBookings.length}
               </span>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -1007,7 +1045,7 @@ const CabinBookings = () => {
                 </button>
               )}
 
-              {filteredBookings.length > 0 && (
+              {displayBookings.length > 0 && (
                 <button onClick={exportToExcel} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200">
                   <Download size={14} />
                   <span className="hidden xs:inline">Export</span>
@@ -1024,9 +1062,61 @@ const CabinBookings = () => {
               </button>
             </div>
           </div>
+        </div>
 
+        {/* ✅ TAB SWITCHER */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-1 mt-4 mb-4 flex">
+          <button
+            onClick={() => setActiveTab('all')}
+            className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
+              activeTab === 'all'
+                ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200'
+                : 'text-gray-500 hover:bg-gray-50'
+            }`}
+          >
+            All Bookings
+            <span className={`ml-1.5 px-1.5 py-0.5 text-[9px] rounded-full ${
+              activeTab === 'all' ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-600'
+            }`}>
+              {totalCount}
+            </span>
+          </button>
+          <button
+            onClick={() => setActiveTab('visits')}
+            className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
+              activeTab === 'visits'
+                ? 'bg-purple-600 text-white shadow-sm shadow-purple-200'
+                : 'text-gray-500 hover:bg-gray-50'
+            }`}
+          >
+            Site Visits
+            <span className={`ml-1.5 px-1.5 py-0.5 text-[9px] rounded-full ${
+              activeTab === 'visits' ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-600'
+            }`}>
+              {visitCount}
+            </span>
+          </button>
+          <button
+            onClick={() => setActiveTab('spaces')}
+            className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
+              activeTab === 'spaces'
+                ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-200'
+                : 'text-gray-500 hover:bg-gray-50'
+            }`}
+          >
+            Space Bookings
+            <span className={`ml-1.5 px-1.5 py-0.5 text-[9px] rounded-full ${
+              activeTab === 'spaces' ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-600'
+            }`}>
+              {spaceCount}
+            </span>
+          </button>
+        </div>
+
+        {/* Table Section */}
+        <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
           <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
-            {filteredBookings.length === 0 ? (
+            {displayBookings.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-3 py-20 text-gray-400">
                 <Calendar size={48} className="opacity-20" />
                 <p className="text-lg font-medium">No bookings found</p>
@@ -1038,24 +1128,39 @@ const CabinBookings = () => {
                   <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Space</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Customer</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Start Date</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Start Time</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">End Date</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">End Time</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Hours</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Seats</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Payment</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Pmt Status</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Visits</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Created At</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Amount</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Actions</th>
+                    {activeTab === 'visits' ? (
+                      // ✅ SITE VISIT COLUMNS - Limited
+                      <>
+                        <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Visit Date</th>
+                        <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Visit Time</th>
+                        <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
+                        <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Created At</th>
+                        <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap text-center">Actions</th>
+                      </>
+                    ) : (
+                      // ✅ SPACE BOOKING COLUMNS - Full
+                      <>
+                        <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Start Date</th>
+                        <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Start Time</th>
+                        <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">End Date</th>
+                        <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">End Time</th>
+                        <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Hours</th>
+                        <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Seats</th>
+                        <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
+                        <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Payment</th>
+                        <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Pmt Status</th>
+                        <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Visits</th>
+                        <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Created At</th>
+                        <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Amount</th>
+                        <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap text-center">Actions</th>
+                      </>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {filteredBookings.map((booking, idx) => {
+                  {displayBookings.map((booking, idx) => {
                     const statusBadge = getStatusBadge(booking.status);
                     const paymentMethodBadge = getPaymentMethodBadge(booking.paymentMethod);
                     const paymentStatusBadge = getPaymentStatusBadge(booking.paymentStatus);
@@ -1063,6 +1168,8 @@ const CabinBookings = () => {
                     const isCashPending = (booking.paymentMethod === 'cash' || booking.paymentMethod === 'counter') && booking.paymentStatus === 'pending';
                     const seatCount = booking.seatCount || 0;
                     const seatNames = booking.selectedSeats?.map(s => s.name).join(', ') || 'N/A';
+                    const isVisit = booking.bookingType === 'visit';
+                    const isChamber = booking.cabin?.isChamber || false;
 
                     return (
                       <tr key={booking._id} className="transition-colors group hover:bg-gray-50/80">
@@ -1082,6 +1189,23 @@ const CabinBookings = () => {
                           </div>
                         </td>
                         <td className="p-4">
+                          <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full inline-flex items-center gap-1 ${
+                            isChamber 
+                              ? 'bg-emerald-100 text-emerald-700' 
+                              : 'bg-blue-100 text-blue-700'
+                          }`}>
+                            {isChamber ? (
+                              <>
+                                <Stethoscope size={10} /> Medical
+                              </>
+                            ) : (
+                              <>
+                                <Briefcase size={10} /> Co-Working
+                              </>
+                            )}
+                          </span>
+                        </td>
+                        <td className="p-4">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
                               <User size={18} className="text-gray-600" />
@@ -1092,112 +1216,143 @@ const CabinBookings = () => {
                             </div>
                           </div>
                         </td>
-                        <td className="p-4">
-                          <span className="text-sm font-medium text-gray-700">{booking.startDate || 'N/A'}</span>
-                        </td>
-                        <td className="p-4">
-                          <span className="text-sm font-medium text-gray-700">{booking.startTime || 'N/A'}</span>
-                        </td>
-                        <td className="p-4">
-                          <span className="text-sm font-medium text-gray-700">{booking.endDate || 'N/A'}</span>
-                        </td>
-                        <td className="p-4">
-                          <span className="text-sm font-medium text-gray-700">{booking.endTime || 'N/A'}</span>
-                        </td>
-                        <td className="p-4">
-                          <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-bold">{booking.totalHours}h</span>
-                        </td>
-                        <td className="p-4">
-                          <div>
-                            <span className="flex items-center gap-1 text-sm font-medium text-gray-700">
-                              <Armchair size={14} className="text-indigo-500" />
-                              {seatCount}
-                            </span>
-                            {seatCount > 0 && (
-                              <p className="text-[10px] text-gray-400 truncate max-w-[120px]" title={seatNames}>
-                                {seatNames}
-                              </p>
-                            )}
-                          </div>
-                        </td>
-                        <td className="p-4">
-                          <span className={`px-3 py-1 text-xs font-bold rounded-full inline-flex items-center gap-1.5 ${statusBadge.color}`}>
-                            {statusBadge.icon} {statusBadge.label}
-                          </span>
-                        </td>
-                        <td className="p-4">
-                          <span className={`px-3 py-1 text-xs font-bold rounded-full inline-flex items-center gap-1.5 ${paymentMethodBadge.color}`}>
-                            {paymentMethodBadge.icon} {paymentMethodBadge.label}
-                          </span>
-                        </td>
-                        <td className="p-4">
-                          <span className={`px-3 py-1 text-xs font-bold rounded-full inline-flex items-center gap-1.5 ${paymentStatusBadge.color}`}>
-                            {paymentStatusBadge.icon} {paymentStatusBadge.label}
-                          </span>
-                        </td>
-                        <td className="p-4">
-                          <div className="flex items-center gap-1">
-                            <History size={14} className="text-indigo-400" />
-                            <span className="text-sm font-semibold text-gray-700">{visitCount}</span>
-                          </div>
-                        </td>
-                        <td className="p-4">
-                          <span className="text-[10px] text-gray-500 font-medium">{formatDateTime(booking.createdAt)}</span>
-                        </td>
-                        <td className="p-4">
-                          <div>
-                            <span className="flex items-center gap-1 text-indigo-600 font-bold text-sm">
-                              <IndianRupee size={14} />
-                              {booking.totalPrice?.toLocaleString("en-IN") || "0"}
-                            </span>
-                            {booking.extraCharge > 0 && (
-                              <p className="text-[9px] text-amber-500">+₹{booking.extraCharge} seat</p>
-                            )}
-                          </div>
-                        </td>
-                        <td className="p-4">
-                          <div className="flex items-center gap-1 flex-wrap max-w-[180px]">
-                            <button onClick={() => handleViewBooking(booking)} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors whitespace-nowrap flex-shrink-0" title="View">
-                              <Eye size={12} /> View
-                            </button>
-                            <button onClick={() => printReceipt(booking)} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors whitespace-nowrap flex-shrink-0" title="Print Receipt">
-                              <Printer size={12} /> Print
-                            </button>
-                            <button onClick={() => downloadPDF(booking)} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors whitespace-nowrap flex-shrink-0" title="Download PDF">
-                              <FileDown size={12} /> PDF
-                            </button>
-                            <button onClick={() => { setTimingBooking(booking); setNewTiming({ date: "", checkIn: "", checkOut: "" }); setShowTimingModal(true); }} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-cyan-50 text-cyan-700 hover:bg-cyan-100 transition-colors whitespace-nowrap flex-shrink-0" title="Add Timing">
-                              <Plus size={12} /> Time
-                            </button>
-                            <button onClick={() => { setSelectedBooking(booking); setNewStatus(booking.status || 'pending'); setShowStatusModal(true); }} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-orange-50 text-orange-700 hover:bg-orange-100 transition-colors whitespace-nowrap flex-shrink-0" title="Update Status">
-                              <Edit size={12} /> Status
-                            </button>
-                            {isCashPending && (
-                              <button onClick={() => {
-                                setPaymentBooking(booking);
-                                setNewPaymentStatus(booking.paymentStatus || 'pending');
-                                setAmountPaid(booking.totalPrice || 0);
-                                setPaymentDetails({
-                                  paymentMode: 'cash',
-                                  cardNumber: '',
-                                  cardHolderName: '',
-                                  cardExpiry: '',
-                                  cardCVV: '',
-                                  upiId: '',
-                                  upiApp: '',
-                                  transactionId: '',
-                                  paymentDate: new Date().toISOString().split('T')[0],
-                                  notes: ''
-                                });
-                                setPaymentScreenshot(null);
-                                setPaymentScreenshotPreview(null);
-                                setShowPaymentModal(true);
-                              }} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-yellow-50 text-yellow-700 hover:bg-yellow-100 transition-colors whitespace-nowrap flex-shrink-0" title="Update Payment">
-                                <CreditCard size={12} /> Pay
-                              </button>
-                            )}
-                          </div>
-                        </td>
+
+                        {isVisit ? (
+                          // ✅ SITE VISIT ROW - Limited columns
+                          <>
+                            <td className="p-4">
+                              <span className="text-sm font-medium text-gray-700">{booking.startDate || 'N/A'}</span>
+                            </td>
+                            <td className="p-4">
+                              <span className="text-sm font-medium text-gray-700">{booking.startTime || 'N/A'}</span>
+                            </td>
+                            <td className="p-4">
+                              <span className={`px-3 py-1 text-xs font-bold rounded-full inline-flex items-center gap-1.5 ${statusBadge.color}`}>
+                                {statusBadge.icon} {statusBadge.label}
+                              </span>
+                            </td>
+                            <td className="p-4">
+                              <span className="text-[10px] text-gray-500 font-medium">{formatDateTime(booking.createdAt)}</span>
+                            </td>
+                            <td className="p-4 text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                <button onClick={() => handleViewBooking(booking)} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors whitespace-nowrap flex-shrink-0" title="View">
+                                  <Eye size={12} /> View
+                                </button>
+                              </div>
+                            </td>
+                          </>
+                        ) : (
+                          // ✅ SPACE BOOKING ROW - Full columns
+                          <>
+                            <td className="p-4">
+                              <span className="text-sm font-medium text-gray-700">{booking.startDate || 'N/A'}</span>
+                            </td>
+                            <td className="p-4">
+                              <span className="text-sm font-medium text-gray-700">{booking.startTime || 'N/A'}</span>
+                            </td>
+                            <td className="p-4">
+                              <span className="text-sm font-medium text-gray-700">{booking.endDate || 'N/A'}</span>
+                            </td>
+                            <td className="p-4">
+                              <span className="text-sm font-medium text-gray-700">{booking.endTime || 'N/A'}</span>
+                            </td>
+                            <td className="p-4">
+                              <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-bold">{booking.totalHours}h</span>
+                            </td>
+                            <td className="p-4">
+                              <div>
+                                <span className="flex items-center gap-1 text-sm font-medium text-gray-700">
+                                  <Armchair size={14} className="text-indigo-500" />
+                                  {seatCount}
+                                </span>
+                                {seatCount > 0 && (
+                                  <p className="text-[10px] text-gray-400 truncate max-w-[120px]" title={seatNames}>
+                                    {seatNames}
+                                  </p>
+                                )}
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              <span className={`px-3 py-1 text-xs font-bold rounded-full inline-flex items-center gap-1.5 ${statusBadge.color}`}>
+                                {statusBadge.icon} {statusBadge.label}
+                              </span>
+                            </td>
+                            <td className="p-4">
+                              <span className={`px-3 py-1 text-xs font-bold rounded-full inline-flex items-center gap-1.5 ${paymentMethodBadge.color}`}>
+                                {paymentMethodBadge.icon} {paymentMethodBadge.label}
+                              </span>
+                            </td>
+                            <td className="p-4">
+                              <span className={`px-3 py-1 text-xs font-bold rounded-full inline-flex items-center gap-1.5 ${paymentStatusBadge.color}`}>
+                                {paymentStatusBadge.icon} {paymentStatusBadge.label}
+                              </span>
+                            </td>
+                            <td className="p-4">
+                              <div className="flex items-center gap-1">
+                                <History size={14} className="text-indigo-400" />
+                                <span className="text-sm font-semibold text-gray-700">{visitCount}</span>
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              <span className="text-[10px] text-gray-500 font-medium">{formatDateTime(booking.createdAt)}</span>
+                            </td>
+                            <td className="p-4">
+                              <div>
+                                <span className="flex items-center gap-1 text-indigo-600 font-bold text-sm">
+                                  <IndianRupee size={14} />
+                                  {booking.totalPrice?.toLocaleString("en-IN") || "0"}
+                                </span>
+                                {booking.extraCharge > 0 && (
+                                  <p className="text-[9px] text-amber-500">+₹{booking.extraCharge} seat</p>
+                                )}
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              <div className="flex items-center gap-1 flex-wrap max-w-[180px]">
+                                <button onClick={() => handleViewBooking(booking)} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors whitespace-nowrap flex-shrink-0" title="View">
+                                  <Eye size={12} /> View
+                                </button>
+                                <button onClick={() => printReceipt(booking)} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors whitespace-nowrap flex-shrink-0" title="Print Receipt">
+                                  <Printer size={12} /> Print
+                                </button>
+                                <button onClick={() => downloadPDF(booking)} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors whitespace-nowrap flex-shrink-0" title="Download PDF">
+                                  <FileDown size={12} /> PDF
+                                </button>
+                                <button onClick={() => { setTimingBooking(booking); setNewTiming({ date: "", checkIn: "", checkOut: "" }); setShowTimingModal(true); }} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-cyan-50 text-cyan-700 hover:bg-cyan-100 transition-colors whitespace-nowrap flex-shrink-0" title="Add Timing">
+                                  <Plus size={12} /> Time
+                                </button>
+                                <button onClick={() => { setSelectedBooking(booking); setNewStatus(booking.status || 'pending'); setShowStatusModal(true); }} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-orange-50 text-orange-700 hover:bg-orange-100 transition-colors whitespace-nowrap flex-shrink-0" title="Update Status">
+                                  <Edit size={12} /> Status
+                                </button>
+                                {isCashPending && (
+                                  <button onClick={() => {
+                                    setPaymentBooking(booking);
+                                    setNewPaymentStatus(booking.paymentStatus || 'pending');
+                                    setAmountPaid(booking.totalPrice || 0);
+                                    setPaymentDetails({
+                                      paymentMode: 'cash',
+                                      cardNumber: '',
+                                      cardHolderName: '',
+                                      cardExpiry: '',
+                                      cardCVV: '',
+                                      upiId: '',
+                                      upiApp: '',
+                                      transactionId: '',
+                                      paymentDate: new Date().toISOString().split('T')[0],
+                                      notes: ''
+                                    });
+                                    setPaymentScreenshot(null);
+                                    setPaymentScreenshotPreview(null);
+                                    setShowPaymentModal(true);
+                                  }} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-yellow-50 text-yellow-700 hover:bg-yellow-100 transition-colors whitespace-nowrap flex-shrink-0" title="Update Payment">
+                                    <CreditCard size={12} /> Pay
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </>
+                        )}
                       </tr>
                     );
                   })}
@@ -1206,10 +1361,10 @@ const CabinBookings = () => {
             )}
           </div>
 
-          {!loading && filteredBookings.length > 0 && (
+          {!loading && displayBookings.length > 0 && (
             <div className="px-4 py-3 border-t border-gray-100 rounded-b-2xl flex flex-wrap items-center justify-between gap-2" style={{ backgroundColor: '#fafafa' }}>
               <span className="text-xs text-gray-500">
-                Showing <strong>{filteredBookings.length}</strong> of <strong>{bookings.length}</strong> bookings
+                Showing <strong>{displayBookings.length}</strong> of <strong>{bookings.length}</strong> bookings
               </span>
               <div className="flex items-center gap-3 text-xs text-gray-500">
                 <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> Confirmed: {stats.confirmed}</span>

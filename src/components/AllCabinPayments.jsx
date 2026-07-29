@@ -1,4 +1,4 @@
-// AllCabinPayments.jsx - Complete with Professional Invoice (Redesigned)
+// AllCabinPayments.jsx - Complete with All Filters in Single Row
 import axios from "axios";
 import {
   CreditCard,
@@ -28,7 +28,8 @@ import {
   DollarSign,
   History,
   XCircle as XCircleIcon,
-  Crown
+  Crown,
+  CalendarDays
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
@@ -44,6 +45,9 @@ const AllCabinPayments = () => {
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterCabinName, setFilterCabinName] = useState("");
   const [filterOwnerName, setFilterOwnerName] = useState("");
+  const [filterDateFrom, setFilterDateFrom] = useState("");
+  const [filterDateTo, setFilterDateTo] = useState("");
+  
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
@@ -104,10 +108,10 @@ const AllCabinPayments = () => {
   const formatDate = (dateStr) => {
     if (!dateStr) return "N/A";
     const d = new Date(dateStr);
-    return d.toLocaleDateString('en-US', {
-      year: 'numeric',
+    return d.toLocaleDateString('en-IN', {
+      day: '2-digit',
       month: 'short',
-      day: 'numeric'
+      year: 'numeric'
     });
   };
 
@@ -172,6 +176,8 @@ const AllCabinPayments = () => {
     setFilterStatus("all");
     setFilterCabinName("");
     setFilterOwnerName("");
+    setFilterDateFrom("");
+    setFilterDateTo("");
   };
 
   const filteredOrders = orders.filter((order) => {
@@ -183,7 +189,17 @@ const AllCabinPayments = () => {
     const matchesCabinName = filterCabinName === "" || cabinName.includes(filterCabinName.toLowerCase());
     const matchesOwnerName = filterOwnerName === "" || ownerName.includes(filterOwnerName.toLowerCase());
     
-    return matchesStatus && matchesCabinName && matchesOwnerName;
+    let matchesDateRange = true;
+    const orderDate = order.createdAt ? order.createdAt.split('T')[0] : null;
+    
+    if (filterDateFrom && orderDate) {
+      matchesDateRange = matchesDateRange && orderDate >= filterDateFrom;
+    }
+    if (filterDateTo && orderDate) {
+      matchesDateRange = matchesDateRange && orderDate <= filterDateTo;
+    }
+    
+    return matchesStatus && matchesCabinName && matchesOwnerName && matchesDateRange;
   });
 
   const handleViewDetails = (order) => {
@@ -191,7 +207,6 @@ const AllCabinPayments = () => {
     setShowDetailModal(true);
   };
 
-  // DELETE ORDER
   const handleDeleteOrder = async () => {
     if (!deleteOrder) return;
     
@@ -226,7 +241,6 @@ const AllCabinPayments = () => {
     }
   };
 
-  // UPDATE ORDER STATUS
   const handleUpdateStatus = async () => {
     if (!editOrder || !editStatus) {
       toast.error("Please select a status");
@@ -270,9 +284,6 @@ const AllCabinPayments = () => {
     }
   };
 
-  // ======================
-  // EXPORT TO EXCEL
-  // ======================
   const exportToExcel = () => {
     try {
       if (filteredOrders.length === 0) {
@@ -320,9 +331,6 @@ const AllCabinPayments = () => {
     }
   };
 
-  // ======================
-  // PROFESSIONAL INVOICE DOWNLOAD
-  // ======================
   const downloadInvoice = (order) => {
     try {
       const cabin = order.cabin || {};
@@ -453,7 +461,6 @@ const AllCabinPayments = () => {
               Cabin <span>Payments</span>
             </h1>
           </div>
-         
         </div>
 
         {/* Stats Cards */}
@@ -489,37 +496,47 @@ const AllCabinPayments = () => {
                 {filteredOrders.length}
               </span>
             </div>
+            {filteredOrders.length > 0 && (
+              <button onClick={exportToExcel} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200">
+                <Download size={14} /> Export
+              </button>
+            )}
           </div>
 
-          {/* ─── FILTERS - ALWAYS VISIBLE ─── */}
-          <div className="px-4 pt-4 pb-3 border-b border-gray-100" style={{ backgroundColor: '#fafafa' }}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Cabin Name</label>
+          {/* ─── ALL FILTERS IN SINGLE ROW ─── */}
+          <div className="px-4 pt-3 pb-3 border-b border-gray-100" style={{ backgroundColor: '#fafafa' }}>
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Cabin Name */}
+              <div className="min-w-[120px] flex-1">
+                <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider block">Cabin</label>
                 <input
                   type="text"
-                  placeholder="Filter by cabin..."
+                  placeholder="Search..."
                   value={filterCabinName}
                   onChange={(e) => setFilterCabinName(e.target.value)}
-                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  className="w-full px-2 py-1 text-xs border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                 />
               </div>
-              <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Owner Name</label>
+
+              {/* Owner Name */}
+              <div className="min-w-[120px] flex-1">
+                <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider block">Owner</label>
                 <input
                   type="text"
-                  placeholder="Filter by owner..."
+                  placeholder="Search..."
                   value={filterOwnerName}
                   onChange={(e) => setFilterOwnerName(e.target.value)}
-                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  className="w-full px-2 py-1 text-xs border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                 />
               </div>
-              <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</label>
+
+              {/* Status */}
+              <div className="min-w-[100px]">
+                <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider block">Status</label>
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
-                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  className="w-full px-2 py-1 text-xs border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
                 >
                   <option value="all">All</option>
                   <option value="active">Active</option>
@@ -528,12 +545,51 @@ const AllCabinPayments = () => {
                   <option value="cancelled">Cancelled</option>
                 </select>
               </div>
-              <div className="flex items-end">
-                <button onClick={clearFilters} className="w-full px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-red-600 transition-colors border border-gray-200 rounded-lg hover:border-red-300 flex items-center justify-center gap-1">
-                  <XCircleIcon size={14} /> Clear All
-                </button>
+
+              {/* From Date */}
+              <div className="min-w-[130px]">
+                <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider block">From</label>
+                <input
+                  type="date"
+                  value={filterDateFrom}
+                  onChange={(e) => setFilterDateFrom(e.target.value)}
+                  className="w-full px-2 py-1 text-xs border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                />
               </div>
+
+              {/* To Date */}
+              <div className="min-w-[130px]">
+                <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider block">To</label>
+                <input
+                  type="date"
+                  value={filterDateTo}
+                  onChange={(e) => setFilterDateTo(e.target.value)}
+                  className="w-full px-2 py-1 text-xs border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                />
+              </div>
+
+              {/* Clear Button */}
+              {(filterStatus !== "all" || filterCabinName || filterOwnerName || filterDateFrom || filterDateTo) && (
+                <button
+                  onClick={clearFilters}
+                  className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors mt-auto"
+                >
+                  <XCircleIcon size={14} /> Clear
+                </button>
+              )}
             </div>
+
+            {/* Active Filters Display */}
+            {(filterDateFrom || filterDateTo) && (
+              <div className="mt-1.5 flex items-center gap-2 text-[10px] text-gray-500">
+                <CalendarDays size={12} className="text-indigo-400" />
+                <span>
+                  {filterDateFrom && <span className="font-medium text-gray-700">From {formatDate(filterDateFrom)}</span>}
+                  {filterDateFrom && filterDateTo && <span className="text-gray-300 mx-1">→</span>}
+                  {filterDateTo && <span className="font-medium text-gray-700">To {formatDate(filterDateTo)}</span>}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Table Container */}

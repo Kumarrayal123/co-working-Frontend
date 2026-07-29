@@ -13,6 +13,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import UsersNavbar from "./UsersNavbar";
 import AdminNavbar from "./AdminNavbar";
+import SimpleUserNavbar from "./SimpleUserNavbar";
 import "./Dashboard.css";
 
 const API_URL = "https://spaceapi.iryax.com";
@@ -21,7 +22,16 @@ const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526
 const SiteVisit = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const isAdmin = localStorage.getItem("admin") !== null;
+  
+  // ✅ Get user data from localStorage
+  const user = JSON.parse(localStorage.getItem("user") || "null");
+  const admin = JSON.parse(localStorage.getItem("admin") || "null");
+  
+  // ✅ Determine user role
+  const userRole = user?.role || admin?.role || null;
+  const isAdmin = userRole === "admin";
+  const isCabinOwner = userRole === "cabinOwner";
+  const isRegularUser = userRole === "user";
 
   const [cabin, setCabin] = useState(null);
   const [relatedCabins, setRelatedCabins] = useState([]);
@@ -92,7 +102,25 @@ const SiteVisit = () => {
         }
       );
       toast.success("Site visit scheduled successfully!");
-      navigate("/mybookings");
+      
+      // ✅ ROLE BASED NAVIGATION AFTER BOOKING
+      const userRole = currentUser?.role;
+      
+      if (userRole === "user") {
+        console.log("👤 Regular user booking → Navigating to /userbooking");
+        navigate("/userbooking");
+      } else if (userRole === "cabinOwner") {
+        console.log("🏪 Cabin Owner booking → Navigating to /mybookings");
+        navigate("/mybookings");
+      } else if (userRole === "admin") {
+        console.log("👑 Admin booking → Navigating to /mybookings");
+        navigate("/mybookings");
+      } else {
+        // Fallback for any other role
+        console.log("⚠️ Unknown role → Navigating to /mybookings");
+        navigate("/mybookings");
+      }
+      
     } catch (err) {
       const errorMsg = err.response?.data?.error || "Scheduling failed. Please try again.";
       toast.error(errorMsg);
@@ -101,10 +129,24 @@ const SiteVisit = () => {
     }
   };
 
+  // ✅ Function to render correct navbar based on role
+  const renderNavbar = () => {
+    if (isAdmin) {
+      return <AdminNavbar />;
+    } else if (isCabinOwner) {
+      return <UsersNavbar />;
+    } else if (isRegularUser) {
+      return <SimpleUserNavbar />;
+    } else {
+      // Fallback - if no role found, show nothing or default
+      return <UsersNavbar />;
+    }
+  };
+
   if (!cabin) {
     return (
       <div className="admin-dash">
-        {isAdmin ? <AdminNavbar /> : <UsersNavbar />}
+        {renderNavbar()}
         <div className="admin-dash__loading">
           <div className="admin-dash__spinner" />
           <p className="admin-dash__loading-text">Preparing workspace...</p>
@@ -115,7 +157,7 @@ const SiteVisit = () => {
 
   return (
     <div className="admin-dash">
-      {isAdmin ? <AdminNavbar /> : <UsersNavbar />}
+      {renderNavbar()}
 
       <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-16">
         {/* Header */}

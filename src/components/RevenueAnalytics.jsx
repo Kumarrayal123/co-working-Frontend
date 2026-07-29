@@ -1,4 +1,4 @@
-// RevenueAnalytics.jsx - Complete Revenue Analytics Dashboard
+// RevenueAnalytics.jsx - Complete with Created At Column
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -32,7 +32,9 @@ import {
   ArrowUp,
   ArrowDown,
   DollarSign,
-  Percent
+  Percent,
+  CalendarDays,
+  History
 } from "lucide-react";
 import { toast } from "react-toastify";
 import * as XLSX from 'xlsx';
@@ -61,9 +63,15 @@ const RevenueAnalytics = () => {
   const [bookings, setBookings] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   
-  // Filter States
-  const [filterDateFrom, setFilterDateFrom] = useState("");
-  const [filterDateTo, setFilterDateTo] = useState("");
+  // Get today's date for default filter
+  const getTodayDate = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  };
+
+  // Filter States - Default to Today
+  const [filterDateFrom, setFilterDateFrom] = useState(getTodayDate());
+  const [filterDateTo, setFilterDateTo] = useState(getTodayDate());
   const [filterCabinName, setFilterCabinName] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   
@@ -94,13 +102,26 @@ const RevenueAnalytics = () => {
   const [cabinNames, setCabinNames] = useState([]);
 
   const formatCurrency = (amount) => {
-    return `₹${amount.toLocaleString('en-IN')}`;
+    return `₹${Number(amount).toLocaleString('en-IN')}`;
   };
 
   const formatDate = (dateStr) => {
     if (!dateStr) return "N/A";
     const d = new Date(dateStr);
     return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
+
+  const formatDateTimeIndian = (dateStr) => {
+    if (!dateStr) return "N/A";
+    const d = new Date(dateStr);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = String(d.getFullYear()).slice(2);
+    let hours = d.getHours();
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    return `${day}/${month}/${year} ${hours}:${minutes} ${ampm}`;
   };
 
   const getStatusBadge = (status) => {
@@ -131,40 +152,63 @@ const RevenueAnalytics = () => {
       const res = await axios.get(`${API_URL}/api/bookings`);
       const bookingsData = res.data.bookings || [];
       setBookings(bookingsData);
-      setFilteredData(bookingsData);
       
       // Get unique cabin names
       const names = [...new Set(bookingsData.map(b => b.cabin?.name).filter(Boolean))];
       setCabinNames(names);
       
-      calculateStats(bookingsData);
-      processChartData(bookingsData);
+      // Apply default filter (today) after fetching
+      applyDefaultFilter(bookingsData);
     } catch (err) {
       console.error("Failed to fetch bookings:", err);
       toast.error("Failed to fetch bookings");
-    } finally {
       setLoading(false);
     }
   };
 
+  const applyDefaultFilter = (data) => {
+    const today = getTodayDate();
+    let filtered = [...data];
+    
+    // Filter by today's date - check startDate or createdAt
+    if (today) {
+      filtered = filtered.filter(b => {
+        const startDate = b.startDate;
+        const createdDate = b.createdAt ? b.createdAt.split('T')[0] : null;
+        return startDate === today || createdDate === today;
+      });
+    }
+    
+    console.log("Today's bookings:", filtered.length);
+    console.log("Bookings data:", filtered);
+    
+    setFilteredData(filtered);
+    calculateStats(filtered);
+    processChartData(filtered);
+    setLoading(false);
+  };
+
   const calculateStats = (data) => {
-    const totalRevenue = data.reduce((sum, b) => sum + (b.totalPrice || 0), 0);
+    const totalRevenue = data.reduce((sum, b) => sum + (Number(b.totalPrice) || 0), 0);
     const totalBookings = data.length;
     const averageRevenue = totalBookings > 0 ? totalRevenue / totalBookings : 0;
     
-    const revenues = data.map(b => b.totalPrice || 0);
+    const revenues = data.map(b => Number(b.totalPrice) || 0);
     const highestRevenue = revenues.length > 0 ? Math.max(...revenues) : 0;
     const lowestRevenue = revenues.length > 0 ? Math.min(...revenues) : 0;
     
-    const confirmedRevenue = data.filter(b => b.status === 'confirmed').reduce((sum, b) => sum + (b.totalPrice || 0), 0);
-    const completedRevenue = data.filter(b => b.status === 'completed').reduce((sum, b) => sum + (b.totalPrice || 0), 0);
-    const pendingRevenue = data.filter(b => b.status === 'pending').reduce((sum, b) => sum + (b.totalPrice || 0), 0);
-    const cancelledRevenue = data.filter(b => b.status === 'cancelled').reduce((sum, b) => sum + (b.totalPrice || 0), 0);
+    const confirmedRevenue = data.filter(b => b.status === 'confirmed').reduce((sum, b) => sum + (Number(b.totalPrice) || 0), 0);
+    const completedRevenue = data.filter(b => b.status === 'completed').reduce((sum, b) => sum + (Number(b.totalPrice) || 0), 0);
+    const pendingRevenue = data.filter(b => b.status === 'pending').reduce((sum, b) => sum + (Number(b.totalPrice) || 0), 0);
+    const cancelledRevenue = data.filter(b => b.status === 'cancelled').reduce((sum, b) => sum + (Number(b.totalPrice) || 0), 0);
     
-    const cashRevenue = data.filter(b => b.paymentMethod === 'cash' || b.paymentMethod === 'counter').reduce((sum, b) => sum + (b.totalPrice || 0), 0);
-    const onlineRevenue = data.filter(b => b.paymentMethod === 'online').reduce((sum, b) => sum + (b.totalPrice || 0), 0);
-    const upiRevenue = data.filter(b => b.paymentMethod === 'upi').reduce((sum, b) => sum + (b.totalPrice || 0), 0);
-    const cardRevenue = data.filter(b => b.paymentMethod === 'card').reduce((sum, b) => sum + (b.totalPrice || 0), 0);
+    const cashRevenue = data.filter(b => b.paymentMethod === 'cash' || b.paymentMethod === 'counter').reduce((sum, b) => sum + (Number(b.totalPrice) || 0), 0);
+    const onlineRevenue = data.filter(b => b.paymentMethod === 'online').reduce((sum, b) => sum + (Number(b.totalPrice) || 0), 0);
+    const upiRevenue = data.filter(b => b.paymentMethod === 'upi').reduce((sum, b) => sum + (Number(b.totalPrice) || 0), 0);
+    const cardRevenue = data.filter(b => b.paymentMethod === 'card').reduce((sum, b) => sum + (Number(b.totalPrice) || 0), 0);
+
+    console.log("Total Revenue:", totalRevenue);
+    console.log("Total Bookings:", totalBookings);
 
     setStats({
       totalRevenue,
@@ -193,7 +237,7 @@ const RevenueAnalytics = () => {
       if (b.createdAt) {
         const date = new Date(b.createdAt);
         const month = months[date.getMonth()];
-        monthlyMap[month] = (monthlyMap[month] || 0) + (b.totalPrice || 0);
+        monthlyMap[month] = (monthlyMap[month] || 0) + (Number(b.totalPrice) || 0);
       }
     });
     
@@ -207,7 +251,7 @@ const RevenueAnalytics = () => {
     const statusMap = {};
     data.forEach(b => {
       const status = b.status || 'pending';
-      statusMap[status] = (statusMap[status] || 0) + (b.totalPrice || 0);
+      statusMap[status] = (statusMap[status] || 0) + (Number(b.totalPrice) || 0);
     });
     const statusColors = {
       pending: '#f59e0b',
@@ -227,7 +271,7 @@ const RevenueAnalytics = () => {
     const pmtMap = {};
     data.forEach(b => {
       const method = b.paymentMethod || 'unknown';
-      pmtMap[method] = (pmtMap[method] || 0) + (b.totalPrice || 0);
+      pmtMap[method] = (pmtMap[method] || 0) + (Number(b.totalPrice) || 0);
     });
     const pmtColors = {
       cash: '#f97316',
@@ -248,7 +292,7 @@ const RevenueAnalytics = () => {
     const cabinMap = {};
     data.forEach(b => {
       const name = b.cabin?.name || 'Unknown Cabin';
-      cabinMap[name] = (cabinMap[name] || 0) + (b.totalPrice || 0);
+      cabinMap[name] = (cabinMap[name] || 0) + (Number(b.totalPrice) || 0);
     });
     const topCabins = Object.keys(cabinMap)
       .map(key => ({ name: key, revenue: cabinMap[key] }))
@@ -261,10 +305,10 @@ const RevenueAnalytics = () => {
     let filtered = [...bookings];
     
     if (filterDateFrom) {
-      filtered = filtered.filter(b => b.startDate >= filterDateFrom);
+      filtered = filtered.filter(b => b.startDate >= filterDateFrom || (b.createdAt && b.createdAt.split('T')[0] >= filterDateFrom));
     }
     if (filterDateTo) {
-      filtered = filtered.filter(b => b.endDate <= filterDateTo);
+      filtered = filtered.filter(b => b.startDate <= filterDateTo || (b.createdAt && b.createdAt.split('T')[0] <= filterDateTo));
     }
     if (filterCabinName) {
       filtered = filtered.filter(b => b.cabin?.name === filterCabinName);
@@ -276,16 +320,17 @@ const RevenueAnalytics = () => {
     setFilteredData(filtered);
     calculateStats(filtered);
     processChartData(filtered);
+    toast.success(`Showing ${filtered.length} bookings`);
   };
 
   const clearFilters = () => {
-    setFilterDateFrom("");
-    setFilterDateTo("");
+    const today = getTodayDate();
+    setFilterDateFrom(today);
+    setFilterDateTo(today);
     setFilterCabinName("");
     setFilterStatus("all");
-    setFilteredData(bookings);
-    calculateStats(bookings);
-    processChartData(bookings);
+    applyDefaultFilter(bookings);
+    toast.success("Reset to today's data");
   };
 
   const exportToExcel = () => {
@@ -296,16 +341,20 @@ const RevenueAnalytics = () => {
       }
       const exportData = filteredData.map((b, i) => ({
         'S.No': i + 1,
+        'Booking ID': b._id?.slice(-8).toUpperCase() || 'N/A',
         'Cabin': b.cabin?.name || 'Unknown',
         'Customer': b.name || b.user?.name || 'Unknown',
         'Mobile': b.mobile || b.user?.mobile || 'N/A',
         'Start Date': b.startDate || 'N/A',
         'End Date': b.endDate || 'N/A',
+        'Start Time': b.startTime || 'N/A',
+        'End Time': b.endTime || 'N/A',
         'Hours': b.totalHours || 0,
-        'Amount (₹)': b.totalPrice || 0,
+        'Amount (₹)': Number(b.totalPrice) || 0,
         'Status': getStatusBadge(b.status).label,
         'Payment Method': getPaymentMethodBadge(b.paymentMethod).label,
-        'Payment Status': b.paymentStatus || 'N/A'
+        'Payment Status': b.paymentStatus || 'N/A',
+        'Created At': formatDateTimeIndian(b.createdAt)
       }));
       const ws = XLSX.utils.json_to_sheet(exportData);
       const wb = XLSX.utils.book_new();
@@ -335,6 +384,13 @@ const RevenueAnalytics = () => {
     return null;
   };
 
+  // Calculate today's date display
+  const todayDisplay = new Date().toLocaleDateString('en-IN', { 
+    day: '2-digit', 
+    month: 'long', 
+    year: 'numeric' 
+  });
+
   if (loading) {
     return (
       <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
@@ -357,50 +413,55 @@ const RevenueAnalytics = () => {
             <h1 className="admin-dash__greeting">
               Revenue <span>Analytics</span>
             </h1>
+            <p className="admin-dash__subtitle text-sm text-gray-500 flex items-center gap-2 mt-1">
+              <CalendarDays size={16} className="text-indigo-500" />
+              Today: <span className="font-semibold text-gray-700">{todayDisplay}</span>
+              <span className="text-gray-400">|</span>
+              <span className="text-indigo-600 font-medium">{filteredData.length} bookings today</span>
+            </p>
           </div>
-        
         </div>
 
-        {/* Stats Cards */}
+        {/* Stats Cards - Today's Revenue */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
           <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-4 text-white shadow-lg shadow-indigo-500/25">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-200">Total Revenue</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-200">Today's Revenue</p>
             <p className="text-2xl sm:text-3xl font-bold mt-1">{formatCurrency(stats.totalRevenue)}</p>
             <div className="mt-2 pt-2 border-t border-white/20 flex justify-between text-[10px]">
-              <span className="text-indigo-200">Bookings</span>
+              <span className="text-indigo-200">Bookings Today</span>
               <span className="font-semibold">{stats.totalBookings}</span>
             </div>
           </div>
 
           <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Avg Revenue</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Avg Per Booking</p>
             <p className="text-xl sm:text-2xl font-bold text-emerald-600 mt-1">{formatCurrency(stats.averageRevenue)}</p>
             <div className="mt-2 pt-2 border-t border-gray-100 flex justify-between text-[10px]">
-              <span className="text-gray-500">Per Booking</span>
+              <span className="text-gray-500">Today's Average</span>
               <span className="font-semibold text-gray-900">Avg</span>
             </div>
           </div>
 
           <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-blue-600">Highest Booking</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-blue-600">Highest Today</p>
             <p className="text-xl sm:text-2xl font-bold text-blue-600 mt-1">{formatCurrency(stats.highestRevenue)}</p>
             <div className="mt-2 pt-2 border-t border-gray-100 flex justify-between text-[10px]">
-              <span className="text-gray-500">Max Revenue</span>
-              <span className="font-semibold text-gray-900">Single</span>
+              <span className="text-gray-500">Max Booking</span>
+              <span className="font-semibold text-gray-900">Today</span>
             </div>
           </div>
 
           <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Completed Revenue</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Completed Today</p>
             <p className="text-xl sm:text-2xl font-bold text-amber-600 mt-1">{formatCurrency(stats.completedRevenue)}</p>
             <div className="mt-2 pt-2 border-t border-gray-100 flex justify-between text-[10px]">
-              <span className="text-gray-500">Closed Bookings</span>
+              <span className="text-gray-500">Closed Revenue</span>
               <span className="font-semibold text-gray-900">{formatCurrency(stats.completedRevenue)}</span>
             </div>
           </div>
         </div>
 
-        {/* Filters - Always Expanded */}
+        {/* Filters - Default Today */}
         <div className="bg-gray-50 rounded-xl p-3 mb-4 border border-gray-200">
           <div className="flex flex-wrap items-end gap-3">
             <div className="min-w-[120px]">
@@ -435,7 +496,7 @@ const RevenueAnalytics = () => {
               Apply
             </button>
             <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-red-600 transition-colors">
-              <XCircleIcon size={14} /> Clear
+              <XCircleIcon size={14} /> Reset to Today
             </button>
             {filteredData.length > 0 && (
               <button onClick={exportToExcel} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200">
@@ -452,7 +513,7 @@ const RevenueAnalytics = () => {
             <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
               <div>
                 <h3 className="text-sm font-bold text-gray-800">Monthly Revenue Trend</h3>
-                <p className="text-[10px] text-gray-400">Revenue by month</p>
+                <p className="text-[10px] text-gray-400">Revenue by month (based on filtered data)</p>
               </div>
               <TrendingUp size={16} className="text-indigo-500" />
             </div>
@@ -480,7 +541,7 @@ const RevenueAnalytics = () => {
             <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
               <div>
                 <h3 className="text-sm font-bold text-gray-800">Revenue by Status</h3>
-                <p className="text-[10px] text-gray-400">Distribution by booking status</p>
+                <p className="text-[10px] text-gray-400">Distribution by booking status (today)</p>
               </div>
               <PieChart size={16} className="text-purple-500" />
             </div>
@@ -514,7 +575,7 @@ const RevenueAnalytics = () => {
           </div>
         </div>
 
-        {/* Additional Stats Row */}
+        {/* Additional Stats Row - Today's Breakdown */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
           <div className="bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
             <p className="text-[9px] font-bold uppercase tracking-wider text-emerald-600">Confirmed</p>
@@ -541,7 +602,7 @@ const RevenueAnalytics = () => {
             <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
               <div>
                 <h3 className="text-sm font-bold text-gray-800">Revenue by Payment Method</h3>
-                <p className="text-[10px] text-gray-400">Distribution by payment type</p>
+                <p className="text-[10px] text-gray-400">Distribution by payment type (today)</p>
               </div>
               <CreditCard size={16} className="text-blue-500" />
             </div>
@@ -565,14 +626,14 @@ const RevenueAnalytics = () => {
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
               <div>
-                <h3 className="text-sm font-bold text-gray-800">Top Cabins by Revenue</h3>
-                <p className="text-[10px] text-gray-400">Highest earning cabins</p>
+                <h3 className="text-sm font-bold text-gray-800">Top Cabins Today</h3>
+                <p className="text-[10px] text-gray-400">Highest earning cabins today</p>
               </div>
               <Building2 size={16} className="text-emerald-500" />
             </div>
             <div className="p-4 h-48 overflow-y-auto">
               {topCabinsData.length === 0 ? (
-                <div className="flex items-center justify-center h-32 text-gray-400 text-sm">No data available</div>
+                <div className="flex items-center justify-center h-32 text-gray-400 text-sm">No data available for today</div>
               ) : (
                 <div className="space-y-2">
                   {topCabinsData.map((cabin, idx) => (
@@ -590,17 +651,17 @@ const RevenueAnalytics = () => {
           </div>
         </div>
 
-        {/* Detailed Bookings Table */}
+        {/* Detailed Bookings Table - Today's Bookings with Created At */}
         <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
           <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
             <div className="flex items-center gap-3">
-              <h3 className="admin-dash__card-title">Revenue Details</h3>
+              <h3 className="admin-dash__card-title">Today's Bookings Details</h3>
               <span className="px-2.5 py-0.5 text-xs font-bold text-indigo-700 bg-indigo-100 rounded-full">
                 {filteredData.length}
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500 font-medium">Total Revenue: <span className="font-bold text-indigo-600">{formatCurrency(stats.totalRevenue)}</span></span>
+              <span className="text-xs text-gray-500 font-medium">Today's Revenue: <span className="font-bold text-indigo-600">{formatCurrency(stats.totalRevenue)}</span></span>
             </div>
           </div>
 
@@ -608,30 +669,37 @@ const RevenueAnalytics = () => {
             {filteredData.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-3 py-20 text-gray-400">
                 <DollarSign size={48} className="opacity-20" />
-                <p className="text-lg font-medium">No revenue data found</p>
-                <p className="text-sm">Try adjusting your filters.</p>
+                <p className="text-lg font-medium">No revenue data for today</p>
+                <p className="text-sm">No bookings found for {todayDisplay}</p>
               </div>
             ) : (
-              <table className="w-full min-w-[900px] text-left text-xs">
+              <table className="w-full min-w-[1100px] text-left text-xs">
                 <thead>
                   <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
                     <th className="p-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
+                    <th className="p-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Booking ID</th>
                     <th className="p-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
                     <th className="p-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Customer</th>
-                    <th className="p-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Date</th>
+                    <th className="p-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Start</th>
+                    <th className="p-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">End</th>
                     <th className="p-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Hours</th>
                     <th className="p-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
                     <th className="p-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Payment</th>
                     <th className="p-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Amount</th>
+                    <th className="p-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Created At</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {filteredData.slice(0, 20).map((booking, idx) => {
+                  {filteredData.map((booking, idx) => {
                     const status = getStatusBadge(booking.status);
                     const pmtMethod = getPaymentMethodBadge(booking.paymentMethod);
+                    const bookingId = booking._id?.slice(-8).toUpperCase() || 'N/A';
                     return (
                       <tr key={booking._id} className="transition-colors hover:bg-gray-50/80">
                         <td className="p-2"><span className="text-xs font-semibold text-gray-400">#{idx + 1}</span></td>
+                        <td className="p-2">
+                          <span className="font-mono text-xs font-bold text-indigo-600">{bookingId}</span>
+                        </td>
                         <td className="p-2">
                           <p className="font-semibold text-gray-800 text-xs">{booking.cabin?.name || "Unknown"}</p>
                         </td>
@@ -641,7 +709,11 @@ const RevenueAnalytics = () => {
                         </td>
                         <td className="p-2">
                           <p className="text-xs text-gray-700">{booking.startDate}</p>
-                          <p className="text-[10px] text-gray-400">{booking.startTime} - {booking.endTime}</p>
+                          <p className="text-[10px] text-indigo-600 font-medium">{booking.startTime}</p>
+                        </td>
+                        <td className="p-2">
+                          <p className="text-xs text-gray-700">{booking.endDate}</p>
+                          <p className="text-[10px] text-indigo-600 font-medium">{booking.endTime}</p>
                         </td>
                         <td className="p-2">
                           <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-full text-[10px] font-bold">{booking.totalHours}h</span>
@@ -653,7 +725,13 @@ const RevenueAnalytics = () => {
                           <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${pmtMethod.color}`}>{pmtMethod.label}</span>
                         </td>
                         <td className="p-2">
-                          <span className="text-xs font-bold text-indigo-600">{formatCurrency(booking.totalPrice || 0)}</span>
+                          <span className="text-xs font-bold text-indigo-600">{formatCurrency(Number(booking.totalPrice) || 0)}</span>
+                        </td>
+                        <td className="p-2">
+                          <div className="flex flex-col">
+                            <span className="text-xs font-medium text-gray-700">{formatDate(booking.createdAt)}</span>
+                            <span className="text-[9px] text-gray-400">{booking.createdAt ? new Date(booking.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) : 'N/A'}</span>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -666,10 +744,10 @@ const RevenueAnalytics = () => {
           {!loading && filteredData.length > 0 && (
             <div className="px-4 py-2 border-t border-gray-100 rounded-b-2xl flex flex-wrap items-center justify-between gap-2" style={{ backgroundColor: '#fafafa' }}>
               <span className="text-[10px] text-gray-500">
-                Showing <strong>{filteredData.length}</strong> of <strong>{bookings.length}</strong> bookings
+                Showing <strong>{filteredData.length}</strong> bookings for today
               </span>
               <div className="flex items-center gap-2 text-[10px] text-gray-500">
-                <span className="flex items-center gap-1 font-semibold text-indigo-600">Total Revenue: {formatCurrency(stats.totalRevenue)}</span>
+                <span className="flex items-center gap-1 font-semibold text-indigo-600">Today's Revenue: {formatCurrency(stats.totalRevenue)}</span>
               </div>
             </div>
           )}

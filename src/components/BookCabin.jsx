@@ -1,4 +1,4 @@
-// BookCabin.jsx - Complete with Pay on Counter Only (Seats Optional)
+// BookCabin.jsx - Complete with Multi-Day Slots + DoctorNavbar Support
 import axios from "axios";
 import {
   ArrowLeft,
@@ -16,7 +16,9 @@ import {
   X,
   ChevronDown,
   ChevronUp,
-  Armchair
+  Armchair,
+  Calendar,
+  Clock
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -24,37 +26,75 @@ import { toast } from "react-toastify";
 import UsersNavbar from "./UsersNavbar";
 import AdminNavbar from "./AdminNavbar";
 import SimpleUserNavbar from "./SimpleUserNavbar";
+import DoctorNavbar from "./DoctorNavbar";
 import "./Dashboard.css";
 
 const API_URL = "https://spaceapi.iryax.com";
 const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
 const GST_RATE = 0.18;
-const SEAT_EXTRA_CHARGE = 100; // ₹100 per seat
+const SEAT_EXTRA_CHARGE = 100;
 
 const BookCabin = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   
-  // Check user role from localStorage
-  const userStr = localStorage.getItem("user");
-  const adminStr = localStorage.getItem("admin");
-  
-  let userRole = "user"; // default
-  let currentUser = null;
-  
-  if (userStr) {
-    currentUser = JSON.parse(userStr);
-    userRole = currentUser?.role || "user";
-  } else if (adminStr) {
-    currentUser = JSON.parse(adminStr);
-    userRole = "admin";
-  }
+  // ✅ Get user data from localStorage
+  const getUserData = () => {
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      try {
+        const userData = JSON.parse(userStr);
+        if (userData && (userData.role === "doctor" || userData.isDoctor === true)) {
+          return { user: userData, role: "doctor" };
+        }
+        if (userData && userData._id) {
+          return { user: userData, role: userData.role || "user" };
+        }
+      } catch (e) {
+        console.error("Error parsing user data:", e);
+      }
+    }
 
+    const doctorFlag = localStorage.getItem("doctor") || localStorage.getItem("isDoctor");
+    if (doctorFlag === "true") {
+      const userData = localStorage.getItem("user");
+      if (userData) {
+        try {
+          const parsed = JSON.parse(userData);
+          if (parsed && parsed._id) {
+            return { user: parsed, role: parsed.role || "doctor" };
+          }
+        } catch (e) {
+          console.error("Error parsing user data:", e);
+        }
+      }
+      return { user: null, role: "doctor" };
+    }
+
+    const adminStr = localStorage.getItem("admin");
+    if (adminStr) {
+      try {
+        const adminData = JSON.parse(adminStr);
+        if (adminData && adminData._id) {
+          return { user: adminData, role: "admin" };
+        }
+      } catch (e) {
+        console.error("Error parsing admin data:", e);
+      }
+    }
+
+    return { user: null, role: "user" };
+  };
+
+  const { user: currentUser, role: userRole } = getUserData();
+  
   const isAdmin = userRole === "admin";
+  const isDoctor = userRole === "doctor";
 
-  // Select navbar based on role
   const renderNavbar = () => {
-    if (isAdmin) {
+    if (isDoctor) {
+      return <DoctorNavbar />;
+    } else if (isAdmin) {
       return <AdminNavbar />;
     } else if (userRole === "user") {
       return <SimpleUserNavbar />;
@@ -80,7 +120,6 @@ const BookCabin = () => {
   const [showTerms, setShowTerms] = useState(false);
   const [termsExpanded, setTermsExpanded] = useState(true);
 
-  // Seat selection state - OPTIONAL
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [selectedSeatCount, setSelectedSeatCount] = useState(0);
   const [extraCharge, setExtraCharge] = useState(0);
@@ -91,6 +130,9 @@ const BookCabin = () => {
   const [totalPrice, setTotalPrice] = useState(0);
   const [availabilityError, setAvailabilityError] = useState("");
   const [loading, setLoading] = useState(false);
+  
+  // ✅ New: Multi-day slots
+  const [bookingSlots, setBookingSlots] = useState([]);
 
   const getImageUrl = (img) => {
     if (!img) return PLACEHOLDER_IMAGE;
@@ -123,7 +165,6 @@ const BookCabin = () => {
     fetchData();
   }, [id]);
 
-  // Update extra charge when selected seats change
   useEffect(() => {
     const count = selectedSeats.length;
     setSelectedSeatCount(count);
@@ -141,7 +182,6 @@ const BookCabin = () => {
     }
   }, [startDate, startTime, totalPrice]);
 
-  // Handle seat selection toggle
   const toggleSeat = (seatId) => {
     setSelectedSeats(prev => {
       if (prev.includes(seatId)) {
@@ -152,14 +192,57 @@ const BookCabin = () => {
     });
   };
 
-  // Reset seat selection
   const resetSeats = () => {
     setSelectedSeats([]);
+  };
+
+  // ✅ Generate daily slots between start and end date
+  const generateDailySlots = (start, end, startTimeStr, endTimeStr) => {
+    const slots = [];
+    const current = new Date(start);
+    const endDateObj = new Date(end);
+    
+    // Reset time to start of day for comparison
+    current.setHours(0, 0, 0, 0);
+    endDateObj.setHours(0, 0, 0, 0);
+    
+    while (current <= endDateObj) {
+      const dateStr = current.toISOString().split('T')[0];
+      slots.push({
+        date: dateStr,
+        startTime: startTimeStr,
+        endTime: endTimeStr,
+        // Calculate hours for this slot
+        hours: calculateDailyHours(startTimeStr, endTimeStr)
+      });
+      current.setDate(current.getDate() + 1);
+    }
+    
+    return slots;
+  };
+
+  // ✅ Calculate hours for a single day
+  const calculateDailyHours = (startTimeStr, endTimeStr) => {
+    const start = new Date(`2000-01-01T${startTimeStr}`);
+    const end = new Date(`2000-01-01T${endTimeStr}`);
+    
+    if (end <= start) {
+      // If end time is before or equal to start time, assume it's next day
+      end.setDate(end.getDate() + 1);
+    }
+    
+    return Math.ceil((end - start) / (1000 * 60 * 60));
+  };
+
+  // ✅ Calculate total hours across all days
+  const calculateTotalHours = (slots) => {
+    return slots.reduce((total, slot) => total + slot.hours, 0);
   };
 
   useEffect(() => {
     let hours = 0;
     let price = 0;
+    let slots = [];
 
     if (bookingBasis === "hourly") {
       if (startDate && startTime && endDate && endTime) {
@@ -171,13 +254,18 @@ const BookCabin = () => {
           setSubtotal(0);
           setGstAmount(0);
           setTotalPrice(0);
+          setBookingSlots([]);
           return;
         }
 
-        hours = Math.ceil((end - start) / (1000 * 60 * 60));
+        // ✅ Generate daily slots
+        slots = generateDailySlots(startDate, endDate, startTime, endTime);
+        hours = calculateTotalHours(slots);
         price = hours * (cabin?.price || 0);
+        
         setTotalHours(hours);
         setSubtotal(price);
+        setBookingSlots(slots);
       }
     } else {
       if (selectedPlan) {
@@ -192,17 +280,21 @@ const BookCabin = () => {
           const end = new Date(start.getTime() + validityDays * 24 * 60 * 60 * 1000);
           setEndDate(end.toISOString().split("T")[0]);
           setEndTime(startTime);
+          
+          // For plan, generate slots for the validity period
+          slots = generateDailySlots(startDate, end.toISOString().split("T")[0], startTime, startTime);
+          setBookingSlots(slots);
         }
       } else {
         setTotalHours(0);
         setSubtotal(0);
         setGstAmount(0);
         setTotalPrice(0);
+        setBookingSlots([]);
         return;
       }
     }
 
-    // Add extra charge for seats if any selected
     const totalWithSeats = price + extraCharge;
     const gst = totalWithSeats * GST_RATE;
     const total = totalWithSeats + gst;
@@ -214,9 +306,6 @@ const BookCabin = () => {
 
   const handleBooking = async (e) => {
     e.preventDefault();
-    
-    // ✅ Seat selection is OPTIONAL - No validation needed
-    // User can book with 0 seats
 
     if (!termsAccepted) {
       toast.error("Please accept Terms & Conditions to proceed");
@@ -231,14 +320,9 @@ const BookCabin = () => {
       return;
     }
 
-    const userStr = localStorage.getItem("user");
-    const adminStr = localStorage.getItem("admin");
-    let currentUser = null;
-    if (userStr) currentUser = JSON.parse(userStr);
-    else if (adminStr) currentUser = JSON.parse(adminStr);
-
-    const userId = currentUser?._id || currentUser?.id;
-    const userRole = currentUser?.role || "user";
+    const userData = getUserData();
+    const userId = userData.user?._id || userData.user?.id;
+    const userRoleFinal = userData.role || "user";
 
     if (!userId) {
       toast.error("Please log in to book a cabin.");
@@ -252,24 +336,28 @@ const BookCabin = () => {
         cabinId: id,
         name,
         mobile,
-        email: currentUser?.email || "",
+        email: userData.user?.email || "",
         startDate,
         startTime,
         endDate,
         endTime,
         bookingBasis,
         selectedPlan,
-        selectedSeats: selectedSeats || [], // ✅ Empty array if no seats selected
+        selectedSeats: selectedSeats || [],
         extraCharge: extraCharge || 0,
         seatCount: selectedSeats.length || 0,
         paymentMethod: "cash",
         subtotal: subtotal,
         gstAmount: gstAmount,
         totalAmount: totalPrice,
-        termsAccepted: true
+        termsAccepted: true,
+        // ✅ Send slots data to backend
+        bookingSlots: bookingSlots,
+        totalDays: bookingSlots.length,
+        dailyHours: bookingSlots.map(slot => slot.hours)
       };
 
-      console.log("Booking Data:", bookingData);
+      console.log("Booking Data with Slots:", bookingData);
 
       const res = await axios.post(
         `${API_URL}/api/bookings/createbooking/${userId}`,
@@ -279,15 +367,17 @@ const BookCabin = () => {
 
       if (res.data.success) {
         toast.success(`Booking confirmed! Total: ₹${totalPrice.toFixed(2)} (incl. GST ₹${gstAmount.toFixed(2)})`);
+        toast.info(`Booking for ${bookingSlots.length} day(s), ${totalHours} total hours`);
         if (selectedSeats.length > 0) {
           toast.info(`Selected ${selectedSeats.length} seat(s). Extra charge: ₹${extraCharge}`);
         }
         toast.info("Please pay cash at the counter.");
         
-        // ✅ Navigate based on user role
-        if (userRole === "admin") {
+        if (userRoleFinal === "admin") {
           navigate("/mybookings");
-        } else if (userRole === "user") {
+        } else if (userRoleFinal === "doctor") {
+          navigate("/doctorbookings");
+        } else if (userRoleFinal === "user") {
           navigate("/userbooking");
         } else {
           navigate("/mybookings");
@@ -379,7 +469,6 @@ const BookCabin = () => {
                 </div>
               </div>
 
-              {/* Seat Selection Section - OPTIONAL */}
               {cabin.seats && cabin.seats.length > 0 && (
                 <div className="pt-4 border-t border-slate-100">
                   <div className="flex items-center justify-between mb-3">
@@ -435,7 +524,6 @@ const BookCabin = () => {
                     })}
                   </div>
 
-                  {/* Seat Selection Summary */}
                   {selectedSeats.length > 0 && (
                     <div className="mt-3 p-3 bg-indigo-50/50 rounded-xl border border-indigo-100">
                       <div className="flex items-center justify-between text-sm">
@@ -653,9 +741,43 @@ const BookCabin = () => {
                     )
                   )}
                 </div>
+
+                {/* ✅ Display Daily Slots */}
+                {bookingSlots.length > 0 && (
+                  <div className="mt-6 pt-6 border-t border-slate-200">
+                    <h4 className="text-xs font-bold uppercase text-slate-500 tracking-wider mb-4 flex items-center gap-2">
+                      <Calendar size={14} className="text-indigo-600" />
+                      Daily Schedule ({bookingSlots.length} day{bookingSlots.length > 1 ? 's' : ''})
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {bookingSlots.map((slot, index) => (
+                        <div key={index} className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-bold text-slate-800">
+                              {new Date(slot.date).toLocaleDateString('en-IN', { 
+                                day: '2-digit', 
+                                month: 'short', 
+                                year: 'numeric' 
+                              })}
+                            </span>
+                            <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full">
+                              {slot.hours}h
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1 text-xs text-slate-500 mt-1">
+                            <Clock size={12} />
+                            <span>{slot.startTime} - {slot.endTime}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-3 text-xs text-slate-500 bg-indigo-50 p-2 rounded-xl text-center">
+                      Total: <strong className="text-indigo-700">{totalHours} hours</strong> across {bookingSlots.length} days
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* Terms & Conditions */}
               {showTerms && (
                 <div className="admin-dash__card p-6 sm:p-8 bg-white border border-slate-200 rounded-2xl animate-in fade-in slide-in-from-top duration-300">
                   <div 
@@ -744,7 +866,7 @@ const BookCabin = () => {
                   
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between items-center text-white/80">
-                      <span>Subtotal ({totalHours} hours)</span>
+                      <span>Subtotal ({totalHours} hours • {bookingSlots.length} days)</span>
                       <span className="font-semibold">₹{subtotal.toFixed(2)}</span>
                     </div>
                     {selectedSeats.length > 0 && (

@@ -1,4 +1,4 @@
-// RevenueAnalytics.jsx - Complete with Created At Column
+// RevenueAnalytics.jsx - Complete with Owner Filter and Analytics
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -34,7 +34,11 @@ import {
   DollarSign,
   Percent,
   CalendarDays,
-  History
+  History,
+  UserCircle,
+  UserCheck,
+  Briefcase,
+  Layers
 } from "lucide-react";
 import { toast } from "react-toastify";
 import * as XLSX from 'xlsx';
@@ -74,6 +78,7 @@ const RevenueAnalytics = () => {
   const [filterDateTo, setFilterDateTo] = useState(getTodayDate());
   const [filterCabinName, setFilterCabinName] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [filterOwner, setFilterOwner] = useState("all");
   
   // Stats
   const [stats, setStats] = useState({
@@ -92,14 +97,27 @@ const RevenueAnalytics = () => {
     cardRevenue: 0
   });
   
+  // Owner Stats
+  const [ownerStats, setOwnerStats] = useState({
+    totalOwners: 0,
+    totalCabins: 0,
+    totalChambers: 0,
+    totalOwnerRevenue: 0,
+    ownerRevenueBreakdown: [],
+    topOwners: []
+  });
+  
   // Chart Data
   const [monthlyData, setMonthlyData] = useState([]);
   const [statusRevenueData, setStatusRevenueData] = useState([]);
   const [paymentMethodData, setPaymentMethodData] = useState([]);
   const [topCabinsData, setTopCabinsData] = useState([]);
+  const [ownerRevenueData, setOwnerRevenueData] = useState([]);
   
   // Cabin names for filter
   const [cabinNames, setCabinNames] = useState([]);
+  // Owner names for filter
+  const [ownerNames, setOwnerNames] = useState([]);
 
   const formatCurrency = (amount) => {
     return `₹${Number(amount).toLocaleString('en-IN')}`;
@@ -157,6 +175,10 @@ const RevenueAnalytics = () => {
       const names = [...new Set(bookingsData.map(b => b.cabin?.name).filter(Boolean))];
       setCabinNames(names);
       
+      // Get unique owner names
+      const owners = [...new Set(bookingsData.map(b => b.cabin?.owner?.name).filter(Boolean))];
+      setOwnerNames(owners);
+      
       // Apply default filter (today) after fetching
       applyDefaultFilter(bookingsData);
     } catch (err) {
@@ -179,12 +201,10 @@ const RevenueAnalytics = () => {
       });
     }
     
-    console.log("Today's bookings:", filtered.length);
-    console.log("Bookings data:", filtered);
-    
     setFilteredData(filtered);
     calculateStats(filtered);
     processChartData(filtered);
+    calculateOwnerStats(filtered);
     setLoading(false);
   };
 
@@ -207,9 +227,6 @@ const RevenueAnalytics = () => {
     const upiRevenue = data.filter(b => b.paymentMethod === 'upi').reduce((sum, b) => sum + (Number(b.totalPrice) || 0), 0);
     const cardRevenue = data.filter(b => b.paymentMethod === 'card').reduce((sum, b) => sum + (Number(b.totalPrice) || 0), 0);
 
-    console.log("Total Revenue:", totalRevenue);
-    console.log("Total Bookings:", totalBookings);
-
     setStats({
       totalRevenue,
       totalBookings,
@@ -225,6 +242,68 @@ const RevenueAnalytics = () => {
       upiRevenue,
       cardRevenue
     });
+  };
+
+  const calculateOwnerStats = (data) => {
+    // Group by owner
+    const ownerMap = {};
+    const cabinSet = new Set();
+    const chamberSet = new Set();
+    
+    data.forEach(b => {
+      const ownerName = b.cabin?.owner?.name || 'Unknown Owner';
+      const cabinName = b.cabin?.name || 'Unknown Cabin';
+      const isChamber = b.cabin?.isChamber || false;
+      
+      if (!ownerMap[ownerName]) {
+        ownerMap[ownerName] = {
+          name: ownerName,
+          revenue: 0,
+          bookings: 0,
+          cabins: new Set(),
+          chambers: new Set(),
+          bookingsList: []
+        };
+      }
+      
+      ownerMap[ownerName].revenue += Number(b.totalPrice) || 0;
+      ownerMap[ownerName].bookings += 1;
+      ownerMap[ownerName].cabins.add(cabinName);
+      if (isChamber) {
+        ownerMap[ownerName].chambers.add(cabinName);
+      }
+      ownerMap[ownerName].bookingsList.push(b);
+    });
+    
+    // Convert to array and sort by revenue
+    const ownerArray = Object.keys(ownerMap).map(key => ({
+      name: key,
+      revenue: ownerMap[key].revenue,
+      bookings: ownerMap[key].bookings,
+      totalCabins: ownerMap[key].cabins.size,
+      totalChambers: ownerMap[key].chambers.size,
+      averageRevenue: ownerMap[key].bookings > 0 ? ownerMap[key].revenue / ownerMap[key].bookings : 0
+    }));
+    
+    const sortedOwners = ownerArray.sort((a, b) => b.revenue - a.revenue);
+    
+    // Calculate totals
+    const totalOwners = sortedOwners.length;
+    const totalCabins = sortedOwners.reduce((sum, o) => sum + o.totalCabins, 0);
+    const totalChambers = sortedOwners.reduce((sum, o) => sum + o.totalChambers, 0);
+    const totalOwnerRevenue = sortedOwners.reduce((sum, o) => sum + o.revenue, 0);
+    
+    setOwnerStats({
+      totalOwners,
+      totalCabins,
+      totalChambers,
+      totalOwnerRevenue,
+      ownerRevenueBreakdown: sortedOwners,
+      topOwners: sortedOwners.slice(0, 10)
+    });
+    
+    // Set owner revenue data for chart
+    setOwnerRevenueData(sortedOwners.slice(0, 10));
   };
 
   const processChartData = (data) => {
@@ -305,10 +384,16 @@ const RevenueAnalytics = () => {
     let filtered = [...bookings];
     
     if (filterDateFrom) {
-      filtered = filtered.filter(b => b.startDate >= filterDateFrom || (b.createdAt && b.createdAt.split('T')[0] >= filterDateFrom));
+      filtered = filtered.filter(b => {
+        const date = b.startDate || (b.createdAt ? b.createdAt.split('T')[0] : '');
+        return date >= filterDateFrom;
+      });
     }
     if (filterDateTo) {
-      filtered = filtered.filter(b => b.startDate <= filterDateTo || (b.createdAt && b.createdAt.split('T')[0] <= filterDateTo));
+      filtered = filtered.filter(b => {
+        const date = b.startDate || (b.createdAt ? b.createdAt.split('T')[0] : '');
+        return date <= filterDateTo;
+      });
     }
     if (filterCabinName) {
       filtered = filtered.filter(b => b.cabin?.name === filterCabinName);
@@ -316,10 +401,14 @@ const RevenueAnalytics = () => {
     if (filterStatus !== 'all') {
       filtered = filtered.filter(b => b.status === filterStatus);
     }
+    if (filterOwner !== 'all') {
+      filtered = filtered.filter(b => b.cabin?.owner?.name === filterOwner);
+    }
     
     setFilteredData(filtered);
     calculateStats(filtered);
     processChartData(filtered);
+    calculateOwnerStats(filtered);
     toast.success(`Showing ${filtered.length} bookings`);
   };
 
@@ -329,6 +418,7 @@ const RevenueAnalytics = () => {
     setFilterDateTo(today);
     setFilterCabinName("");
     setFilterStatus("all");
+    setFilterOwner("all");
     applyDefaultFilter(bookings);
     toast.success("Reset to today's data");
   };
@@ -343,6 +433,7 @@ const RevenueAnalytics = () => {
         'S.No': i + 1,
         'Booking ID': b._id?.slice(-8).toUpperCase() || 'N/A',
         'Cabin': b.cabin?.name || 'Unknown',
+        'Owner': b.cabin?.owner?.name || 'Unknown',
         'Customer': b.name || b.user?.name || 'Unknown',
         'Mobile': b.mobile || b.user?.mobile || 'N/A',
         'Start Date': b.startDate || 'N/A',
@@ -422,7 +513,46 @@ const RevenueAnalytics = () => {
           </div>
         </div>
 
-        {/* Stats Cards - Today's Revenue */}
+        {/* Owner Stats Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
+          <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl p-4 text-white shadow-lg shadow-emerald-500/25">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-200">Total Owners</p>
+            <p className="text-2xl sm:text-3xl font-bold mt-1">{ownerStats.totalOwners}</p>
+            <div className="mt-2 pt-2 border-t border-white/20 flex justify-between text-[10px]">
+              <span className="text-emerald-200">Active Today</span>
+              <span className="font-semibold">{ownerStats.totalOwners}</span>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl p-4 text-white shadow-lg shadow-blue-500/25">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-blue-200">Total Cabins</p>
+            <p className="text-2xl sm:text-3xl font-bold mt-1">{ownerStats.totalCabins}</p>
+            <div className="mt-2 pt-2 border-t border-white/20 flex justify-between text-[10px]">
+              <span className="text-blue-200">Booked Today</span>
+              <span className="font-semibold">{ownerStats.totalCabins}</span>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl p-4 text-white shadow-lg shadow-purple-500/25">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-purple-200">Total Chambers</p>
+            <p className="text-2xl sm:text-3xl font-bold mt-1">{ownerStats.totalChambers}</p>
+            <div className="mt-2 pt-2 border-t border-white/20 flex justify-between text-[10px]">
+              <span className="text-purple-200">Available</span>
+              <span className="font-semibold">{ownerStats.totalChambers}</span>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-r from-amber-600 to-orange-600 rounded-2xl p-4 text-white shadow-lg shadow-amber-500/25">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-amber-200">Owner Revenue</p>
+            <p className="text-2xl sm:text-3xl font-bold mt-1">{formatCurrency(ownerStats.totalOwnerRevenue)}</p>
+            <div className="mt-2 pt-2 border-t border-white/20 flex justify-between text-[10px]">
+              <span className="text-amber-200">Total Today</span>
+              <span className="font-semibold">{formatCurrency(ownerStats.totalOwnerRevenue)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Stats Cards - Today's Revenue */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
           <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-4 text-white shadow-lg shadow-indigo-500/25">
             <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-200">Today's Revenue</p>
@@ -461,7 +591,7 @@ const RevenueAnalytics = () => {
           </div>
         </div>
 
-        {/* Filters - Default Today */}
+        {/* Filters - Default Today with Owner Filter */}
         <div className="bg-gray-50 rounded-xl p-3 mb-4 border border-gray-200">
           <div className="flex flex-wrap items-end gap-3">
             <div className="min-w-[120px]">
@@ -471,6 +601,15 @@ const RevenueAnalytics = () => {
             <div className="min-w-[120px]">
               <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">To Date</label>
               <input type="date" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)} className="w-full px-3 py-1.5 text-xs border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" />
+            </div>
+            <div className="min-w-[140px]">
+              <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Owner</label>
+              <select value={filterOwner} onChange={(e) => setFilterOwner(e.target.value)} className="w-full px-3 py-1.5 text-xs border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                <option value="all">All Owners</option>
+                {ownerNames.map((name, i) => (
+                  <option key={i} value={name}>{name}</option>
+                ))}
+              </select>
             </div>
             <div className="min-w-[140px]">
               <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Cabin Name</label>
@@ -505,6 +644,88 @@ const RevenueAnalytics = () => {
             )}
           </div>
         </div>
+
+        {/* Owner Revenue Breakdown Table */}
+        {ownerStats.topOwners.length > 0 && (
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm mb-4 overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+              <div>
+                <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2">
+                  <UserCircle size={18} className="text-emerald-600" />
+                  Owner Revenue Breakdown
+                </h3>
+                <p className="text-[10px] text-gray-400">Revenue distribution by cabin owner</p>
+              </div>
+              <span className="text-[10px] font-medium text-gray-500">
+                {ownerStats.totalOwners} Owners • {ownerStats.totalCabins} Cabins
+              </span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-gray-100 bg-gray-50">
+                    <th className="p-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase">#</th>
+                    <th className="p-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase">Owner Name</th>
+                    <th className="p-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase text-center">Bookings</th>
+                    <th className="p-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase text-center">Cabins</th>
+                    <th className="p-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase text-center">Chambers</th>
+                    <th className="p-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase text-center">Avg/Booking</th>
+                    <th className="p-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase text-right">Revenue</th>
+                    <th className="p-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase text-right">% of Total</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {ownerStats.topOwners.map((owner, idx) => {
+                    const percentage = ownerStats.totalOwnerRevenue > 0 
+                      ? ((owner.revenue / ownerStats.totalOwnerRevenue) * 100).toFixed(1) 
+                      : 0;
+                    return (
+                      <tr key={idx} className="hover:bg-gray-50/80 transition-colors">
+                        <td className="p-2">
+                          <span className="text-xs font-semibold text-gray-400">#{idx + 1}</span>
+                        </td>
+                        <td className="p-2">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center">
+                              <UserCheck size={12} className="text-indigo-600" />
+                            </div>
+                            <span className="font-semibold text-gray-800 text-xs">{owner.name}</span>
+                          </div>
+                        </td>
+                        <td className="p-2 text-center">
+                          <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full text-[10px] font-bold">{owner.bookings}</span>
+                        </td>
+                        <td className="p-2 text-center">
+                          <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-full text-[10px] font-bold">{owner.totalCabins}</span>
+                        </td>
+                        <td className="p-2 text-center">
+                          <span className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded-full text-[10px] font-bold">{owner.totalChambers}</span>
+                        </td>
+                        <td className="p-2 text-center">
+                          <span className="text-xs font-medium text-gray-700">{formatCurrency(owner.averageRevenue)}</span>
+                        </td>
+                        <td className="p-2 text-right">
+                          <span className="text-xs font-bold text-indigo-600">{formatCurrency(owner.revenue)}</span>
+                        </td>
+                        <td className="p-2 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <div className="w-16 bg-gray-200 rounded-full h-1.5">
+                              <div 
+                                className="bg-indigo-600 h-1.5 rounded-full" 
+                                style={{ width: `${Math.min(percentage, 100)}%` }}
+                              />
+                            </div>
+                            <span className="text-[10px] font-bold text-gray-600 w-10">{percentage}%</span>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         {/* Charts Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
@@ -673,12 +894,13 @@ const RevenueAnalytics = () => {
                 <p className="text-sm">No bookings found for {todayDisplay}</p>
               </div>
             ) : (
-              <table className="w-full min-w-[1100px] text-left text-xs">
+              <table className="w-full min-w-[1200px] text-left text-xs">
                 <thead>
                   <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
                     <th className="p-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
                     <th className="p-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Booking ID</th>
                     <th className="p-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
+                    <th className="p-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Owner</th>
                     <th className="p-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Customer</th>
                     <th className="p-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Start</th>
                     <th className="p-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">End</th>
@@ -702,6 +924,9 @@ const RevenueAnalytics = () => {
                         </td>
                         <td className="p-2">
                           <p className="font-semibold text-gray-800 text-xs">{booking.cabin?.name || "Unknown"}</p>
+                        </td>
+                        <td className="p-2">
+                          <p className="text-xs font-medium text-gray-700">{booking.cabin?.owner?.name || "Unknown"}</p>
                         </td>
                         <td className="p-2">
                           <p className="font-medium text-gray-800 text-xs">{booking.name || booking.user?.name || "Unknown"}</p>
@@ -748,6 +973,8 @@ const RevenueAnalytics = () => {
               </span>
               <div className="flex items-center gap-2 text-[10px] text-gray-500">
                 <span className="flex items-center gap-1 font-semibold text-indigo-600">Today's Revenue: {formatCurrency(stats.totalRevenue)}</span>
+                <span className="text-gray-300">|</span>
+                <span className="flex items-center gap-1 font-semibold text-emerald-600">Owners: {ownerStats.totalOwners}</span>
               </div>
             </div>
           )}

@@ -1,4 +1,4 @@
-// BookCabin.jsx - Complete with Multi-Day Slots + DoctorNavbar Support
+// BookCabin.jsx - Complete with Multi-Day Slots + DoctorNavbar Support + Indian Time Format
 import axios from "axios";
 import {
   ArrowLeft,
@@ -131,7 +131,7 @@ const BookCabin = () => {
   const [availabilityError, setAvailabilityError] = useState("");
   const [loading, setLoading] = useState(false);
   
-  // ✅ New: Multi-day slots
+  // ✅ Multi-day slots
   const [bookingSlots, setBookingSlots] = useState([]);
 
   const getImageUrl = (img) => {
@@ -144,6 +144,36 @@ const BookCabin = () => {
   const getAuthHeader = () => {
     const token = localStorage.getItem("token");
     return { headers: { Authorization: `Bearer ${token}` } };
+  };
+
+  // ✅ Convert to Indian time format for display
+  const convertToIndianTime = (timeStr) => {
+    if (!timeStr) return "N/A";
+    if (timeStr.includes('AM') || timeStr.includes('PM')) return timeStr;
+    try {
+      const parts = timeStr.split(':');
+      if (parts.length >= 2) {
+        let hours = parseInt(parts[0]);
+        const minutes = parts[1];
+        if (isNaN(hours)) return timeStr;
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        const hour12 = hours % 12 || 12;
+        return `${hour12}:${minutes} ${ampm}`;
+      }
+      return timeStr;
+    } catch (e) {
+      return timeStr;
+    }
+  };
+
+  // ✅ Format date in Indian format
+  const formatDateIndian = (dateStr) => {
+    if (!dateStr) return "N/A";
+    const d = new Date(dateStr);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = String(d.getFullYear()).slice(2);
+    return `${day}/${month}/${year}`;
   };
 
   useEffect(() => {
@@ -202,7 +232,6 @@ const BookCabin = () => {
     const current = new Date(start);
     const endDateObj = new Date(end);
     
-    // Reset time to start of day for comparison
     current.setHours(0, 0, 0, 0);
     endDateObj.setHours(0, 0, 0, 0);
     
@@ -212,7 +241,6 @@ const BookCabin = () => {
         date: dateStr,
         startTime: startTimeStr,
         endTime: endTimeStr,
-        // Calculate hours for this slot
         hours: calculateDailyHours(startTimeStr, endTimeStr)
       });
       current.setDate(current.getDate() + 1);
@@ -221,20 +249,17 @@ const BookCabin = () => {
     return slots;
   };
 
-  // ✅ Calculate hours for a single day
   const calculateDailyHours = (startTimeStr, endTimeStr) => {
     const start = new Date(`2000-01-01T${startTimeStr}`);
     const end = new Date(`2000-01-01T${endTimeStr}`);
     
     if (end <= start) {
-      // If end time is before or equal to start time, assume it's next day
       end.setDate(end.getDate() + 1);
     }
     
     return Math.ceil((end - start) / (1000 * 60 * 60));
   };
 
-  // ✅ Calculate total hours across all days
   const calculateTotalHours = (slots) => {
     return slots.reduce((total, slot) => total + slot.hours, 0);
   };
@@ -258,7 +283,6 @@ const BookCabin = () => {
           return;
         }
 
-        // ✅ Generate daily slots
         slots = generateDailySlots(startDate, endDate, startTime, endTime);
         hours = calculateTotalHours(slots);
         price = hours * (cabin?.price || 0);
@@ -281,7 +305,6 @@ const BookCabin = () => {
           setEndDate(end.toISOString().split("T")[0]);
           setEndTime(startTime);
           
-          // For plan, generate slots for the validity period
           slots = generateDailySlots(startDate, end.toISOString().split("T")[0], startTime, startTime);
           setBookingSlots(slots);
         }
@@ -351,7 +374,6 @@ const BookCabin = () => {
         gstAmount: gstAmount,
         totalAmount: totalPrice,
         termsAccepted: true,
-        // ✅ Send slots data to backend
         bookingSlots: bookingSlots,
         totalDays: bookingSlots.length,
         dailyHours: bookingSlots.map(slot => slot.hours)
@@ -734,7 +756,7 @@ const BookCabin = () => {
                       <div className="space-y-2 bg-indigo-50/40 border border-indigo-100 rounded-2xl p-4 flex flex-col justify-center">
                         <p className="text-[10px] uppercase font-bold text-indigo-700 tracking-wider">Plan Validity</p>
                         <p className="text-sm font-bold text-slate-800">
-                          Active until: <span className="text-indigo-600">{endDate}</span>
+                          Active until: <span className="text-indigo-600">{formatDateIndian(endDate)}</span>
                         </p>
                         <p className="text-xs text-slate-400">Valid for {selectedPlan.validity} days from start date</p>
                       </div>
@@ -742,7 +764,7 @@ const BookCabin = () => {
                   )}
                 </div>
 
-                {/* ✅ Display Daily Slots */}
+                {/* ✅ Display Daily Slots with Indian Time Format */}
                 {bookingSlots.length > 0 && (
                   <div className="mt-6 pt-6 border-t border-slate-200">
                     <h4 className="text-xs font-bold uppercase text-slate-500 tracking-wider mb-4 flex items-center gap-2">
@@ -766,7 +788,7 @@ const BookCabin = () => {
                           </div>
                           <div className="flex items-center gap-1 text-xs text-slate-500 mt-1">
                             <Clock size={12} />
-                            <span>{slot.startTime} - {slot.endTime}</span>
+                            <span>{convertToIndianTime(slot.startTime)} - {convertToIndianTime(slot.endTime)}</span>
                           </div>
                         </div>
                       ))}

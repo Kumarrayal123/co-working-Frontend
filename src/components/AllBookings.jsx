@@ -1,4 +1,4 @@
-// AllBookings.jsx - Complete with VIEW in ALL Tables
+// AllBookings.jsx - Complete with VIEW + STATUS + DELETE in Site Visits, FULL ACTIONS in Space Bookings
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -1223,7 +1223,7 @@ const AllBookings = () => {
                         </td>
 
                         {isVisit ? (
-                          // ✅ SITE VISIT ROW - VIEW BUTTON ADDED
+                          // ✅ SITE VISIT ROW - VIEW + STATUS + DELETE
                           <>
                             <td className="p-2">
                               <span className="text-xs font-medium text-gray-700">{formatDateIndian(booking.startDate)}</span>
@@ -1241,6 +1241,7 @@ const AllBookings = () => {
                             </td>
                             <td className="p-2 text-center">
                               <div className="flex items-center justify-center gap-1">
+                                {/* ✅ VIEW BUTTON */}
                                 <button 
                                   onClick={() => handleViewBooking(booking)} 
                                   className="flex items-center gap-0.5 px-2 py-1 rounded-lg text-[10px] font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors whitespace-nowrap"
@@ -1248,11 +1249,36 @@ const AllBookings = () => {
                                 >
                                   <Eye size={11} /> View
                                 </button>
+                                
+                                {/* ✅ STATUS UPDATE BUTTON */}
+                                <button 
+                                  onClick={() => { 
+                                    setSelectedBooking(booking); 
+                                    setNewStatus(booking.status || 'pending'); 
+                                    setShowStatusModal(true); 
+                                  }} 
+                                  className="flex items-center gap-0.5 px-2 py-1 rounded-lg text-[10px] font-medium bg-orange-50 text-orange-700 hover:bg-orange-100 transition-colors whitespace-nowrap"
+                                  title="Update Status"
+                                >
+                                  <Edit size={11} /> Status
+                                </button>
+
+                                {/* ✅ DELETE BUTTON - NOW AVAILABLE FOR SITE VISITS TOO */}
+                                <button 
+                                  onClick={() => { 
+                                    setDeleteBooking(booking); 
+                                    setShowDeleteModal(true); 
+                                  }} 
+                                  className="flex items-center gap-0.5 px-2 py-1 rounded-lg text-[10px] font-medium bg-red-50 text-red-700 hover:bg-red-100 transition-colors whitespace-nowrap"
+                                  title="Delete Booking"
+                                >
+                                  <Trash2 size={11} /> Delete
+                                </button>
                               </div>
                             </td>
                           </>
                         ) : (
-                          // ✅ SPACE BOOKING ROW - VIEW, PRINT, PDF, TIMING, STATUS, PAYMENT, DELETE
+                          // ✅ SPACE BOOKING ROW - FULL ACTIONS
                           <>
                             <td className="p-2">
                               <div>
@@ -1317,7 +1343,7 @@ const AllBookings = () => {
                             <td className="p-2">
                               <div className="flex items-center gap-1 justify-center overflow-x-auto max-w-[360px] py-1 scrollbar-thin scrollbar-thumb-gray-300">
                                 
-                                {/* ✅ VIEW - ADDED */}
+                                {/* VIEW */}
                                 <button 
                                   onClick={() => handleViewBooking(booking)} 
                                   className="flex items-center gap-0.5 px-2 py-1 rounded-lg text-[10px] font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors whitespace-nowrap"
@@ -1447,7 +1473,7 @@ const AllBookings = () => {
               <div>
                 <h3 className="text-2xl font-bold">Booking Details</h3>
                 <p className="text-sm text-indigo-200">#{viewBooking._id?.slice(-8).toUpperCase()}</p>
-                <p className="text-xs text-indigo-200">{viewBooking.bookingType === 'visit' ? 'Site Visit' : 'Chamber Booking'}</p>
+                <p className="text-xs text-indigo-200">{viewBooking.bookingType === 'visit' ? 'Site Visit' : 'Space Booking'}</p>
               </div>
               <button onClick={() => setShowViewModal(false)} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors">
                 <X size={20} />
@@ -1710,11 +1736,18 @@ const AllBookings = () => {
 
               {/* Action Buttons */}
               <div className="flex gap-2">
-                <button onClick={() => { setShowViewModal(false); printReceipt(viewBooking); }} className="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition shadow-sm active:scale-[0.98] flex items-center justify-center gap-2">
-                  <Printer size={16} /> Print
-                </button>
-                <button onClick={() => { setShowViewModal(false); downloadPDF(viewBooking); }} className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition shadow-sm active:scale-[0.98] flex items-center justify-center gap-2">
-                  <FileDown size={16} /> PDF
+                {viewBooking.bookingType !== 'visit' && (
+                  <>
+                    <button onClick={() => { setShowViewModal(false); printReceipt(viewBooking); }} className="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition shadow-sm active:scale-[0.98] flex items-center justify-center gap-2">
+                      <Printer size={16} /> Print
+                    </button>
+                    <button onClick={() => { setShowViewModal(false); downloadPDF(viewBooking); }} className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition shadow-sm active:scale-[0.98] flex items-center justify-center gap-2">
+                      <FileDown size={16} /> PDF
+                    </button>
+                  </>
+                )}
+                <button onClick={() => setShowViewModal(false)} className="px-6 py-3 bg-gray-100 text-gray-600 rounded-xl font-medium hover:bg-gray-200 transition">
+                  Close
                 </button>
               </div>
             </div>
@@ -1769,7 +1802,7 @@ const AllBookings = () => {
         </div>
       )}
 
-      {/* PAYMENT STATUS UPDATE MODAL */}
+      {/* PAYMENT STATUS UPDATE MODAL - ONLY FOR SPACE BOOKINGS */}
       {showPaymentModal && paymentBooking && (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) resetPaymentModal(); }}>
           <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-y-auto max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
@@ -2020,6 +2053,9 @@ const AllBookings = () => {
                   <p><span className="text-gray-500">Amount:</span> ₹{deleteBooking.totalPrice}</p>
                   {deleteBooking.totalDays > 0 && (
                     <p><span className="text-gray-500">Days:</span> {deleteBooking.totalDays} days ({deleteBooking.totalHours}h)</p>
+                  )}
+                  {deleteBooking.bookingType === 'visit' && (
+                    <p><span className="text-gray-500">Type:</span> <span className="font-medium text-purple-600">Site Visit</span></p>
                   )}
                 </div>
               </div>

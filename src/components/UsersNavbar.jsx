@@ -149,9 +149,6 @@ function UsersNavbar() {
             </div>
             <div className="flex flex-col leading-tight">
               <span className="text-base font-bold text-slate-900 tracking-tight">IRYAX SPACE</span>
-              <span className="text-[9px] font-bold uppercase tracking-[0.06em] text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded w-fit">
-                User Portal
-              </span>
             </div>
           </Link>
 

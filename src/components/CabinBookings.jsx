@@ -1,4 +1,4 @@
-// CabinBookings.jsx - Complete with THERMAL PDF Download + Tabs (All, Site Visits, Space Bookings)
+// CabinBookings.jsx - Complete with THERMAL PDF Download + Tabs + Indian Time Format + Status Update in ALL Tabs
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -47,7 +47,13 @@ import {
   Armchair,
   CalendarPlus,
   Stethoscope,
-  Briefcase
+  Briefcase,
+  Wallet,
+  Info,
+  Check,
+  AlertTriangle,
+  Layers,
+  CalendarDays
 } from "lucide-react";
 import { toast } from "react-toastify";
 import * as XLSX from 'xlsx';
@@ -62,7 +68,7 @@ const CabinBookings = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDate, setFilterDate] = useState("");
-  const [activeTab, setActiveTab] = useState('all'); // ✅ TAB STATE
+  const [activeTab, setActiveTab] = useState('all');
   const [filters, setFilters] = useState({
     status: 'all',
     paymentStatus: 'all',
@@ -127,6 +133,48 @@ const CabinBookings = () => {
     return { headers: { Authorization: `Bearer ${token}` } };
   };
 
+  // ✅ Convert to Indian time format
+  const convertToIndianTime = (timeStr) => {
+    if (!timeStr) return "N/A";
+    if (timeStr.includes('AM') || timeStr.includes('PM')) return timeStr;
+    try {
+      const parts = timeStr.split(':');
+      if (parts.length >= 2) {
+        let hours = parseInt(parts[0]);
+        const minutes = parts[1];
+        if (isNaN(hours)) return timeStr;
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        const hour12 = hours % 12 || 12;
+        return `${hour12}:${minutes} ${ampm}`;
+      }
+      return timeStr;
+    } catch (e) {
+      return timeStr;
+    }
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "N/A";
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
+
+  const formatDateTime = (dateStr) => {
+    if (!dateStr) return "N/A";
+    const d = new Date(dateStr);
+    return d.toLocaleString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const formatCurrency = (amount) => {
+    return `₹${amount.toLocaleString('en-IN')}`;
+  };
+
   const getStatusBadge = (status) => {
     const statusMap = {
       pending: {
@@ -168,7 +216,10 @@ const CabinBookings = () => {
     if (method === 'card') {
       return { label: 'Card', color: 'bg-blue-100 text-blue-700', icon: <CreditCard size={12} className="text-blue-500" /> };
     }
-    return { label: 'Online', color: 'bg-blue-100 text-blue-700', icon: <CreditCard size={12} className="text-blue-500" /> };
+    if (method === 'online') {
+      return { label: 'Online', color: 'bg-blue-100 text-blue-700', icon: <CreditCard size={12} className="text-blue-500" /> };
+    }
+    return { label: method || 'Unknown', color: 'bg-gray-100 text-gray-700', icon: <CreditCard size={12} className="text-gray-500" /> };
   };
 
   const getPaymentStatusBadge = (status) => {
@@ -212,26 +263,28 @@ const CabinBookings = () => {
     fetchBookings();
   }, []);
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return "N/A";
-    const d = new Date(dateStr);
-    return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-  };
-
-  const formatDateTime = (dateStr) => {
-    if (!dateStr) return "N/A";
-    const d = new Date(dateStr);
-    return d.toLocaleString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const formatCurrency = (amount) => {
-    return `₹${amount.toLocaleString('en-IN')}`;
+  // ✅ Handle status update from view modal
+  const handleUpdateStatusFromView = async (bookingId, status) => {
+    if (!status) { toast.error("Please select a status"); return; }
+    setUpdating(true);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.put(`${API_URL}/api/bookings/update-status/${bookingId}`, { status }, { headers: { Authorization: `Bearer ${token}` } });
+      if (response.data.success) {
+        const updatedBookings = bookings.map(b => b._id === bookingId ? { ...b, status: status } : b);
+        setBookings(updatedBookings);
+        calculateStats(updatedBookings);
+        // Update viewBooking as well
+        if (viewBooking && viewBooking._id === bookingId) {
+          setViewBooking({ ...viewBooking, status: status });
+        }
+        toast.success(`Booking status updated to ${status}`);
+      } else {
+        toast.error(response.data.message || "Failed to update status");
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.error || "Failed to update status");
+    } finally { setUpdating(false); }
   };
 
   const handleUpdateStatus = async () => {
@@ -244,6 +297,10 @@ const CabinBookings = () => {
         const updatedBookings = bookings.map(b => b._id === selectedBooking._id ? { ...b, status: newStatus } : b);
         setBookings(updatedBookings);
         calculateStats(updatedBookings);
+        // Update viewBooking if it matches
+        if (viewBooking && viewBooking._id === selectedBooking._id) {
+          setViewBooking({ ...viewBooking, status: newStatus });
+        }
         toast.success(`Booking status updated to ${newStatus}`);
         setShowStatusModal(false);
         setSelectedBooking(null);
@@ -369,6 +426,27 @@ const CabinBookings = () => {
         );
         setBookings(updatedBookings);
         calculateStats(updatedBookings);
+        // Update viewBooking if it matches
+        if (viewBooking && viewBooking._id === paymentBooking._id) {
+          setViewBooking({
+            ...viewBooking,
+            paymentStatus: newPaymentStatus,
+            paymentDetails: {
+              mode: paymentDetails.paymentMode,
+              transactionId: paymentDetails.transactionId,
+              paymentDate: paymentDetails.paymentDate,
+              ...(paymentDetails.paymentMode === 'card' && {
+                cardNumber: paymentDetails.cardNumber,
+                cardHolderName: paymentDetails.cardHolderName
+              }),
+              ...(paymentDetails.paymentMode === 'upi' && {
+                upiId: paymentDetails.upiId,
+                upiApp: paymentDetails.upiApp
+              }),
+              screenshot: response.data.screenshotUrl || null
+            }
+          });
+        }
         toast.success(`Payment status updated to ${newPaymentStatus}`);
         setShowPaymentModal(false);
         setPaymentBooking(null);
@@ -429,6 +507,10 @@ const CabinBookings = () => {
       if (response.data.success) {
         const updatedBookings = bookings.map(b => b._id === timingBooking._id ? { ...b, visitingTimings: response.data.booking.visitingTimings } : b);
         setBookings(updatedBookings);
+        // Update viewBooking if it matches
+        if (viewBooking && viewBooking._id === timingBooking._id) {
+          setViewBooking({ ...viewBooking, visitingTimings: response.data.booking.visitingTimings });
+        }
         toast.success("Timing added successfully!");
         setShowTimingModal(false);
         setTimingBooking(null);
@@ -450,6 +532,10 @@ const CabinBookings = () => {
       if (response.data.success) {
         const updatedBookings = bookings.map(b => b._id === bookingId ? { ...b, visitingTimings: response.data.booking.visitingTimings } : b);
         setBookings(updatedBookings);
+        // Update viewBooking if it matches
+        if (viewBooking && viewBooking._id === bookingId) {
+          setViewBooking({ ...viewBooking, visitingTimings: response.data.booking.visitingTimings });
+        }
         toast.success("Timing deleted successfully!");
         const res = await axios.get(`${API_URL}/api/bookings/owner-bookings`, { headers: { Authorization: `Bearer ${token}` } });
         setBookings(res.data.bookings || []);
@@ -473,18 +559,50 @@ const CabinBookings = () => {
         const paymentMethod = getPaymentMethodBadge(booking.paymentMethod);
         const paymentStatus = getPaymentStatusBadge(booking.paymentStatus);
         return {
-          'S.No': index + 1, 'Booking Type': booking.bookingBasis === 'plan' ? 'Plan Booking' : 'Hourly Booking',
-          'Cabin Name': booking.cabin?.name || 'Unknown Cabin', 'Address': booking.cabin?.address || 'No Address',
-          'Customer Name': booking.name || booking.user?.name || 'Unknown Guest', 'Mobile': booking.mobile || booking.user?.mobile || 'N/A',
-          'Email': booking.email || booking.user?.email || 'N/A', 'Start Date': booking.startDate || 'N/A',
-          'Start Time': booking.startTime || 'N/A', 'End Date': booking.endDate || 'N/A', 'End Time': booking.endTime || 'N/A',
+          'S.No': index + 1,
+          'Booking ID': booking._id?.slice(-8).toUpperCase() || 'N/A',
+          'Booking Type': booking.bookingBasis === 'plan' ? 'Plan Booking' : 'Hourly Booking',
+          'Cabin Name': booking.cabin?.name || 'Unknown Cabin',
+          'Address': booking.cabin?.address || 'No Address',
+          'Space Type': booking.cabin?.isChamber ? 'Medical' : 'Co-Working',
+          'Customer Name': booking.name || booking.user?.name || 'Unknown Guest',
+          'Mobile': booking.mobile || booking.user?.mobile || 'N/A',
+          'Email': booking.email || booking.user?.email || 'N/A',
+          'Start Date': booking.startDate || 'N/A',
+          'Start Time': convertToIndianTime(booking.startTime) || 'N/A',
+          'End Date': booking.endDate || 'N/A',
+          'End Time': convertToIndianTime(booking.endTime) || 'N/A',
           'Created At': formatDateTime(booking.createdAt) || 'N/A',
-          'Duration (Hours)': booking.totalHours || 0, 'Subtotal (₹)': booking.subtotal || 0,
-          'GST (18%)': booking.gstAmount || 0, 'Total (₹)': booking.totalPrice || 0,
-          'Seats': booking.seatCount || 0, 'Extra Charge': booking.extraCharge || 0,
-          'Status': statusBadge.label, 'Payment Method': paymentMethod.label,
-          'Payment Status': paymentStatus.label, 'Transaction ID': booking.transactionId || 'N/A',
-          'Visiting Days': booking.visitingTimings?.length || 0
+          'Duration (Hours)': booking.totalHours || 0,
+          'Total Days': booking.totalDays || 0,
+          'Daily Hours': booking.dailyHours?.join(', ') || 'N/A',
+          'Slots': booking.bookingSlots?.map(s => `${s.date} ${s.startTime}-${s.endTime}`).join('; ') || 'N/A',
+          'Subtotal (₹)': booking.subtotal || 0,
+          'GST (18%)': booking.gstAmount || 0,
+          'Total (₹)': booking.totalPrice || 0,
+          'Seats': booking.seatCount || 0,
+          'Seat Names': booking.selectedSeats?.map(s => s.name).join(', ') || 'N/A',
+          'Extra Charge': booking.extraCharge || 0,
+          'Status': statusBadge.label,
+          'Payment Method': paymentMethod.label,
+          'Payment Status': paymentStatus.label,
+          'Transaction ID': booking.transactionId || 'N/A',
+          'Razorpay Order ID': booking.razorpayOrderId || 'N/A',
+          'Payment Mode': booking.paymentDetails?.mode || 'N/A',
+          'Payment Date': booking.paymentDetails?.paymentDate ? formatDate(booking.paymentDetails.paymentDate) : 'N/A',
+          'UPI ID': booking.paymentDetails?.upiId || 'N/A',
+          'UPI App': booking.paymentDetails?.upiApp || 'N/A',
+          'Card Number': booking.paymentDetails?.cardNumber || 'N/A',
+          'Card Holder': booking.paymentDetails?.cardHolderName || 'N/A',
+          'Screenshot': booking.paymentDetails?.screenshot ? 'Yes' : 'No',
+          'Visiting Days': booking.visitingTimings?.length || 0,
+          'Is Paid to Owner': booking.isPaidToOwner ? 'Yes' : 'No',
+          'Is Replaced': booking.isReplaced ? 'Yes' : 'No',
+          'Is Extended': booking.isExtended ? 'Yes' : 'No',
+          'Cancelled At': booking.cancelledAt ? formatDateTime(booking.cancelledAt) : 'N/A',
+          'Cancellation Reason': booking.cancellationReason || 'N/A',
+          'Review': booking.review || 'N/A',
+          'Rating': booking.rating || 'N/A'
         };
       });
       const ws = XLSX.utils.json_to_sheet(exportData);
@@ -514,15 +632,16 @@ const CabinBookings = () => {
     const selectedSeats = booking.selectedSeats || [];
     const orderId = booking._id.slice(-8).toUpperCase();
     const startDate = booking.startDate || 'N/A';
-    const startTime = booking.startTime || 'N/A';
+    const startTime = convertToIndianTime(booking.startTime);
     const endDate = booking.endDate || 'N/A';
-    const endTime = booking.endTime || 'N/A';
+    const endTime = convertToIndianTime(booking.endTime);
     const status = booking.status?.charAt(0).toUpperCase() + booking.status?.slice(1) || 'N/A';
     const paymentStatus = booking.paymentStatus === 'paid' ? 'PAID' : 'PENDING';
     const paymentMethod = booking.paymentMethod === 'cash' || booking.paymentMethod === 'counter' ? 'CASH' :
                          booking.paymentMethod === 'upi' ? 'UPI' :
                          booking.paymentMethod === 'card' ? 'CARD' : 'ONLINE';
     const totalHours = booking.totalHours || 0;
+    const totalDays = booking.totalDays || 0;
     const customerName = booking.name || booking.user?.name || 'Customer';
     const customerMobile = booking.mobile || booking.user?.mobile || 'N/A';
     const customerEmail = booking.email || booking.user?.email || 'N/A';
@@ -580,6 +699,7 @@ const CabinBookings = () => {
         <div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">End Date</span><span style="font-weight:600;">${endDate}</span></div>
         <div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">End Time</span><span style="font-weight:600;">${endTime}</span></div>
         <div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">Duration</span><span style="font-weight:600;">${totalHours} Hrs</span></div>
+        <div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">Days</span><span style="font-weight:600;">${totalDays}</span></div>
         <div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">Type</span><span style="font-weight:600;">${booking.bookingBasis === 'plan' ? 'PLAN' : 'HOURLY'}</span></div>
         ${booking.bookingBasis === 'plan' && booking.selectedPlan ? `<div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">Plan</span><span style="font-weight:600;">${booking.selectedPlan.label || 'Subscription'}</span></div>` : ''}
         ${seatCount > 0 ? `<div style="display:flex;justify-content:space-between;padding:1px 0;font-size:10px;"><span style="color:#555;">Seats</span><span style="font-weight:600;">${seatCount}</span></div>` : ''}
@@ -588,6 +708,18 @@ const CabinBookings = () => {
           <div style="margin:3px 0;padding:3px;background:#f8fafc;border-radius:4px;border:1px solid #e2e8f0;">
             <div style="font-size:8px;color:#555;margin-bottom:2px;">Selected Seats:</div>
             <div style="display:flex;flex-wrap:wrap;gap:2px;">${seatListHtml}</div>
+          </div>
+        ` : ''}
+
+        ${booking.bookingSlots && booking.bookingSlots.length > 0 ? `
+          <div style="margin:3px 0;padding:3px;background:#eff6ff;border-radius:4px;border:1px solid #93c5fd;">
+            <div style="font-size:8px;color:#555;margin-bottom:2px;">Daily Slots:</div>
+            ${booking.bookingSlots.map(s => `
+              <div style="display:flex;justify-content:space-between;font-size:8px;padding:1px 0;">
+                <span>${formatDateFn(s.date)}</span>
+                <span>${s.startTime} - ${s.endTime} (${s.hours}h)</span>
+              </div>
+            `).join('')}
           </div>
         ` : ''}
 
@@ -844,6 +976,9 @@ const CabinBookings = () => {
   const visitCount = bookings.filter(b => b.bookingType === 'visit').length;
   const spaceCount = bookings.filter(b => b.bookingType !== 'visit').length;
 
+  // Check if current tab is visits
+  const isVisitsTab = activeTab === 'visits';
+
   if (loading) {
     return (
       <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
@@ -965,7 +1100,6 @@ const CabinBookings = () => {
               </span>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              {/* Search Bar */}
               <div className="relative w-full sm:w-48">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
@@ -977,18 +1111,15 @@ const CabinBookings = () => {
                 />
               </div>
 
-              {/* Date Filter */}
               <div className="min-w-[140px]">
                 <input
                   type="date"
                   value={filterDate}
                   onChange={(e) => setFilterDate(e.target.value)}
                   className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  placeholder="Filter by date"
                 />
               </div>
 
-              {/* Status Filter */}
               <div className="min-w-[130px]">
                 <select
                   value={filters.status}
@@ -1004,7 +1135,6 @@ const CabinBookings = () => {
                 </select>
               </div>
 
-              {/* Payment Status Filter */}
               <div className="min-w-[140px]">
                 <select
                   value={filters.paymentStatus}
@@ -1019,7 +1149,6 @@ const CabinBookings = () => {
                 </select>
               </div>
 
-              {/* Payment Method Filter */}
               <div className="min-w-[140px]">
                 <select
                   value={filters.paymentMethod}
@@ -1035,7 +1164,6 @@ const CabinBookings = () => {
                 </select>
               </div>
 
-              {/* Clear Filters Button */}
               {(filters.status !== 'all' || filters.paymentStatus !== 'all' || filters.paymentMethod !== 'all' || filterDate || searchTerm) && (
                 <button
                   onClick={clearFilters}
@@ -1127,36 +1255,29 @@ const CabinBookings = () => {
                 <thead>
                   <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Booking ID</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Space</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Customer</th>
-                    {activeTab === 'visits' ? (
-                      // ✅ SITE VISIT COLUMNS - Limited
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Start Date</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Start Time</th>
+                    {!isVisitsTab && (
                       <>
-                        <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Visit Date</th>
-                        <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Visit Time</th>
-                        <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
-                        <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Created At</th>
-                        <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap text-center">Actions</th>
-                      </>
-                    ) : (
-                      // ✅ SPACE BOOKING COLUMNS - Full
-                      <>
-                        <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Start Date</th>
-                        <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Start Time</th>
                         <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">End Date</th>
                         <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">End Time</th>
                         <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Hours</th>
+                        <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Days</th>
+                        <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Daily Hrs</th>
                         <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Seats</th>
-                        <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
                         <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Payment</th>
                         <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Pmt Status</th>
                         <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Visits</th>
-                        <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Created At</th>
                         <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Amount</th>
-                        <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap text-center">Actions</th>
                       </>
                     )}
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Created At</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -1168,23 +1289,21 @@ const CabinBookings = () => {
                     const isCashPending = (booking.paymentMethod === 'cash' || booking.paymentMethod === 'counter') && booking.paymentStatus === 'pending';
                     const seatCount = booking.seatCount || 0;
                     const seatNames = booking.selectedSeats?.map(s => s.name).join(', ') || 'N/A';
-                    const isVisit = booking.bookingType === 'visit';
                     const isChamber = booking.cabin?.isChamber || false;
+                    const bookingId = booking._id?.slice(-8).toUpperCase() || 'N/A';
+                    const isVisit = booking.bookingType === 'visit';
 
                     return (
                       <tr key={booking._id} className="transition-colors group hover:bg-gray-50/80">
                         <td className="p-4"><span className="text-sm font-semibold text-gray-400">#{idx + 1}</span></td>
                         <td className="p-4">
-                          <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
-                              <Building2 size={18} className="text-indigo-600" />
-                            </div>
-                            <div>
-                              <p className="font-semibold text-gray-900 text-sm">{booking.cabin?.name || "Unknown"}</p>
-                              <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-1">
-                                <MapPin size={12} className="text-indigo-500" />
-                                {booking.cabin?.address?.split(",")[0] || "No Address"}
-                              </div>
+                          <span className="font-mono text-xs font-bold text-indigo-600">{bookingId}</span>
+                        </td>
+                        <td className="p-4">
+                          <div>
+                            <p className="font-semibold text-gray-900 text-sm">{booking.cabin?.name || "Unknown"}</p>
+                            <div className="text-xs text-gray-500 mt-0.5">
+                              {booking.cabin?.address?.split(",")[0] || "No Address"}
                             </div>
                           </div>
                         </td>
@@ -1194,71 +1313,43 @@ const CabinBookings = () => {
                               ? 'bg-emerald-100 text-emerald-700' 
                               : 'bg-blue-100 text-blue-700'
                           }`}>
-                            {isChamber ? (
-                              <>
-                                <Stethoscope size={10} /> Medical
-                              </>
-                            ) : (
-                              <>
-                                <Briefcase size={10} /> Co-Working
-                              </>
-                            )}
+                            {isChamber ? 'Medical' : 'Co-Working'}
                           </span>
                         </td>
                         <td className="p-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                              <User size={18} className="text-gray-600" />
-                            </div>
-                            <div>
-                              <p className="font-medium text-gray-800 text-sm">{booking.name || booking.user?.name || "Unknown"}</p>
-                              <p className="text-xs text-gray-400">{booking.mobile || booking.user?.mobile || "N/A"}</p>
-                            </div>
+                          <div>
+                            <p className="font-medium text-gray-800 text-sm">{booking.name || booking.user?.name || "Unknown"}</p>
+                            <p className="text-xs text-gray-400">{booking.mobile || booking.user?.mobile || "N/A"}</p>
                           </div>
                         </td>
-
-                        {isVisit ? (
-                          // ✅ SITE VISIT ROW - Limited columns
+                        <td className="p-4">
+                          <span className="text-sm font-medium text-gray-700">{booking.startDate || 'N/A'}</span>
+                        </td>
+                        <td className="p-4">
+                          <span className="text-sm font-medium text-gray-700">{convertToIndianTime(booking.startTime)}</span>
+                        </td>
+                        {!isVisitsTab && (
                           <>
-                            <td className="p-4">
-                              <span className="text-sm font-medium text-gray-700">{booking.startDate || 'N/A'}</span>
-                            </td>
-                            <td className="p-4">
-                              <span className="text-sm font-medium text-gray-700">{booking.startTime || 'N/A'}</span>
-                            </td>
-                            <td className="p-4">
-                              <span className={`px-3 py-1 text-xs font-bold rounded-full inline-flex items-center gap-1.5 ${statusBadge.color}`}>
-                                {statusBadge.icon} {statusBadge.label}
-                              </span>
-                            </td>
-                            <td className="p-4">
-                              <span className="text-[10px] text-gray-500 font-medium">{formatDateTime(booking.createdAt)}</span>
-                            </td>
-                            <td className="p-4 text-center">
-                              <div className="flex items-center justify-center gap-1">
-                                <button onClick={() => handleViewBooking(booking)} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors whitespace-nowrap flex-shrink-0" title="View">
-                                  <Eye size={12} /> View
-                                </button>
-                              </div>
-                            </td>
-                          </>
-                        ) : (
-                          // ✅ SPACE BOOKING ROW - Full columns
-                          <>
-                            <td className="p-4">
-                              <span className="text-sm font-medium text-gray-700">{booking.startDate || 'N/A'}</span>
-                            </td>
-                            <td className="p-4">
-                              <span className="text-sm font-medium text-gray-700">{booking.startTime || 'N/A'}</span>
-                            </td>
                             <td className="p-4">
                               <span className="text-sm font-medium text-gray-700">{booking.endDate || 'N/A'}</span>
                             </td>
                             <td className="p-4">
-                              <span className="text-sm font-medium text-gray-700">{booking.endTime || 'N/A'}</span>
+                              <span className="text-sm font-medium text-gray-700">{convertToIndianTime(booking.endTime)}</span>
                             </td>
                             <td className="p-4">
-                              <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-bold">{booking.totalHours}h</span>
+                              <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-bold">{booking.totalHours || 0}h</span>
+                            </td>
+                            <td className="p-4">
+                              <span className="px-2.5 py-1 bg-purple-50 text-purple-700 rounded-full text-xs font-bold">{booking.totalDays || 0}d</span>
+                            </td>
+                            <td className="p-4">
+                              <div className="flex flex-wrap gap-0.5">
+                                {booking.dailyHours?.map((h, i) => (
+                                  <span key={i} className="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded text-[9px] font-medium">
+                                    {h}h
+                                  </span>
+                                )) || <span className="text-xs text-gray-400">N/A</span>}
+                              </div>
                             </td>
                             <td className="p-4">
                               <div>
@@ -1272,11 +1363,6 @@ const CabinBookings = () => {
                                   </p>
                                 )}
                               </div>
-                            </td>
-                            <td className="p-4">
-                              <span className={`px-3 py-1 text-xs font-bold rounded-full inline-flex items-center gap-1.5 ${statusBadge.color}`}>
-                                {statusBadge.icon} {statusBadge.label}
-                              </span>
                             </td>
                             <td className="p-4">
                               <span className={`px-3 py-1 text-xs font-bold rounded-full inline-flex items-center gap-1.5 ${paymentMethodBadge.color}`}>
@@ -1295,9 +1381,6 @@ const CabinBookings = () => {
                               </div>
                             </td>
                             <td className="p-4">
-                              <span className="text-[10px] text-gray-500 font-medium">{formatDateTime(booking.createdAt)}</span>
-                            </td>
-                            <td className="p-4">
                               <div>
                                 <span className="flex items-center gap-1 text-indigo-600 font-bold text-sm">
                                   <IndianRupee size={14} />
@@ -1308,11 +1391,35 @@ const CabinBookings = () => {
                                 )}
                               </div>
                             </td>
-                            <td className="p-4">
-                              <div className="flex items-center gap-1 flex-wrap max-w-[180px]">
-                                <button onClick={() => handleViewBooking(booking)} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors whitespace-nowrap flex-shrink-0" title="View">
-                                  <Eye size={12} /> View
-                                </button>
+                          </>
+                        )}
+                        <td className="p-4">
+                          <span className={`px-3 py-1 text-xs font-bold rounded-full inline-flex items-center gap-1.5 ${statusBadge.color}`}>
+                            {statusBadge.icon} {statusBadge.label}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <span className="text-[10px] text-gray-500 font-medium">{formatDateTime(booking.createdAt)}</span>
+                        </td>
+                        <td className="p-4">
+                          <div className="flex items-center gap-1 flex-wrap max-w-[200px]">
+                            {/* View - Always visible */}
+                            <button onClick={() => handleViewBooking(booking)} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors whitespace-nowrap flex-shrink-0" title="View">
+                              <Eye size={12} /> View
+                            </button>
+
+                            {/* ⭐ STATUS - Now visible for ALL bookings including Site Visits */}
+                            <button onClick={() => { 
+                              setSelectedBooking(booking); 
+                              setNewStatus(booking.status || 'pending'); 
+                              setShowStatusModal(true); 
+                            }} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-orange-50 text-orange-700 hover:bg-orange-100 transition-colors whitespace-nowrap flex-shrink-0" title="Update Status">
+                              <Edit size={12} /> Status
+                            </button>
+
+                            {/* Space booking specific actions (Print, PDF, Time, Pay) */}
+                            {!isVisit && (
+                              <>
                                 <button onClick={() => printReceipt(booking)} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors whitespace-nowrap flex-shrink-0" title="Print Receipt">
                                   <Printer size={12} /> Print
                                 </button>
@@ -1321,9 +1428,6 @@ const CabinBookings = () => {
                                 </button>
                                 <button onClick={() => { setTimingBooking(booking); setNewTiming({ date: "", checkIn: "", checkOut: "" }); setShowTimingModal(true); }} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-cyan-50 text-cyan-700 hover:bg-cyan-100 transition-colors whitespace-nowrap flex-shrink-0" title="Add Timing">
                                   <Plus size={12} /> Time
-                                </button>
-                                <button onClick={() => { setSelectedBooking(booking); setNewStatus(booking.status || 'pending'); setShowStatusModal(true); }} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-orange-50 text-orange-700 hover:bg-orange-100 transition-colors whitespace-nowrap flex-shrink-0" title="Update Status">
-                                  <Edit size={12} /> Status
                                 </button>
                                 {isCashPending && (
                                   <button onClick={() => {
@@ -1349,10 +1453,10 @@ const CabinBookings = () => {
                                     <CreditCard size={12} /> Pay
                                   </button>
                                 )}
-                              </div>
-                            </td>
-                          </>
-                        )}
+                              </>
+                            )}
+                          </div>
+                        </td>
                       </tr>
                     );
                   })}
@@ -1377,102 +1481,260 @@ const CabinBookings = () => {
         </div>
       </div>
 
-      {/* VIEW BOOKING MODAL */}
+      {/* VIEW BOOKING MODAL - Complete with all fields + Status Update */}
       {showViewModal && viewBooking && (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setShowViewModal(false); }}>
-          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="sticky top-0 bg-gradient-to-br from-indigo-600 to-purple-600 text-white p-6 rounded-t-3xl flex justify-between items-center">
               <div>
                 <h3 className="text-2xl font-bold">Booking Details</h3>
-                <p className="text-sm text-indigo-200">#{viewBooking._id.slice(-6).toUpperCase()}</p>
+                <p className="text-sm text-indigo-200 flex items-center gap-2">
+                  <Hash size={14} /> #{viewBooking._id?.slice(-8).toUpperCase()}
+                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="px-2 py-0.5 bg-white/20 rounded-full text-[10px] font-medium capitalize">
+                    {viewBooking.bookingBasis || 'Hourly'}
+                  </span>
+                  <span className="px-2 py-0.5 bg-white/20 rounded-full text-[10px] font-medium">
+                    {viewBooking.bookingType === 'visit' ? 'Site Visit' : 'Booking'}
+                  </span>
+                </div>
               </div>
               <button onClick={() => setShowViewModal(false)} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors">
                 <X size={20} />
               </button>
             </div>
+
             <div className="p-6 space-y-4">
+              {/* Basic Info */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
+                    <Hash size={10} /> Booking ID
+                  </p>
+                  <p className="mt-1 font-mono text-sm font-semibold text-gray-800">{viewBooking._id?.slice(-8).toUpperCase()}</p>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Type</p>
+                  <span className={`mt-1 inline-block px-3 py-1 text-xs font-bold rounded-full ${viewBooking.bookingType === 'visit' ? 'bg-purple-100 text-purple-700' : 'bg-indigo-100 text-indigo-700'}`}>
+                    {viewBooking.bookingType === 'visit' ? 'Site Visit' : 'Space Booking'}
+                  </span>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Basis</p>
+                  <span className="mt-1 inline-block px-3 py-1 text-xs font-bold rounded-full bg-blue-100 text-blue-700 capitalize">
+                    {viewBooking.bookingBasis || 'Hourly'}
+                  </span>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Terms</p>
+                  <span className={`mt-1 inline-block px-3 py-1 text-xs font-bold rounded-full ${viewBooking.termsAccepted ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                    {viewBooking.termsAccepted ? 'Accepted' : 'Not Accepted'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Cabin & Space Type */}
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Cabin</p>
-                  <p className="mt-1 font-semibold text-gray-800">{viewBooking.cabin?.name || 'N/A'}</p>
+                <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
+                    <Building2 size={12} /> Cabin
+                  </p>
+                  <p className="mt-1 font-semibold text-gray-800 text-sm">{viewBooking.cabin?.name || 'Unknown'}</p>
+                  <p className="text-xs text-gray-400 flex items-center gap-0.5 mt-0.5">
+                    <MapPin size={10} /> {viewBooking.cabin?.address?.split(',')[0] || 'N/A'}
+                  </p>
+                  <div className="grid grid-cols-2 gap-1 mt-1 text-xs text-gray-500">
+                    <span>Capacity: {viewBooking.cabin?.capacity || 'N/A'}</span>
+                    <span>Price: ₹{viewBooking.cabin?.price || 0}/hr</span>
+                  </div>
                 </div>
-                <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Customer</p>
-                  <p className="mt-1 font-semibold text-gray-800">{viewBooking.name || viewBooking.user?.name || 'N/A'}</p>
-                </div>
-                <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Mobile</p>
-                  <p className="mt-1 font-semibold text-gray-800">{viewBooking.mobile || viewBooking.user?.mobile || 'N/A'}</p>
-                </div>
-                <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Email</p>
-                  <p className="mt-1 font-semibold text-gray-800 text-sm break-all">{viewBooking.email || viewBooking.user?.email || 'N/A'}</p>
+                <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200">
+                  <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-1">
+                    <Layers size={12} /> Space Type
+                  </p>
+                  <div className="mt-2">
+                    <span className={`px-3 py-1.5 text-xs font-bold rounded-full inline-flex items-center gap-2 ${
+                      viewBooking.cabin?.isChamber 
+                        ? 'bg-emerald-100 text-emerald-700' 
+                        : 'bg-blue-100 text-blue-700'
+                    }`}>
+                      {viewBooking.cabin?.isChamber ? (
+                        <><Stethoscope size={14} /> Medical Chamber</>
+                      ) : (
+                        <><Briefcase size={14} /> Co-Working Space</>
+                      )}
+                    </span>
+                  </div>
+                  <div className="mt-2 text-xs text-gray-500">
+                    <p><span className="font-medium">Owner:</span> {viewBooking.cabin?.owner?.name || 'N/A'}</p>
+                    {viewBooking.selectedPlan && (
+                      <p><span className="font-medium">Plan:</span> {viewBooking.selectedPlan.label || 'N/A'}</p>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Start</p>
-                  <p className="mt-1 font-semibold text-gray-800">{viewBooking.startDate || 'N/A'}</p>
-                  <p className="text-sm font-medium text-indigo-600">{viewBooking.startTime || 'N/A'}</p>
-                </div>
-                <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">End</p>
-                  <p className="mt-1 font-semibold text-gray-800">{viewBooking.endDate || 'N/A'}</p>
-                  <p className="text-sm font-medium text-indigo-600">{viewBooking.endTime || 'N/A'}</p>
-                </div>
-              </div>
-
-              <div className="p-4 bg-gray-50 rounded-xl">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Booking Info</p>
-                <div className="flex items-center gap-4 mt-1 flex-wrap">
-                  <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold">{viewBooking.totalHours}h Total</span>
-                  <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium capitalize">{viewBooking.bookingBasis || 'Hourly'}</span>
-                  {viewBooking.selectedPlan && <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-medium">Plan: {viewBooking.selectedPlan.label || 'N/A'}</span>}
-                </div>
-              </div>
-
-              <div className="p-4 bg-gray-50 rounded-xl">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
-                  <CalendarPlus size={14} /> Created At
+              {/* User Details */}
+              <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+                <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider flex items-center gap-1">
+                  <User size={12} /> User Details
                 </p>
-                <p className="mt-1 font-semibold text-gray-800">{formatDateTime(viewBooking.createdAt)}</p>
+                <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <p className="text-gray-500 text-xs">Name</p>
+                    <p className="font-semibold">{viewBooking.name || viewBooking.user?.name || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-xs">Mobile</p>
+                    <p className="font-medium">{viewBooking.mobile || viewBooking.user?.mobile || 'N/A'}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-gray-500 text-xs">Email</p>
+                    <p className="font-medium break-all">{viewBooking.email || viewBooking.user?.email || 'N/A'}</p>
+                  </div>
+                </div>
               </div>
 
-              {/* Seats Section */}
-              {viewBooking.selectedSeats && viewBooking.selectedSeats.length > 0 && (
+              {/* Schedule */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
+                    <CalendarDays size={12} /> Start
+                  </p>
+                  <p className="mt-1 font-semibold text-gray-800">{viewBooking.startDate || 'N/A'}</p>
+                  <p className="text-sm font-bold text-indigo-600">{convertToIndianTime(viewBooking.startTime)}</p>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
+                    <CalendarDays size={12} /> End
+                  </p>
+                  <p className="mt-1 font-semibold text-gray-800">{viewBooking.endDate || 'N/A'}</p>
+                  <p className="text-sm font-bold text-indigo-600">{convertToIndianTime(viewBooking.endTime)}</p>
+                </div>
+              </div>
+
+              {/* Booking Info */}
+              <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
+                  <Info size={12} /> Booking Info
+                </p>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold">
+                    {viewBooking.totalHours || 0}h Total
+                  </span>
+                  <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-bold">
+                    {viewBooking.totalDays || 0} Days
+                  </span>
+                  <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                    Daily: {viewBooking.dailyHours?.join(', ') || 'N/A'}h
+                  </span>
+                  <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">
+                    Remaining: {viewBooking.remainingHours || 0}h
+                  </span>
+                  <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
+                    Used: {viewBooking.hoursUsed || 0}h
+                  </span>
+                </div>
+              </div>
+
+              {/* Booking Slots */}
+              {viewBooking.bookingSlots && viewBooking.bookingSlots.length > 0 && (
                 <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-200">
-                  <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider flex items-center gap-2">
+                  <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider flex items-center gap-2">
+                    <CalendarDays size={14} />
+                    Booking Slots ({viewBooking.bookingSlots.length} days)
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    {viewBooking.bookingSlots.map((slot, idx) => (
+                      <div key={idx} className="bg-white p-2 rounded-lg border border-indigo-100">
+                        <p className="text-xs font-bold text-gray-700">{formatDate(slot.date)}</p>
+                        <p className="text-[10px] text-gray-500">{convertToIndianTime(slot.startTime)} - {convertToIndianTime(slot.endTime)}</p>
+                        <p className="text-[10px] font-bold text-indigo-600">{slot.hours}h</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Seats */}
+              {viewBooking.selectedSeats && viewBooking.selectedSeats.length > 0 && (
+                <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200">
+                  <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-2">
                     <Armchair size={14} />
                     Selected Seats ({viewBooking.seatCount})
                   </p>
                   <div className="flex flex-wrap gap-2 mt-2">
                     {viewBooking.selectedSeats.map((seat) => (
-                      <span key={seat._id} className="px-3 py-1.5 bg-white rounded-lg border border-indigo-200 text-sm font-medium text-gray-700">
+                      <span key={seat._id} className="px-3 py-1.5 bg-white rounded-lg border border-emerald-200 text-sm font-medium text-gray-700">
                         {seat.name} <span className="text-gray-400 text-xs">#{seat.number}</span>
                       </span>
                     ))}
                   </div>
-                  {viewBooking.extraCharge > 0 && (
-                    <p className="text-xs text-amber-600 mt-2">Extra Charge: ₹{viewBooking.extraCharge}</p>
-                  )}
+                  <p className="mt-2 text-xs text-emerald-600 font-medium">
+                    Extra Charge: ₹{viewBooking.extraCharge || 0} ({viewBooking.seatCount} × ₹{viewBooking.seatExtraChargePerSeat || 100})
+                  </p>
                 </div>
               )}
 
+              {/* ⭐ STATUS UPDATE SECTION - Now visible for ALL bookings */}
+              <div className="p-4 bg-orange-50 rounded-xl border border-orange-200">
+                <p className="text-[10px] font-bold text-orange-600 uppercase tracking-wider flex items-center gap-2">
+                  <Edit size={14} /> Update Status
+                </p>
+                <div className="mt-3">
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-sm text-gray-600 font-medium">Current:</span>
+                    <span className={`px-3 py-1 text-xs font-bold rounded-full inline-flex items-center gap-1.5 ${getStatusBadge(viewBooking.status).color}`}>
+                      {getStatusBadge(viewBooking.status).icon} {getStatusBadge(viewBooking.status).label}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                    {['pending', 'confirmed', 'active', 'completed', 'cancelled'].map((status) => {
+                      const badge = getStatusBadge(status);
+                      const isSelected = viewBooking.status === status;
+                      return (
+                        <button
+                          key={status}
+                          onClick={() => handleUpdateStatusFromView(viewBooking._id, status)}
+                          disabled={updating || isSelected}
+                          className={`py-2 px-3 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1 ${
+                            isSelected
+                              ? 'border-orange-500 bg-orange-100 text-orange-700 cursor-default'
+                              : 'border-gray-200 hover:bg-gray-50 text-gray-600 hover:text-gray-800'
+                          } ${updating ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                          {badge.icon}
+                          {badge.label}
+                          {isSelected && <Check size={12} className="text-orange-600" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {updating && (
+                    <div className="mt-2 text-xs text-orange-600 flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-orange-600 rounded-full border-t-transparent animate-spin" />
+                      Updating status...
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Status & Payment */}
               <div className="grid grid-cols-3 gap-3">
-                <div className="p-3 bg-indigo-50 rounded-xl text-center">
+                <div className="p-3 bg-indigo-50 rounded-xl text-center border border-indigo-200">
                   <p className="text-[10px] text-indigo-500 font-bold uppercase">Status</p>
                   <span className={`px-3 py-1 text-xs font-bold rounded-full inline-block mt-1 ${getStatusBadge(viewBooking.status).color}`}>
                     {getStatusBadge(viewBooking.status).label}
                   </span>
                 </div>
-                <div className="p-3 bg-gray-50 rounded-xl text-center">
+                <div className="p-3 bg-gray-50 rounded-xl text-center border border-gray-200">
                   <p className="text-[10px] text-gray-500 font-bold uppercase">Payment</p>
                   <span className={`px-3 py-1 text-xs font-bold rounded-full inline-block mt-1 ${getPaymentMethodBadge(viewBooking.paymentMethod).color}`}>
                     {getPaymentMethodBadge(viewBooking.paymentMethod).label}
                   </span>
                 </div>
-                <div className="p-3 bg-gray-50 rounded-xl text-center">
+                <div className="p-3 bg-gray-50 rounded-xl text-center border border-gray-200">
                   <p className="text-[10px] text-gray-500 font-bold uppercase">Pmt Status</p>
                   <span className={`px-3 py-1 text-xs font-bold rounded-full inline-block mt-1 ${getPaymentStatusBadge(viewBooking.paymentStatus).color}`}>
                     {getPaymentStatusBadge(viewBooking.paymentStatus).label}
@@ -1480,20 +1742,193 @@ const CabinBookings = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Subtotal</p>
-                  <p className="mt-1 font-semibold text-gray-800">₹{viewBooking.subtotal?.toFixed(2) || '0'}</p>
-                </div>
-                <div className="p-3 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">GST (18%)</p>
-                  <p className="mt-1 font-semibold text-gray-800">₹{viewBooking.gstAmount?.toFixed(2) || '0'}</p>
+              {/* Price Breakdown */}
+              <div className="p-4 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl border border-emerald-200">
+                <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider flex items-center gap-2 mb-3">
+                  <IndianRupee size={14} />
+                  Price Breakdown
+                </p>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between items-center border-b border-emerald-100 pb-1.5">
+                    <span className="text-gray-600">Subtotal ({viewBooking.totalHours || 0}h)</span>
+                    <span className="font-semibold text-gray-800">₹{(viewBooking.subtotal || 0).toFixed(2)}</span>
+                  </div>
+                  {viewBooking.extraCharge > 0 && (
+                    <div className="flex justify-between items-center border-b border-emerald-100 pb-1.5">
+                      <span className="text-gray-600">Seat Charges ({viewBooking.seatCount} × ₹{viewBooking.seatExtraChargePerSeat || 100})</span>
+                      <span className="font-semibold text-amber-600">₹{(viewBooking.extraCharge || 0).toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center border-b border-emerald-100 pb-1.5">
+                    <span className="text-gray-600">GST ({(viewBooking.gstRate || 0.18) * 100}%)</span>
+                    <span className="font-semibold text-gray-800">₹{(viewBooking.gstAmount || 0).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t-2 border-emerald-300">
+                    <span className="font-bold text-gray-800">Total Amount</span>
+                    <span className="text-xl font-bold text-emerald-700">₹{(viewBooking.totalPrice || 0).toFixed(2)}</span>
+                  </div>
                 </div>
               </div>
 
+              {/* Payment Details */}
+              {(viewBooking.transactionId || viewBooking.paymentDetails) && (
+                <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+                  <p className="text-[10px] font-bold text-blue-700 uppercase tracking-wider flex items-center gap-2 mb-2">
+                    <Wallet size={14} />
+                    Payment Details
+                  </p>
+                  <div className="grid grid-cols-2 gap-1 text-sm">
+                    <div>
+                      <p className="text-gray-500 text-xs">Transaction ID</p>
+                      <p className="font-mono font-medium text-xs break-all">{viewBooking.transactionId || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500 text-xs">Payment Mode</p>
+                      <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${getPaymentMethodBadge(viewBooking.paymentMethod).color}`}>
+                        {getPaymentMethodBadge(viewBooking.paymentMethod).label}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-gray-500 text-xs">Payment Status</p>
+                      <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${getPaymentStatusBadge(viewBooking.paymentStatus).color}`}>
+                        {getPaymentStatusBadge(viewBooking.paymentStatus).label}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-gray-500 text-xs">Paid to Owner</p>
+                      <p className="font-medium">{viewBooking.isPaidToOwner ? '✅ Yes' : '❌ No'}</p>
+                    </div>
+                    {viewBooking.paymentDetails?.upiId && (
+                      <div className="col-span-2">
+                        <p className="text-gray-500 text-xs">UPI ID</p>
+                        <p className="font-mono text-xs">{viewBooking.paymentDetails.upiId}</p>
+                      </div>
+                    )}
+                    {viewBooking.paymentDetails?.upiApp && (
+                      <div>
+                        <p className="text-gray-500 text-xs">UPI App</p>
+                        <p className="font-medium text-xs">{viewBooking.paymentDetails.upiApp}</p>
+                      </div>
+                    )}
+                    {viewBooking.paymentDetails?.cardNumber && (
+                      <div>
+                        <p className="text-gray-500 text-xs">Card Number</p>
+                        <p className="font-mono text-xs">•••• {viewBooking.paymentDetails.cardNumber.slice(-4)}</p>
+                      </div>
+                    )}
+                    {viewBooking.paymentDetails?.paymentDate && (
+                      <div>
+                        <p className="text-gray-500 text-xs">Payment Date</p>
+                        <p className="font-medium text-xs">{formatDate(viewBooking.paymentDetails.paymentDate)}</p>
+                      </div>
+                    )}
+                    {viewBooking.paymentDetails?.screenshot && (
+                      <div className="col-span-2 mt-1">
+                        <p className="text-gray-500 text-xs">Screenshot</p>
+                        <img 
+                          src={`${API_URL}${viewBooking.paymentDetails.screenshot}`} 
+                          alt="Payment Screenshot" 
+                          className="mt-1 max-h-32 rounded-lg border border-gray-200"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Transaction IDs */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Transaction ID</p>
+                  <p className="mt-1 font-mono text-xs text-gray-700 break-all">{viewBooking.transactionId || 'N/A'}</p>
+                </div>
+                <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Razorpay Order ID</p>
+                  <p className="mt-1 font-mono text-xs text-gray-700 break-all">{viewBooking.razorpayOrderId || 'N/A'}</p>
+                </div>
+              </div>
+
+              {/* Check-in/Check-out */}
+              {(viewBooking.checkInTime || viewBooking.checkOutTime) && (
+                <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                    <Timer size={14} /> Check-in/Check-out
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 mt-1 text-sm">
+                    <div>
+                      <p className="text-gray-500 text-xs">Check-in</p>
+                      <p className="font-medium">{viewBooking.checkInTime || 'Not checked in'}</p>
+                      {viewBooking.actualCheckIn && (
+                        <p className="text-xs text-gray-400">Actual: {viewBooking.actualCheckIn}</p>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-gray-500 text-xs">Check-out</p>
+                      <p className="font-medium">{viewBooking.checkOutTime || 'Not checked out'}</p>
+                      {viewBooking.actualCheckOut && (
+                        <p className="text-xs text-gray-400">Actual: {viewBooking.actualCheckOut}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Extension */}
+              {viewBooking.isExtended && (
+                <div className="p-4 bg-amber-50 rounded-xl border border-amber-200">
+                  <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider flex items-center gap-2">
+                    <ClockIcon size={14} />
+                    Booking Extended
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    <div>
+                      <p className="text-[10px] text-gray-400">Extension Details</p>
+                      <p className="text-sm font-medium text-gray-700">{viewBooking.extensionDetails || 'N/A'}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Cancellation */}
+              {viewBooking.status === 'cancelled' && (
+                <div className="p-4 bg-red-50 rounded-xl border border-red-200">
+                  <p className="text-[10px] font-bold text-red-600 uppercase tracking-wider flex items-center gap-2">
+                    <AlertTriangle size={14} />
+                    Cancelled
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    <div>
+                      <p className="text-[10px] text-gray-400">Cancelled At</p>
+                      <p className="text-sm font-medium text-gray-700">{viewBooking.cancelledAt ? formatDateTime(viewBooking.cancelledAt) : 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-gray-400">Reason</p>
+                      <p className="text-sm font-medium text-gray-700">{viewBooking.cancellationReason || 'N/A'}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Review & Rating */}
+              {(viewBooking.review || viewBooking.rating) && (
+                <div className="p-4 bg-yellow-50 rounded-xl border border-yellow-200">
+                  <p className="text-[10px] font-bold text-yellow-600 uppercase tracking-wider flex items-center gap-2">
+                    <Star size={14} />
+                    Review
+                  </p>
+                  <div className="mt-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-yellow-600">{viewBooking.rating} ⭐</span>
+                      <span className="text-sm text-gray-700">{viewBooking.review}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Visiting Timings */}
               {viewBooking.visitingTimings && viewBooking.visitingTimings.length > 0 && (
-                <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
-                  <p className="text-xs font-medium text-blue-600 uppercase tracking-wider flex items-center gap-1">
+                <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
+                  <p className="text-[10px] font-medium text-blue-600 uppercase tracking-wider flex items-center gap-1">
                     <History size={14} /> Visit Log ({viewBooking.visitingTimings.length} entries)
                   </p>
                   <div className="space-y-1.5 mt-2">
@@ -1504,8 +1939,8 @@ const CabinBookings = () => {
                           <span className="text-slate-600">{formatDate(timing.date)}</span>
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className="text-xs font-medium text-emerald-600">IN: {timing.checkIn}</span>
-                          <span className="text-xs font-medium text-red-500">OUT: {timing.checkOut}</span>
+                          <span className="text-xs font-medium text-emerald-600">IN: {convertToIndianTime(timing.checkIn)}</span>
+                          <span className="text-xs font-medium text-red-500">OUT: {convertToIndianTime(timing.checkOut)}</span>
                         </div>
                       </div>
                     ))}
@@ -1513,37 +1948,37 @@ const CabinBookings = () => {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Amount</p>
-                  <p className="text-xl font-bold text-indigo-600 mt-1">₹{viewBooking.totalPrice?.toLocaleString('en-IN') || 0}</p>
-                </div>
-                <div className="p-3 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Created</p>
-                  <p className="mt-1 font-semibold text-gray-800 text-sm">{formatDate(viewBooking.createdAt)}</p>
-                </div>
+              {/* Created At */}
+              <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
+                  <CalendarPlus size={12} /> Booked On
+                </p>
+                <p className="mt-1 font-semibold text-gray-800">{formatDateTime(viewBooking.createdAt)}</p>
               </div>
 
-              {viewBooking.transactionId && (
-                <div className="p-3 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Transaction ID</p>
-                  <p className="mt-1 font-mono text-xs text-gray-700 break-all">{viewBooking.transactionId}</p>
-                </div>
-              )}
-
-              {viewBooking.paymentDetails?.screenshot && (
-                <div className="p-3 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Payment Screenshot</p>
-                  <img src={`${API_URL}${viewBooking.paymentDetails.screenshot}`} alt="Payment Screenshot" className="mt-2 max-h-48 rounded-lg border border-gray-200" />
-                </div>
-              )}
-
-              <div className="flex gap-2">
-                <button onClick={() => { setShowViewModal(false); printReceipt(viewBooking); }} className="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition shadow-sm active:scale-[0.98] flex items-center justify-center gap-2">
-                  <Printer size={16} /> Print
-                </button>
-                <button onClick={() => { setShowViewModal(false); downloadPDF(viewBooking); }} className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition shadow-sm active:scale-[0.98] flex items-center justify-center gap-2">
-                  <FileDown size={16} /> PDF
+              {/* Actions */}
+              <div className="flex flex-wrap gap-3 pt-2 border-t border-gray-200">
+                {viewBooking.bookingType !== 'visit' && (
+                  <>
+                    <button
+                      onClick={() => { setShowViewModal(false); printReceipt(viewBooking); }}
+                      className="flex-1 min-w-[120px] py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition shadow-sm active:scale-[0.98] flex items-center justify-center gap-2"
+                    >
+                      <Printer size={16} /> Print Receipt
+                    </button>
+                    <button
+                      onClick={() => { setShowViewModal(false); downloadPDF(viewBooking); }}
+                      className="flex-1 min-w-[120px] py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition shadow-sm active:scale-[0.98] flex items-center justify-center gap-2"
+                    >
+                      <FileDown size={16} /> Download PDF
+                    </button>
+                  </>
+                )}
+                <button
+                  onClick={() => setShowViewModal(false)}
+                  className="px-6 py-3 bg-gray-100 text-gray-600 rounded-xl font-medium hover:bg-gray-200 transition"
+                >
+                  Close
                 </button>
               </div>
             </div>
@@ -1551,7 +1986,7 @@ const CabinBookings = () => {
         </div>
       )}
 
-      {/* STATUS UPDATE MODAL */}
+      {/* STATUS UPDATE MODAL - Kept for backward compatibility */}
       {showStatusModal && selectedBooking && (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) { setShowStatusModal(false); setSelectedBooking(null); setNewStatus(""); } }}>
           <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden">
@@ -1803,9 +2238,9 @@ const CabinBookings = () => {
                       <div key={idx} className="flex items-center justify-between text-xs">
                         <span className="text-gray-600">{formatDate(t.date)}</span>
                         <div className="flex items-center gap-2">
-                          <span className="text-emerald-600 font-medium">{t.checkIn}</span>
+                          <span className="text-emerald-600 font-medium">{convertToIndianTime(t.checkIn)}</span>
                           <span className="text-gray-300">-</span>
-                          <span className="text-red-500 font-medium">{t.checkOut}</span>
+                          <span className="text-red-500 font-medium">{convertToIndianTime(t.checkOut)}</span>
                           <button onClick={() => { if (window.confirm("Delete this timing entry?")) { handleDeleteTiming(timingBooking._id, idx); } }} className="text-red-400 hover:text-red-600 transition-colors"><Trash2 size={12} /></button>
                         </div>
                       </div>

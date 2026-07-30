@@ -1,4 +1,4 @@
-// AdminBookings.jsx - Complete with ALL Fields from API Response
+// AdminBookings.jsx - Complete with ALL Fields from API Response + Owner Bookings API
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -59,7 +59,7 @@ import jsPDF from 'jspdf';
 import "./Dashboard.css";
 
 const API_URL = "https://spaceapi.iryax.com";
-const ADMIN_ID = "68ebe9ee8f06d33ee022d665";
+// ✅ REMOVED ADMIN_ID - using API directly
 
 const AdminBookings = () => {
   const [bookings, setBookings] = useState([]);
@@ -124,6 +124,11 @@ const AdminBookings = () => {
     confirmedRevenue: 0,
     completedRevenue: 0
   });
+
+  const getAuthHeader = () => {
+    const token = localStorage.getItem("token");
+    return { headers: { Authorization: `Bearer ${token}` } };
+  };
 
   const getStatusBadge = (status) => {
     const statusMap = {
@@ -191,22 +196,29 @@ const AdminBookings = () => {
     setStats({ totalBookings: total, confirmed, active, completed, cancelled, pending, totalRevenue, confirmedRevenue, completedRevenue });
   };
 
+  // ✅ FETCH BOOKINGS USING OWNER-BOOKINGS API
   useEffect(() => {
     const fetchBookings = async () => {
       try {
-        const res = await axios.get(`${API_URL}/api/bookings`);
-        const allBookings = res.data.bookings || [];
-        
-        const adminBookings = allBookings.filter(booking => {
-          const owner = booking.cabin?.owner || booking.cabinId?.owner;
-          return owner === ADMIN_ID || owner === null || owner === undefined;
+        const token = localStorage.getItem("token");
+        if (!token) {
+          toast.error("Please login to view bookings");
+          navigate("/login");
+          return;
+        }
+
+        // ✅ Using owner-bookings API with auth
+        const res = await axios.get(`${API_URL}/api/bookings/owner-bookings`, {
+          headers: { Authorization: `Bearer ${token}` }
         });
         
-        setBookings(adminBookings);
-        calculateStats(adminBookings);
+        const bookingsData = res.data.bookings || [];
+        console.log("✅ Owner Bookings fetched:", bookingsData.length);
+        setBookings(bookingsData);
+        calculateStats(bookingsData);
       } catch (err) {
         console.error("Failed to fetch bookings:", err);
-        toast.error("Failed to fetch bookings");
+        toast.error(err.response?.data?.error || "Failed to fetch bookings");
       } finally {
         setLoading(false);
       }
@@ -547,7 +559,7 @@ const AdminBookings = () => {
   };
 
   // ============================================================
-  // GENERATE THERMAL RECEIPT HTML - UPDATED WITH ALL FIELDS
+  // GENERATE THERMAL RECEIPT HTML
   // ============================================================
   const generateReceiptHTML = (booking) => {
     const cabin = booking.cabin || {};
@@ -1252,7 +1264,6 @@ const AdminBookings = () => {
                         </td>
 
                         {isVisit ? (
-                          // ✅ SITE VISIT ROW - Limited columns
                           <>
                             <td className="p-4">
                               <span className="text-sm text-gray-900 font-medium">{booking.startDate}</span>
@@ -1277,7 +1288,6 @@ const AdminBookings = () => {
                             </td>
                           </>
                         ) : (
-                          // ✅ SPACE BOOKING ROW - All columns with new fields
                           <>
                             <td className="p-4">
                               <div className="space-y-1">
@@ -1420,9 +1430,7 @@ const AdminBookings = () => {
         </div>
       </div>
 
-      {/* ====================== */}
-      {/* VIEW BOOKING MODAL - UPDATED WITH ALL FIELDS */}
-      {/* ====================== */}
+      {/* VIEW BOOKING MODAL - Same as before */}
       {showViewModal && viewBooking && (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setShowViewModal(false); }}>
           <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
@@ -1722,7 +1730,7 @@ const AdminBookings = () => {
         </div>
       )}
 
-      {/* STATUS UPDATE MODAL - Same as before */}
+      {/* STATUS UPDATE MODAL */}
       {showStatusModal && selectedBooking && (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) { setShowStatusModal(false); setSelectedBooking(null); setNewStatus(""); } }}>
           <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden">
@@ -1769,7 +1777,7 @@ const AdminBookings = () => {
         </div>
       )}
 
-      {/* PAYMENT STATUS UPDATE MODAL - Same as before */}
+      {/* PAYMENT STATUS UPDATE MODAL */}
       {showPaymentModal && paymentBooking && (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) resetPaymentModal(); }}>
           <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-y-auto max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
@@ -1935,7 +1943,7 @@ const AdminBookings = () => {
         </div>
       )}
 
-      {/* VISITING TIMINGS MODAL - Same as before */}
+      {/* VISITING TIMINGS MODAL */}
       {showTimingModal && timingBooking && (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) { setShowTimingModal(false); setTimingBooking(null); setNewTiming({ date: "", checkIn: "", checkOut: "" }); } }}>
           <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden">

@@ -243,14 +243,14 @@ const SimpleUserProfile = () => {
             <div className="mt-5 pt-5 border-t border-gray-200">
               <div className="grid grid-cols-2 gap-3">
                 <button
-                  onClick={() => navigate("/simple-bookings")}
+                  onClick={() => navigate("/userbooking")}
                   className="flex items-center justify-center gap-2 px-3 py-2.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition border border-indigo-200"
                 >
                   <Calendar size={14} />
                   My Bookings
                 </button>
                 <button
-                  onClick={() => navigate("/spaces")}
+                  onClick={() => navigate("/spaceforusers")}
                   className="flex items-center justify-center gap-2 px-3 py-2.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-medium hover:bg-emerald-100 transition border border-emerald-200"
                 >
                   <Shield size={14} />

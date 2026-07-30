@@ -9,7 +9,8 @@ import {
   User,
   Wallet,
   Grid,
-  BookOpen
+  BookOpen,
+  Heart // ✅ ADDED
 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -67,11 +68,12 @@ function SimpleUserNavbar() {
     navigate("/login");
   };
 
-  // Navigation Data - Simplified for User
+  // Navigation Data - Updated with Wishlist
   const navLinks = [
     { name: "Dashboard", path: "/userdashboard", icon: LayoutDashboard },
     { name: "Spaces", path: "/spaceforusers", icon: Building2 },
     { name: "My Bookings", path: "/userbooking", icon: Calendar },
+    { name: "Wishlist", path: "/mywishlist", icon: Heart }, // ✅ ADDED
   ];
 
   const userString = localStorage.getItem("user");
@@ -100,13 +102,10 @@ function SimpleUserNavbar() {
             </div>
             <div className="flex flex-col leading-tight">
               <span className="text-base font-bold text-slate-900 tracking-tight">IRYAX SPACE</span>
-              <span className="text-[9px] font-bold uppercase tracking-[0.06em] text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded w-fit">
-                User Portal
-              </span>
             </div>
           </Link>
 
-          {/* Desktop Nav Links - Simple */}
+          {/* Desktop Nav Links */}
           <ul className="hidden md:flex items-center gap-1 flex-1 justify-center list-none m-0 p-0">
             {navLinks.map((link) => (
               <li key={link.path}>
@@ -140,6 +139,15 @@ function SimpleUserNavbar() {
             >
               <Building2 size={14} />
               <span>Find Space</span>
+            </button>
+
+            {/* Wishlist Button */}
+            <button
+              onClick={() => navigate("/mywishlist")}
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold rounded-lg transition-all duration-200 hover:shadow-md"
+            >
+              <Heart size={14} className="fill-current" />
+              <span>Wishlist</span>
             </button>
 
             <span className="hidden md:block w-px h-7 bg-slate-200" />
@@ -181,8 +189,6 @@ function SimpleUserNavbar() {
                   </div>
                   <div className="h-px bg-slate-100 mx-2 my-1" />
 
-               
-
                   {/* My Profile */}
                   <button
                     className="flex items-center gap-2.5 w-full px-3 py-1.75 border-none bg-transparent rounded-lg text-xs font-medium text-slate-600 cursor-pointer transition-all duration-150 hover:bg-slate-100 hover:text-slate-900 font-inherit"
@@ -192,6 +198,28 @@ function SimpleUserNavbar() {
                     }}
                   >
                     <User size={15} className="text-slate-400" /> My Profile
+                  </button>
+
+                  {/* My Wishlist - ✅ ADDED */}
+                  <button
+                    className="flex items-center gap-2.5 w-full px-3 py-1.75 border-none bg-transparent rounded-lg text-xs font-medium text-slate-600 cursor-pointer transition-all duration-150 hover:bg-slate-100 hover:text-slate-900 font-inherit"
+                    onClick={() => {
+                      setProfileOpen(false);
+                      navigate("/mywishlist");
+                    }}
+                  >
+                    <Heart size={15} className="text-red-400" /> My Wishlist
+                  </button>
+
+                  {/* My Wallet */}
+                  <button
+                    className="flex items-center gap-2.5 w-full px-3 py-1.75 border-none bg-transparent rounded-lg text-xs font-medium text-slate-600 cursor-pointer transition-all duration-150 hover:bg-slate-100 hover:text-slate-900 font-inherit"
+                    onClick={() => {
+                      setProfileOpen(false);
+                      navigate("/my-wallet");
+                    }}
+                  >
+                    <Wallet size={15} className="text-slate-400" /> My Wallet
                   </button>
 
                   <div className="h-px bg-slate-100 mx-2 my-1" />
@@ -284,7 +312,7 @@ function SimpleUserNavbar() {
             </button>
           </div>
 
-          {/* Mobile Navigation - Simple */}
+          {/* Mobile Navigation */}
           <p className="text-[10px] font-bold uppercase tracking-[0.06em] text-slate-400 px-1 pb-1.5 m-0">
             Navigation
           </p>
@@ -332,6 +360,18 @@ function SimpleUserNavbar() {
             >
               <User size={17} className="text-slate-400" />
               <span>My Profile</span>
+            </button>
+
+            {/* ✅ My Wishlist in Mobile Drawer */}
+            <button
+              onClick={() => {
+                setOpen(false);
+                navigate("/mywishlist");
+              }}
+              className="flex items-center gap-2.5 w-full px-3 py-2.5 border-none bg-transparent rounded-lg text-sm font-medium text-slate-600 cursor-pointer transition-all duration-150 hover:bg-slate-100 hover:text-slate-900 font-inherit"
+            >
+              <Heart size={17} className="text-red-400" />
+              <span>My Wishlist</span>
             </button>
 
             <button

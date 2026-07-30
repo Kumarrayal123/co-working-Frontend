@@ -126,11 +126,36 @@ function SpacesPage() {
   const [activeFilter, setActiveFilter] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [showAllCabins, setShowAllCabins] = useState(false);
+  const [wishlist, setWishlist] = useState([]);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
 
   const navigate = useNavigate();
 
+  // Get current user
+  const currentUser = (() => {
+    try {
+      const userStr = localStorage.getItem("user");
+      const adminStr = localStorage.getItem("admin");
+      if (userStr) return JSON.parse(userStr);
+      if (adminStr) return JSON.parse(adminStr);
+      return null;
+    } catch (err) {
+      return null;
+    }
+  })();
+
+  const userId = currentUser?._id || currentUser?.id;
+  const token = localStorage.getItem("token");
+
+  const getAuthHeader = () => {
+    return { headers: { Authorization: `Bearer ${token}` } };
+  };
+
   useEffect(() => {
     fetchCabins();
+    if (userId && token) {
+      fetchWishlist();
+    }
   }, []);
 
   const fetchCabins = async () => {
@@ -148,6 +173,68 @@ function SpacesPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // ✅ FETCH WISHLIST - GET /api/cabins/mywishlist/:userId
+  const fetchWishlist = async () => {
+    if (!userId || !token) return;
+    try {
+      const res = await axios.get(
+        `${API_URL}/api/cabins/mywishlist/${userId}`,
+        getAuthHeader()
+      );
+      console.log("Wishlist Response:", res.data);
+      setWishlist(res.data.wishlist || []);
+    } catch (err) {
+      console.error("Error fetching wishlist:", err);
+    }
+  };
+
+  // ✅ TOGGLE WISHLIST - POST /api/cabins/toggle/:userId
+  const toggleWishlist = async (cabinId, e) => {
+    if (e) e.stopPropagation();
+    
+    if (!userId || !token) {
+      toast.error("Please login to add to wishlist");
+      navigate("/login");
+      return;
+    }
+
+    setWishlistLoading(true);
+    try {
+      const res = await axios.post(
+        `${API_URL}/api/cabins/toggle/${userId}`,
+        { cabinId },
+        getAuthHeader()
+      );
+
+      console.log("Toggle Response:", res.data);
+      
+      // ✅ Update wishlist based on action
+      if (res.data.action === 'added') {
+        setWishlist(res.data.wishlist || []);
+        toast.success("Added to wishlist! ❤️");
+      } else if (res.data.action === 'removed') {
+        setWishlist(res.data.wishlist || []);
+        toast.success("Removed from wishlist");
+      }
+      
+    } catch (err) {
+      console.error("Error toggling wishlist:", err);
+      toast.error(err.response?.data?.error || "Failed to update wishlist");
+    } finally {
+      setWishlistLoading(false);
+    }
+  };
+
+  // ✅ CHECK IF CABIN IS IN WISHLIST
+  const isInWishlist = (cabinId) => {
+    return wishlist.some(item => item._id === cabinId || item === cabinId);
+  };
+
+  // ✅ GET WISHLIST COUNT
+  const getWishlistCount = () => {
+    return wishlist.length;
   };
 
   const handleCategorySelect = (categoryId) => {
@@ -632,96 +719,104 @@ function SpacesPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-            {filteredCabins.map((cabin) => (
-              <div
-                key={cabin._id}
-                className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer group hover:-translate-y-1.5"
-                onClick={() => navigate(`/cabin/${cabin._id}`)}
-              >
-                <div className="relative h-52 overflow-hidden bg-gray-100">
-                  <img
-                    src={cabin.images?.[0] ? getImageUrl(cabin.images[0]) : "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000"}
-                    alt={cabin.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition duration-500"
-                    onError={(e) => {
-                      e.target.src = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
-                    }}
-                  />
-                  {/* Badges */}
-                  <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
-                    <span className={`px-2.5 py-0.5 text-[9px] font-bold rounded-full border backdrop-blur-sm ${getTypeColor(cabin)}`}>
-                      {getTypeLabel(cabin)}
-                    </span>
-                    {cabin.cabinType === "exclusive" && (
-                      <span className="px-2.5 py-0.5 text-[9px] font-bold rounded-full bg-amber-100/90 text-amber-700 border border-amber-200 flex items-center gap-0.5 backdrop-blur-sm">
-                        <Crown size={10} /> Exclusive
+            {filteredCabins.map((cabin) => {
+              const inWishlist = isInWishlist(cabin._id);
+              return (
+                <div
+                  key={cabin._id}
+                  className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer group hover:-translate-y-1.5"
+                  onClick={() => navigate(`/cabin/${cabin._id}`)}
+                >
+                  <div className="relative h-52 overflow-hidden bg-gray-100">
+                    <img
+                      src={cabin.images?.[0] ? getImageUrl(cabin.images[0]) : "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000"}
+                      alt={cabin.name}
+                      className="w-full h-full object-cover group-hover:scale-110 transition duration-500"
+                      onError={(e) => {
+                        e.target.src = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
+                      }}
+                    />
+                    {/* Badges */}
+                    <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
+                      <span className={`px-2.5 py-0.5 text-[9px] font-bold rounded-full border backdrop-blur-sm ${getTypeColor(cabin)}`}>
+                        {getTypeLabel(cabin)}
                       </span>
-                    )}
-                  </div>
-                  {/* Price */}
-                  <div className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-md px-3.5 py-1.5 rounded-lg">
-                    <span className="text-white font-bold text-sm">{formatCurrency(cabin.price)}</span>
-                    <span className="text-white/50 text-[8px] font-light">/hour</span>
-                  </div>
-                  {/* Wishlist button */}
-                  <button 
-                    className="absolute top-3 right-3 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition shadow-md opacity-0 group-hover:opacity-100"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toast.success("Added to wishlist! ❤️");
-                    }}
-                  >
-                    <Heart size={14} className="text-gray-500 hover:text-red-500 transition" />
-                  </button>
-                </div>
-
-                <div className="p-4">
-                  <h3 className="font-semibold text-gray-900 text-sm line-clamp-1">{cabin.name}</h3>
-                  <p className="text-[10px] text-gray-400 flex items-center gap-1 mt-0.5">
-                    <MapPin size={11} />
-                    <span className="line-clamp-1">{cabin.address?.split(',')[0] || 'N/A'}</span>
-                  </p>
-                  
-                  {/* Rating */}
-                  <div className="flex items-center gap-1 mt-1.5">
-                    <Star size={12} className="text-yellow-400 fill-yellow-400" />
-                    <span className="text-[10px] font-medium text-gray-700">4.8</span>
-                    <span className="text-[9px] text-gray-400">(24 reviews)</span>
-                  </div>
-                  
-                  {/* Amenities */}
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {getActiveAmenities(cabin.amenities).slice(0, 4).map((key) => {
-                      const amenity = AMENITY_ICONS[key];
-                      if (!amenity) return null;
-                      const Icon = amenity.icon;
-                      return (
-                        <span key={key} className="p-1.5 bg-gray-50 rounded-lg" title={amenity.label}>
-                          <Icon size={12} className="text-gray-500" />
+                      {cabin.cabinType === "exclusive" && (
+                        <span className="px-2.5 py-0.5 text-[9px] font-bold rounded-full bg-amber-100/90 text-amber-700 border border-amber-200 flex items-center gap-0.5 backdrop-blur-sm">
+                          <Crown size={10} /> Exclusive
                         </span>
-                      );
-                    })}
-                    {getActiveAmenities(cabin.amenities).length > 4 && (
-                      <span className="text-[9px] text-gray-400 font-medium px-1.5 py-0.5 bg-gray-50 rounded-lg">
-                        +{getActiveAmenities(cabin.amenities).length - 4}
-                      </span>
-                    )}
-                  </div>
-                  
-                  <div className="mt-3 flex items-center justify-between pt-3 border-t border-gray-50">
-                    <span className="text-[10px] text-gray-400 flex items-center gap-1">
-                      <Users size={11} /> {cabin.capacity || 'N/A'} seats
-                    </span>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); navigate(`/cabin/${cabin._id}`); }}
-                      className="px-4 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-[10px] font-medium rounded-lg transition flex items-center gap-1 shadow-sm hover:shadow"
+                      )}
+                    </div>
+                    {/* Price */}
+                    <div className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-md px-3.5 py-1.5 rounded-lg">
+                      <span className="text-white font-bold text-sm">{formatCurrency(cabin.price)}</span>
+                      <span className="text-white/50 text-[8px] font-light">/hour</span>
+                    </div>
+                    {/* ✅ Wishlist button with API integration */}
+                    <button 
+                      className={`absolute top-3 right-3 w-8 h-8 backdrop-blur-sm rounded-full flex items-center justify-center transition shadow-md ${
+                        inWishlist 
+                          ? 'bg-red-500 text-white hover:bg-red-600' 
+                          : 'bg-white/90 hover:bg-white text-gray-500 hover:text-red-500'
+                      } ${wishlistLoading ? 'opacity-50 pointer-events-none' : ''}`}
+                      onClick={(e) => toggleWishlist(cabin._id, e)}
+                      disabled={wishlistLoading}
                     >
-                      <Eye size={11} /> View
+                      <Heart 
+                        size={14} 
+                        className={inWishlist ? 'fill-current' : ''} 
+                      />
                     </button>
                   </div>
+
+                  <div className="p-4">
+                    <h3 className="font-semibold text-gray-900 text-sm line-clamp-1">{cabin.name}</h3>
+                    <p className="text-[10px] text-gray-400 flex items-center gap-1 mt-0.5">
+                      <MapPin size={11} />
+                      <span className="line-clamp-1">{cabin.address?.split(',')[0] || 'N/A'}</span>
+                    </p>
+                    
+                    {/* Rating */}
+                    <div className="flex items-center gap-1 mt-1.5">
+                      <Star size={12} className="text-yellow-400 fill-yellow-400" />
+                      <span className="text-[10px] font-medium text-gray-700">4.8</span>
+                      <span className="text-[9px] text-gray-400">(24 reviews)</span>
+                    </div>
+                    
+                    {/* Amenities */}
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {getActiveAmenities(cabin.amenities).slice(0, 4).map((key) => {
+                        const amenity = AMENITY_ICONS[key];
+                        if (!amenity) return null;
+                        const Icon = amenity.icon;
+                        return (
+                          <span key={key} className="p-1.5 bg-gray-50 rounded-lg" title={amenity.label}>
+                            <Icon size={12} className="text-gray-500" />
+                          </span>
+                        );
+                      })}
+                      {getActiveAmenities(cabin.amenities).length > 4 && (
+                        <span className="text-[9px] text-gray-400 font-medium px-1.5 py-0.5 bg-gray-50 rounded-lg">
+                          +{getActiveAmenities(cabin.amenities).length - 4}
+                        </span>
+                      )}
+                    </div>
+                    
+                    <div className="mt-3 flex items-center justify-between pt-3 border-t border-gray-50">
+                      <span className="text-[10px] text-gray-400 flex items-center gap-1">
+                        <Users size={11} /> {cabin.capacity || 'N/A'} seats
+                      </span>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); navigate(`/cabin/${cabin._id}`); }}
+                        className="px-4 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-[10px] font-medium rounded-lg transition flex items-center gap-1 shadow-sm hover:shadow"
+                      >
+                        <Eye size={11} /> View
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

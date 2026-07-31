@@ -1188,30 +1188,30 @@ const AdminCabins = () => {
       <AdminNavbar />
 
       <div className="pt-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
-        {/* Header */}
-        <div className="admin-dash__header">
-          <div>
-            <h1 className="admin-dash__greeting">
-              My <span>Cabins</span>
-            </h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => navigate("/adminbookings")}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
-            >
-              <FileText size={14} className="text-indigo-600" />
-              <span className="hidden xs:inline">Bookings</span>
-            </button>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors"
-            >
-              <Plus size={14} />
-              <span className="hidden xs:inline">Add Cabin</span>
-            </button>
-          </div>
-        </div>
+      {/* Header */}
+<div className="admin-dash__header">
+  <div>
+    <h1 className="admin-dash__greeting">
+      My <span>Cabins</span>
+    </h1>
+  </div>
+  <div className="flex items-center gap-2">
+    <button
+      onClick={() => navigate("/adminbookings")}
+      className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+    >
+      <FileText size={14} className="text-indigo-600" />
+      <span>Bookings</span>
+    </button>
+    <button
+      onClick={() => setIsModalOpen(true)}
+      className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors"
+    >
+      <Plus size={14} />
+      <span>Add Space</span>
+    </button>
+  </div>
+</div>
 
         {/* Stats Cards - Updated with Space Type stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">

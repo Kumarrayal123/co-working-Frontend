@@ -24,7 +24,8 @@ import {
   Key,
   Store,
   UserCheck,
-  UserCog
+  UserCog,
+  Stethoscope // Added for Doctor
 } from "lucide-react";
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -158,7 +159,7 @@ function Register() {
           <div className="absolute bottom-20 right-10 w-3 h-3 bg-blue-400 rounded-full blur-sm animate-ping delay-700"></div>
         </div>
 
-        <div className="relative z-10 max-w-2xl w-full">
+        <div className="relative z-10 max-w-3xl w-full">
           <div className="bg-white/5 backdrop-blur-xl p-8 rounded-3xl shadow-2xl border border-white/10 hover:border-white/20 transition-all duration-500">
             <div className="w-16 h-0.5 bg-gradient-to-r from-emerald-400 via-blue-500 to-purple-500 rounded-full mx-auto mb-4"></div>
 
@@ -183,7 +184,8 @@ function Register() {
               Select how you want to register with IRYAX Space
             </p>
 
-            <div className="grid md:grid-cols-2 gap-4">
+            {/* Grid with 3 options - User, Cabin Owner, Medical Cabin */}
+            <div className="grid md:grid-cols-3 gap-4">
               {/* User Card */}
               <button
                 onClick={() => handleUserTypeSelect("user")}
@@ -229,6 +231,29 @@ function Register() {
                   </div>
                 </div>
               </button>
+
+              {/* Medical Cabin / Doctor Card */}
+              <button
+                onClick={() => navigate("/doctorregister")}
+                className="group relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 text-left hover:border-purple-400/50 hover:bg-white/10 transition-all duration-500 hover:-translate-y-1 hover:shadow-xl hover:shadow-purple-500/10"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/0 to-purple-500/0 group-hover:from-purple-500/5 group-hover:to-purple-500/10 rounded-2xl transition-all duration-500"></div>
+                <div className="relative">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-400/20 to-indigo-600/20 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform duration-300 mb-4 border border-purple-400/20 group-hover:border-purple-400/40">
+                    <Stethoscope size={28} />
+                  </div>
+                  <h3 className="text-white font-semibold text-base tracking-wide group-hover:text-purple-400 transition-colors">
+                    Medical Cabin
+                  </h3>
+                  <p className="text-white/40 text-xs font-light mt-1 leading-relaxed">
+                    Register as a doctor, manage your medical practice, and offer consultations.
+                  </p>
+                  <div className="mt-4 flex items-center gap-2 text-purple-400/60 text-xs font-medium group-hover:text-purple-400 transition-colors">
+                    <span>Join as Medical Cabin Owner</span>
+                    <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </div>
+              </button>
             </div>
 
             <div className="mt-6 text-center">
@@ -256,7 +281,7 @@ function Register() {
     );
   }
 
-  // Main Registration Form
+  // Main Registration Form (User / Cabin Owner)
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 flex items-center justify-center px-4 relative overflow-hidden py-8">
       <div className="absolute inset-0 overflow-hidden">

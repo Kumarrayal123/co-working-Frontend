@@ -83,7 +83,7 @@ const DoctorNavbar = () => {
   const handleLogout = () => {
     localStorage.removeItem("doctor");
     localStorage.removeItem("token");
-    navigate("/doctorlogin");
+    navigate("/login");
   };
 
   const handleProfileClick = () => {

@@ -1,3 +1,4 @@
+// SimpleUserDashboard.jsx - With Profile Completion Circle
 import axios from "axios";
 import {
   Calendar,
@@ -17,7 +18,13 @@ import {
   Search,
   X as XIcon,
   RefreshCw,
-  FileDown
+  FileDown,
+  User,
+  AlertCircle,
+  AlertTriangle,
+  ArrowRight,
+  Mail,
+  Phone
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -28,6 +35,11 @@ const API_URL = "https://spaceapi.iryax.com";
 
 function SimpleUserDashboard() {
   const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
+  const [completionPercentage, setCompletionPercentage] = useState(0);
+  const [missingFields, setMissingFields] = useState([]);
+  const [animatedPercentage, setAnimatedPercentage] = useState(0);
+  
   const [bookings, setBookings] = useState([]);
   const [filteredBookings, setFilteredBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -47,12 +59,124 @@ function SimpleUserDashboard() {
 
   const navigate = useNavigate();
 
+  const getUserId = () => {
+    let userId = localStorage.getItem("userId");
+    
+    if (!userId) {
+      try {
+        const token = localStorage.getItem("token");
+        if (token) {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          userId = payload.id || payload.userId || payload._id;
+          if (userId) {
+            localStorage.setItem("userId", userId);
+          }
+        }
+      } catch (err) {
+        console.error("Error extracting userId from token:", err);
+      }
+    }
+    
+    return userId;
+  };
+
+  // Calculate profile completion percentage - ONLY BASIC FIELDS
+  const calculateCompletion = (userData) => {
+    const fields = [
+      { key: 'name', label: 'Full Name', required: true },
+      { key: 'email', label: 'Email Address', required: true },
+      { key: 'mobile', label: 'Mobile Number', required: true },
+      { key: 'address', label: 'Address', required: false },
+      { key: 'organizationName', label: 'Organization Name', required: false },
+      { key: 'gstNumber', label: 'GST Number', required: false }
+    ];
+
+    let completed = 0;
+    let total = 0;
+    const missing = [];
+
+    fields.forEach(field => {
+      const value = userData[field.key];
+      
+      if (field.required) {
+        total++;
+        if (value && value.toString().trim() !== '') {
+          completed++;
+        } else {
+          missing.push(field.label);
+        }
+      } else {
+        total++;
+        if (value && value.toString().trim() !== '') {
+          completed++;
+        } else {
+          missing.push(field.label);
+        }
+      }
+    });
+
+    let percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+    
+    if (userData._id && percentage < 10) {
+      percentage = 10;
+    }
+
+    return { percentage, missing };
+  };
+
+  // Animate percentage on load
+  useEffect(() => {
+    if (completionPercentage > 0) {
+      let start = 0;
+      const duration = 1500;
+      const step = Math.max(1, Math.floor(completionPercentage / 60));
+      
+      const timer = setInterval(() => {
+        start += step;
+        if (start >= completionPercentage) {
+          setAnimatedPercentage(completionPercentage);
+          clearInterval(timer);
+        } else {
+          setAnimatedPercentage(start);
+        }
+      }, 20);
+      
+      return () => clearInterval(timer);
+    }
+  }, [completionPercentage]);
+
+  // Fetch profile for completion
+  const fetchProfile = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const userId = getUserId();
+      if (!userId) return;
+
+      const res = await axios.get(
+        `${API_URL}/api/auth/profile/${userId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (res.data.success && res.data.user) {
+        setProfile(res.data.user);
+        const { percentage, missing } = calculateCompletion(res.data.user);
+        setCompletionPercentage(percentage);
+        setMissingFields(missing);
+      }
+    } catch (err) {
+      console.error("Error fetching profile:", err);
+    }
+  };
+
   useEffect(() => {
     const userData = localStorage.getItem("user");
     if (userData) {
       setUser(JSON.parse(userData));
     }
     fetchBookings();
+    fetchProfile();
   }, []);
 
   const fetchBookings = async () => {
@@ -206,12 +330,10 @@ function SimpleUserDashboard() {
     return `₹${Number(amount).toLocaleString('en-IN')}`;
   };
 
-  // ✅ Navigate to booking details
   const handleViewBooking = (booking) => {
     navigate(`/booking/${booking._id}`);
   };
 
-  // ✅ Download invoice
   const downloadInvoice = (booking) => {
     try {
       const cabin = booking.cabin || {};
@@ -386,6 +508,76 @@ function SimpleUserDashboard() {
     }
   };
 
+  // Circular Progress Component
+  const CircularProgress = ({ percentage, size = 100, strokeWidth = 8 }) => {
+    const radius = (size - strokeWidth) / 2;
+    const circumference = radius * 2 * Math.PI;
+    const offset = circumference - (percentage / 100) * circumference;
+    
+    const getColor = (p) => {
+      if (p >= 80) return '#10b981';
+      if (p >= 50) return '#f59e0b';
+      return '#ef4444';
+    };
+    const color = getColor(percentage);
+
+    return (
+      <div className="relative inline-flex items-center justify-center">
+        <svg
+          width={size}
+          height={size}
+          className="transform -rotate-90"
+        >
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke="#e5e7eb"
+            strokeWidth={strokeWidth}
+            fill="none"
+          />
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke={color}
+            strokeWidth={strokeWidth}
+            fill="none"
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            className="transition-all duration-500 ease-in-out"
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-xl font-bold" style={{ color: color }}>
+            {percentage}%
+          </span>
+          <span className="text-[7px] font-medium text-gray-500 uppercase tracking-wider">
+            Complete
+          </span>
+        </div>
+      </div>
+    );
+  };
+
+  const getCompletionColor = (percentage) => {
+    if (percentage >= 80) return 'text-emerald-600';
+    if (percentage >= 50) return 'text-yellow-600';
+    return 'text-red-500';
+  };
+
+  const getCompletionEmoji = (percentage) => {
+    if (percentage >= 80) return '🎉';
+    if (percentage >= 50) return '📈';
+    if (percentage >= 30) return '📝';
+    return '⚠️';
+  };
+
+  const getProfileName = () => {
+    return profile?.name || user?.name || 'User';
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -429,10 +621,12 @@ function SimpleUserDashboard() {
       <div className="pt-24 px-4 sm:px-6 md:px-8 max-w-full mx-auto pb-16">
         
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">My Bookings</h1>
-            <p className="text-sm text-gray-500">Manage all your workspace bookings in one place</p>
+            <p className="text-sm text-gray-500">
+              Welcome back, <span className="font-semibold text-gray-700">{getProfileName()}</span>
+            </p>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -441,6 +635,70 @@ function SimpleUserDashboard() {
             >
               <Building2 size={16} />
               Find New Space
+            </button>
+          </div>
+        </div>
+
+        {/* Profile Completion Card */}
+        <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 rounded-xl border border-indigo-200 shadow-sm p-3 sm:p-4 mb-5">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            {/* Circular Progress */}
+            <div className="flex-shrink-0 flex justify-center">
+              <CircularProgress 
+                percentage={animatedPercentage || completionPercentage} 
+                size={80}
+                strokeWidth={7}
+              />
+            </div>
+
+            {/* Details */}
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="text-lg">{getCompletionEmoji(completionPercentage)}</span>
+                <h3 className="text-xs font-semibold text-gray-800">Profile Completion</h3>
+              </div>
+              
+              <div className="flex flex-wrap items-center gap-1.5">
+                <div className="flex items-center gap-1 bg-white/80 backdrop-blur-sm px-2 py-0.5 rounded-lg border border-gray-200">
+                  <span className="text-[8px] font-medium text-gray-500">Completed:</span>
+                  <span className={`text-xs font-bold ${getCompletionColor(completionPercentage)}`}>{completionPercentage}%</span>
+                </div>
+                <div className="flex items-center gap-1 bg-white/80 backdrop-blur-sm px-2 py-0.5 rounded-lg border border-gray-200">
+                  <span className="text-[8px] font-medium text-gray-500">Pending:</span>
+                  <span className="text-xs font-bold text-amber-600">{missingFields.length}</span>
+                </div>
+              </div>
+
+              {missingFields.length > 0 && (
+                <div className="mt-1 flex flex-wrap items-center gap-1 bg-white/60 backdrop-blur-sm px-2 py-1 rounded-lg border border-amber-200">
+                  <AlertTriangle size={10} className="text-amber-500 flex-shrink-0" />
+                  <p className="text-[8px] text-gray-700">
+                    <span className="font-semibold text-amber-600">{missingFields.length}</span> fields remaining
+                  </p>
+                  <button
+                    onClick={() => navigate("/userprofile")}
+                    className="inline-flex items-center gap-0.5 text-[8px] font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
+                  >
+                    Complete Now <ArrowRight size={8} />
+                  </button>
+                </div>
+              )}
+              
+              {missingFields.length === 0 && (
+                <div className="mt-1 flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
+                  <CheckCircle size={10} className="text-emerald-500" />
+                  <p className="text-[8px] font-medium text-emerald-700">100% complete! 🎉</p>
+                </div>
+              )}
+            </div>
+            
+            {/* Quick Action Button */}
+            <button
+              onClick={() => navigate("/userprofile")}
+              className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1.5 bg-indigo-600 text-white rounded-lg text-[10px] font-medium hover:bg-indigo-700 transition-colors shadow-sm shadow-indigo-200"
+            >
+              <User size={12} />
+              View Profile
             </button>
           </div>
         </div>
@@ -556,7 +814,6 @@ function SimpleUserDashboard() {
                         </td>
                         <td className="px-3 py-2.5">
                           <div>
-                            {/* ✅ FIXED: booking.cabin use karo, NOT booking.cabinId */}
                             <p className="font-semibold text-gray-900 text-sm">
                               {booking.cabin?.name || 'Unknown Cabin'}
                             </p>

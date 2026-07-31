@@ -115,6 +115,49 @@ const CATEGORIES = [
   }
 ];
 
+// ✅ Helper: Convert 24hr time to 12hr format with AM/PM (NO IST)
+const formatTo12Hour = (time24) => {
+  if (!time24) return "N/A";
+  
+  // If it's already in 12hr format with AM/PM, return as is
+  if (time24.includes('AM') || time24.includes('PM')) {
+    return time24;
+  }
+  
+  try {
+    const [hours, minutes] = time24.split(':').map(Number);
+    if (isNaN(hours) || isNaN(minutes)) return time24;
+    
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const hours12 = hours % 12 || 12;
+    return `${hours12}:${String(minutes).padStart(2, '0')} ${ampm}`;
+  } catch (e) {
+    return time24;
+  }
+};
+
+// ✅ Helper: Format timing display (NO IST)
+const getTimingDisplay = (cabin) => {
+  if (cabin.is24x7) {
+    return { display: "24x7 Open", icon: Clock, color: "text-emerald-600" };
+  }
+  
+  const openTime = cabin.openTime || "09:00";
+  const closeTime = cabin.closeTime || "21:00";
+  
+  if (openTime && closeTime) {
+    const open12 = formatTo12Hour(openTime);
+    const close12 = formatTo12Hour(closeTime);
+    return { 
+      display: `${open12} - ${close12}`, 
+      icon: Clock, 
+      color: "text-blue-600"
+    };
+  }
+  
+  return { display: "Timings N/A", icon: Clock, color: "text-gray-400" };
+};
+
 function SpacesPage() {
   const [cabins, setCabins] = useState([]);
   const [filteredCabins, setFilteredCabins] = useState([]);
@@ -721,6 +764,9 @@ function SpacesPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {filteredCabins.map((cabin) => {
               const inWishlist = isInWishlist(cabin._id);
+              const timing = getTimingDisplay(cabin);
+              const TimingIcon = timing.icon;
+              
               return (
                 <div
                   key={cabin._id}
@@ -744,6 +790,11 @@ function SpacesPage() {
                       {cabin.cabinType === "exclusive" && (
                         <span className="px-2.5 py-0.5 text-[9px] font-bold rounded-full bg-amber-100/90 text-amber-700 border border-amber-200 flex items-center gap-0.5 backdrop-blur-sm">
                           <Crown size={10} /> Exclusive
+                        </span>
+                      )}
+                      {cabin.is24x7 && (
+                        <span className="px-2.5 py-0.5 text-[9px] font-bold rounded-full bg-emerald-100/90 text-emerald-700 border border-emerald-200 flex items-center gap-0.5 backdrop-blur-sm">
+                          <Clock size={10} /> 24x7
                         </span>
                       )}
                     </div>
@@ -775,6 +826,12 @@ function SpacesPage() {
                       <MapPin size={11} />
                       <span className="line-clamp-1">{cabin.address?.split(',')[0] || 'N/A'}</span>
                     </p>
+                    
+                    {/* ✅ TIMING DISPLAY - NO IST */}
+                    <div className={`flex items-center gap-1 mt-1 ${timing.color}`}>
+                      <TimingIcon size={11} />
+                      <span className="text-[10px] font-medium">{timing.display}</span>
+                    </div>
                     
                     {/* Rating */}
                     <div className="flex items-center gap-1 mt-1.5">

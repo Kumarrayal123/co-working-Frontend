@@ -780,8 +780,8 @@ const DoctorChamberPage = () => {
             </div>
 
             <div className="flex items-center gap-2">
-              <button onClick={() => navigate("/doctorlogin")} className="navbar-signin hidden sm:block">Sign in</button>
-              <button onClick={() => navigate("/doctorlogin")} className="navbar-btn"><Stethoscope size={14} /> Book chamber</button>
+              <button onClick={() => navigate("/login")} className="navbar-signin hidden sm:block">Sign in</button>
+              <button onClick={() => navigate("/login")} className="navbar-btn"><Stethoscope size={14} /> Book chamber</button>
               <button onClick={() => setMobileOpen(!mobileOpen)} className="navbar-menu-btn" aria-label="Toggle menu">
                 {mobileOpen ? <X size={20} /> : <Menu size={20} />}
               </button>
@@ -802,7 +802,7 @@ const DoctorChamberPage = () => {
               </button>
             ))}
             <div className="h-px my-1" style={{ background: "#E3DDCE" }} />
-            <button onClick={() => { navigate("/doctorlogin"); setMobileOpen(false); }} className="px-4 py-3.5 text-center text-white rounded-xl font-semibold" style={{ background: "#8B4433" }}>
+            <button onClick={() => { navigate("/login"); setMobileOpen(false); }} className="px-4 py-3.5 text-center text-white rounded-xl font-semibold" style={{ background: "#8B4433" }}>
               Book chamber
             </button>
           </div>
@@ -833,7 +833,7 @@ const DoctorChamberPage = () => {
               </RevealSection>
               <RevealSection delay={0.3}>
                 <div className="hero-buttons">
-                  <button onClick={() => navigate("/doctorlogin")} className="btn-primary">
+                  <button onClick={() => navigate("/login")} className="btn-primary">
                     <Stethoscope size={16} /> Get your space now <ArrowRight size={16} />
                   </button>
                   <button onClick={() => scrollToSection("chambers")} className="btn-secondary">
@@ -1011,7 +1011,7 @@ const DoctorChamberPage = () => {
               <div className="doctor-cta-section">
                 <h2>Start seeing patients this week</h2>
                 <p>Join 100+ healthcare professionals who moved their practice into a chamber that was ready on day one.</p>
-                <button onClick={() => navigate("/doctorlogin")} className="doctor-cta-btn">Get started <ArrowRight size={18} /></button>
+                <button onClick={() => navigate("/login")} className="doctor-cta-btn">Get started <ArrowRight size={18} /></button>
               </div>
             </RevealSection>
           </div>

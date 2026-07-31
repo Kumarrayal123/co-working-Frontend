@@ -44,7 +44,8 @@ import {
   XCircle,
   Timer,
   List as ListIcon,
-  Grid as GridIcon
+  Grid as GridIcon,
+  Video
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -124,6 +125,9 @@ const MyCabin = () => {
   const [seatBatchMode, setSeatBatchMode] = useState(false);
   const [batchSeatNumber, setBatchSeatNumber] = useState(1);
 
+  // ✅ NEW: Videos state
+  const [videos, setVideos] = useState([]);
+
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -132,6 +136,9 @@ const MyCabin = () => {
     price: "",
     cabin: "",
     cabinType: "normal",
+    is24x7: false,
+    openTime: "09:00",
+    closeTime: "21:00",
     amenities: {
       wifi: false,
       parking: false,
@@ -303,8 +310,12 @@ const MyCabin = () => {
   };
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    const { name, value, type, checked } = e.target;
+    if (type === 'checkbox') {
+      setFormData({ ...formData, [name]: checked });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   };
 
   const handleCabinTypeChange = (type) => {
@@ -324,6 +335,15 @@ const MyCabin = () => {
 
   const handleImageChange = (e) => {
     setImages(Array.from(e.target.files));
+  };
+
+  // ✅ NEW: Video handlers
+  const handleVideoChange = (e) => {
+    setVideos(Array.from(e.target.files));
+  };
+
+  const removeVideo = (index) => {
+    setVideos(videos.filter((_, i) => i !== index));
   };
 
   const removeImage = (index) => {
@@ -532,6 +552,9 @@ const MyCabin = () => {
                 price: "",
                 cabin: "",
                 cabinType: "normal",
+                is24x7: false,
+                openTime: "09:00",
+                closeTime: "21:00",
                 amenities: {
                   wifi: false,
                   parking: false,
@@ -548,6 +571,7 @@ const MyCabin = () => {
                 },
               });
               setImages([]);
+              setVideos([]);
               setPricingPlans([]);
               setSeats([]);
               setSeatBatchMode(false);
@@ -636,10 +660,14 @@ const MyCabin = () => {
     data.append("address", formData.address);
     data.append("price", formData.price);
     data.append("cabinType", formData.cabinType);
+    data.append("is24x7", formData.is24x7);
+    data.append("openTime", formData.openTime);
+    data.append("closeTime", formData.closeTime);
     data.append("pricingPlans", JSON.stringify(pricingPlans));
     data.append("amenities", JSON.stringify(formData.amenities));
     data.append("seats", JSON.stringify(seats));
     images.forEach((img) => data.append("images", img));
+    videos.forEach((video) => data.append("videos", video));
 
     console.log("📋 Cabin Data being sent:");
     console.log("  - Name:", cabinName);
@@ -647,8 +675,12 @@ const MyCabin = () => {
     console.log("  - Price:", formData.price);
     console.log("  - Capacity:", formData.capacity);
     console.log("  - Type:", formData.cabinType);
+    console.log("  - is24x7:", formData.is24x7);
+    console.log("  - openTime:", formData.openTime);
+    console.log("  - closeTime:", formData.closeTime);
     console.log("  - Seats:", seats.length);
     console.log("  - Images:", images.length);
+    console.log("  - Videos:", videos.length);
     console.log("  - Pricing Plans:", pricingPlans.length);
 
     try {
@@ -669,19 +701,7 @@ const MyCabin = () => {
       console.log("  - ID:", newCabin._id);
       console.log("  - Name:", newCabin.name);
       console.log("  - Owner ID:", newCabin.owner);
-      console.log("  - Expected Owner ID:", userId);
-      
-      if (newCabin.owner === userId) {
-        console.log("✅✅✅ Owner ID MATCHES! ✅✅✅");
-      } else if (newCabin.owner === "68ebe9ee8f06d33ee022d665") {
-        console.log("⚠️⚠️⚠️ WARNING: Admin ID hardcoded! Owner is admin: 68ebe9ee8f06d33ee022d665");
-        console.log("⚠️ Expected owner:", userId);
-        console.log("⚠️ Actual owner:", newCabin.owner);
-      } else {
-        console.log("⚠️ Owner ID MISMATCH!");
-        console.log("  - Expected:", userId);
-        console.log("  - Actual:", newCabin.owner);
-      }
+      console.log("  - Expiry Date:", newCabin.expiryDate);
       console.log("========================================");
       
       toast.success("Cabin created successfully!");
@@ -719,6 +739,7 @@ const MyCabin = () => {
     console.log("Form Data:", formData);
     console.log("Seats:", seats.length);
     console.log("Images:", images.length);
+    console.log("Videos:", videos.length);
     console.log("Pricing Plans:", pricingPlans.length);
     console.log("========================================");
     
@@ -991,6 +1012,7 @@ const MyCabin = () => {
                     setIsModalOpen(true);
                     setSeats([]);
                     setSeatBatchMode(false);
+                    setVideos([]);
                   }}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors"
                 >
@@ -1380,7 +1402,10 @@ const MyCabin = () => {
                 </div>
               </div>
               <button
-                onClick={() => setIsModalOpen(false)}
+                onClick={() => {
+                  setIsModalOpen(false);
+                  setVideos([]);
+                }}
                 className="w-8 h-8 rounded-xl bg-white/15 hover:bg-white/25 transition-colors flex items-center justify-center text-white"
               >
                 <X size={18} />
@@ -1540,6 +1565,48 @@ const MyCabin = () => {
                   )}
                 </div>
 
+                {/* ✅ NEW: Operating Hours Section */}
+                <div>
+                  <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Operating Hours</label>
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-1">
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, is24x7: !prev.is24x7 }))}
+                      className={`py-2.5 sm:py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold border-2 transition-all flex items-center justify-center gap-2 ${
+                        formData.is24x7
+                          ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      {formData.is24x7 ? '✅ 24x7' : '⏰ Set Hours'}
+                    </button>
+                    {!formData.is24x7 && (
+                      <>
+                        <div>
+                          <label className="text-[8px] font-bold text-slate-400">Open</label>
+                          <input
+                            type="time"
+                            name="openTime"
+                            value={formData.openTime}
+                            onChange={handleChange}
+                            className="w-full mt-0.5 px-2 py-1.5 border border-slate-200 rounded-lg text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[8px] font-bold text-slate-400">Close</label>
+                          <input
+                            type="time"
+                            name="closeTime"
+                            value={formData.closeTime}
+                            onChange={handleChange}
+                            className="w-full mt-0.5 px-2 py-1.5 border border-slate-200 rounded-lg text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                          />
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+
                 <div>
                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Cabin Type</label>
                   <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-1">
@@ -1656,6 +1723,7 @@ const MyCabin = () => {
                   />
                 </div>
 
+                {/* Photos */}
                 <div>
                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Photos</label>
                   <div className="mt-1 border-2 border-dashed border-indigo-200 rounded-xl p-4 sm:p-6 text-center hover:border-indigo-400 transition-colors relative">
@@ -1676,6 +1744,38 @@ const MyCabin = () => {
                           <button
                             type="button"
                             onClick={() => removeImage(index)}
+                            className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* ✅ NEW: Videos Upload */}
+                <div>
+                  <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Videos</label>
+                  <div className="mt-1 border-2 border-dashed border-purple-200 rounded-xl p-4 sm:p-6 text-center hover:border-purple-400 transition-colors relative">
+                    <input
+                      type="file" multiple accept="video/*"
+                      onChange={handleVideoChange}
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                    />
+                    <Video size={20} className="mx-auto text-purple-400 sm:w-6 sm:h-6" />
+                    <p className="text-[10px] sm:text-xs text-slate-500 mt-1">Click to upload videos</p>
+                    <p className="text-[8px] sm:text-[10px] text-slate-400">MP4, MOV, AVI</p>
+                  </div>
+                  {videos.length > 0 && (
+                    <div className="grid grid-cols-3 xs:grid-cols-4 sm:grid-cols-5 gap-2 mt-2">
+                      {videos.map((file, index) => (
+                        <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-slate-200 bg-slate-900 flex items-center justify-center">
+                          <Video size={24} className="text-white/50" />
+                          <p className="absolute bottom-1 left-1 right-1 text-[8px] text-white truncate">{file.name}</p>
+                          <button
+                            type="button"
+                            onClick={() => removeVideo(index)}
                             className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs"
                           >
                             ×
@@ -1709,7 +1809,10 @@ const MyCabin = () => {
                 <div className="grid grid-cols-2 gap-2 sm:gap-3 pt-2">
                   <button
                     type="button"
-                    onClick={() => setIsModalOpen(false)}
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      setVideos([]);
+                    }}
                     className="py-2.5 sm:py-3 rounded-xl border border-slate-200 text-slate-600 font-semibold text-xs sm:text-sm hover:bg-slate-50 transition-colors"
                   >
                     Cancel
@@ -1853,6 +1956,11 @@ const MyCabin = () => {
                 <div className="flex justify-between"><span className="text-slate-500">Amenities</span>
                   <span className="font-semibold">{Object.values(formData.amenities).filter(v => v).length} / {currentAmenities.length}</span>
                 </div>
+                <div className="flex justify-between"><span className="text-slate-500">Timings</span>
+                  <span className="font-semibold">
+                    {formData.is24x7 ? '24x7 Open' : `${formData.openTime} - ${formData.closeTime}`}
+                  </span>
+                </div>
                 <div className="border-t border-slate-200 pt-2 flex justify-between"><span className="text-slate-500">Base Fee</span><span>₹{baseFee}</span></div>
                 <div className="flex justify-between"><span className="text-slate-500">GST (18%)</span><span>₹{gstAmount.toFixed(2)}</span></div>
                 <div className="border-t border-slate-200 pt-2 flex justify-between font-bold"><span>Total</span><span className="text-indigo-600">₹{totalWithGST.toFixed(2)}</span></div>
@@ -1860,7 +1968,7 @@ const MyCabin = () => {
 
               <div className="mt-3 sm:mt-4 p-2.5 sm:p-3 bg-amber-50 rounded-lg text-[10px] sm:text-xs text-amber-700 flex items-start gap-2">
                 <Receipt size={14} className="shrink-0 mt-0.5" />
-                <span>Total includes 18% GST (₹{gstAmount.toFixed(2)})</span>
+                <span>Total includes 18% GST (₹{gstAmount.toFixed(2)}) | Expires in 1 month</span>
               </div>
 
               <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-3 sm:mt-4">

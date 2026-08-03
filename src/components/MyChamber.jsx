@@ -50,7 +50,8 @@ import {
   FileVideo,
   Sun,
   Moon,
-  Clock as ClockIcon
+  Clock as ClockIcon,
+  Stethoscope
 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
@@ -128,7 +129,7 @@ const MyChamber = () => {
   const [openTime, setOpenTime] = useState('09:00');
   const [closeTime, setCloseTime] = useState('21:00');
   const [is24x7, setIs24x7] = useState(false);
-  
+
   // isChamber state
   const [isChamber, setIsChamber] = useState(false);
 
@@ -159,6 +160,66 @@ const MyChamber = () => {
   const [videos, setVideos] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
   const [videoPreviews, setVideoPreviews] = useState([]);
+  const [errors, setErrors] = useState({
+    name: "",
+    address: "",
+    cabin: "",
+    description: "",
+  });
+
+  // Plan Modal State
+  const [showPlanModal, setShowPlanModal] = useState(false);
+  const [editingPlanIndex, setEditingPlanIndex] = useState(null);
+  const [planInput, setPlanInput] = useState({
+    label: "",
+    hours: "",
+    cost: "",
+    validity: ""
+  });
+
+  // Validation function
+  const validateField = (name, value) => {
+    let error = "";
+    
+    switch (name) {
+      case "name":
+        if (!value) {
+          error = "Building Name is required";
+        } else if (value.length > 30) {
+          error = "Building Name must be 30 characters or less";
+        } else if (!/^[a-zA-Z0-9\s]+$/.test(value)) {
+          error = "Building Name can only contain letters, digits, and spaces";
+        }
+        break;
+      case "address":
+        if (!value) {
+          error = "Address is required";
+        } else if (value.length > 50) {
+          error = "Address must be 50 characters or less";
+        } else if (!/^[a-zA-Z0-9\s,.-]+$/.test(value)) {
+          error = "Address can only contain letters, digits, spaces, commas, dots, and hyphens";
+        }
+        break;
+      case "cabin":
+        if (!value) {
+          error = "Cabin Spec is required";
+        } else if (value.length > 15) {
+          error = "Cabin Spec must be 15 characters or less";
+        } else if (!/^[a-zA-Z0-9-]+$/.test(value)) {
+          error = "Cabin Spec can only contain letters, digits, and hyphens";
+        }
+        break;
+      case "description":
+        if (value && (value.length < 150 || value.length > 200)) {
+          error = "Description must be between 150 and 200 characters";
+        }
+        break;
+      default:
+        break;
+    }
+    
+    return error;
+  };
 
   // ✅ IMAGE POPUP FUNCTIONS
   const openImagePopup = (imageUrl) => {
@@ -185,6 +246,46 @@ const MyChamber = () => {
       ...prev,
       amenities: newAmenities
     }));
+  };
+
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      description: "",
+      capacity: "",
+      address: "",
+      price: "",
+      cabin: "",
+      cabinType: "normal",
+      amenities: {
+        wifi: false,
+        parking: false,
+        lockers: false,
+        privateWashroom: false,
+        secureAccess: false,
+        comfortSeating: false,
+        coffee: false,
+        gym: false,
+        ac: false,
+        tv: false,
+        printer: false,
+        phone: false,
+      },
+    });
+    setImages([]);
+    setVideos([]);
+    setImagePreviews([]);
+    setVideoPreviews([]);
+    setErrors({
+      name: "",
+      address: "",
+      cabin: "",
+      description: "",
+    });
+    setOpenTime('09:00');
+    setCloseTime('21:00');
+    setIs24x7(false);
+    setIsChamber(false);
   };
 
   useEffect(() => {
@@ -250,7 +351,7 @@ const MyChamber = () => {
       const chamberList = Array.isArray(data) ? data : [];
       setChambers(chamberList);
       setChamberCount(chamberList.length);
-      
+
       const initialCountdowns = {};
       chamberList.forEach(chamber => {
         if (chamber.expiryDate) {
@@ -261,7 +362,7 @@ const MyChamber = () => {
         }
       });
       setCountdowns(initialCountdowns);
-      
+
     } catch (err) {
       console.error("Error fetching chambers:", err);
       toast.error("Failed to fetch chambers");
@@ -293,10 +394,16 @@ const MyChamber = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+    setFormData(prev => ({ ...prev, [name]: value }));
+
+    // Validate field on change
+    const error = validateField(name, value);
+    setErrors(prev => ({ ...prev, [name]: error }));
   };
 
   const handleCabinTypeChange = (type) => {
     setFormData({ ...formData, cabinType: type });
+    setFormData(prev => ({ ...prev, cabinType: type }));
     resetAmenitiesForType(type);
   };
 
@@ -360,6 +467,63 @@ const MyChamber = () => {
     setIsChamber(!isChamber);
   };
 
+  // Plan Modal Functions
+  const openPlanModal = () => {
+    setPlanInput({ label: "", hours: "", cost: "", validity: "" });
+    setEditingPlanIndex(null);
+    setShowPlanModal(true);
+  };
+
+  const openEditPlanModal = (index) => {
+    const targetPlan = pricingPlans[index];
+    if (targetPlan) {
+      setPlanInput({
+        label: targetPlan.label || "",
+        hours: targetPlan.hours !== undefined ? targetPlan.hours.toString() : "",
+        cost: targetPlan.cost !== undefined ? targetPlan.cost.toString() : "",
+        validity: targetPlan.validity !== undefined ? targetPlan.validity.toString() : ""
+      });
+      setEditingPlanIndex(index);
+      setShowPlanModal(true);
+    }
+  };
+
+  const savePlanModal = () => {
+    if (!planInput.hours || Number(planInput.hours) <= 0) {
+      toast.error("Please enter valid included hours");
+      return;
+    }
+    if (!planInput.cost || Number(planInput.cost) <= 0) {
+      toast.error("Please enter valid cost (₹)");
+      return;
+    }
+    if (!planInput.validity || Number(planInput.validity) <= 0) {
+      toast.error("Please enter valid validity days");
+      return;
+    }
+
+    const newPlan = {
+      label: planInput.label.trim() || `${planInput.hours} Hours Plan`,
+      hours: Number(planInput.hours),
+      cost: Number(planInput.cost),
+      validity: Number(planInput.validity)
+    };
+
+    if (editingPlanIndex !== null) {
+      setPricingPlans(prev => prev.map((p, i) => (i === editingPlanIndex ? newPlan : p)));
+    } else {
+      setPricingPlans(prev => [...prev, newPlan]);
+    }
+
+    setShowPlanModal(false);
+    setPlanInput({ label: "", hours: "", cost: "", validity: "" });
+    setEditingPlanIndex(null);
+  };
+
+  const removePlan = (index) => {
+    setPricingPlans(pricingPlans.filter((_, i) => i !== index));
+  };
+
   const calculateGST = (amount) => {
     const gstAmount = amount * GST_RATE;
     const totalWithGST = amount + gstAmount;
@@ -383,7 +547,7 @@ const MyChamber = () => {
       }
 
       const razorpayKey = orderData.razorpayKey || 'rzp_test_BxtRNvflG06PTV';
-      
+
       const options = {
         key: razorpayKey,
         amount: orderData.order.amount * 100,
@@ -408,7 +572,7 @@ const MyChamber = () => {
               const transactionId = verifyRes.data.transactionId || 
                                    verifyRes.data.order?.transactionId || 
                                    'N/A';
-              
+
               toast.success(
                 <div>
                   <div style={{ fontWeight: 'bold' }}>Payment Successful! 🎉</div>
@@ -419,6 +583,7 @@ const MyChamber = () => {
                 { autoClose: 5000 }
               );
               
+
               setShowConfirmModal(false);
               setIsModalOpen(false);
               setPaymentProcessing(false);
@@ -450,6 +615,7 @@ const MyChamber = () => {
               setImagePreviews([]);
               setVideos([]);
               setVideoPreviews([]);
+              resetForm();
               setPricingPlans([]);
               setOpenTime('09:00');
               setCloseTime('21:00');
@@ -504,18 +670,18 @@ const MyChamber = () => {
     data.append("cabinType", formData.cabinType);
     data.append("pricingPlans", JSON.stringify(pricingPlans));
     data.append("amenities", JSON.stringify(formData.amenities));
-    
+
     data.append("openTime", openTime);
     data.append("closeTime", closeTime);
     data.append("is24x7", is24x7 ? "true" : "false");
     data.append("isChamber", isChamber ? "true" : "false");
-    
+
     images.forEach((img) => data.append("images", img));
     videos.forEach((video) => data.append("videos", video));
 
     try {
       const token = localStorage.getItem("token");
-      
+
       const chamberRes = await axios.post(`${API_URL}/api/cabins`, data, {
         headers: { 
           Authorization: `Bearer ${token}`,
@@ -534,10 +700,12 @@ const MyChamber = () => {
 
       if (orderRes.data.success) {
         setShowConfirmModal(false);
+        setIsModalOpen(false);
         setSubmitting(false);
+        resetForm();
         await initiateRazorpayPayment(newChamber._id, orderRes.data);
       }
-      
+
     } catch (err) {
       console.error("Error:", err);
       toast.error(err.response?.data?.error || "Failed to create chamber and order");
@@ -549,6 +717,27 @@ const MyChamber = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // Validate all fields before submission
+    const nameError = validateField("name", formData.name);
+    const addressError = validateField("address", formData.address);
+    const cabinError = validateField("cabin", formData.cabin);
+    const descriptionError = validateField("description", formData.description);
+    
+    const newErrors = {
+      name: nameError,
+      address: addressError,
+      cabin: cabinError,
+      description: descriptionError,
+    };
+    
+    setErrors(newErrors);
+    
+    // Check if there are any validation errors
+    if (nameError || addressError || cabinError || descriptionError) {
+      toast.error("Please fix the validation errors before submitting");
+      return;
+    }
     
     if (!formData.name || !formData.address || !formData.capacity || !formData.price || !formData.cabin) {
       toast.error("Please fill all required fields");
@@ -565,7 +754,7 @@ const MyChamber = () => {
         return;
       }
     }
-    
+
     setShowConfirmModal(true);
   };
 
@@ -574,19 +763,19 @@ const MyChamber = () => {
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch = chamber.name?.toLowerCase().includes(searchLower) ||
                          chamber.address?.toLowerCase().includes(searchLower);
-    
+
     const matchesName = chamber.name?.toLowerCase().includes(filters.name.toLowerCase());
     const matchesAddress = chamber.address?.toLowerCase().includes(filters.address.toLowerCase());
-    
+
     const price = chamber.price || 0;
     const matchesPriceMin = filters.priceMin === '' || price >= Number(filters.priceMin);
     const matchesPriceMax = filters.priceMax === '' || price <= Number(filters.priceMax);
-    
+
     const isActive = chamber.isActive === true;
     const matchesStatus = filters.status === 'all' || 
                          (filters.status === 'active' && isActive) ||
                          (filters.status === 'inactive' && !isActive);
-    
+
     return matchesSearch && matchesName && matchesAddress && 
            matchesPriceMin && matchesPriceMax && matchesStatus;
   });
@@ -628,7 +817,7 @@ const MyChamber = () => {
     const hours = Math.floor((seconds % 86400) / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
-    
+
     if (days > 0) {
       return `${days}d ${hours}h`;
     }
@@ -682,30 +871,63 @@ const MyChamber = () => {
               My <span>Chambers</span>
             </h1>
           </div>
-          
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4 mb-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
-            <p className="text-xs text-gray-500 font-medium">Total Chambers</p>
-            <p className="text-xl sm:text-2xl font-bold text-indigo-600">{chambers.length}</p>
+        <div className="admin-dash__stats">
+          <div className="admin-dash__stat">
+            <div className="admin-dash__stat-top">
+              <span className="admin-dash__stat-label">Total Chambers</span>
+              <div className="admin-dash__stat-icon bg-indigo-100 text-indigo-600">
+                <Home size={18} />
+              </div>
+            </div>
+            <div className="admin-dash__stat-value">{chambers.length}</div>
+            <div className="admin-dash__stat-meta">{activeCount} active</div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
-            <p className="text-xs text-gray-500 font-medium">Active</p>
-            <p className="text-xl sm:text-2xl font-bold text-emerald-600">{activeCount}</p>
+
+          <div className="admin-dash__stat">
+            <div className="admin-dash__stat-top">
+              <span className="admin-dash__stat-label">Active</span>
+              <div className="admin-dash__stat-icon bg-emerald-100 text-emerald-600">
+                <CheckCircle size={18} />
+              </div>
+            </div>
+            <div className="admin-dash__stat-value">{activeCount}</div>
+            <div className="admin-dash__stat-meta">Available for booking</div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
-            <p className="text-xs text-gray-500 font-medium">Inactive</p>
-            <p className="text-xl sm:text-2xl font-bold text-gray-600">{inactiveCount}</p>
+
+          <div className="admin-dash__stat">
+            <div className="admin-dash__stat-top">
+              <span className="admin-dash__stat-label">Inactive</span>
+              <div className="admin-dash__stat-icon bg-gray-100 text-gray-600">
+                <XCircle size={18} />
+              </div>
+            </div>
+            <div className="admin-dash__stat-value">{inactiveCount}</div>
+            <div className="admin-dash__stat-meta">Currently unavailable</div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
-            <p className="text-xs text-gray-500 font-medium">Exclusive</p>
-            <p className="text-xl sm:text-2xl font-bold text-amber-600">{exclusiveCount}</p>
+
+          <div className="admin-dash__stat">
+            <div className="admin-dash__stat-top">
+              <span className="admin-dash__stat-label">Premium</span>
+              <div className="admin-dash__stat-icon bg-amber-100 text-amber-600">
+                <Crown size={18} />
+              </div>
+            </div>
+            <div className="admin-dash__stat-value">{exclusiveCount}</div>
+            <div className="admin-dash__stat-meta">Exclusive chambers</div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
-            <p className="text-xs text-gray-500 font-medium">Chambers</p>
-            <p className="text-xl sm:text-2xl font-bold text-rose-600">{chamberCountFilter}</p>
+
+          <div className="admin-dash__stat">
+            <div className="admin-dash__stat-top">
+              <span className="admin-dash__stat-label">Medical</span>
+              <div className="admin-dash__stat-icon bg-rose-100 text-rose-600">
+                <Stethoscope size={18} />
+              </div>
+            </div>
+            <div className="admin-dash__stat-value">{chamberCountFilter}</div>
+            <div className="admin-dash__stat-meta">Chamber spaces</div>
           </div>
         </div>
 
@@ -786,6 +1008,7 @@ const MyChamber = () => {
                 </button>
                 <button
                   onClick={() => {
+                    resetForm();
                     setIsModalOpen(true);
                     setImagePreviews([]);
                     setVideoPreviews([]);
@@ -836,7 +1059,7 @@ const MyChamber = () => {
                         const is24x7 = chamber.is24x7 === true;
                         const openTimeDisplay = chamber.openTime ? formatTimeDisplay(chamber.openTime) : 'N/A';
                         const closeTimeDisplay = chamber.closeTime ? formatTimeDisplay(chamber.closeTime) : 'N/A';
-                        
+
                         return (
                           <tr key={chamber._id} className="transition-colors group hover:bg-gray-50/80">
                             <td className="p-4">
@@ -1357,6 +1580,7 @@ const MyChamber = () => {
                   setIsModalOpen(false);
                   setImagePreviews([]);
                   setVideoPreviews([]);
+                  resetForm();
                 }}
                 className="w-8 h-8 rounded-xl bg-white/15 hover:bg-white/25 transition-colors flex items-center justify-center text-white"
               >
@@ -1370,24 +1594,26 @@ const MyChamber = () => {
                   <div>
                     <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Building Name *</label>
                     <input
-                      className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                      className={`w-full mt-1 px-3 py-2.5 sm:py-3 border rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all ${errors.name ? 'border-red-500 focus:border-red-500' : 'border-slate-200 focus:border-indigo-500'}`}
                       type="text" name="name"
                       placeholder="e.g. Medical Center"
                       value={formData.name}
                       onChange={handleChange}
                       required
                     />
+                    {errors.name && <p className="text-[10px] text-red-500 mt-1">{errors.name}</p>}
                   </div>
                   <div>
                     <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Address *</label>
                     <input
-                      className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                      className={`w-full mt-1 px-3 py-2.5 sm:py-3 border rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all ${errors.address ? 'border-red-500 focus:border-red-500' : 'border-slate-200 focus:border-indigo-500'}`}
                       type="text" name="address"
                       placeholder="e.g. Bangalore"
                       value={formData.address}
                       onChange={handleChange}
                       required
                     />
+                    {errors.address && <p className="text-[10px] text-red-500 mt-1">{errors.address}</p>}
                   </div>
                 </div>
 
@@ -1395,13 +1621,14 @@ const MyChamber = () => {
                   <div>
                     <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Room/Suite *</label>
                     <input
-                      className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                      className={`w-full mt-1 px-3 py-2.5 sm:py-3 border rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all ${errors.cabin ? 'border-red-500 focus:border-red-500' : 'border-slate-200 focus:border-indigo-500'}`}
                       type="text" name="cabin"
                       placeholder="e.g. Suite 101"
                       value={formData.cabin}
                       onChange={handleChange}
                       required
                     />
+                    {errors.cabin && <p className="text-[10px] text-red-500 mt-1">{errors.cabin}</p>}
                   </div>
                   <div>
                     <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Price/hr *</label>
@@ -1583,47 +1810,49 @@ const MyChamber = () => {
                 {/* Pricing Plans */}
                 <div>
                   <div className="flex justify-between items-center mb-1.5">
-                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Pricing Plans</label>
+                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Pricing Plans ({pricingPlans.length})</label>
                     <button
                       type="button"
-                      onClick={() => {
-                        const label = prompt("Plan Label:");
-                        const hours = prompt("Included Hours:");
-                        const cost = prompt("Cost (₹):");
-                        const validity = prompt("Validity (Days):");
-                        if (hours && cost && validity) {
-                          setPricingPlans([...pricingPlans, {
-                            label: (label || "").trim(),
-                            hours: Number(hours),
-                            cost: Number(cost),
-                            validity: Number(validity)
-                          }]);
-                        }
-                      }}
-                      className="text-[10px] sm:text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 sm:px-3 py-1 rounded-lg hover:bg-indigo-100 transition-colors"
+                      onClick={openPlanModal}
+                      className="text-[10px] sm:text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 sm:px-3 py-1 rounded-lg hover:bg-indigo-100 transition-colors flex items-center gap-1 cursor-pointer"
                     >
-                      + Add Plan
+                      <Plus size={12} /> Add Plan
                     </button>
                   </div>
                   {pricingPlans.length > 0 ? (
-                    <div className="grid grid-cols-1 xs:grid-cols-2 gap-1.5 sm:gap-2">
+                    <div className="grid grid-cols-1 xs:grid-cols-2 gap-2">
                       {pricingPlans.map((plan, idx) => (
-                        <div key={idx} className="p-2 sm:p-2.5 bg-slate-50 rounded-lg text-[10px] sm:text-xs border border-slate-200 relative">
-                          <div><strong>{plan.label || "Plan"}</strong></div>
-                          <div>{plan.hours}h · ₹{plan.cost}</div>
-                          <div className="text-slate-400">{plan.validity}d validity</div>
-                          <button
-                            type="button"
-                            onClick={() => setPricingPlans(pricingPlans.filter((_, i) => i !== idx))}
-                            className="absolute top-1 right-1 text-red-500 hover:text-red-700 text-xs font-bold"
-                          >
-                            ×
-                          </button>
+                        <div key={idx} className="p-2.5 bg-slate-50 rounded-xl text-xs border border-slate-200 relative group flex justify-between items-center">
+                          <div>
+                            <div className="font-bold text-slate-800">{plan.label || "Plan"}</div>
+                            <div className="text-indigo-600 font-semibold">{plan.hours}h · ₹{plan.cost}</div>
+                            <div className="text-[10px] text-slate-400">{plan.validity} days validity</div>
+                          </div>
+                          <div className="flex items-center gap-1 opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              type="button"
+                              onClick={() => openEditPlanModal(idx)}
+                              className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs hover:bg-indigo-200 transition-colors cursor-pointer"
+                              title="Edit Plan"
+                            >
+                              ✎
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removePlan(idx)}
+                              className="w-6 h-6 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-xs hover:bg-red-200 transition-colors cursor-pointer"
+                              title="Delete Plan"
+                            >
+                              ×
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-[10px] sm:text-xs text-slate-400">No plans defined. Hourly booking only.</p>
+                    <div className="border-2 border-dashed border-slate-200 rounded-xl p-3 text-center">
+                      <p className="text-xs text-slate-400">No custom plans added. Click <strong>"Add Plan"</strong> to add plan details.</p>
+                    </div>
                   )}
                 </div>
 
@@ -1631,13 +1860,17 @@ const MyChamber = () => {
                 <div>
                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Description</label>
                   <textarea
-                    className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all resize-none"
+                    className={`w-full mt-1 px-3 py-2.5 sm:py-3 border rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all resize-none ${errors.description ? 'border-red-500 focus:border-red-500' : 'border-slate-200 focus:border-indigo-500'}`}
                     name="description"
-                    placeholder="Describe your chamber..."
+                    placeholder="Describe your space (150-200 characters)..."
                     value={formData.description}
                     onChange={handleChange}
                     rows={2}
                   />
+                  {errors.description && <p className="text-[10px] text-red-500 mt-1">{errors.description}</p>}
+                  {!errors.description && formData.description && (
+                    <p className="text-[10px] text-slate-400 mt-1">{formData.description.length}/200 characters</p>
+                  )}
                 </div>
 
                 {/* Image Upload */}
@@ -1741,6 +1974,7 @@ const MyChamber = () => {
                       setIsModalOpen(false);
                       setImagePreviews([]);
                       setVideoPreviews([]);
+                      resetForm();
                     }}
                     className="py-2.5 sm:py-3 rounded-xl border border-slate-200 text-slate-600 font-semibold text-xs sm:text-sm hover:bg-slate-50 transition-colors"
                   >
@@ -1838,7 +2072,10 @@ const MyChamber = () => {
 
               <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-3 sm:mt-4">
                 <button
-                  onClick={() => setShowConfirmModal(false)}
+                  onClick={() => {
+                    setShowConfirmModal(false);
+                    resetForm();
+                  }}
                   disabled={paymentProcessing}
                   className="py-2.5 sm:py-3 rounded-xl border border-slate-200 text-slate-600 font-semibold text-xs sm:text-sm hover:bg-slate-50 transition-colors"
                 >
@@ -1863,6 +2100,106 @@ const MyChamber = () => {
                     `Pay ₹${totalWithGST.toFixed(2)}`
                   )}
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── PRICING PLAN MODAL ─── */}
+      {showPlanModal && (
+        <div className="fixed inset-0 z-[10500] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-slate-900">
+                  {editingPlanIndex !== null ? 'Edit Pricing Plan' : 'Add Pricing Plan'}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPlanModal(false);
+                    setPlanInput({ label: '', hours: '', cost: '', validity: '' });
+                    setEditingPlanIndex(null);
+                  }}
+                  className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors flex items-center justify-center text-slate-600 cursor-pointer"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Plan Label</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Weekly Flexi, Dedicated Desk, Monthly 50h"
+                    value={planInput.label}
+                    onChange={(e) => setPlanInput({ ...planInput, label: e.target.value })}
+                    className="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                    autoFocus
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Included Hours *</label>
+                    <input
+                      type="number"
+                      min="1"
+                      placeholder="e.g. 40"
+                      value={planInput.hours}
+                      onChange={(e) => setPlanInput({ ...planInput, hours: e.target.value })}
+                      className="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Cost (₹) *</label>
+                    <input
+                      type="number"
+                      min="1"
+                      placeholder="e.g. 5000"
+                      value={planInput.cost}
+                      onChange={(e) => setPlanInput({ ...planInput, cost: e.target.value })}
+                      className="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Validity (Days) *</label>
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder="e.g. 30"
+                    value={planInput.validity}
+                    onChange={(e) => setPlanInput({ ...planInput, validity: e.target.value })}
+                    className="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-0.5">Number of days plan stays valid after purchase</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowPlanModal(false);
+                      setPlanInput({ label: '', hours: '', cost: '', validity: '' });
+                      setEditingPlanIndex(null);
+                    }}
+                    className="py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold text-sm hover:bg-slate-50 transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={savePlanModal}
+                    className="py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition-colors shadow-sm cursor-pointer"
+                  >
+                    {editingPlanIndex !== null ? 'Update Plan' : 'Add Plan'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

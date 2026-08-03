@@ -74,7 +74,7 @@ const ChamberBookings = () => {
     paymentMethod: 'all',
     cabinId: 'all'
   });
-  
+
   const navigate = useNavigate();
 
   const [showStatusModal, setShowStatusModal] = useState(false);
@@ -218,7 +218,7 @@ const ChamberBookings = () => {
       try {
         const token = localStorage.getItem("token");
         if (!token) { setLoading(false); return; }
-        
+
         const res = await axios.get(`${API_URL}/api/bookings/owner-bookings`, { headers: { Authorization: `Bearer ${token}` } });
         const bookingsData = res.data.bookings || [];
         setBookings(bookingsData);
@@ -908,7 +908,7 @@ const ChamberBookings = () => {
 
   const filteredBookings = bookings.filter((b) => {
     const bookingDate = b.startDate || b.date;
-    
+
     let matchDateRange = true;
     if (filterDateFrom && filterDateTo) {
       matchDateRange = bookingDate >= filterDateFrom && bookingDate <= filterDateTo;
@@ -917,12 +917,12 @@ const ChamberBookings = () => {
     } else if (filterDateTo) {
       matchDateRange = bookingDate <= filterDateTo;
     }
-    
+
     const matchCabin = filters.cabinId === 'all' || b.cabin?._id === filters.cabinId;
     const matchStatus = filters.status === 'all' || b.status === filters.status;
     const matchPaymentStatus = filters.paymentStatus === 'all' || b.paymentStatus === filters.paymentStatus;
     const matchPaymentMethod = filters.paymentMethod === 'all' || b.paymentMethod === filters.paymentMethod;
-    
+
     return matchDateRange && matchCabin && matchStatus && matchPaymentStatus && matchPaymentMethod;
   });
 
@@ -970,90 +970,91 @@ const ChamberBookings = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4 mb-6">
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-4 sm:p-5 text-white shadow-lg shadow-indigo-500/25">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-200">Total</p>
-            <p className="text-2xl sm:text-3xl font-bold mt-1">{stats.totalBookings}</p>
-            <div className="mt-2 pt-2 border-t border-white/20 flex justify-between text-[10px]">
-              <span className="text-indigo-200">Revenue</span>
-              <span className="font-semibold">{formatCurrency(stats.totalRevenue)}</span>
+        <div className="admin-dash__stats">
+          <div className="admin-dash__stat">
+            <div className="admin-dash__stat-top">
+              <span className="admin-dash__stat-label">Total Bookings</span>
+              <div className="admin-dash__stat-icon bg-indigo-100 text-indigo-600">
+                <Calendar size={18} />
+              </div>
             </div>
+            <div className="admin-dash__stat-value">{stats.totalBookings}</div>
+            <div className="admin-dash__stat-meta">Rev: {formatCurrency(stats.totalRevenue)}</div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Confirmed</p>
-                <p className="text-2xl font-bold text-emerald-600 mt-1">{stats.confirmed}</p>
-              </div>
-              <div className="bg-emerald-100 p-2.5 rounded-xl">
-                <CheckCircle size={20} className="text-emerald-600" />
+          <div className="admin-dash__stat">
+            <div className="admin-dash__stat-top">
+              <span className="admin-dash__stat-label">Confirmed</span>
+              <div className="admin-dash__stat-icon bg-emerald-100 text-emerald-600">
+                <CheckCircle size={18} />
               </div>
             </div>
-            <div className="mt-2 pt-2 border-t border-gray-100 flex justify-between text-[10px]">
-              <span className="text-gray-500">Revenue</span>
-              <span className="font-semibold text-gray-900">{formatCurrency(stats.confirmedRevenue)}</span>
-            </div>
+            <div className="admin-dash__stat-value">{stats.confirmed}</div>
+            <div className="admin-dash__stat-meta">Rev: {formatCurrency(stats.confirmedRevenue)}</div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Active</p>
-                <p className="text-2xl font-bold text-indigo-600 mt-1">{stats.active}</p>
-              </div>
-              <div className="bg-indigo-100 p-2.5 rounded-xl">
-                <Timer size={20} className="text-indigo-600" />
+          <div className="admin-dash__stat">
+            <div className="admin-dash__stat-top">
+              <span className="admin-dash__stat-label">Active</span>
+              <div className="admin-dash__stat-icon bg-amber-100 text-amber-600">
+                <Timer size={18} />
               </div>
             </div>
-            <div className="mt-2 pt-2 border-t border-gray-100 flex justify-between text-[10px]">
-              <span className="text-gray-500">In Progress</span>
-              <span className="font-semibold text-gray-900">{stats.active}</span>
-            </div>
+            <div className="admin-dash__stat-value">{stats.active}</div>
+            <div className="admin-dash__stat-meta">{stats.pending} pending approval</div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-blue-600">Completed</p>
-                <p className="text-2xl font-bold text-blue-600 mt-1">{stats.completed}</p>
-              </div>
-              <div className="bg-blue-100 p-2.5 rounded-xl">
-                <CheckCircle size={20} className="text-blue-600" />
+          <div className="admin-dash__stat">
+            <div className="admin-dash__stat-top">
+              <span className="admin-dash__stat-label">Completed</span>
+              <div className="admin-dash__stat-icon bg-blue-100 text-blue-600">
+                <CheckCircle size={18} />
               </div>
             </div>
-            <div className="mt-2 pt-2 border-t border-gray-100 flex justify-between text-[10px]">
-              <span className="text-gray-500">Revenue</span>
-              <span className="font-semibold text-gray-900">{formatCurrency(stats.completedRevenue)}</span>
-            </div>
+            <div className="admin-dash__stat-value">{stats.completed}</div>
+            <div className="admin-dash__stat-meta">Rev: {formatCurrency(stats.completedRevenue)}</div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-purple-600">Visits</p>
-                <p className="text-2xl font-bold text-purple-600 mt-1">{visitCount}</p>
-              </div>
-              <div className="bg-purple-100 p-2.5 rounded-xl">
-                <Calendar size={20} className="text-purple-600" />
+          <div className="admin-dash__stat">
+            <div className="admin-dash__stat-top">
+              <span className="admin-dash__stat-label">Site Visits</span>
+              <div className="admin-dash__stat-icon bg-purple-100 text-purple-600">
+                <Eye size={18} />
               </div>
             </div>
+            <div className="admin-dash__stat-value">{visitCount}</div>
+            <div className="admin-dash__stat-meta">{stats.cancelled} cancelled</div>
           </div>
         </div>
 
-        {/* Mini Stats */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          <div className="bg-yellow-50 rounded-xl border border-yellow-200 p-3 text-center">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-yellow-600">Pending</p>
-            <p className="text-xl font-bold text-yellow-700">{stats.pending}</p>
+        {/* Mini Stats - Pending, Cancelled, Revenue */}
+        <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-4">
+          <div className="bg-amber-50/80 rounded-xl border border-amber-200/80 p-3 sm:p-3.5 flex items-center justify-between shadow-sm">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700">Pending</p>
+              <p className="text-lg font-bold text-amber-900 mt-0.5">{stats.pending}</p>
+            </div>
+            <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 font-bold text-xs">
+              ⏳
+            </div>
           </div>
-          <div className="bg-red-50 rounded-xl border border-red-200 p-3 text-center">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-red-600">Cancelled</p>
-            <p className="text-xl font-bold text-red-700">{stats.cancelled}</p>
+          <div className="bg-rose-50/80 rounded-xl border border-rose-200/80 p-3 sm:p-3.5 flex items-center justify-between shadow-sm">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-rose-700">Cancelled</p>
+              <p className="text-lg font-bold text-rose-900 mt-0.5">{stats.cancelled}</p>
+            </div>
+            <div className="w-8 h-8 rounded-lg bg-rose-100 flex items-center justify-center text-rose-600 font-bold text-xs">
+              ✕
+            </div>
           </div>
-          <div className="bg-purple-50 rounded-xl border border-purple-200 p-3 text-center">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-purple-600">Total Revenue</p>
-            <p className="text-xl font-bold text-purple-700">{formatCurrency(stats.totalRevenue)}</p>
+          <div className="bg-indigo-50/80 rounded-xl border border-indigo-200/80 p-3 sm:p-3.5 flex items-center justify-between shadow-sm">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-700">Total Revenue</p>
+              <p className="text-lg font-bold text-indigo-900 mt-0.5">{formatCurrency(stats.totalRevenue)}</p>
+            </div>
+            <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-xs">
+              ₹
+            </div>
           </div>
         </div>
 
@@ -1661,25 +1662,25 @@ const ChamberBookings = () => {
                   <Calculator size={14} />
                   Price Breakdown
                 </p>
-                
+
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between items-center border-b border-emerald-100 pb-1.5">
                     <span className="text-gray-600">Subtotal ({getTotalHoursDisplay(viewBooking)}h × ₹{viewBooking.cabin?.price || 0})</span>
                     <span className="font-semibold text-gray-800">₹{(viewBooking.subtotal || 0).toFixed(2)}</span>
                   </div>
-                  
+
                   {viewBooking.extraCharge > 0 && (
                     <div className="flex justify-between items-center border-b border-emerald-100 pb-1.5">
                       <span className="text-gray-600">Seat Charges ({viewBooking.seatCount} × ₹{viewBooking.seatExtraChargePerSeat || 100})</span>
                       <span className="font-semibold text-amber-600">₹{(viewBooking.extraCharge || 0).toFixed(2)}</span>
                     </div>
                   )}
-                  
+
                   <div className="flex justify-between items-center border-b border-emerald-100 pb-1.5">
                     <span className="text-gray-600">GST ({(viewBooking.gstRate || 0.18) * 100}%)</span>
                     <span className="font-semibold text-gray-800">₹{(viewBooking.gstAmount || 0).toFixed(2)}</span>
                   </div>
-                  
+
                   <div className="flex justify-between items-center pt-2 border-t-2 border-emerald-300">
                     <span className="font-bold text-gray-800">Total Amount</span>
                     <span className="text-xl font-bold text-emerald-700">₹{(viewBooking.totalPrice || 0).toFixed(2)}</span>

@@ -66,7 +66,7 @@ import {
   AlertTriangle,
   ArrowRight
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import UsersNavbar from "./UsersNavbar";
@@ -105,7 +105,7 @@ const UserDashboard = () => {
   const [completionPercentage, setCompletionPercentage] = useState(0);
   const [missingFields, setMissingFields] = useState([]);
   const [animatedPercentage, setAnimatedPercentage] = useState(0);
-  
+
   const [dashboardData, setDashboardData] = useState({
     totalBookings: 0,
     totalSpent: 0,
@@ -138,7 +138,7 @@ const UserDashboard = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   // Filter States
   const [selectedMonth, setSelectedMonth] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
@@ -147,10 +147,10 @@ const UserDashboard = () => {
   const [originalBookings, setOriginalBookings] = useState([]);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  
+
   // My Cabins data
   const [cabins, setCabins] = useState([]);
-  
+
   // Cabin Payments data (for total spent)
   const [cabinPayments, setCabinPayments] = useState({
     totalAmount: 0,
@@ -158,7 +158,7 @@ const UserDashboard = () => {
     activeOrders: 0,
     expiredOrders: 0
   });
-  
+
   const navigate = useNavigate();
 
   // Calculate profile completion percentage - FOR USER
@@ -178,7 +178,7 @@ const UserDashboard = () => {
 
     fields.forEach(field => {
       const value = userData[field.key];
-      
+
       if (field.required) {
         total++;
         if (value && value.toString().trim() !== '') {
@@ -197,7 +197,7 @@ const UserDashboard = () => {
     });
 
     let percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
-    
+
     if (userData._id && percentage < 10) {
       percentage = 10;
     }
@@ -211,7 +211,7 @@ const UserDashboard = () => {
       let start = 0;
       const duration = 1500;
       const step = Math.max(1, Math.floor(completionPercentage / 60));
-      
+
       const timer = setInterval(() => {
         start += step;
         if (start >= completionPercentage) {
@@ -221,7 +221,7 @@ const UserDashboard = () => {
           setAnimatedPercentage(start);
         }
       }, 20);
-      
+
       return () => clearInterval(timer);
     }
   }, [completionPercentage]);
@@ -253,7 +253,7 @@ const UserDashboard = () => {
 
   const getUserId = () => {
     let userId = localStorage.getItem("userId");
-    
+
     if (!userId) {
       try {
         const token = localStorage.getItem("token");
@@ -268,7 +268,7 @@ const UserDashboard = () => {
         console.error("Error extracting userId from token:", err);
       }
     }
-    
+
     return userId;
   };
 
@@ -281,11 +281,16 @@ const UserDashboard = () => {
     fetchProfile();
   }, []);
 
+  // Auto-apply filters when selectedStatus changes
+  useEffect(() => {
+    applyFilters();
+  }, [selectedStatus]);
+
   // Fetch ALL data
   const fetchAllData = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -297,7 +302,7 @@ const UserDashboard = () => {
       await fetchUserDashboard();
       await fetchCabins();
       await fetchCabinPayments();
-      
+
     } catch (err) {
       console.error("Error fetching data:", err);
       setError("Failed to load dashboard data");
@@ -311,22 +316,22 @@ const UserDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       const userData = localStorage.getItem("user");
-      
+
       const res = await fetch(`${API_URL}/api/bookings/user-dashboard`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'user': userData || ''
         }
       });
-      
+
       const data = await res.json();
 
       if (data.success) {
         const apiData = data.data;
-        
+
         const bookings = apiData.recentBookings || [];
         const cabinBookings = apiData.recentCabinBookings || [];
-        
+
         const statusDist = {
           pending: 0,
           confirmed: 0,
@@ -334,9 +339,13 @@ const UserDashboard = () => {
           completed: 0,
           cancelled: 0
         };
-        
+
+        console.log('All bookings:', bookings);
+        console.log('All cabin bookings:', cabinBookings);
+
         cabinBookings.forEach(booking => {
           const status = booking.status?.toLowerCase() || 'pending';
+          console.log('Cabin booking status:', booking.status, 'Lowercased:', status);
           if (status === 'active') {
             statusDist.active += 1;
           } else if (status === 'confirmed') {
@@ -349,9 +358,10 @@ const UserDashboard = () => {
             statusDist.pending += 1;
           }
         });
-        
+
         bookings.forEach(booking => {
           const status = booking.status?.toLowerCase() || 'pending';
+          console.log('Booking status:', booking.status, 'Lowercased:', status);
           if (status === 'active') {
             statusDist.active += 1;
           } else if (status === 'confirmed') {
@@ -364,18 +374,20 @@ const UserDashboard = () => {
             statusDist.pending += 1;
           }
         });
-        
+
+        console.log('Final status distribution:', statusDist);
+
         const recentBookings = bookings.length > 0 ? bookings : cabinBookings;
-        
+
         const now = new Date();
         const currentMonth = now.getMonth();
         const currentYear = now.getFullYear();
-        
+
         const bookingsThisMonth = [...bookings, ...cabinBookings].filter(b => {
           const date = new Date(b.createdAt);
           return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
         }).length;
-        
+
         setDashboardData({
           totalBookings: apiData.totalBookings || bookings.length + cabinBookings.length,
           totalSpent: apiData.totalSpent || 0,
@@ -395,11 +407,11 @@ const UserDashboard = () => {
           },
           statusDistribution: statusDist
         });
-        
+
         setOriginalBookings(recentBookings);
         setFilteredBookings(recentBookings);
         generateAvailableMonths(recentBookings);
-        
+
       } else {
         console.error("Dashboard API error:", data.error);
         setError(data.error || "Failed to fetch dashboard data");
@@ -421,7 +433,7 @@ const UserDashboard = () => {
       const data = res.data.cabins || res.data;
       const cabinList = Array.isArray(data) ? data : [];
       setCabins(cabinList);
-      
+
       setDashboardData(prev => ({
         ...prev,
         myCabinsCount: cabinList.length,
@@ -438,23 +450,23 @@ const UserDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
-      
+
       const res = await axios.get(
         `${API_URL}/api/cabins/my-cabinpayments`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
+
       if (res.data.success) {
         const stats = res.data.stats || {};
         const totalAmount = stats.totalAmount || 0;
-        
+
         setCabinPayments({
           totalAmount,
           totalOrders: stats.total || 0,
           activeOrders: stats.active || 0,
           expiredOrders: stats.expired || 0
         });
-        
+
         setDashboardData(prev => ({
           ...prev,
           totalSpent: totalAmount,
@@ -479,38 +491,38 @@ const UserDashboard = () => {
         months.add(monthKey);
       }
     });
-    
+
     if (months.size === 0) {
       const now = new Date();
       const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
       months.add(currentMonth);
     }
-    
+
     setAvailableMonths(Array.from(months).sort());
   };
 
   // Apply filters
-  const applyFilters = () => {
+  const applyFilters = useCallback(() => {
     let filtered = [...originalBookings];
-    
+
     if (selectedMonth !== "all") {
       const [year, month] = selectedMonth.split('-');
       filtered = filtered.filter(booking => {
         if (!booking.createdAt) return false;
         const date = new Date(booking.createdAt);
-        return date.getFullYear() === parseInt(year) && 
+        return date.getFullYear() === parseInt(year) &&
                (date.getMonth() + 1) === parseInt(month);
       });
     }
-    
+
     if (selectedStatus !== "all") {
       filtered = filtered.filter(booking => {
         if (selectedStatus === 'completed') {
           return booking.status === 'confirmed' && booking.paymentStatus === 'paid';
         } else if (selectedStatus === 'active') {
           const today = new Date().toISOString().split('T')[0];
-          return booking.status === 'confirmed' && 
-                 booking.startDate <= today && 
+          return booking.status === 'confirmed' &&
+                 booking.startDate <= today &&
                  booking.endDate >= today;
         } else {
           return booking.status === selectedStatus;
@@ -533,10 +545,10 @@ const UserDashboard = () => {
         return new Date(booking.createdAt) <= to;
       });
     }
-    
+
     setFilteredBookings(filtered);
     updateChartData(filtered);
-  };
+  }, [originalBookings, selectedMonth, selectedStatus, dateFrom, dateTo]);
 
   // Update chart data
   const updateChartData = (filtered) => {
@@ -547,19 +559,19 @@ const UserDashboard = () => {
       }));
       return;
     }
-    
+
     const monthMap = {};
     filtered.forEach(booking => {
       if (!booking.createdAt) return;
       const date = new Date(booking.createdAt);
       const monthName = date.toLocaleString('default', { month: 'short' });
-      
+
       if (!monthMap[monthName]) {
         monthMap[monthName] = { month: monthName, bookings: 0 };
       }
       monthMap[monthName].bookings += 1;
     });
-    
+
     const chartData = Object.values(monthMap);
     setDashboardData(prev => ({
       ...prev,
@@ -574,20 +586,20 @@ const UserDashboard = () => {
     setDateFrom("");
     setDateTo("");
     setFilteredBookings(originalBookings);
-    
+
     if (originalBookings.length > 0) {
       const monthMap = {};
       originalBookings.forEach(booking => {
         if (!booking.createdAt) return;
         const date = new Date(booking.createdAt);
         const monthName = date.toLocaleString('default', { month: 'short' });
-        
+
         if (!monthMap[monthName]) {
           monthMap[monthName] = { month: monthName, bookings: 0 };
         }
         monthMap[monthName].bookings += 1;
       });
-      
+
       const chartData = Object.values(monthMap);
       setDashboardData(prev => ({
         ...prev,
@@ -631,7 +643,7 @@ const UserDashboard = () => {
     const radius = (size - strokeWidth) / 2;
     const circumference = radius * 2 * Math.PI;
     const offset = circumference - (percentage / 100) * circumference;
-    
+
     const getColor = (p) => {
       if (p >= 80) return '#10b981';
       if (p >= 50) return '#f59e0b';
@@ -751,15 +763,28 @@ const UserDashboard = () => {
       value: totalBookings,
       meta: `${monthlyStats?.bookingsThisMonth || 0} this month`,
       icon: Calendar,
-      iconBg: "bg-indigo-100 text-indigo-600",
+      color: "indigo",
       onClick: () => navigate("/mybookings")
+    },
+    {
+      label: "Pending",
+      value: statusDistribution.pending || 0,
+      meta: "awaiting confirmation",
+      icon: Clock,
+      color: "amber",
+      onClick: () => {
+        setSelectedStatus("pending");
+        setTimeout(() => {
+          window.scrollTo({ top: 1000, behavior: 'smooth' });
+        }, 200);
+      }
     },
     {
       label: "My Cabins",
       value: myCabinsCount,
       meta: `${totalCabins} total spaces available`,
       icon: Home,
-      iconBg: "bg-emerald-100 text-emerald-600",
+      color: "emerald",
       onClick: () => navigate("/mycabin")
     },
     {
@@ -767,7 +792,7 @@ const UserDashboard = () => {
       value: cabinBookingsCount,
       meta: `₹${cabinRevenue.toLocaleString('en-IN')} revenue`,
       icon: Building2,
-      iconBg: "bg-rose-100 text-rose-600",
+      color: "rose",
       onClick: () => navigate("/cabin-bookings")
     },
     {
@@ -775,15 +800,15 @@ const UserDashboard = () => {
       value: formatCurrency(totalSpent),
       meta: `₹${monthlyStats?.spentThisMonth || 0} total spent`,
       icon: IndianRupee,
-      iconBg: "bg-amber-100 text-amber-600"
+      color: "purple"
     },
     {
       label: "Wallet Balance",
       value: formatCurrency(wallet.balance || 0),
       meta: `${wallet.transactions || 0} transactions`,
       icon: Wallet,
-      iconBg: "bg-cyan-100 text-cyan-600",
-      onClick: () => navigate("/userwallet")
+      color: "cyan",
+      onClick: () => navigate("/my-wallet")
     }
   ];
 
@@ -793,19 +818,19 @@ const UserDashboard = () => {
       label: "Cabin Bookings",
       value: cabinBookingsCount,
       icon: Building2,
-      iconBg: "bg-amber-100 text-amber-600"
+      color: "amber"
     },
     {
       label: "Cabin Revenue",
       value: formatCurrency(cabinRevenue),
       icon: IndianRupee,
-      iconBg: "bg-emerald-100 text-emerald-600"
+      color: "emerald"
     },
     {
       label: "Wallet Withdrawals",
       value: wallet.withdrawals || 0,
       icon: Wallet,
-      iconBg: "bg-rose-100 text-rose-600"
+      color: "rose"
     }
   ];
 
@@ -853,7 +878,7 @@ const UserDashboard = () => {
                 <span className="text-xl">{getCompletionEmoji(completionPercentage)}</span>
                 <h3 className="text-sm font-semibold text-gray-800">Profile Completion</h3>
               </div>
-              
+
               <div className="flex flex-wrap items-center gap-2 mt-1">
                 <div className="flex items-center gap-1.5 bg-white/80 backdrop-blur-sm px-3 py-1 rounded-lg border border-gray-200">
                   <span className="text-[9px] font-medium text-gray-500">Completed:</span>
@@ -879,7 +904,7 @@ const UserDashboard = () => {
                   </button>
                 </div>
               )}
-              
+
               {missingFields.length === 0 && (
                 <div className="mt-2 flex items-center gap-1.5 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
                   <CheckCircle size={12} className="text-emerald-500" />
@@ -904,7 +929,7 @@ const UserDashboard = () => {
                 </div>
               )}
             </div>
-            
+
             {/* Quick Action Button */}
             <button
               onClick={() => navigate("/myprofile")}
@@ -916,40 +941,51 @@ const UserDashboard = () => {
           </div>
         </div>
 
-        {/* Row 1: Stats Cards */}
-        <div className="admin-dash__stats">
+        {/* Row 1: Stats Cards - Exact MyBookings / AdminDashboard style */}
+        <div className="admin-dash__stats" style={{ marginBottom: '16px' }}>
           {statsCards.map((stat, index) => (
             <div
               key={index}
-              className="admin-dash__stat cursor-pointer"
+              className="admin-dash__stat"
               onClick={stat.onClick}
+              style={{ 
+                cursor: stat.onClick ? 'pointer' : 'default',
+                padding: '12px 14px',
+                minHeight: '80px'
+              }}
             >
               <div className="admin-dash__stat-top">
-                <span className="admin-dash__stat-label">{stat.label}</span>
-                <div className={`admin-dash__stat-icon ${stat.iconBg}`}>
-                  <stat.icon size={18} />
+                <span className="admin-dash__stat-label" style={{ fontSize: '11px' }}>{stat.label}</span>
+                <div className={`admin-dash__stat-icon admin-dash__stat-icon--${stat.color}`} style={{ width: '28px', height: '28px' }}>
+                  <stat.icon size={14} />
                 </div>
               </div>
-              <div className="admin-dash__stat-value">{stat.value}</div>
-              <div className="admin-dash__stat-meta">{stat.meta}</div>
+              <div className="admin-dash__stat-value" style={{ fontSize: '18px', fontWeight: '700' }}>{stat.value}</div>
+              <div className="admin-dash__stat-meta" style={{ fontSize: '9px' }}>{stat.meta}</div>
             </div>
           ))}
         </div>
 
         {/* Row 2: Footer Stats */}
-        <div className="admin-dash__stats mt-4">
+        <div className="admin-dash__stats mt-4" style={{ marginBottom: '16px' }}>
           {footerStats.map((stat, index) => (
-            <div key={index} className="admin-dash__stat">
+            <div 
+              key={index} 
+              className="admin-dash__stat"
+              style={{ 
+                padding: '12px 14px',
+                minHeight: '80px'
+              }}
+            >
               <div className="admin-dash__stat-top">
-                <span className="admin-dash__stat-label">{stat.label}</span>
-                <div className={`admin-dash__stat-icon ${stat.iconBg}`}>
-                  <stat.icon size={18} />
+                <span className="admin-dash__stat-label" style={{ fontSize: '11px' }}>{stat.label}</span>
+                <div className={`admin-dash__stat-icon admin-dash__stat-icon--${stat.color}`} style={{ width: '28px', height: '28px' }}>
+                  <stat.icon size={14} />
                 </div>
               </div>
-              <div className="admin-dash__stat-value">{stat.value}</div>
+              <div className="admin-dash__stat-value" style={{ fontSize: '18px', fontWeight: '700' }}>{stat.value}</div>
             </div>
           ))}
-          <div className="admin-dash__stat" style={{ visibility: 'hidden' }}></div>
         </div>
 
         {/* Row 3: Filter Section */}
@@ -1335,5 +1371,6 @@ const UserDashboard = () => {
     </div>
   );
 };
+
 
 export default UserDashboard;

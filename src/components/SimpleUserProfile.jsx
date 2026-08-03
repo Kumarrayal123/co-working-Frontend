@@ -1,4 +1,4 @@
-// SimpleUserProfile.jsx - With Profile Completion Percentage
+// SimpleUserProfile.jsx - With Profile Completion Percentage + localStorage Based + Edit Popup (No PAN Field)
 import axios from "axios";
 import {
   User,
@@ -13,7 +13,12 @@ import {
   AlertTriangle,
   ArrowRight,
   Sparkles,
-  Crown
+  Crown,
+  Building2,
+  Stethoscope,
+  X,
+  Loader2,
+  FileText
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -28,6 +33,20 @@ const SimpleUserProfile = () => {
   const [completionPercentage, setCompletionPercentage] = useState(0);
   const [missingFields, setMissingFields] = useState([]);
   const [animatedPercentage, setAnimatedPercentage] = useState(0);
+  const [userRole, setUserRole] = useState("user");
+  
+  // ✅ Edit Profile Popup States
+  const [showEditPopup, setShowEditPopup] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    name: "",
+    email: "",
+    mobile: "",
+    address: "",
+    organizationName: "",
+    gstNumber: ""
+  });
+  
   const navigate = useNavigate();
 
   const getAuthHeader = () => {
@@ -35,28 +54,42 @@ const SimpleUserProfile = () => {
     return { headers: { Authorization: `Bearer ${token}` } };
   };
 
-  const getUserId = () => {
-    let userId = localStorage.getItem("userId");
-    
-    if (!userId) {
+  // ✅ Get user data directly from localStorage
+  const getLocalUserData = () => {
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
       try {
-        const token = localStorage.getItem("token");
-        if (token) {
-          const payload = JSON.parse(atob(token.split('.')[1]));
-          userId = payload.id || payload.userId || payload._id;
-          if (userId) {
-            localStorage.setItem("userId", userId);
-          }
+        const userData = JSON.parse(userStr);
+        if (userData && userData._id) {
+          return { user: userData, role: userData.role || "user" };
         }
-      } catch (err) {
-        console.error("Error extracting userId from token:", err);
+      } catch (e) {
+        console.error("Error parsing user data:", e);
       }
     }
-    
-    return userId;
+
+    const adminStr = localStorage.getItem("admin");
+    if (adminStr) {
+      try {
+        const adminData = JSON.parse(adminStr);
+        if (adminData && adminData._id) {
+          return { user: adminData, role: "admin" };
+        }
+      } catch (e) {
+        console.error("Error parsing admin data:", e);
+      }
+    }
+
+    return { user: null, role: "user" };
   };
 
-  // Calculate profile completion percentage - ONLY BASIC FIELDS
+  // ✅ Get userId from localStorage
+  const getUserId = () => {
+    const { user } = getLocalUserData();
+    return user?._id || user?.id || null;
+  };
+
+  // Calculate profile completion percentage
   const calculateCompletion = (userData) => {
     const fields = [
       { key: 'name', label: 'Full Name', required: true },
@@ -82,7 +115,6 @@ const SimpleUserProfile = () => {
           missing.push(field.label);
         }
       } else {
-        // Optional fields - only count if they have value
         total++;
         if (value && value.toString().trim() !== '') {
           completed++;
@@ -133,11 +165,43 @@ const SimpleUserProfile = () => {
       }
 
       const userId = getUserId();
+      console.log("🔍 User ID from localStorage:", userId);
+      
       if (!userId) {
         toast.error("User ID not found. Please login again.");
         localStorage.removeItem("token");
-        localStorage.removeItem("userId");
         navigate("/login");
+        return;
+      }
+
+      const { user: localUser, role } = getLocalUserData();
+      console.log("📋 Local User Data:", localUser);
+      console.log("👤 User Role:", role);
+      
+      if (localUser && localUser._id) {
+        setProfile(localUser);
+        setUserRole(role || "user");
+        const { percentage, missing } = calculateCompletion(localUser);
+        setCompletionPercentage(percentage);
+        setMissingFields(missing);
+        setLoading(false);
+        
+        try {
+          const res = await axios.get(
+            `${API_URL}/api/auth/profile/${userId}`,
+            getAuthHeader()
+          );
+          
+          if (res.data.success && res.data.user) {
+            setProfile(res.data.user);
+            const { percentage: newPercentage, missing: newMissing } = calculateCompletion(res.data.user);
+            setCompletionPercentage(newPercentage);
+            setMissingFields(newMissing);
+          }
+        } catch (apiErr) {
+          console.log("API fetch failed, using local data");
+        }
+        setLoading(false);
         return;
       }
 
@@ -148,6 +212,8 @@ const SimpleUserProfile = () => {
 
       if (res.data.success && res.data.user) {
         setProfile(res.data.user);
+        const { user: localUserData, role: localRole } = getLocalUserData();
+        setUserRole(localRole || res.data.user.role || "user");
         const { percentage, missing } = calculateCompletion(res.data.user);
         setCompletionPercentage(percentage);
         setMissingFields(missing);
@@ -156,16 +222,24 @@ const SimpleUserProfile = () => {
       }
     } catch (err) {
       console.error("Error fetching profile:", err);
-      if (err.response?.status === 401) {
-        toast.error("Session expired. Please login again.");
-        localStorage.removeItem("token");
-        localStorage.removeItem("userId");
-        navigate("/login");
-      } else if (err.response?.status === 404) {
-        toast.error("User not found");
-        navigate("/login");
+      
+      const { user: localUser, role } = getLocalUserData();
+      if (localUser && localUser._id) {
+        console.log("⚠️ Using local data as fallback");
+        setProfile(localUser);
+        setUserRole(role || "user");
+        const { percentage, missing } = calculateCompletion(localUser);
+        setCompletionPercentage(percentage);
+        setMissingFields(missing);
+        toast.info("Showing cached profile data");
       } else {
-        toast.error(err.response?.data?.message || "Failed to fetch profile");
+        if (err.response?.status === 401) {
+          toast.error("Session expired. Please login again.");
+          localStorage.removeItem("token");
+          navigate("/login");
+        } else {
+          toast.error(err.response?.data?.message || "Failed to fetch profile");
+        }
       }
     } finally {
       setLoading(false);
@@ -173,8 +247,89 @@ const SimpleUserProfile = () => {
   };
 
   useEffect(() => {
+    console.log("========== PROFILE PAGE LOADED ==========");
+    const { user, role } = getLocalUserData();
+    console.log("👤 User from localStorage:", user);
+    console.log("🎭 Role from localStorage:", role);
+    console.log("==========================================");
     fetchProfile();
   }, []);
+
+  // ─── EDIT PROFILE FUNCTIONS ───
+  const openEditPopup = () => {
+    if (profile) {
+      setEditFormData({
+        name: profile.name || "",
+        email: profile.email || "",
+        mobile: profile.mobile || "",
+        address: profile.address || "",
+        organizationName: profile.organizationName || "",
+        gstNumber: profile.gstNumber || ""
+      });
+      setShowEditPopup(true);
+    }
+  };
+
+  const closeEditPopup = () => {
+    setShowEditPopup(false);
+    setEditFormData({});
+  };
+
+  const handleEditChange = (e) => {
+    setEditFormData({ ...editFormData, [e.target.name]: e.target.value });
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    setEditLoading(true);
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error("Please login to continue");
+        return;
+      }
+
+      const userId = getUserId();
+      if (!userId) {
+        toast.error("User ID not found");
+        return;
+      }
+
+      const formData = new FormData();
+      
+      Object.keys(editFormData).forEach(key => {
+        if (editFormData[key]) {
+          formData.append(key, editFormData[key]);
+        }
+      });
+
+      const res = await axios.put(
+        `${API_URL}/api/auth/profile/${userId}`,
+        formData,
+        {
+          ...getAuthHeader(),
+          headers: { 
+            ...getAuthHeader().headers,
+            'Content-Type': 'multipart/form-data' 
+          }
+        }
+      );
+
+      if (res.data.success) {
+        toast.success("Profile updated successfully!");
+        setShowEditPopup(false);
+        await fetchProfile();
+      } else {
+        toast.error(res.data.message || "Failed to update profile");
+      }
+    } catch (err) {
+      console.error("Error updating profile:", err);
+      toast.error(err.response?.data?.message || "Failed to update profile");
+    } finally {
+      setEditLoading(false);
+    }
+  };
 
   const formatDate = (date) => {
     if (!date) return 'N/A';
@@ -183,6 +338,17 @@ const SimpleUserProfile = () => {
       month: 'short',
       year: 'numeric'
     });
+  };
+
+  // ✅ Get role display info
+  const getRoleInfo = (role) => {
+    const roles = {
+      admin: { icon: Shield, label: 'Admin', color: 'text-purple-600', bg: 'bg-purple-100' },
+      cabinOwner: { icon: Building2, label: 'Cabin Owner', color: 'text-amber-600', bg: 'bg-amber-100' },
+      doctor: { icon: Stethoscope, label: 'Doctor', color: 'text-emerald-600', bg: 'bg-emerald-100' },
+      user: { icon: User, label: 'User', color: 'text-indigo-600', bg: 'bg-indigo-100' }
+    };
+    return roles[role] || roles.user;
   };
 
   // Circular Progress Component
@@ -244,12 +410,6 @@ const SimpleUserProfile = () => {
     return 'text-red-500';
   };
 
-  const getCompletionBgColor = (percentage) => {
-    if (percentage >= 80) return 'bg-emerald-500';
-    if (percentage >= 50) return 'bg-yellow-500';
-    return 'bg-red-500';
-  };
-
   const getCompletionEmoji = (percentage) => {
     if (percentage >= 80) return '🎉';
     if (percentage >= 50) return '📈';
@@ -281,11 +441,20 @@ const SimpleUserProfile = () => {
           <div className="flex flex-col items-center justify-center gap-4 py-20 text-gray-400">
             <User size={48} className="opacity-20" />
             <p className="text-lg font-medium">No profile data found</p>
+            <button
+              onClick={() => navigate("/login")}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition"
+            >
+              Login Again
+            </button>
           </div>
         </div>
       </div>
     );
   }
+
+  const roleInfo = getRoleInfo(userRole || profile.role || "user");
+  const RoleIcon = roleInfo.icon;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -299,9 +468,13 @@ const SimpleUserProfile = () => {
             <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
             <p className="text-sm text-gray-500">View your profile information</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full ${roleInfo.bg} ${roleInfo.color} border`}>
+              <RoleIcon size={14} />
+              <span className="text-[10px] font-bold uppercase tracking-wider">{roleInfo.label}</span>
+            </div>
             <button
-              onClick={() => navigate("/edit-profile")}
+              onClick={openEditPopup}
               className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition shadow-sm shadow-indigo-200"
             >
               <Edit size={16} />
@@ -313,7 +486,6 @@ const SimpleUserProfile = () => {
         {/* Profile Completion Card */}
         <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 rounded-xl border border-indigo-200 shadow-sm p-4 sm:p-5 mb-6 max-w-2xl mx-auto">
           <div className="flex flex-col sm:flex-row sm:items-center gap-5">
-            {/* Circular Progress */}
             <div className="flex-shrink-0 flex justify-center">
               <CircularProgress 
                 percentage={animatedPercentage || completionPercentage} 
@@ -322,7 +494,6 @@ const SimpleUserProfile = () => {
               />
             </div>
 
-            {/* Details */}
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-2xl">{getCompletionEmoji(completionPercentage)}</span>
@@ -347,7 +518,7 @@ const SimpleUserProfile = () => {
                     <span className="font-semibold text-amber-600">{missingFields.length}</span> fields remaining
                   </p>
                   <button
-                    onClick={() => navigate("/edit-profile")}
+                    onClick={openEditPopup}
                     className="inline-flex items-center gap-0.5 text-[10px] font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
                   >
                     Complete Now <ArrowRight size={10} />
@@ -362,7 +533,6 @@ const SimpleUserProfile = () => {
                 </div>
               )}
 
-              {/* Missing Fields Tags */}
               {missingFields.length > 0 && (
                 <div className="mt-1.5 flex flex-wrap gap-1">
                   {missingFields.slice(0, 6).map((field, index) => (
@@ -407,7 +577,7 @@ const SimpleUserProfile = () => {
               </div>
             </div>
 
-            {/* Details - Basic only */}
+            {/* Details */}
             <div className="mt-5 border-t border-gray-200 pt-5">
               <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2 mb-4">
                 <User size={14} className="text-indigo-600" /> Personal Information
@@ -472,6 +642,15 @@ const SimpleUserProfile = () => {
                     <p className="font-medium text-gray-800 text-sm">{formatDate(profile.createdAt)}</p>
                   </div>
                 </div>
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-lg ${roleInfo.bg} flex items-center justify-center flex-shrink-0`}>
+                    <RoleIcon size={14} className={roleInfo.color} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Role</p>
+                    <p className={`font-medium text-sm ${roleInfo.color}`}>{roleInfo.label}</p>
+                  </div>
+                </div>
 
                 {/* Organization Details - Only if present */}
                 {(profile.organizationName || profile.gstNumber) && (
@@ -508,7 +687,7 @@ const SimpleUserProfile = () => {
               </div>
             </div>
 
-            {/* Quick Actions - Only 2 buttons */}
+            {/* Quick Actions */}
             <div className="mt-5 pt-5 border-t border-gray-200">
               <div className="grid grid-cols-2 gap-3">
                 <button
@@ -535,6 +714,180 @@ const SimpleUserProfile = () => {
           © IRYAX SPACE — All Rights Reserved
         </div>
       </div>
+
+      {/* ====================== */}
+      {/* EDIT PROFILE POPUP - No PAN Field */}
+      {/* ====================== */}
+      {showEditPopup && (
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              closeEditPopup();
+            }
+          }}
+        >
+          <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="sticky top-0 bg-white z-10 border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                  <Edit size={20} className="text-indigo-600" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">Edit Profile</h2>
+                  <p className="text-xs text-gray-500">Update your personal and organization details</p>
+                </div>
+              </div>
+              <button
+                onClick={closeEditPopup}
+                className="w-8 h-8 rounded-full hover:bg-gray-100 transition-colors flex items-center justify-center text-gray-500 hover:text-gray-700"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleEditSubmit} className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Personal Information */}
+                <div className="md:col-span-2">
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2 mb-3">
+                    <User size={14} className="text-indigo-600" /> Personal Information
+                  </h3>
+                </div>
+
+                <div className="relative group">
+                  <User className="absolute left-3 top-3 text-gray-400 group-focus-within:text-indigo-600 transition-colors" size={16} />
+                  <input
+                    type="text"
+                    name="name"
+                    placeholder="Full Name *"
+                    value={editFormData.name}
+                    onChange={handleEditChange}
+                    required
+                    className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none text-gray-800 placeholder:text-gray-400 text-sm"
+                  />
+                </div>
+
+                <div className="relative group">
+                  <Mail className="absolute left-3 top-3 text-gray-400 group-focus-within:text-indigo-600 transition-colors" size={16} />
+                  <input
+                    type="email"
+                    name="email"
+                    placeholder="Email Address *"
+                    value={editFormData.email}
+                    onChange={handleEditChange}
+                    required
+                    className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none text-gray-800 placeholder:text-gray-400 text-sm"
+                  />
+                </div>
+
+                <div className="relative group">
+                  <Phone className="absolute left-3 top-3 text-gray-400 group-focus-within:text-indigo-600 transition-colors" size={16} />
+                  <input
+                    type="text"
+                    name="mobile"
+                    placeholder="Mobile Number *"
+                    value={editFormData.mobile}
+                    onChange={handleEditChange}
+                    required
+                    className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none text-gray-800 placeholder:text-gray-400 text-sm"
+                  />
+                </div>
+
+                <div className="relative group md:col-span-2">
+                  <MapPin className="absolute left-3 top-3 text-gray-400 group-focus-within:text-indigo-600 transition-colors" size={16} />
+                  <input
+                    type="text"
+                    name="address"
+                    placeholder="Address *"
+                    value={editFormData.address}
+                    onChange={handleEditChange}
+                    required
+                    className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none text-gray-800 placeholder:text-gray-400 text-sm"
+                  />
+                </div>
+
+                {/* Organization Details */}
+                <div className="md:col-span-2 mt-2">
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2 mb-3">
+                    <Building2 size={14} className="text-amber-600" /> Organization Details
+                  </h3>
+                </div>
+
+                <div className="relative group md:col-span-2">
+                  <Building2 className="absolute left-3 top-3 text-gray-400 group-focus-within:text-amber-600 transition-colors" size={16} />
+                  <input
+                    type="text"
+                    name="organizationName"
+                    placeholder="Organization Name"
+                    value={editFormData.organizationName}
+                    onChange={handleEditChange}
+                    className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all outline-none text-gray-800 placeholder:text-gray-400 text-sm"
+                  />
+                </div>
+
+                <div className="relative group md:col-span-2">
+                  <FileText className="absolute left-3 top-3 text-gray-400 group-focus-within:text-amber-600 transition-colors" size={16} />
+                  <input
+                    type="text"
+                    name="gstNumber"
+                    placeholder="GST Number"
+                    value={editFormData.gstNumber}
+                    onChange={handleEditChange}
+                    className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all outline-none text-gray-800 placeholder:text-gray-400 text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={closeEditPopup}
+                  className="px-6 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={editLoading}
+                  className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium text-sm rounded-xl hover:shadow-lg hover:shadow-indigo-500/25 transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                >
+                  {editLoading ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle size={16} />
+                      Save Changes
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Animations */}
+      <style>{`
+        @keyframes fade-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes zoom-in-95 {
+          from { transform: scale(0.95); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
+        }
+        .animate-in {
+          animation: fade-in 0.3s ease-out;
+        }
+        .zoom-in-95 {
+          animation: zoom-in-95 0.3s ease-out;
+        }
+      `}</style>
     </div>
   );
 };

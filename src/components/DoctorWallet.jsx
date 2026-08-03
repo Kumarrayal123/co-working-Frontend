@@ -55,12 +55,12 @@ const DoctorWallet = () => {
   const [loading, setLoading] = useState(true);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  
+
   // Filter States
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [filterDate, setFilterDate] = useState("");
-  
+
   // Withdraw States
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState("");
@@ -68,14 +68,14 @@ const DoctorWallet = () => {
   const [withdrawBank, setWithdrawBank] = useState("");
   const [withdrawIfsc, setWithdrawIfsc] = useState("");
   const [withdrawing, setWithdrawing] = useState(false);
-  
+
   // Withdrawals View
   const [showWithdrawals, setShowWithdrawals] = useState(false);
-  
+
   // Withdrawal Detail Modal
   const [selectedWithdrawal, setSelectedWithdrawal] = useState(null);
   const [showWithdrawalDetailModal, setShowWithdrawalDetailModal] = useState(false);
-  
+
   const navigate = useNavigate();
 
   const getAuthHeader = () => {
@@ -278,10 +278,10 @@ const DoctorWallet = () => {
 
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Doctor_Wallet');
-      
+
       const date = new Date().toISOString().split('T')[0];
       XLSX.writeFile(wb, `doctor_wallet_${date}.xlsx`);
-      
+
       toast.success(`Exported ${filteredTransactions.length} transactions!`);
     } catch (error) {
       console.error("Export error:", error);
@@ -329,7 +329,7 @@ const DoctorWallet = () => {
         setWithdrawAccount("");
         setWithdrawBank("");
         setWithdrawIfsc("");
-        
+
         await fetchWallet();
         await fetchWithdrawals();
       }
@@ -385,74 +385,53 @@ const DoctorWallet = () => {
             <h1 className="admin-dash__greeting">
               Doctor <span>Wallet</span>
             </h1>
-          
           </div>
-         
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-4 sm:p-5 text-white shadow-lg shadow-indigo-500/25">
-            <p className="text-xs font-medium text-indigo-200">Available Balance</p>
-            <p className="text-2xl sm:text-3xl font-bold mt-1">{formatCurrency(wallet.balance)}</p>
-            <div className="mt-3 pt-3 border-t border-white/20 flex justify-between text-xs">
-              <span className="text-indigo-200">Total Earned</span>
-              <span className="font-semibold">{formatCurrency(wallet.totalEarned)}</span>
+        <div className="admin-dash__stats grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="admin-dash__stat">
+            <div className="admin-dash__stat-top">
+              <span className="admin-dash__stat-label">Available Balance</span>
+              <div className="admin-dash__stat-icon bg-emerald-100 text-emerald-600">
+                <WalletIcon size={18} />
+              </div>
             </div>
+            <div className="admin-dash__stat-value">{formatCurrency(wallet.balance)}</div>
+            <div className="admin-dash__stat-meta">Earned: {formatCurrency(wallet.totalEarned)}</div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-gray-500">Total Earned</p>
-                <p className="text-xl sm:text-2xl font-bold text-indigo-600 mt-1">
-                  {formatCurrency(wallet.totalEarned)}
-                </p>
-              </div>
-              <div className="bg-indigo-100 p-3 rounded-xl">
-                <TrendingUp size={20} className="text-indigo-600" />
+          <div className="admin-dash__stat">
+            <div className="admin-dash__stat-top">
+              <span className="admin-dash__stat-label">Total Earned</span>
+              <div className="admin-dash__stat-icon bg-indigo-100 text-indigo-600">
+                <TrendingUp size={18} />
               </div>
             </div>
-            <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between text-xs">
-              <span className="text-gray-500">Transactions</span>
-              <span className="font-semibold text-gray-900">{wallet.totalTransactions}</span>
-            </div>
+            <div className="admin-dash__stat-value">{formatCurrency(wallet.totalEarned)}</div>
+            <div className="admin-dash__stat-meta">{wallet.totalTransactions} transactions</div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-gray-500">Total Withdrawn</p>
-                <p className="text-xl sm:text-2xl font-bold text-purple-600 mt-1">
-                  {formatCurrency(totalWithdrawn)}
-                </p>
-              </div>
-              <div className="bg-purple-100 p-3 rounded-xl">
-                <History size={20} className="text-purple-600" />
+          <div className="admin-dash__stat">
+            <div className="admin-dash__stat-top">
+              <span className="admin-dash__stat-label">Total Withdrawn</span>
+              <div className="admin-dash__stat-icon bg-purple-100 text-purple-600">
+                <History size={18} />
               </div>
             </div>
-            <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between text-xs">
-              <span className="text-gray-500">Requests</span>
-              <span className="font-semibold text-gray-900">{withdrawals.length}</span>
-            </div>
+            <div className="admin-dash__stat-value">{formatCurrency(totalWithdrawn)}</div>
+            <div className="admin-dash__stat-meta">{withdrawals.length} withdrawal requests</div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-gray-500">Pending Requests</p>
-                <p className="text-xl sm:text-2xl font-bold text-yellow-600 mt-1">
-                  {withdrawStats.pending}
-                </p>
-              </div>
-              <div className="bg-yellow-100 p-3 rounded-xl">
-                <Clock size={20} className="text-yellow-600" />
+          <div className="admin-dash__stat">
+            <div className="admin-dash__stat-top">
+              <span className="admin-dash__stat-label">Pending Requests</span>
+              <div className="admin-dash__stat-icon bg-amber-100 text-amber-600">
+                <Clock size={18} />
               </div>
             </div>
-            <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between text-xs">
-              <span className="text-gray-500">Completed</span>
-              <span className="font-semibold text-gray-900">{withdrawStats.completed}</span>
-            </div>
+            <div className="admin-dash__stat-value">{withdrawStats.pending}</div>
+            <div className="admin-dash__stat-meta">{withdrawStats.completed} completed</div>
           </div>
         </div>
 

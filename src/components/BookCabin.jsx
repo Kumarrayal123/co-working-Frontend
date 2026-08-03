@@ -1,4 +1,4 @@
-// BookCabin.jsx - Complete with Multi-Day Slots + DoctorNavbar Support + Indian Time Format
+// BookCabin.jsx - Complete with Multi-Day Slots + Fixed Navbar Logic + Time Validation Modal Popup
 import axios from "axios";
 import {
   ArrowLeft,
@@ -7,18 +7,20 @@ import {
   MapPin,
   User,
   Users,
-  CreditCard,
   ShieldCheck,
   CheckCircle,
   IndianRupee,
   Receipt,
   FileText,
-  X,
   ChevronDown,
   ChevronUp,
   Armchair,
   Calendar,
-  Clock
+  Clock,
+  Clock as ClockIcon,
+  AlertCircle,
+  X,
+  Clock as ClockIcon2
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -38,37 +40,18 @@ const BookCabin = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   
-  // ✅ Get user data from localStorage
   const getUserData = () => {
     const userStr = localStorage.getItem("user");
     if (userStr) {
       try {
         const userData = JSON.parse(userStr);
-        if (userData && (userData.role === "doctor" || userData.isDoctor === true)) {
-          return { user: userData, role: "doctor" };
-        }
         if (userData && userData._id) {
-          return { user: userData, role: userData.role || "user" };
+          const role = userData.role || "user";
+          return { user: userData, role: role };
         }
       } catch (e) {
         console.error("Error parsing user data:", e);
       }
-    }
-
-    const doctorFlag = localStorage.getItem("doctor") || localStorage.getItem("isDoctor");
-    if (doctorFlag === "true") {
-      const userData = localStorage.getItem("user");
-      if (userData) {
-        try {
-          const parsed = JSON.parse(userData);
-          if (parsed && parsed._id) {
-            return { user: parsed, role: parsed.role || "doctor" };
-          }
-        } catch (e) {
-          console.error("Error parsing user data:", e);
-        }
-      }
-      return { user: null, role: "doctor" };
     }
 
     const adminStr = localStorage.getItem("admin");
@@ -88,18 +71,19 @@ const BookCabin = () => {
 
   const { user: currentUser, role: userRole } = getUserData();
   
-  const isAdmin = userRole === "admin";
-  const isDoctor = userRole === "doctor";
-
   const renderNavbar = () => {
-    if (isDoctor) {
-      return <DoctorNavbar />;
-    } else if (isAdmin) {
+    console.log("🔍 Current Role:", userRole);
+    
+    if (userRole === "admin") {
       return <AdminNavbar />;
+    } else if (userRole === "doctor") {
+      return <DoctorNavbar />;
+    } else if (userRole === "cabinOwner") {
+      return <UsersNavbar />;
     } else if (userRole === "user") {
       return <SimpleUserNavbar />;
     } else {
-      return <UsersNavbar />;
+      return <SimpleUserNavbar />;
     }
   };
 
@@ -131,8 +115,11 @@ const BookCabin = () => {
   const [availabilityError, setAvailabilityError] = useState("");
   const [loading, setLoading] = useState(false);
   
-  // ✅ Multi-day slots
   const [bookingSlots, setBookingSlots] = useState([]);
+
+  // ✅ Time Validation Modal States
+  const [showTimeErrorModal, setShowTimeErrorModal] = useState(false);
+  const [timeErrorMsg, setTimeErrorMsg] = useState("");
 
   const getImageUrl = (img) => {
     if (!img) return PLACEHOLDER_IMAGE;
@@ -146,7 +133,6 @@ const BookCabin = () => {
     return { headers: { Authorization: `Bearer ${token}` } };
   };
 
-  // ✅ Convert to Indian time format for display
   const convertToIndianTime = (timeStr) => {
     if (!timeStr) return "N/A";
     if (timeStr.includes('AM') || timeStr.includes('PM')) return timeStr;
@@ -166,7 +152,6 @@ const BookCabin = () => {
     }
   };
 
-  // ✅ Format date in Indian format
   const formatDateIndian = (dateStr) => {
     if (!dateStr) return "N/A";
     const d = new Date(dateStr);
@@ -175,6 +160,69 @@ const BookCabin = () => {
     const year = String(d.getFullYear()).slice(2);
     return `${day}/${month}/${year}`;
   };
+
+  const is24x7 = () => {
+    return cabin?.is24x7 === true;
+  };
+
+  const getCabinStatus = () => {
+    if (is24x7()) return { status: "24×7", color: "text-emerald-600", bg: "bg-emerald-50" };
+    
+    const now = new Date();
+    const currentHours = now.getHours();
+    const currentMinutes = now.getMinutes();
+    const currentTimeInMinutes = currentHours * 60 + currentMinutes;
+    
+    if (!cabin?.openTime || !cabin?.closeTime) return { status: "Unknown", color: "text-amber-600", bg: "bg-amber-50" };
+    
+    const [openHour, openMin] = cabin.openTime.split(':').map(Number);
+    const [closeHour, closeMin] = cabin.closeTime.split(':').map(Number);
+    const openTimeInMinutes = openHour * 60 + openMin;
+    const closeTimeInMinutes = closeHour * 60 + closeMin;
+    
+    const isOpen = currentTimeInMinutes >= openTimeInMinutes && currentTimeInMinutes < closeTimeInMinutes;
+    
+    return {
+      status: isOpen ? "● Open" : "● Closed",
+      color: isOpen ? "text-emerald-600" : "text-red-600",
+      bg: isOpen ? "bg-emerald-50" : "bg-red-50"
+    };
+  };
+
+  // ✅ Validate if selected time is within working hours
+  const validateBookingTime = (selectedStartTime, selectedEndTime) => {
+    if (is24x7()) return true;
+    
+    if (!cabin?.openTime || !cabin?.closeTime) return true;
+    
+    const [openHour, openMin] = cabin.openTime.split(':').map(Number);
+    const [closeHour, closeMin] = cabin.closeTime.split(':').map(Number);
+    const openTimeInMinutes = openHour * 60 + openMin;
+    const closeTimeInMinutes = closeHour * 60 + closeMin;
+    
+    const [startHour, startMin] = selectedStartTime.split(':').map(Number);
+    const startTimeInMinutes = startHour * 60 + startMin;
+    
+    const [endHour, endMin] = selectedEndTime.split(':').map(Number);
+    const endTimeInMinutes = endHour * 60 + endMin;
+    
+    if (startTimeInMinutes < openTimeInMinutes || endTimeInMinutes > closeTimeInMinutes || startTimeInMinutes >= closeTimeInMinutes) {
+      setTimeErrorMsg(
+        `Sorry, you cannot book at this time. The workspace is available from ${convertToIndianTime(cabin.openTime)} to ${convertToIndianTime(cabin.closeTime)}.`
+      );
+      setShowTimeErrorModal(true);
+      return false;
+    }
+    
+    return true;
+  };
+
+  // ✅ Validate on time change
+  useEffect(() => {
+    if (startTime && endTime && cabin) {
+      validateBookingTime(startTime, endTime);
+    }
+  }, [startTime, endTime, cabin]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -226,7 +274,6 @@ const BookCabin = () => {
     setSelectedSeats([]);
   };
 
-  // ✅ Generate daily slots between start and end date
   const generateDailySlots = (start, end, startTimeStr, endTimeStr) => {
     const slots = [];
     const current = new Date(start);
@@ -330,6 +377,11 @@ const BookCabin = () => {
   const handleBooking = async (e) => {
     e.preventDefault();
 
+    // ✅ Validate time before proceeding
+    if (!validateBookingTime(startTime, endTime)) {
+      return;
+    }
+
     if (!termsAccepted) {
       toast.error("Please accept Terms & Conditions to proceed");
       return;
@@ -399,10 +451,10 @@ const BookCabin = () => {
           navigate("/mybookings");
         } else if (userRoleFinal === "doctor") {
           navigate("/doctorbookings");
-        } else if (userRoleFinal === "user") {
-          navigate("/userbooking");
-        } else {
+        } else if (userRoleFinal === "cabinOwner") {
           navigate("/mybookings");
+        } else {
+          navigate("/userbooking");
         }
       }
     } catch (err) {
@@ -430,9 +482,80 @@ const BookCabin = () => {
     );
   }
 
+  const cabinStatus = getCabinStatus();
+
   return (
     <div className="admin-dash">
       {renderNavbar()}
+
+      {/* ✅ TIME ERROR MODAL POPUP */}
+      {showTimeErrorModal && (
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-md p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowTimeErrorModal(false);
+            }
+          }}
+        >
+          <div className="relative max-w-md w-full animate-in zoom-in-95 duration-300">
+            {/* Glow Effect */}
+            <div className="absolute -inset-1 bg-gradient-to-r from-red-500 to-rose-500 rounded-2xl blur-xl opacity-20 animate-pulse"></div>
+            
+            {/* Modal Card */}
+            <div className="relative bg-white rounded-2xl shadow-2xl overflow-hidden">
+              {/* Top Red Gradient Bar */}
+              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-red-500 to-rose-500"></div>
+              
+              <div className="p-6">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 bg-red-50 rounded-xl">
+                      <AlertCircle size={22} className="text-red-500" />
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-900">Invalid Booking Time</h3>
+                  </div>
+                  <button
+                    onClick={() => setShowTimeErrorModal(false)}
+                    className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors text-slate-400 hover:text-slate-600"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+
+                {/* Message */}
+                <div className="bg-red-50 rounded-xl p-4 border border-red-100">
+                  <p className="text-sm text-red-700 font-medium">
+                    {timeErrorMsg}
+                  </p>
+                </div>
+
+                {/* Timing Info */}
+                {!is24x7() && cabin?.openTime && cabin?.closeTime && (
+                  <div className="mt-4 flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                    <ClockIcon2 size={16} className="text-indigo-600" />
+                    <div>
+                      <p className="text-xs text-slate-500">Available Timing</p>
+                      <p className="text-sm font-bold text-slate-800">
+                        {convertToIndianTime(cabin.openTime)} — {convertToIndianTime(cabin.closeTime)}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Close Button */}
+                <button
+                  onClick={() => setShowTimeErrorModal(false)}
+                  className="mt-5 w-full py-3 rounded-xl bg-gradient-to-r from-red-500 to-rose-500 text-white font-bold text-sm hover:from-red-600 hover:to-rose-600 transition-all shadow-lg shadow-red-500/20"
+                >
+                  I Understand
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-16">
         <button
@@ -458,17 +581,27 @@ const BookCabin = () => {
                 <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest text-indigo-700 shadow-sm">
                   Premium
                 </div>
+                <div className={`absolute top-3 right-3 px-3 py-1 rounded-full text-[10px] font-bold backdrop-blur-sm shadow-sm ${cabinStatus.bg} ${cabinStatus.color}`}>
+                  {cabinStatus.status}
+                </div>
               </div>
 
               <h2 className="text-xl font-bold uppercase text-slate-900 mb-1">
                 {cabin.name}
               </h2>
 
-              <div className="flex items-center gap-2 text-slate-500 text-sm font-semibold mb-6">
+              <div className="flex items-center gap-2 text-slate-500 text-sm font-semibold mb-4">
                 <div className="p-1.5 bg-indigo-50 rounded-lg">
                   <MapPin size={16} className="text-indigo-500" />
                 </div>
                 {cabin.address}
+              </div>
+
+              <div className="flex items-center gap-2 text-sm font-bold mb-4 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                <ClockIcon size={16} className="text-indigo-600" />
+                <span className="text-slate-800">
+                  {is24x7() ? "24×7" : `${convertToIndianTime(cabin.openTime)} — ${convertToIndianTime(cabin.closeTime)}`}
+                </span>
               </div>
 
               <div className="grid grid-cols-2 gap-3 mb-6">
@@ -764,7 +897,6 @@ const BookCabin = () => {
                   )}
                 </div>
 
-                {/* ✅ Display Daily Slots with Indian Time Format */}
                 {bookingSlots.length > 0 && (
                   <div className="mt-6 pt-6 border-t border-slate-200">
                     <h4 className="text-xs font-bold uppercase text-slate-500 tracking-wider mb-4 flex items-center gap-2">
@@ -788,7 +920,7 @@ const BookCabin = () => {
                           </div>
                           <div className="flex items-center gap-1 text-xs text-slate-500 mt-1">
                             <Clock size={12} />
-                            <span>{convertToIndianTime(slot.startTime)} - {convertToIndianTime(slot.endTime)}</span>
+                            <span>{convertToIndianTime(slot.startTime)} — {convertToIndianTime(slot.endTime)}</span>
                           </div>
                         </div>
                       ))}

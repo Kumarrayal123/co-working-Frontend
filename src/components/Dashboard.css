@@ -166,6 +166,16 @@
   color: #7c3aed;
 }
 
+.admin-dash__stat-icon--purple {
+  background: #f3e8ff;
+  color: #9333ea;
+}
+
+.admin-dash__stat-icon--orange {
+  background: #ffedd5;
+  color: #ea580c;
+}
+
 .admin-dash__stat-label {
   font-size: 0.75rem;
   font-weight: 500;

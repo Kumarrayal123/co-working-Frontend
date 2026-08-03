@@ -53,7 +53,8 @@ import {
   Check,
   AlertTriangle,
   Layers,
-  CalendarDays
+  CalendarDays,
+  Ticket
 } from "lucide-react";
 import { toast } from "react-toastify";
 import * as XLSX from 'xlsx';
@@ -1003,90 +1004,70 @@ const CabinBookings = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4 mb-6">
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-4 sm:p-5 text-white shadow-lg shadow-indigo-500/25">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-200">Total</p>
-            <p className="text-2xl sm:text-3xl font-bold mt-1">{stats.totalBookings}</p>
-            <div className="mt-2 pt-2 border-t border-white/20 flex justify-between text-[10px]">
-              <span className="text-indigo-200">Revenue</span>
-              <span className="font-semibold">{formatCurrency(stats.totalRevenue)}</span>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Confirmed</p>
-                <p className="text-2xl font-bold text-emerald-600 mt-1">{stats.confirmed}</p>
+        {/* Stats Cards - Exact MyBookings / AdminDashboard style */}
+        <div className="admin-dash__stats" style={{ marginBottom: '16px' }}>
+          {[
+            {
+              label: "Total Bookings",
+              value: stats.totalBookings,
+              meta: `${formatCurrency(stats.totalRevenue)} revenue`,
+              icon: Ticket,
+              color: "indigo",
+              onClick: () => setFilters({...filters, status: 'all'})
+            },
+            {
+              label: "Active",
+              value: stats.active + stats.confirmed,
+              meta: `${stats.active} active, ${stats.confirmed} confirmed`,
+              icon: Timer,
+              color: "emerald",
+              onClick: () => setFilters({...filters, status: 'confirmed'})
+            },
+            {
+              label: "Pending",
+              value: stats.pending,
+              meta: "awaiting payment",
+              icon: ClockIcon,
+              color: "amber",
+              onClick: () => setFilters({...filters, status: 'pending'})
+            },
+            {
+              label: "Completed",
+              value: stats.completed,
+              meta: `${formatCurrency(stats.completedRevenue)} finished`,
+              icon: CheckCircle,
+              color: "purple",
+              onClick: () => setFilters({...filters, status: 'completed'})
+            },
+            {
+              label: "Visits",
+              value: visitCount,
+              meta: `${spaceCount} space bookings`,
+              icon: Eye,
+              color: "cyan",
+              onClick: () => setActiveTab('visits')
+            }
+          ].map((stat, index) => (
+            <div
+              key={index}
+              className="admin-dash__stat"
+              onClick={stat.onClick}
+              style={{ 
+                cursor: stat.onClick ? 'pointer' : 'default',
+                padding: '12px 14px',
+                minHeight: '80px'
+              }}
+            >
+              <div className="admin-dash__stat-top">
+                <span className="admin-dash__stat-label" style={{ fontSize: '11px' }}>{stat.label}</span>
+                <div className={`admin-dash__stat-icon admin-dash__stat-icon--${stat.color}`} style={{ width: '28px', height: '28px' }}>
+                  <stat.icon size={14} />
+                </div>
               </div>
-              <div className="bg-emerald-100 p-2.5 rounded-xl">
-                <CheckCircle size={20} className="text-emerald-600" />
-              </div>
+              <div className="admin-dash__stat-value" style={{ fontSize: '18px', fontWeight: '700' }}>{stat.value}</div>
+              <div className="admin-dash__stat-meta" style={{ fontSize: '9px' }}>{stat.meta}</div>
             </div>
-            <div className="mt-2 pt-2 border-t border-gray-100 flex justify-between text-[10px]">
-              <span className="text-gray-500">Revenue</span>
-              <span className="font-semibold text-gray-900">{formatCurrency(stats.confirmedRevenue)}</span>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Active</p>
-                <p className="text-2xl font-bold text-indigo-600 mt-1">{stats.active}</p>
-              </div>
-              <div className="bg-indigo-100 p-2.5 rounded-xl">
-                <Timer size={20} className="text-indigo-600" />
-              </div>
-            </div>
-            <div className="mt-2 pt-2 border-t border-gray-100 flex justify-between text-[10px]">
-              <span className="text-gray-500">In Progress</span>
-              <span className="font-semibold text-gray-900">{stats.active}</span>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-blue-600">Completed</p>
-                <p className="text-2xl font-bold text-blue-600 mt-1">{stats.completed}</p>
-              </div>
-              <div className="bg-blue-100 p-2.5 rounded-xl">
-                <CheckCircle size={20} className="text-blue-600" />
-              </div>
-            </div>
-            <div className="mt-2 pt-2 border-t border-gray-100 flex justify-between text-[10px]">
-              <span className="text-gray-500">Revenue</span>
-              <span className="font-semibold text-gray-900">{formatCurrency(stats.completedRevenue)}</span>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-purple-600">Visits</p>
-                <p className="text-2xl font-bold text-purple-600 mt-1">{visitCount}</p>
-              </div>
-              <div className="bg-purple-100 p-2.5 rounded-xl">
-                <Calendar size={20} className="text-purple-600" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          <div className="bg-yellow-50 rounded-xl border border-yellow-200 p-3 text-center">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-yellow-600">Pending</p>
-            <p className="text-xl font-bold text-yellow-700">{stats.pending}</p>
-          </div>
-          <div className="bg-red-50 rounded-xl border border-red-200 p-3 text-center">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-red-600">Cancelled</p>
-            <p className="text-xl font-bold text-red-700">{stats.cancelled}</p>
-          </div>
-          <div className="bg-purple-50 rounded-xl border border-purple-200 p-3 text-center">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-purple-600">Total Revenue</p>
-            <p className="text-xl font-bold text-purple-700">{formatCurrency(stats.totalRevenue)}</p>
-          </div>
+          ))}
         </div>
 
         <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>

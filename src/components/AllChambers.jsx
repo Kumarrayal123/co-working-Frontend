@@ -27,7 +27,11 @@ import {
   IndianRupee,
   Plus,
   ArrowUpRight,
-  RefreshCw
+  RefreshCw,
+  Activity,
+  CheckCircle,
+  Shield,
+  Stethoscope
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -139,7 +143,7 @@ const AllChambers = () => {
   const CabinCard = ({ cabin, showBadge = true }) => {
     const isActive = cabin.isActive === true;
     const isExclusive = cabin.cabinType === 'exclusive';
-    
+
     return (
       <div
         onClick={() => handleCabinClick(cabin)}
@@ -270,37 +274,80 @@ const AllChambers = () => {
 
       <div className="pt-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
         {/* Header */}
-        <div className="admin-dash__header">
+        <div className="admin-dash__header mb-4 flex items-center justify-between">
           <div>
             <h1 className="admin-dash__greeting">
               All <span>Chambers</span>
             </h1>
+            <p className="text-sm text-gray-500 mt-0.5">
+              Browse and discover available chambers across all locations
+            </p>
           </div>
-        
+          <button
+            onClick={() => navigate("/mychambers")}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors shadow-sm shadow-indigo-200"
+          >
+            <Plus size={14} />
+            <span>Add Chamber</span>
+          </button>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
-            <p className="text-xs text-gray-500 font-medium">Total Chambers</p>
-            <p className="text-xl sm:text-2xl font-bold text-indigo-600">{cabins.length}</p>
+        {/* Stats Cards */}
+        <div className="admin-dash__stats">
+          <div className="admin-dash__stat cursor-pointer" onClick={() => navigate("/mychambers")}>
+            <div className="admin-dash__stat-top">
+              <span className="admin-dash__stat-label">Total Chambers</span>
+              <div className="admin-dash__stat-icon bg-indigo-100 text-indigo-600">
+                <Home size={18} />
+              </div>
+            </div>
+            <div className="admin-dash__stat-value">{cabins.length}</div>
+            <div className="admin-dash__stat-meta">{activeCabins.length} active</div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
-            <p className="text-xs text-gray-500 font-medium">Active</p>
-            <p className="text-xl sm:text-2xl font-bold text-emerald-600">{activeCabins.length}</p>
+          <div className="admin-dash__stat">
+            <div className="admin-dash__stat-top">
+              <span className="admin-dash__stat-label">Active</span>
+              <div className="admin-dash__stat-icon bg-emerald-100 text-emerald-600">
+                <CheckCircle size={18} />
+              </div>
+            </div>
+            <div className="admin-dash__stat-value">{activeCabins.length}</div>
+            <div className="admin-dash__stat-meta">Available for booking</div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
-            <p className="text-xs text-gray-500 font-medium">Inactive</p>
-            <p className="text-xl sm:text-2xl font-bold text-gray-600">{cabins.length - activeCabins.length}</p>
+          <div className="admin-dash__stat">
+            <div className="admin-dash__stat-top">
+              <span className="admin-dash__stat-label">Inactive</span>
+              <div className="admin-dash__stat-icon bg-gray-100 text-gray-600">
+                <XCircle size={18} />
+              </div>
+            </div>
+            <div className="admin-dash__stat-value">{cabins.length - activeCabins.length}</div>
+            <div className="admin-dash__stat-meta">Currently unavailable</div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
-            <p className="text-xs text-gray-500 font-medium">Premium</p>
-            <p className="text-xl sm:text-2xl font-bold text-amber-600">{cabins.filter(c => c.cabinType === 'exclusive').length}</p>
+          <div className="admin-dash__stat">
+            <div className="admin-dash__stat-top">
+              <span className="admin-dash__stat-label">Premium</span>
+              <div className="admin-dash__stat-icon bg-amber-100 text-amber-600">
+                <Crown size={18} />
+              </div>
+            </div>
+            <div className="admin-dash__stat-value">{cabins.filter(c => c.cabinType === 'exclusive').length}</div>
+            <div className="admin-dash__stat-meta">Exclusive chambers</div>
+          </div>
+          <div className="admin-dash__stat">
+            <div className="admin-dash__stat-top">
+              <span className="admin-dash__stat-label">Medical</span>
+              <div className="admin-dash__stat-icon bg-rose-100 text-rose-600">
+                <Stethoscope size={18} />
+              </div>
+            </div>
+            <div className="admin-dash__stat-value">{cabins.filter(c => c.isChamber === true).length}</div>
+            <div className="admin-dash__stat-meta">Chamber spaces</div>
           </div>
         </div>
 
         {/* Filter Section */}
-        <div className="admin-dash__card">
+        <div className="admin-dash__card mt-6">
           <div className="admin-dash__card-body py-3 px-4">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-3">
@@ -319,7 +366,7 @@ const AllChambers = () => {
                   <input
                     type="text"
                     placeholder="Search chambers..."
-                    className="pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 w-full md:w-44"
+                    className="pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 w-full md:w-44 shadow-sm"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />

@@ -57,7 +57,7 @@ const MyChamberPayments = () => {
   const [renewOrder, setRenewOrder] = useState(null);
   const [renewing, setRenewing] = useState(false);
   const [countdowns, setCountdowns] = useState({});
-  
+
   // ✅ MULTI-FILTERS
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterChamberName, setFilterChamberName] = useState("");
@@ -65,7 +65,7 @@ const MyChamberPayments = () => {
   const [filterDateTo, setFilterDateTo] = useState("");
   const [filterMinAmount, setFilterMinAmount] = useState("");
   const [filterMaxAmount, setFilterMaxAmount] = useState("");
-  
+
   const navigate = useNavigate();
 
   const getAuthHeader = () => {
@@ -90,7 +90,7 @@ const MyChamberPayments = () => {
 
       setOrders(res.data.orders || []);
       setStats(res.data.stats || { total: 0, active: 0, expired: 0, totalAmount: 0 });
-      
+
       const initialCountdowns = {};
       (res.data.orders || []).forEach(order => {
         if (order.status === 'active') {
@@ -101,7 +101,7 @@ const MyChamberPayments = () => {
         }
       });
       setCountdowns(initialCountdowns);
-      
+
     } catch (err) {
       console.error("Error fetching payments:", err);
       toast.error("Failed to fetch payment history");
@@ -137,11 +137,11 @@ const MyChamberPayments = () => {
   const filteredOrders = orders.filter(order => {
     // Status filter
     const matchStatus = filterStatus === 'all' || order.status === filterStatus;
-    
+
     // Chamber name filter
     const matchChamberName = filterChamberName === "" || 
       order.cabin?.name?.toLowerCase().includes(filterChamberName.toLowerCase());
-    
+
     // Date range filter
     let matchDate = true;
     if (filterDateFrom) {
@@ -155,13 +155,13 @@ const MyChamberPayments = () => {
       const orderDate = new Date(order.createdAt);
       if (orderDate > toDate) matchDate = false;
     }
-    
+
     // Amount range filter
     let matchAmount = true;
     const amount = order.amount || 0;
     if (filterMinAmount && amount < Number(filterMinAmount)) matchAmount = false;
     if (filterMaxAmount && amount > Number(filterMaxAmount)) matchAmount = false;
-    
+
     return matchStatus && matchChamberName && matchDate && matchAmount;
   });
 
@@ -206,7 +206,7 @@ const MyChamberPayments = () => {
     const hours = Math.floor((seconds % 86400) / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
-    
+
     if (days > 0) {
       return `${days}d ${hours}h ${minutes}m ${secs}s`;
     }
@@ -262,11 +262,11 @@ const MyChamberPayments = () => {
   // ======================
   const handleRenewPayment = async () => {
     if (!renewOrder) return;
-    
+
     setRenewing(true);
     try {
       const token = localStorage.getItem("token");
-      
+
       const res = await axios.post(
         `${API_URL}/api/cabins/renew-payment`,
         { orderId: renewOrder._id },
@@ -276,9 +276,9 @@ const MyChamberPayments = () => {
       toast.success(`Chamber renewed successfully! Amount: ₹${res.data.amount}`);
       setShowRenewModal(false);
       setRenewOrder(null);
-      
+
       await fetchPayments();
-      
+
     } catch (err) {
       console.error("Renew payment error:", err);
       toast.error(err.response?.data?.error || "Failed to renew chamber");
@@ -317,10 +317,10 @@ const MyChamberPayments = () => {
       const ws = XLSX.utils.json_to_sheet(exportData);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Chamber_Payments');
-      
+
       const date = new Date().toISOString().split('T')[0];
       XLSX.writeFile(wb, `chamber_payments_${date}.xlsx`);
-      
+
       toast.success(`Exported ${sortedOrders.length} payments to Excel!`);
     } catch (error) {
       console.error("Export error:", error);
@@ -361,7 +361,7 @@ const MyChamberPayments = () => {
       const cabin = order.cabin || {};
       const chamberName = cabin.name || 'Chamber Deleted';
       const chamberAddress = cabin.address || 'N/A';
-      
+
       const amount = order.amount || 0;
       const baseAmount = order.baseAmount || amount;
       const gstAmount = order.gstAmount || 0;
@@ -378,7 +378,7 @@ const MyChamberPayments = () => {
         month: 'short',
         year: 'numeric'
       });
-      
+
       const win = window.open('', '_blank', 'width=900,height=700');
       if (win) {
         win.document.write(`
@@ -470,64 +470,57 @@ const MyChamberPayments = () => {
               My <span>Chamber Payments</span>
             </h1>
           </div>
-         
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Total Orders</p>
-                <p className="text-2xl font-bold text-indigo-600 mt-1">{stats.total}</p>
-              </div>
-              <div className="bg-indigo-100 p-2 rounded-lg">
-                <Receipt size={20} className="text-indigo-600" />
+        <div className="admin-dash__stats grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="admin-dash__stat">
+            <div className="admin-dash__stat-top">
+              <span className="admin-dash__stat-label">Total Payments</span>
+              <div className="admin-dash__stat-icon bg-indigo-100 text-indigo-600">
+                <Receipt size={18} />
               </div>
             </div>
+            <div className="admin-dash__stat-value">{stats.total}</div>
+            <div className="admin-dash__stat-meta">All transaction records</div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Active</p>
-                <p className="text-2xl font-bold text-emerald-600 mt-1">{stats.active}</p>
-              </div>
-              <div className="bg-emerald-100 p-2 rounded-lg">
-                <CheckCircle size={20} className="text-emerald-600" />
+          <div className="admin-dash__stat">
+            <div className="admin-dash__stat-top">
+              <span className="admin-dash__stat-label">Active</span>
+              <div className="admin-dash__stat-icon bg-emerald-100 text-emerald-600">
+                <CheckCircle size={18} />
               </div>
             </div>
+            <div className="admin-dash__stat-value">{stats.active}</div>
+            <div className="admin-dash__stat-meta">Currently active chambers</div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-red-600">Expired</p>
-                <p className="text-2xl font-bold text-red-600 mt-1">{stats.expired}</p>
-              </div>
-              <div className="bg-red-100 p-2 rounded-lg">
-                <XCircle size={20} className="text-red-600" />
+          <div className="admin-dash__stat">
+            <div className="admin-dash__stat-top">
+              <span className="admin-dash__stat-label">Expired</span>
+              <div className="admin-dash__stat-icon bg-rose-100 text-rose-600">
+                <XCircle size={18} />
               </div>
             </div>
+            <div className="admin-dash__stat-value">{stats.expired}</div>
+            <div className="admin-dash__stat-meta">Expired / Pending renewal</div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-purple-600">Total Spent</p>
-                <p className="text-2xl font-bold text-purple-600 mt-1">
-                  {formatCurrency(stats.totalAmount)}
-                </p>
-              </div>
-              <div className="bg-purple-100 p-2 rounded-lg">
-                <IndianRupee size={20} className="text-purple-600" />
+          <div className="admin-dash__stat">
+            <div className="admin-dash__stat-top">
+              <span className="admin-dash__stat-label">Total Spent</span>
+              <div className="admin-dash__stat-icon bg-purple-100 text-purple-600">
+                <IndianRupee size={18} />
               </div>
             </div>
+            <div className="admin-dash__stat-value">{formatCurrency(stats.totalAmount)}</div>
+            <div className="admin-dash__stat-meta">Lifetime chamber payments</div>
           </div>
         </div>
 
         {/* Table Section */}
-        <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
+        <div className="admin-dash__card mt-4" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
           <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
             <div className="flex items-center gap-3">
               <h3 className="admin-dash__card-title">Payment History</h3>
@@ -614,8 +607,6 @@ const MyChamberPayments = () => {
                   <span>Export</span>
                 </button>
               )}
-
-             
             </div>
           </div>
 
@@ -652,7 +643,7 @@ const MyChamberPayments = () => {
                     const countdown = countdowns[order._id] || 0;
                     const isExpired = order.status === 'expired' || (order.status === 'active' && new Date(order.expiryDate) < new Date());
                     const isExpiringSoon = countdown > 0 && countdown < 86400;
-                    
+
                     return (
                       <tr key={order._id} className="transition-colors group hover:bg-gray-50/80">
                         <td className="p-4">
@@ -724,7 +715,7 @@ const MyChamberPayments = () => {
                             >
                               <Eye size={13} /> View
                             </button>
-                            
+
                             <button
                               onClick={() => downloadInvoice(order)}
                               className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors whitespace-nowrap"
@@ -732,7 +723,7 @@ const MyChamberPayments = () => {
                             >
                               <FileDown size={13} /> Invoice
                             </button>
-                            
+
                             <button
                               onClick={() => { setRenewOrder(order); setShowRenewModal(true); }}
                               className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${isExpired ? 'bg-red-50 text-red-700 hover:bg-red-100' : 'bg-orange-50 text-orange-700 hover:bg-orange-100'}`}

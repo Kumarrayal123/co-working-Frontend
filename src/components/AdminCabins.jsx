@@ -1,4 +1,4 @@
-// AdminCabins.jsx - Complete with Multi-Filter, All Images in Cards & Modal + Razorpay
+// AdminCabins.jsx - Complete with Multi-Filter, All Images in Cards & Modal + Razorpay + 24x7 Checkbox + Open/Close Time
 import axios from "axios";
 import {
   Building2,
@@ -227,7 +227,6 @@ const AdminCabins = () => {
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [cabinCount, setCabinCount] = useState(0);
   
-  // ✅ Get admin ID from localStorage
   const getAdminId = () => {
     const admin = localStorage.getItem("admin");
     if (admin) {
@@ -237,7 +236,6 @@ const AdminCabins = () => {
     return null;
   };
 
-  // ✅ GET TOKEN
   const getToken = () => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -245,7 +243,6 @@ const AdminCabins = () => {
       toast.error("Please login again");
       return null;
     }
-    console.log("🔑 Token found, length:", token.length);
     return token;
   };
 
@@ -256,7 +253,7 @@ const AdminCabins = () => {
     priceMin: "",
     priceMax: "",
     address: "",
-    spaceType: "all"  // ✅ NEW: Space Type filter
+    spaceType: "all"
   });
   
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -269,7 +266,6 @@ const AdminCabins = () => {
   const [addressPopup, setAddressPopup] = useState({ show: false, address: "", x: 0, y: 0 });
   const [galleryModal, setGalleryModal] = useState({ isOpen: false, images: [], cabinName: "" });
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [newCabinData, setNewCabinData] = useState(null);
   const navigate = useNavigate();
 
   // ─── SEAT MANAGEMENT ───
@@ -347,7 +343,6 @@ const AdminCabins = () => {
   const [removeExistingImageIndexes, setRemoveExistingImageIndexes] = useState([]);
   const [removeExistingVideoIndexes, setRemoveExistingVideoIndexes] = useState([]);
 
-  // ─── ALL AMENITIES ───
   const ALL_AMENITIES = [
     { key: "wifi", label: "Wi-Fi", icon: Wifi },
     { key: "parking", label: "Parking", icon: ParkingCircle },
@@ -381,7 +376,6 @@ const AdminCabins = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // ─── LOAD RAZORPAY ───
   useEffect(() => {
     loadRazorpayScript().then((loaded) => {
       setRazorpayLoaded(loaded);
@@ -391,7 +385,6 @@ const AdminCabins = () => {
     });
   }, []);
 
-  // ─── HELPERS ───
   const getImageUrl = (img) => {
     if (!img) return PLACEHOLDER_IMAGE;
     if (img.startsWith("http")) return img;
@@ -420,7 +413,6 @@ const AdminCabins = () => {
       const data = res.data.cabins || res.data;
       const allCabins = Array.isArray(data) ? data : [];
 
-      // ✅ Filter cabins by admin ID from localStorage
       const adminCabins = allCabins.filter(cabin =>
         cabin.owner === adminId
       );
@@ -477,7 +469,6 @@ const AdminCabins = () => {
     }
   };
 
-  // ─── FILTERS ───
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
@@ -490,28 +481,20 @@ const AdminCabins = () => {
       priceMin: "",
       priceMax: "",
       address: "",
-      spaceType: "all"  // ✅ Reset space type
+      spaceType: "all"
     });
   };
 
-  // ✅ UPDATED: Filter with Space Type
   const filteredCabins = cabins.filter(cabin => {
-    if (filters.search && !cabin.name?.toLowerCase().includes(filters.search.toLowerCase())) {
-      return false;
-    }
-    if (filters.cabinType !== "all" && cabin.cabinType !== filters.cabinType) {
-      return false;
-    }
+    if (filters.search && !cabin.name?.toLowerCase().includes(filters.search.toLowerCase())) return false;
+    if (filters.cabinType !== "all" && cabin.cabinType !== filters.cabinType) return false;
     if (filters.status !== "all") {
       if (filters.status === "active" && cabin.isActive !== true) return false;
       if (filters.status === "inactive" && cabin.isActive !== false) return false;
     }
     if (filters.priceMin && (cabin.price || 0) < Number(filters.priceMin)) return false;
     if (filters.priceMax && (cabin.price || 0) > Number(filters.priceMax)) return false;
-    if (filters.address && !cabin.address?.toLowerCase().includes(filters.address.toLowerCase())) {
-      return false;
-    }
-    // ✅ NEW: Space Type filter
+    if (filters.address && !cabin.address?.toLowerCase().includes(filters.address.toLowerCase())) return false;
     if (filters.spaceType !== "all") {
       if (filters.spaceType === "medical" && cabin.isChamber !== true) return false;
       if (filters.spaceType === "coworking" && cabin.isChamber !== false) return false;
@@ -542,10 +525,7 @@ const AdminCabins = () => {
     const days = Math.floor(seconds / 86400);
     const hours = Math.floor((seconds % 86400) / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
-    
-    if (days > 0) {
-      return `${days}d ${hours}h`;
-    }
+    if (days > 0) return `${days}d ${hours}h`;
     return `${hours}h ${minutes}m`;
   };
 
@@ -975,7 +955,6 @@ const AdminCabins = () => {
               setIsModalOpen(false);
               setPaymentProcessing(false);
               
-              // Reset form
               setFormData({
                 name: "",
                 description: "",
@@ -1082,7 +1061,6 @@ const AdminCabins = () => {
       images.forEach((img) => data.append("images", img));
       videos.forEach((video) => data.append("videos", video));
 
-      // ✅ CREATE CABIN WITH AUTH TOKEN
       const cabinRes = await axios.post(`${API_URL}/api/cabins`, data, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -1094,7 +1072,6 @@ const AdminCabins = () => {
         const newCabin = cabinRes.data.cabin;
         toast.success("Cabin created successfully!");
 
-        // ✅ CREATE ORDER WITH AUTH TOKEN
         const orderRes = await axios.post(
           `${API_URL}/api/cabins/createcabinorder`,
           { cabinId: newCabin._id },
@@ -1141,7 +1118,6 @@ const AdminCabins = () => {
       return;
     }
 
-    // Validate seats for Co-Working
     if (!formData.isChamber) {
       if (seats.length === 0) {
         toast.error("Please add at least one seat to the cabin");
@@ -1153,7 +1129,6 @@ const AdminCabins = () => {
       }
     }
     
-    // Check Razorpay
     if (!razorpayLoaded) {
       toast.error("Payment system not loaded. Please refresh the page.");
       return;
@@ -1162,16 +1137,13 @@ const AdminCabins = () => {
     setShowConfirmModal(true);
   };
 
-  // Check if seats should be shown
   const showSeatsSection = !formData.isChamber;
 
-  // Calculate fee
   const isFirstCabin = cabinCount === 0;
   const baseFee = isFirstCabin ? 2000 : 1000;
   const gstAmount = baseFee * 0.18;
   const totalWithGST = baseFee + gstAmount;
 
-  // ─── RENDER ───
   if (loading) {
     return (
       <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
@@ -1188,32 +1160,32 @@ const AdminCabins = () => {
       <AdminNavbar />
 
       <div className="pt-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
-      {/* Header */}
-<div className="admin-dash__header">
-  <div>
-    <h1 className="admin-dash__greeting">
-      My <span>Cabins</span>
-    </h1>
-  </div>
-  <div className="flex items-center gap-2">
-    <button
-      onClick={() => navigate("/adminbookings")}
-      className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
-    >
-      <FileText size={14} className="text-indigo-600" />
-      <span>Bookings</span>
-    </button>
-    <button
-      onClick={() => setIsModalOpen(true)}
-      className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors"
-    >
-      <Plus size={14} />
-      <span>Add Space</span>
-    </button>
-  </div>
-</div>
+        {/* Header */}
+        <div className="admin-dash__header">
+          <div>
+            <h1 className="admin-dash__greeting">
+              My <span>Cabins</span>
+            </h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate("/adminbookings")}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+            >
+              <FileText size={14} className="text-indigo-600" />
+              <span>Bookings</span>
+            </button>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors"
+            >
+              <Plus size={14} />
+              <span>Add Space</span>
+            </button>
+          </div>
+        </div>
 
-        {/* Stats Cards - Updated with Space Type stats */}
+        {/* Stats Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
           <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
             <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Total Cabins</p>
@@ -1233,7 +1205,7 @@ const AdminCabins = () => {
           </div>
         </div>
 
-        {/* ─── SPACE TYPE STATS ─── */}
+        {/* Space Type Stats */}
         <div className="grid grid-cols-2 gap-3 mb-6">
           <div className="bg-emerald-50 rounded-xl border border-emerald-200 p-3 text-center">
             <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 flex items-center justify-center gap-1">
@@ -1260,7 +1232,7 @@ const AdminCabins = () => {
             </div>
           </div>
 
-          {/* ─── MULTI FILTER PANEL ─── */}
+          {/* Filter Panel */}
           <div className="px-4 pt-4 pb-3 border-b border-gray-100" style={{ backgroundColor: '#fafafa' }}>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
               <div>
@@ -1303,7 +1275,6 @@ const AdminCabins = () => {
                 </select>
               </div>
 
-              {/* ✅ NEW: Space Type Filter */}
               <div>
                 <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Space Type</label>
                 <select
@@ -1537,32 +1508,17 @@ const AdminCabins = () => {
             )}
           </div>
 
-          {/* Footer */}
-          {!loading && filteredCabins.length > 0 && (
-            <div className="px-4 py-3 border-t border-gray-100 rounded-b-2xl flex flex-wrap items-center justify-between gap-2" style={{ backgroundColor: '#fafafa' }}>
-              <span className="text-xs text-gray-500">
-                Showing <strong>{filteredCabins.length}</strong> of <strong>{cabins.length}</strong> cabins
-              </span>
-              <div className="flex items-center gap-3 text-xs text-gray-500">
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                  Active: {activeCount}
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-gray-400"></span>
-                  Inactive: {inactiveCount}
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                  Exclusive: {exclusiveCount}
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                  Normal: {normalCount}
-                </span>
-              </div>
+          <div className="px-4 py-3 border-t border-gray-100 rounded-b-2xl flex flex-wrap items-center justify-between gap-2" style={{ backgroundColor: '#fafafa' }}>
+            <span className="text-xs text-gray-500">
+              Showing <strong>{filteredCabins.length}</strong> of <strong>{cabins.length}</strong> cabins
+            </span>
+            <div className="flex items-center gap-3 text-xs text-gray-500">
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> Active: {activeCount}</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-400"></span> Inactive: {inactiveCount}</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500"></span> Exclusive: {exclusiveCount}</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500"></span> Normal: {normalCount}</span>
             </div>
-          )}
+          </div>
         </div>
       </div>
 
@@ -1581,10 +1537,7 @@ const AdminCabins = () => {
             <MapPin size={16} className="text-indigo-600 mt-0.5 flex-shrink-0" />
             <p className="text-sm text-gray-700 leading-relaxed">{addressPopup.address}</p>
           </div>
-          <button 
-            onClick={closeAddressPopup}
-            className="absolute top-1 right-1 p-1 rounded-full hover:bg-gray-100 transition-colors"
-          >
+          <button onClick={closeAddressPopup} className="absolute top-1 right-1 p-1 rounded-full hover:bg-gray-100 transition-colors">
             <X size={14} className="text-gray-400" />
           </button>
         </div>
@@ -1599,7 +1552,7 @@ const AdminCabins = () => {
       />
 
       {/* ====================== */}
-      {/* ADD CABIN MODAL - COMPLETE */}
+      {/* ADD CABIN MODAL - 24x7 + Open/Close Time BOTH VISIBLE */}
       {/* ====================== */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[1100] flex items-end sm:items-center justify-center p-2 sm:p-4 bg-slate-900/50 backdrop-blur-sm">
@@ -1629,7 +1582,7 @@ const AdminCabins = () => {
 
             <div className="overflow-y-auto p-4 sm:p-6 flex-1">
               <form onSubmit={handleSubmit} className="space-y-4">
-                {/* ─── SPACE TYPE (isChamber) ─── */}
+                {/* ─── SPACE TYPE ─── */}
                 <div>
                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Space Type *</label>
                   <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-1">
@@ -1752,7 +1705,7 @@ const AdminCabins = () => {
                   </div>
                 </div>
 
-                {/* ─── SEAT LIST (Only for Co-Working) ─── */}
+                {/* ─── SEAT LIST ─── */}
                 {showSeatsSection && (
                   <div>
                     <div className="flex justify-between items-center mb-1.5">
@@ -1859,46 +1812,66 @@ const AdminCabins = () => {
                   </div>
                 </div>
 
-                {/* ─── TIMINGS ─── */}
+                {/* ─── TIMINGS - BOTH 24x7 AND OPEN/CLOSE TIME VISIBLE ─── */}
                 <div>
                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Timings</label>
-                  <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-1">
-                    <button
-                      type="button"
-                      onClick={() => setFormData({...formData, is24x7: !formData.is24x7})}
-                      className={`py-2.5 sm:py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold border-2 transition-all flex items-center justify-center gap-2 ${
-                        formData.is24x7
-                          ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
-                      }`}
-                    >
-                      {formData.is24x7 ? '✅ 24x7' : '⏰ Set Hours'}
-                    </button>
-                    {!formData.is24x7 && (
-                      <>
-                        <div>
-                          <label className="text-[8px] font-bold text-slate-400">Open</label>
-                          <input
-                            type="time"
-                            name="openTime"
-                            value={formData.openTime}
-                            onChange={handleChange}
-                            className="w-full mt-0.5 px-2 py-1.5 border border-slate-200 rounded-lg text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[8px] font-bold text-slate-400">Close</label>
-                          <input
-                            type="time"
-                            name="closeTime"
-                            value={formData.closeTime}
-                            onChange={handleChange}
-                            className="w-full mt-0.5 px-2 py-1.5 border border-slate-200 rounded-lg text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none"
-                          />
-                        </div>
-                      </>
+                  
+                  {/* 24x7 Checkbox */}
+                  <div className="flex items-center gap-3 mt-1.5 p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        name="is24x7"
+                        checked={formData.is24x7}
+                        onChange={handleChange}
+                        className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
+                      />
+                      <span className="text-xs font-medium text-slate-700">24×7 Open</span>
+                    </label>
+                    {formData.is24x7 && (
+                      <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-full">✅ Always Open</span>
                     )}
                   </div>
+
+                  {/* Open/Close Time - ALWAYS VISIBLE, but disabled if 24x7 is checked */}
+                  <div className="grid grid-cols-2 gap-3 mt-2">
+                    <div>
+                      <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Open Time</label>
+                      <input
+                        type="time"
+                        name="openTime"
+                        value={formData.openTime}
+                        onChange={handleChange}
+                        disabled={formData.is24x7}
+                        className={`w-full mt-0.5 px-3 py-2 border rounded-lg text-sm outline-none transition-all ${
+                          formData.is24x7
+                            ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
+                            : 'border-slate-200 bg-white text-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20'
+                        }`}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Close Time</label>
+                      <input
+                        type="time"
+                        name="closeTime"
+                        value={formData.closeTime}
+                        onChange={handleChange}
+                        disabled={formData.is24x7}
+                        className={`w-full mt-0.5 px-3 py-2 border rounded-lg text-sm outline-none transition-all ${
+                          formData.is24x7
+                            ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
+                            : 'border-slate-200 bg-white text-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20'
+                        }`}
+                      />
+                    </div>
+                  </div>
+
+                  {formData.is24x7 && (
+                    <div className="mt-1.5 text-[10px] text-emerald-600 bg-emerald-50/50 px-3 py-1.5 rounded-lg border border-emerald-200">
+                      🕒 24×7 mode enabled. Open/Close times are not applicable.
+                    </div>
+                  )}
                 </div>
 
                 {/* ─── AMENITIES ─── */}
@@ -2141,7 +2114,7 @@ const AdminCabins = () => {
       )}
 
       {/* ====================== */}
-      {/* EDIT CABIN MODAL */}
+      {/* EDIT CABIN MODAL - 24x7 + Open/Close Time BOTH VISIBLE */}
       {/* ====================== */}
       {isEditModalOpen && editingCabin && (
         <div className="fixed inset-0 z-[1100] flex items-end sm:items-center justify-center p-2 sm:p-4 bg-slate-900/50 backdrop-blur-sm">
@@ -2296,46 +2269,66 @@ const AdminCabins = () => {
                   </div>
                 </div>
 
-                {/* Timings */}
+                {/* ─── EDIT TIMINGS - BOTH 24x7 AND OPEN/CLOSE TIME VISIBLE ─── */}
                 <div>
                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Timings</label>
-                  <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-1">
-                    <button
-                      type="button"
-                      onClick={() => setEditFormData({...editFormData, is24x7: !editFormData.is24x7})}
-                      className={`py-2.5 sm:py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold border-2 transition-all flex items-center justify-center gap-2 ${
-                        editFormData.is24x7
-                          ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
-                      }`}
-                    >
-                      {editFormData.is24x7 ? '✅ 24x7' : '⏰ Set Hours'}
-                    </button>
-                    {!editFormData.is24x7 && (
-                      <>
-                        <div>
-                          <label className="text-[8px] font-bold text-slate-400">Open</label>
-                          <input
-                            type="time"
-                            name="openTime"
-                            value={editFormData.openTime}
-                            onChange={handleEditChange}
-                            className="w-full mt-0.5 px-2 py-1.5 border border-slate-200 rounded-lg text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[8px] font-bold text-slate-400">Close</label>
-                          <input
-                            type="time"
-                            name="closeTime"
-                            value={editFormData.closeTime}
-                            onChange={handleEditChange}
-                            className="w-full mt-0.5 px-2 py-1.5 border border-slate-200 rounded-lg text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none"
-                          />
-                        </div>
-                      </>
+                  
+                  {/* 24x7 Checkbox */}
+                  <div className="flex items-center gap-3 mt-1.5 p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        name="is24x7"
+                        checked={editFormData.is24x7}
+                        onChange={handleEditChange}
+                        className="w-4 h-4 rounded border-slate-300 text-amber-600 focus:ring-2 focus:ring-amber-500/20 cursor-pointer"
+                      />
+                      <span className="text-xs font-medium text-slate-700">24×7 Open</span>
+                    </label>
+                    {editFormData.is24x7 && (
+                      <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-full">✅ Always Open</span>
                     )}
                   </div>
+
+                  {/* Open/Close Time - ALWAYS VISIBLE, but disabled if 24x7 is checked */}
+                  <div className="grid grid-cols-2 gap-3 mt-2">
+                    <div>
+                      <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Open Time</label>
+                      <input
+                        type="time"
+                        name="openTime"
+                        value={editFormData.openTime}
+                        onChange={handleEditChange}
+                        disabled={editFormData.is24x7}
+                        className={`w-full mt-0.5 px-3 py-2 border rounded-lg text-sm outline-none transition-all ${
+                          editFormData.is24x7
+                            ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
+                            : 'border-slate-200 bg-white text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20'
+                        }`}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Close Time</label>
+                      <input
+                        type="time"
+                        name="closeTime"
+                        value={editFormData.closeTime}
+                        onChange={handleEditChange}
+                        disabled={editFormData.is24x7}
+                        className={`w-full mt-0.5 px-3 py-2 border rounded-lg text-sm outline-none transition-all ${
+                          editFormData.is24x7
+                            ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
+                            : 'border-slate-200 bg-white text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20'
+                        }`}
+                      />
+                    </div>
+                  </div>
+
+                  {editFormData.is24x7 && (
+                    <div className="mt-1.5 text-[10px] text-emerald-600 bg-emerald-50/50 px-3 py-1.5 rounded-lg border border-emerald-200">
+                      🕒 24×7 mode enabled. Open/Close times are not applicable.
+                    </div>
+                  )}
                 </div>
 
                 {/* Amenities */}
@@ -2449,7 +2442,8 @@ const AdminCabins = () => {
                       {editImages.map((file, index) => (
                         <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-slate-200">
                           <img src={URL.createObjectURL(file)} alt="preview" className="w-full h-full object-cover" />
-                          <button                            type="button"
+                          <button
+                            type="button"
                             onClick={() => removeEditImage(index)}
                             className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs"
                           >
@@ -2573,6 +2567,12 @@ const AdminCabins = () => {
                 <div className="flex justify-between">
                   <span className="text-slate-500">Capacity</span>
                   <span className="font-semibold">{formData.capacity} {formData.isChamber ? '' : 'seats'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">24×7</span>
+                  <span className={`font-semibold ${formData.is24x7 ? 'text-emerald-600' : 'text-slate-400'}`}>
+                    {formData.is24x7 ? '✅ Yes' : '❌ No'}
+                  </span>
                 </div>
                 {!formData.isChamber && (
                   <div className="flex justify-between">

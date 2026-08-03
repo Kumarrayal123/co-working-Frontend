@@ -42,6 +42,7 @@ import {
   Layers,
   Stethoscope,
   Briefcase,
+  Ticket,
   Hash,
   QrCode,
   History,
@@ -52,6 +53,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import SimpleUserNavbar from "./SimpleUserNavbar";
 import * as XLSX from 'xlsx';
+import "./Dashboard.css";
 
 const API_URL = "https://spaceapi.iryax.com";
 
@@ -67,7 +69,7 @@ const SimpleUserBookings = () => {
   });
   const [activeTab, setActiveTab] = useState('all');
   const navigate = useNavigate();
-  
+
   const [showViewModal, setShowViewModal] = useState(false);
   const [viewBooking, setViewBooking] = useState(null);
 
@@ -143,7 +145,7 @@ const SimpleUserBookings = () => {
   const fetchBookings = async () => {
     try {
       const token = localStorage.getItem("token");
-      
+
       if (!token) {
         toast.error("Please login to view your bookings");
         navigate("/login");
@@ -154,17 +156,17 @@ const SimpleUserBookings = () => {
         `${API_URL}/api/bookings/user`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
+
       const bookingsData = res.data.bookings || [];
       setBookings(bookingsData);
-      
+
       if (bookingsData.length === 0) {
         toast.info("You have no bookings yet");
       }
-      
+
     } catch (error) {
       console.error("Error fetching bookings:", error);
-      
+
       if (error.response?.status === 401) {
         toast.error("Session expired. Please login again.");
         localStorage.removeItem("token");
@@ -354,7 +356,7 @@ const SimpleUserBookings = () => {
 
   const getPriceDifference = () => {
     if (!replaceBooking || !selectedCabinData) return null;
-    
+
     const currentPrice = replaceBooking.totalPrice || 0;
     const newPrice = selectedCabinData.price || 0;
     const totalHours = replaceBooking.totalHours || 1;
@@ -364,7 +366,7 @@ const SimpleUserBookings = () => {
     const totalWithGst = newTotal + (newTotal * 0.18);
     const currentWithGst = currentPrice + (currentPrice * 0.18);
     const finalDifference = totalWithGst - currentWithGst;
-    
+
     return {
       currentPrice,
       newPrice,
@@ -385,13 +387,13 @@ const SimpleUserBookings = () => {
       const cabin = booking.cabin || {};
       const owner = cabin.owner || {};
       const paymentDetails = booking.paymentDetails || {};
-      
+
       const win = window.open('', '_blank', 'width=900,height=700');
       if (!win) {
         toast.error('Please allow popups');
         return;
       }
-      
+
       let seatListHtml = '';
       if (booking.selectedSeats && booking.selectedSeats.length > 0) {
         seatListHtml = booking.selectedSeats.map(s => 
@@ -678,7 +680,7 @@ const SimpleUserBookings = () => {
                 const status = getStatusBadge(b.status);
                 const isChamber = b.cabin?.isChamber || false;
                 const bookingId = b._id?.slice(-8).toUpperCase() || 'N/A';
-                
+
                 return (
                   <tr key={b._id} className="hover:bg-gray-50/80 transition-colors">
                     <td className="px-3 py-2">
@@ -798,7 +800,7 @@ const SimpleUserBookings = () => {
                 const isChamber = b.cabin?.isChamber || false;
                 const totalDays = b.totalDays || 0;
                 const bookingId = b._id?.slice(-8).toUpperCase() || 'N/A';
-                
+
                 return (
                   <tr key={b._id} className="hover:bg-gray-50/80 transition-colors">
                     <td className="px-3 py-2">
@@ -950,21 +952,74 @@ const SimpleUserBookings = () => {
     );
   }
 
+  const statsCount = {
+    total: bookings.length,
+    pending: bookings.filter(b => b.status === 'pending').length,
+    active: bookings.filter(b => b.status === 'active' || (b.status === 'confirmed' && b.paymentStatus !== 'paid')).length,
+    completed: bookings.filter(b => b.status === 'completed' || (b.status === 'confirmed' && b.paymentStatus === 'paid')).length,
+    cancelled: bookings.filter(b => b.status === 'cancelled').length
+  };
+
+  const bookingStatsCards = [
+    {
+      label: "Total",
+      value: statsCount.total,
+      meta: "all reservations",
+      icon: Ticket,
+      color: "indigo",
+      onClick: () => setFilters({ status: 'all', paymentStatus: 'all' })
+    },
+    {
+      label: "Pending",
+      value: statsCount.pending,
+      meta: "awaiting confirmation",
+      icon: Clock,
+      color: "amber",
+      onClick: () => setFilters(prev => ({ ...prev, status: 'pending' }))
+    },
+    {
+      label: "Active",
+      value: statsCount.active,
+      meta: "active & confirmed",
+      icon: Building2,
+      color: "emerald",
+      onClick: () => setFilters(prev => ({ ...prev, status: 'confirmed' }))
+    },
+    {
+      label: "Completed",
+      value: statsCount.completed,
+      meta: "confirmed & paid",
+      icon: CheckCircle,
+      color: "purple",
+      onClick: () => setFilters(prev => ({ ...prev, status: 'completed' }))
+    },
+    {
+      label: "Cancelled",
+      value: statsCount.cancelled,
+      meta: "cancelled reservations",
+      icon: XCircle,
+      color: "rose",
+      onClick: () => setFilters(prev => ({ ...prev, status: 'cancelled' }))
+    }
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
       <SimpleUserNavbar />
 
-      <div className="pt-24 px-4 sm:px-6 md:px-8 max-w-full mx-auto pb-16">
+      <div className="pt-20 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+        <div className="admin-dash__header" style={{ marginBottom: '8px' }}>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">My Bookings</h1>
-            <p className="text-sm text-gray-500">Manage all your workspace bookings</p>
+            <h1 className="admin-dash__greeting" style={{ fontSize: '1.25rem' }}>
+              My <span>Bookings</span>
+            </h1>
+            <p className="admin-dash__subtitle" style={{ fontSize: '11px' }}>Manage all your workspace bookings</p>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => navigate("/spaceforusers")}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition flex items-center gap-2 shadow-sm shadow-indigo-200"
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition flex items-center gap-2 shadow-sm shadow-indigo-200"
             >
               <Building2 size={16} />
               Find New Space
@@ -972,28 +1027,29 @@ const SimpleUserBookings = () => {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
-            <p className="text-xs text-gray-500 font-medium">Total</p>
-            <p className="text-xl sm:text-2xl font-bold text-indigo-600">{totalCount}</p>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
-            <p className="text-xs text-gray-500 font-medium">Active</p>
-            <p className="text-xl sm:text-2xl font-bold text-emerald-600">{activeCount}</p>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
-            <p className="text-xs text-gray-500 font-medium">Pending</p>
-            <p className="text-xl sm:text-2xl font-bold text-yellow-600">{pendingCount}</p>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
-            <p className="text-xs text-gray-500 font-medium">Completed</p>
-            <p className="text-xl sm:text-2xl font-bold text-blue-600">{completedCount}</p>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
-            <p className="text-xs text-gray-500 font-medium">Visits</p>
-            <p className="text-xl sm:text-2xl font-bold text-purple-600">{visitCount}</p>
-          </div>
+        {/* Stats Cards - Same design as Admin Dashboard */}
+        <div className="admin-dash__stats" style={{ marginBottom: '16px' }}>
+          {bookingStatsCards.map((stat, index) => (
+            <div
+              key={index}
+              className="admin-dash__stat"
+              onClick={stat.onClick}
+              style={{ 
+                cursor: stat.onClick ? 'pointer' : 'default',
+                padding: '12px 14px',
+                minHeight: '80px'
+              }}
+            >
+              <div className="admin-dash__stat-top">
+                <span className="admin-dash__stat-label" style={{ fontSize: '11px' }}>{stat.label}</span>
+                <div className={`admin-dash__stat-icon admin-dash__stat-icon--${stat.color}`} style={{ width: '28px', height: '28px' }}>
+                  <stat.icon size={14} />
+                </div>
+              </div>
+              <div className="admin-dash__stat-value" style={{ fontSize: '18px', fontWeight: '700' }}>{stat.value}</div>
+              <div className="admin-dash__stat-meta" style={{ fontSize: '9px' }}>{stat.meta}</div>
+            </div>
+          ))}
         </div>
 
         {/* Filters */}
@@ -1344,25 +1400,25 @@ const SimpleUserBookings = () => {
                   <Calculator size={14} />
                   Price Breakdown
                 </p>
-                
+
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between items-center border-b border-emerald-100 pb-1.5">
                     <span className="text-gray-600">Subtotal ({viewBooking.totalHours}h × ₹{viewBooking.cabin?.price || 0})</span>
                     <span className="font-semibold text-gray-800">₹{(viewBooking.subtotal || 0).toFixed(2)}</span>
                   </div>
-                  
+
                   {viewBooking.extraCharge > 0 && (
                     <div className="flex justify-between items-center border-b border-emerald-100 pb-1.5">
                       <span className="text-gray-600">Seat Charges ({viewBooking.seatCount} × ₹{viewBooking.seatExtraChargePerSeat || 100})</span>
                       <span className="font-semibold text-amber-600">₹{(viewBooking.extraCharge || 0).toFixed(2)}</span>
                     </div>
                   )}
-                  
+
                   <div className="flex justify-between items-center border-b border-emerald-100 pb-1.5">
                     <span className="text-gray-600">GST ({(viewBooking.gstRate || 0.18) * 100}%)</span>
                     <span className="font-semibold text-gray-800">₹{(viewBooking.gstAmount || 0).toFixed(2)}</span>
                   </div>
-                  
+
                   <div className="flex justify-between items-center pt-2 border-t-2 border-emerald-300">
                     <span className="font-bold text-gray-800">Total Amount</span>
                     <span className="text-xl font-bold text-emerald-700">₹{(viewBooking.totalPrice || 0).toFixed(2)}</span>
@@ -1606,7 +1662,7 @@ const SimpleUserBookings = () => {
               {selectedCabinData && priceDiff && (
                 <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 space-y-3">
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Price Comparison</p>
-                  
+
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div className="bg-blue-50 rounded-lg p-3">
                       <p className="text-[10px] text-blue-600 font-medium">Current Cabin</p>

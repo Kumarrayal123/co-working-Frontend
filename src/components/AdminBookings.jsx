@@ -59,7 +59,6 @@ import jsPDF from 'jspdf';
 import "./Dashboard.css";
 
 const API_URL = "https://spaceapi.iryax.com";
-// ✅ REMOVED ADMIN_ID - using API directly
 
 const AdminBookings = () => {
   const [bookings, setBookings] = useState([]);
@@ -196,7 +195,7 @@ const AdminBookings = () => {
     setStats({ totalBookings: total, confirmed, active, completed, cancelled, pending, totalRevenue, confirmedRevenue, completedRevenue });
   };
 
-  // ✅ FETCH BOOKINGS USING OWNER-BOOKINGS API
+  // FETCH BOOKINGS USING OWNER-BOOKINGS API
   useEffect(() => {
     const fetchBookings = async () => {
       try {
@@ -207,11 +206,10 @@ const AdminBookings = () => {
           return;
         }
 
-        // ✅ Using owner-bookings API with auth
         const res = await axios.get(`${API_URL}/api/bookings/owner-bookings`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        
+
         const bookingsData = res.data.bookings || [];
         console.log("✅ Owner Bookings fetched:", bookingsData.length);
         setBookings(bookingsData);
@@ -877,7 +875,7 @@ const AdminBookings = () => {
     setFilterDateTo('');
   };
 
-  // ✅ FILTERED BOOKINGS
+  // FILTERED BOOKINGS
   const filteredBookings = bookings.filter((b) => {
     const matchesSearch = b.cabin?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       b.cabin?.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -885,17 +883,17 @@ const AdminBookings = () => {
       b.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       b.mobile?.includes(searchTerm) ||
       b.user?.mobile?.includes(searchTerm);
-    
+
     const matchesDateFrom = filterDateFrom ? b.startDate >= filterDateFrom : true;
     const matchesDateTo = filterDateTo ? b.startDate <= filterDateTo : true;
-    
+
     const matchesStatus = filters.status === 'all' || b.status === filters.status;
     const matchesPaymentStatus = filters.paymentStatus === 'all' || b.paymentStatus === filters.paymentStatus;
     const matchesPaymentMethod = filters.paymentMethod === 'all' || b.paymentMethod === filters.paymentMethod;
     return matchesSearch && matchesDateFrom && matchesDateTo && matchesStatus && matchesPaymentStatus && matchesPaymentMethod;
   });
 
-  // ✅ TAB BASED FILTERING
+  // TAB BASED FILTERING
   const getFilteredByTab = () => {
     if (activeTab === 'visits') {
       return filteredBookings.filter(b => b.bookingType === 'visit');
@@ -1113,7 +1111,7 @@ const AdminBookings = () => {
           </div>
         </div>
 
-        {/* ✅ TAB SWITCHER */}
+        {/* TAB SWITCHER */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-1 mt-4 mb-4 flex">
           <button
             onClick={() => setActiveTab('all')}
@@ -1430,7 +1428,7 @@ const AdminBookings = () => {
         </div>
       </div>
 
-      {/* VIEW BOOKING MODAL - Same as before */}
+      {/* VIEW BOOKING MODAL */}
       {showViewModal && viewBooking && (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setShowViewModal(false); }}>
           <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
@@ -1685,37 +1683,6 @@ const AdminBookings = () => {
                   </span>
                 </div>
               </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Subtotal</p>
-                  <p className="mt-1 font-semibold text-gray-800">₹{viewBooking.subtotal?.toFixed(2) || '0'}</p>
-                </div>
-                <div className="p-3 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">GST (18%)</p>
-                  <p className="mt-1 font-semibold text-gray-800">₹{viewBooking.gstAmount?.toFixed(2) || '0'}</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Created</p>
-                  <p className="mt-1 font-semibold text-gray-800 text-sm">{formatDateTimeIndian(viewBooking.createdAt)}</p>
-                </div>
-                {viewBooking.transactionId && (
-                  <div className="p-3 bg-gray-50 rounded-xl">
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Transaction ID</p>
-                    <p className="mt-1 font-mono text-xs text-gray-700 break-all">{viewBooking.transactionId}</p>
-                  </div>
-                )}
-              </div>
-
-              {viewBooking.paymentDetails?.screenshot && (
-                <div className="p-3 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Payment Screenshot</p>
-                  <img src={`${API_URL}${viewBooking.paymentDetails.screenshot}`} alt="Payment Screenshot" className="mt-2 max-h-48 rounded-lg border border-gray-200" />
-                </div>
-              )}
 
               <div className="flex gap-2">
                 <button onClick={() => { setShowViewModal(false); printReceipt(viewBooking); }} className="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition shadow-sm active:scale-[0.98] flex items-center justify-center gap-2">
@@ -2008,6 +1975,6 @@ const AdminBookings = () => {
       )}
     </div>
   );
-};
+}
 
 export default AdminBookings;

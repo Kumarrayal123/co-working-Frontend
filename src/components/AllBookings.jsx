@@ -491,7 +491,7 @@ const AllBookings = () => {
 
   const handleDeleteBooking = async () => {
     if (!deleteBooking) return;
-    
+
     setDeleting(true);
     try {
       const token = localStorage.getItem("token");
@@ -525,11 +525,11 @@ const AllBookings = () => {
         const statusBadge = getStatusBadge(booking.status);
         const paymentMethod = getPaymentMethodBadge(booking.paymentMethod);
         const paymentStatus = getPaymentStatusBadge(booking.paymentStatus);
-        
+
         const slotsStr = booking.bookingSlots?.map(s => 
           `${formatDateIndian(s.date)} ${s.startTime}-${s.endTime} (${s.hours}h)`
         ).join('; ') || 'N/A';
-        
+
         return {
           'S.No': index + 1,
           'Booking ID': booking._id?.slice(-8).toUpperCase() || 'N/A',
@@ -909,14 +909,14 @@ const AllBookings = () => {
     const matchesStatus = filters.status === 'all' || b.status === filters.status;
     const matchesPaymentStatus = filters.paymentStatus === 'all' || b.paymentStatus === filters.paymentStatus;
     const matchesPaymentMethod = filters.paymentMethod === 'all' || b.paymentMethod === filters.paymentMethod;
-    
+
     let matchesSpaceType = true;
     if (filterSpaceType === 'medical') {
       matchesSpaceType = b.cabin?.isChamber === true;
     } else if (filterSpaceType === 'coworking') {
       matchesSpaceType = b.cabin?.isChamber === false;
     }
-    
+
     return matchesDateFrom && matchesDateTo && matchesCabinName && matchesOwner && 
            matchesStatus && matchesPaymentStatus && matchesPaymentMethod && matchesSpaceType;
   });
@@ -1058,6 +1058,11 @@ const AllBookings = () => {
                 <option value="card">Card</option>
               </select>
             </div>
+            {(filters.status !== 'all' || filters.paymentStatus !== 'all' || filters.paymentMethod !== 'all' || filterDateFrom || filterDateTo || filterCabinName || filterOwner || filterSpaceType !== 'all') && (
+              <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors">
+                <XCircleIcon size={14} /> Clear
+              </button>
+            )}
             {displayBookings.length > 0 && (
               <button onClick={exportToExcel} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200 whitespace-nowrap">
                 <Download size={14} /> Export
@@ -1223,7 +1228,7 @@ const AllBookings = () => {
                         </td>
 
                         {isVisit ? (
-                          // ✅ SITE VISIT ROW - VIEW + STATUS + DELETE
+                          // SITE VISIT ROW - VIEW + STATUS + DELETE
                           <>
                             <td className="p-2">
                               <span className="text-xs font-medium text-gray-700">{formatDateIndian(booking.startDate)}</span>
@@ -1241,7 +1246,6 @@ const AllBookings = () => {
                             </td>
                             <td className="p-2 text-center">
                               <div className="flex items-center justify-center gap-1">
-                                {/* ✅ VIEW BUTTON */}
                                 <button 
                                   onClick={() => handleViewBooking(booking)} 
                                   className="flex items-center gap-0.5 px-2 py-1 rounded-lg text-[10px] font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors whitespace-nowrap"
@@ -1249,8 +1253,6 @@ const AllBookings = () => {
                                 >
                                   <Eye size={11} /> View
                                 </button>
-                                
-                                {/* ✅ STATUS UPDATE BUTTON */}
                                 <button 
                                   onClick={() => { 
                                     setSelectedBooking(booking); 
@@ -1262,8 +1264,6 @@ const AllBookings = () => {
                                 >
                                   <Edit size={11} /> Status
                                 </button>
-
-                                {/* ✅ DELETE BUTTON - NOW AVAILABLE FOR SITE VISITS TOO */}
                                 <button 
                                   onClick={() => { 
                                     setDeleteBooking(booking); 
@@ -1278,7 +1278,7 @@ const AllBookings = () => {
                             </td>
                           </>
                         ) : (
-                          // ✅ SPACE BOOKING ROW - FULL ACTIONS
+                          // SPACE BOOKING ROW - FULL ACTIONS
                           <>
                             <td className="p-2">
                               <div>
@@ -1342,8 +1342,6 @@ const AllBookings = () => {
                             </td>
                             <td className="p-2">
                               <div className="flex items-center gap-1 justify-center overflow-x-auto max-w-[360px] py-1 scrollbar-thin scrollbar-thumb-gray-300">
-                                
-                                {/* VIEW */}
                                 <button 
                                   onClick={() => handleViewBooking(booking)} 
                                   className="flex items-center gap-0.5 px-2 py-1 rounded-lg text-[10px] font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors whitespace-nowrap"
@@ -1351,8 +1349,6 @@ const AllBookings = () => {
                                 >
                                   <Eye size={11} /> View
                                 </button>
-                                
-                                {/* PRINT */}
                                 <button 
                                   onClick={() => printReceipt(booking)} 
                                   className="flex items-center gap-0.5 px-2 py-1 rounded-lg text-[10px] font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors whitespace-nowrap"
@@ -1360,8 +1356,6 @@ const AllBookings = () => {
                                 >
                                   <Printer size={11} /> Print
                                 </button>
-                                
-                                {/* PDF */}
                                 <button 
                                   onClick={() => downloadPDF(booking)} 
                                   className="flex items-center gap-0.5 px-2 py-1 rounded-lg text-[10px] font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors whitespace-nowrap"
@@ -1369,8 +1363,6 @@ const AllBookings = () => {
                                 >
                                   <FileDown size={11} /> PDF
                                 </button>
-                                
-                                {/* TIMING */}
                                 <button 
                                   onClick={() => { 
                                     setTimingBooking(booking); 
@@ -1382,8 +1374,6 @@ const AllBookings = () => {
                                 >
                                   <Plus size={11} /> Timing
                                 </button>
-                                
-                                {/* STATUS */}
                                 <button 
                                   onClick={() => { 
                                     setSelectedBooking(booking); 
@@ -1395,8 +1385,6 @@ const AllBookings = () => {
                                 >
                                   <Edit size={11} /> Status
                                 </button>
-                                
-                                {/* PAYMENT */}
                                 <button 
                                   onClick={() => {
                                     setPaymentBooking(booking);
@@ -1423,8 +1411,6 @@ const AllBookings = () => {
                                 >
                                   <CreditCard size={11} /> Payment
                                 </button>
-                                
-                                {/* DELETE */}
                                 <button 
                                   onClick={() => { 
                                     setDeleteBooking(booking); 
@@ -1435,7 +1421,6 @@ const AllBookings = () => {
                                 >
                                   <Trash2 size={11} /> Delete
                                 </button>
-                                
                               </div>
                             </td>
                           </>
@@ -1693,7 +1678,7 @@ const AllBookings = () => {
                   <div className="flex justify-between"><span className="text-gray-500">Status</span><span className={`font-medium ${viewBooking.paymentStatus === 'paid' ? 'text-emerald-600' : 'text-yellow-600'}`}>{viewBooking.paymentStatus || 'N/A'}</span></div>
                   <div className="flex justify-between"><span className="text-gray-500">Transaction ID</span><span className="font-mono text-xs">{viewBooking.transactionId || 'N/A'}</span></div>
                   <div className="flex justify-between"><span className="text-gray-500">Amount Paid</span><span className="font-bold text-emerald-600">₹{viewBooking.amountPaid?.toLocaleString('en-IN') || viewBooking.totalPrice || 0}</span></div>
-                  
+
                   {viewBooking.paymentDetails && (
                     <>
                       <div className="border-t border-emerald-200 pt-2 mt-2">

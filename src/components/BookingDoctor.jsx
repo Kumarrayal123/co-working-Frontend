@@ -46,7 +46,7 @@ import {
   History,
   Bell,
   CalendarPlus,
-  Calculator // <-- ADD THIS IMPORT
+  Calculator
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -71,7 +71,7 @@ const BookingDoctor = () => {
     cabinId: 'all'
   });
   const navigate = useNavigate();
-  
+
   const [showViewModal, setShowViewModal] = useState(false);
   const [viewBooking, setViewBooking] = useState(null);
 
@@ -184,14 +184,14 @@ const BookingDoctor = () => {
         `${API_URL}/api/bookings/user`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
+
       const bookingsData = res.data.bookings || [];
       setBookings(bookingsData);
-      
+
       if (bookingsData.length === 0) {
         toast.info("You have no bookings yet");
       }
-      
+
     } catch (error) {
       console.error("Error fetching bookings:", error);
       if (error.response?.status === 401) {
@@ -407,7 +407,7 @@ const BookingDoctor = () => {
         toast.error('Please allow popups');
         return;
       }
-      
+
       let seatListHtml = '';
       if (booking.selectedSeats && booking.selectedSeats.length > 0) {
         seatListHtml = booking.selectedSeats.map(s => 
@@ -495,7 +495,7 @@ const BookingDoctor = () => {
 
   const filteredBookings = bookings.filter((b) => {
     const bookingDate = b.startDate || b.date;
-    
+
     let matchDateRange = true;
     if (filterDateFrom && filterDateTo) {
       matchDateRange = bookingDate >= filterDateFrom && bookingDate <= filterDateTo;
@@ -504,12 +504,12 @@ const BookingDoctor = () => {
     } else if (filterDateTo) {
       matchDateRange = bookingDate <= filterDateTo;
     }
-    
+
     const matchCabin = filters.cabinId === 'all' || b.cabin?._id === filters.cabinId;
     const matchStatus = filters.status === 'all' || b.status === filters.status;
     const matchPaymentStatus = filters.paymentStatus === 'all' || b.paymentStatus === filters.paymentStatus;
     const matchPaymentMethod = filters.paymentMethod === 'all' || b.paymentMethod === filters.paymentMethod;
-    
+
     return matchDateRange && matchCabin && matchStatus && matchPaymentStatus && matchPaymentMethod;
   });
 
@@ -534,7 +534,7 @@ const BookingDoctor = () => {
 
   const getPriceDifference = () => {
     if (!replaceBooking || !selectedChamberData) return null;
-    
+
     const currentPrice = replaceBooking.totalPrice || 0;
     const newPrice = selectedChamberData.price || 0;
     const totalHours = replaceBooking.totalHours || 1;
@@ -544,7 +544,7 @@ const BookingDoctor = () => {
     const totalWithGst = newTotal + (newTotal * 0.18);
     const currentWithGst = currentPrice + (currentPrice * 0.18);
     const finalDifference = totalWithGst - currentWithGst;
-    
+
     return {
       currentPrice,
       newPrice,
@@ -596,26 +596,56 @@ const BookingDoctor = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4 mb-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
-            <p className="text-xs text-gray-500 font-medium">Total</p>
-            <p className="text-xl sm:text-2xl font-bold text-indigo-600">{totalCount}</p>
+        <div className="admin-dash__stats">
+          <div className="admin-dash__stat">
+            <div className="admin-dash__stat-top">
+              <span className="admin-dash__stat-label">Total Bookings</span>
+              <div className="admin-dash__stat-icon bg-indigo-100 text-indigo-600">
+                <Calendar size={18} />
+              </div>
+            </div>
+            <div className="admin-dash__stat-value">{totalCount}</div>
+            <div className="admin-dash__stat-meta">{chamberCount} chamber • {visitCount} visits</div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
-            <p className="text-xs text-gray-500 font-medium">Active</p>
-            <p className="text-xl sm:text-2xl font-bold text-emerald-600">{activeCount}</p>
+          <div className="admin-dash__stat">
+            <div className="admin-dash__stat-top">
+              <span className="admin-dash__stat-label">Active</span>
+              <div className="admin-dash__stat-icon bg-emerald-100 text-emerald-600">
+                <CheckCircle size={18} />
+              </div>
+            </div>
+            <div className="admin-dash__stat-value">{activeCount}</div>
+            <div className="admin-dash__stat-meta">Active & confirmed</div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
-            <p className="text-xs text-gray-500 font-medium">Pending</p>
-            <p className="text-xl sm:text-2xl font-bold text-yellow-600">{pendingCount}</p>
+          <div className="admin-dash__stat">
+            <div className="admin-dash__stat-top">
+              <span className="admin-dash__stat-label">Pending</span>
+              <div className="admin-dash__stat-icon bg-amber-100 text-amber-600">
+                <Timer size={18} />
+              </div>
+            </div>
+            <div className="admin-dash__stat-value">{pendingCount}</div>
+            <div className="admin-dash__stat-meta">Awaiting approval</div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
-            <p className="text-xs text-gray-500 font-medium">Completed</p>
-            <p className="text-xl sm:text-2xl font-bold text-blue-600">{completedCount}</p>
+          <div className="admin-dash__stat">
+            <div className="admin-dash__stat-top">
+              <span className="admin-dash__stat-label">Completed</span>
+              <div className="admin-dash__stat-icon bg-blue-100 text-blue-600">
+                <Check size={18} />
+              </div>
+            </div>
+            <div className="admin-dash__stat-value">{completedCount}</div>
+            <div className="admin-dash__stat-meta">Successfully completed</div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
-            <p className="text-xs text-gray-500 font-medium">Visits</p>
-            <p className="text-xl sm:text-2xl font-bold text-purple-600">{visitCount}</p>
+          <div className="admin-dash__stat">
+            <div className="admin-dash__stat-top">
+              <span className="admin-dash__stat-label">Site Visits</span>
+              <div className="admin-dash__stat-icon bg-purple-100 text-purple-600">
+                <Eye size={18} />
+              </div>
+            </div>
+            <div className="admin-dash__stat-value">{visitCount}</div>
+            <div className="admin-dash__stat-meta">Scheduled visits</div>
           </div>
         </div>
 
@@ -834,13 +864,13 @@ const BookingDoctor = () => {
                       const seatNames = b.selectedSeats?.map(s => s.name).join(', ') || 'N/A';
                       const isVisit = b.bookingType === 'visit';
                       const isChamber = b.cabin?.isChamber || false;
-                      
+
                       const fromTimeIndian = convertToIndianTime(b.startTime || b.time);
                       const toTimeIndian = convertToIndianTime(b.endTime);
                       const dailyHoursStr = b.dailyHours?.join(', ') || 'N/A';
                       const totalDays = b.totalDays || 0;
                       const bookingId = b._id?.slice(-6).toUpperCase() || 'N/A';
-                      
+
                       return (
                         <tr key={b._id} className="transition-colors group hover:bg-gray-50/80">
                           <td className="p-4">
@@ -1298,25 +1328,25 @@ const BookingDoctor = () => {
                   <Calculator size={14} />
                   Price Breakdown
                 </p>
-                
+
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between items-center border-b border-emerald-100 pb-1.5">
                     <span className="text-gray-600">Subtotal ({viewBooking.totalHours}h × ₹{viewBooking.cabin?.price || 0})</span>
                     <span className="font-semibold text-gray-800">₹{(viewBooking.subtotal || 0).toFixed(2)}</span>
                   </div>
-                  
+
                   {viewBooking.extraCharge > 0 && (
                     <div className="flex justify-between items-center border-b border-emerald-100 pb-1.5">
                       <span className="text-gray-600">Seat Charges ({viewBooking.seatCount} × ₹{viewBooking.seatExtraChargePerSeat || 100})</span>
                       <span className="font-semibold text-amber-600">₹{(viewBooking.extraCharge || 0).toFixed(2)}</span>
                     </div>
                   )}
-                  
+
                   <div className="flex justify-between items-center border-b border-emerald-100 pb-1.5">
                     <span className="text-gray-600">GST ({(viewBooking.gstRate || 0.18) * 100}%)</span>
                     <span className="font-semibold text-gray-800">₹{(viewBooking.gstAmount || 0).toFixed(2)}</span>
                   </div>
-                  
+
                   <div className="flex justify-between items-center pt-2 border-t-2 border-emerald-300">
                     <span className="font-bold text-gray-800">Total Amount</span>
                     <span className="text-xl font-bold text-emerald-700">₹{(viewBooking.totalPrice || 0).toFixed(2)}</span>
@@ -1600,7 +1630,7 @@ const BookingDoctor = () => {
               {selectedChamberData && priceDiff && (
                 <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 space-y-3">
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Price Comparison</p>
-                  
+
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div className="bg-blue-50 rounded-lg p-3">
                       <p className="text-[10px] text-blue-600 font-medium">Current Chamber</p>

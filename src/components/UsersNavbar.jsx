@@ -85,7 +85,8 @@ function UsersNavbar() {
       id: "dashboard",
       label: "Dashboard",
       icon: LayoutDashboard,
-      links: [{ name: "Dashboard", path: "/ownerdashboard", icon: LayoutDashboard, description: "Overview & stats" }],
+      path: "/ownerdashboard", // Direct path instead of links
+      description: "Overview & stats",
     },
     {
       id: "coworking",
@@ -109,7 +110,8 @@ function UsersNavbar() {
       id: "payments",
       label: "Payments",
       icon: CreditCard,
-      links: [{ name: "My Reg. Payments", path: "/my-cabin-payments", icon: Receipt, description: "Registration payments" }],
+      path: "/my-cabin-payments",
+      description: "Registration payments",
     },
     {
       id: "wallet",
@@ -123,8 +125,18 @@ function UsersNavbar() {
   const currentUser = userString ? JSON.parse(userString) : { name: "User" };
   const initials = currentUser.name?.substring(0, 2).toUpperCase() || "US";
 
+  // FIXED: Check if section has links or a direct path
   const isSectionActive = (section) => {
-    return section.links.some((link) => isActive(link.path));
+    // If section has a direct path, check if it's active
+    if (section.path) {
+      return isActive(section.path);
+    }
+    // If section has links, check if any link is active
+    if (section.links && Array.isArray(section.links)) {
+      return section.links.some((link) => isActive(link.path));
+    }
+    // If neither, return false
+    return false;
   };
 
   return (
@@ -135,8 +147,8 @@ function UsersNavbar() {
           fixed top-0 left-0 right-0 z-[1100] 
           transition-all duration-300 ease-in-out
           h-16
-          ${scrolled 
-            ? 'bg-white/95 shadow-[0_1px_12px_rgba(0,0,0,0.06)]' 
+          ${scrolled
+            ? 'bg-white/95 shadow-[0_1px_12px_rgba(0,0,0,0.06)]'
             : 'bg-white/85 backdrop-blur-[12px] border-b border-slate-200/60'
           }
         `}
@@ -156,14 +168,38 @@ function UsersNavbar() {
           <ul className="hidden md:flex items-center gap-0.5 flex-1 justify-center list-none m-0 p-0">
             {navSections.map((section) => {
               const isSectionActiveNow = isSectionActive(section);
+
+              // For sections with direct path (like dashboard)
+              if (section.path) {
+                return (
+                  <li key={section.id} className="relative">
+                    <Link
+                      to={section.path}
+                      className={`
+                        flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium 
+                        transition-all duration-150 no-underline
+                        ${isSectionActiveNow
+                          ? 'text-indigo-600 bg-indigo-50'
+                          : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
+                        }
+                      `}
+                    >
+                      <section.icon size={15} />
+                      <span>{section.label}</span>
+                    </Link>
+                  </li>
+                );
+              }
+
+              // For sections with dropdown links
               return (
                 <li key={section.id} className="relative">
                   <button
                     className={`
                       flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium 
                       transition-all duration-150
-                      ${isSectionActiveNow 
-                        ? 'text-indigo-600 bg-indigo-50' 
+                      ${isSectionActiveNow
+                        ? 'text-indigo-600 bg-indigo-50'
                         : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
                       }
                     `}
@@ -174,12 +210,11 @@ function UsersNavbar() {
                     <span>{section.label}</span>
                     <ChevronDown
                       size={12}
-                      className={`transition-transform duration-200 ${
-                        sectionOpen[section.id] ? 'rotate-180' : ''
-                      }`}
+                      className={`transition-transform duration-200 ${sectionOpen[section.id] ? 'rotate-180' : ''
+                        }`}
                     />
                   </button>
-                  {sectionOpen[section.id] && (
+                  {sectionOpen[section.id] && section.links && (
                     <ul className="absolute top-full left-0 mt-1.5 min-w-[180px] bg-white rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.04)] p-1 z-50 animate-[dropdownIn_0.15s_ease]">
                       {section.links.map((link) => (
                         <li key={link.path}>
@@ -187,7 +222,7 @@ function UsersNavbar() {
                             to={link.path}
                             className={`
                               flex items-center gap-2.5 px-3 py-1.75 rounded-lg text-xs font-medium 
-                              transition-all duration-150 relative
+                              transition-all duration-150 relative no-underline
                               ${isActive(link.path)
                                 ? 'text-indigo-600 bg-indigo-50'
                                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -231,9 +266,8 @@ function UsersNavbar() {
                 </div>
                 <ChevronDown
                   size={14}
-                  className={`text-slate-400 transition-transform duration-200 ${
-                    profileOpen ? 'rotate-180' : ''
-                  }`}
+                  className={`text-slate-400 transition-transform duration-200 ${profileOpen ? 'rotate-180' : ''
+                    }`}
                 />
               </button>
 
@@ -352,8 +386,38 @@ function UsersNavbar() {
           <ul className="list-none m-0 p-0">
             {navSections.map((section) => {
               const isSectionActiveNow = isSectionActive(section);
+
+              // For sections with direct path (like dashboard)
+              if (section.path) {
+                return (
+                  <li key={section.id} className="mb-1">
+                    <Link
+                      to={section.path}
+                      onClick={() => setOpen(false)}
+                      className={`
+                        flex items-center w-full gap-2 px-3 py-2 rounded-lg text-sm font-medium 
+                        transition-all duration-150 no-underline
+                        ${isSectionActiveNow
+                          ? 'text-indigo-600 bg-indigo-50'
+                          : 'text-slate-600 hover:bg-slate-100'
+                        }
+                      `}
+                    >
+                      <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex-shrink-0">
+                        <section.icon size={16} />
+                      </span>
+                      <span className="flex-1 text-left">{section.label}</span>
+                      {isSectionActiveNow && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 flex-shrink-0" />
+                      )}
+                    </Link>
+                  </li>
+                );
+              }
+
+              // For sections with dropdown links
               return (
-                <li key={section.id} className="mb-4">
+                <li key={section.id} className="mb-1">
                   <button
                     className={`
                       flex items-center w-full gap-2 px-3 py-2 rounded-lg text-sm font-medium 
@@ -371,13 +435,12 @@ function UsersNavbar() {
                     <span className="flex-1 text-left">{section.label}</span>
                     <ChevronDown
                       size={12}
-                      className={`transition-transform duration-200 ${
-                        sectionOpen[section.id] ? 'rotate-180' : ''
-                      }`}
+                      className={`transition-transform duration-200 ${sectionOpen[section.id] ? 'rotate-180' : ''
+                        }`}
                     />
                   </button>
-                  {sectionOpen[section.id] && (
-                    <ul className="list-none m-0 p-0">
+                  {sectionOpen[section.id] && section.links && (
+                    <ul className="list-none m-0 p-0 pl-4">
                       {section.links.map((link) => (
                         <li key={link.path}>
                           <Link
@@ -385,7 +448,7 @@ function UsersNavbar() {
                             onClick={() => setOpen(false)}
                             className={`
                               flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium 
-                              transition-all duration-150 relative
+                              transition-all duration-150 relative no-underline
                               ${isActive(link.path)
                                 ? 'text-indigo-600 bg-indigo-50'
                                 : 'text-slate-600 hover:bg-slate-100'

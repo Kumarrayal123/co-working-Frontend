@@ -1,4 +1,2017 @@
-// MyCabin.jsx - Fully Responsive with Table Layout and Filters (White Background)
+// // MyCabin.jsx - Fully Responsive with Table Layout and Filters (White Background)
+// import axios from "axios";
+// import {
+//   Building2,
+//   CheckCircle,
+//   FileText,
+//   Home,
+//   IndianRupee,
+//   MapPin,
+//   Plus,
+//   Search,
+//   Trash2,
+//   Upload,
+//   Users,
+//   X,
+//   Building2 as BuildingIcon,
+//   CreditCard,
+//   Calendar,
+//   Clock,
+//   AlertCircle,
+//   Check,
+//   Loader2,
+//   Star,
+//   Crown,
+//   Wifi,
+//   ParkingCircle,
+//   Lock,
+//   Bath,
+//   Shield,
+//   Armchair,
+//   Coffee,
+//   Dumbbell,
+//   Fan,
+//   Tv,
+//   Printer,
+//   Phone,
+//   Clipboard,
+//   Receipt,
+//   Percent,
+//   Menu,
+//   ArrowLeft,
+//   Eye,
+//   Filter,
+//   XCircle,
+//   Timer,
+//   List as ListIcon,
+//   Grid as GridIcon,
+//   Video
+// } from "lucide-react";
+// import { useEffect, useState } from "react";
+// import { useNavigate } from "react-router-dom";
+// import { toast } from "react-toastify";
+// import UsersNavbar from "./UsersNavbar";
+// import "./Dashboard.css";
+
+// // Load Razorpay script
+// const loadRazorpayScript = () => {
+//   return new Promise((resolve) => {
+//     const script = document.createElement('script');
+//     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+//     script.onload = () => resolve(true);
+//     script.onerror = () => resolve(false);
+//     document.body.appendChild(script);
+//   });
+// };
+
+// const API_URL = "https://spaceapi.iryax.com";
+// const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
+// const GST_RATE = 0.18;
+
+// // Normal Amenities
+// const NORMAL_AMENITIES = [
+//   { key: "wifi", label: "Wi-Fi", emoji: "📶", icon: Wifi },
+//   { key: "parking", label: "Parking", emoji: "🅿️", icon: ParkingCircle },
+//   { key: "lockers", label: "Lockers", emoji: "🔐", icon: Lock },
+//   { key: "comfortSeating", label: "Comfort Seating", emoji: "🪑", icon: Armchair },
+// ];
+
+// // Exclusive Amenities
+// const EXCLUSIVE_AMENITIES = [
+//   { key: "wifi", label: "High-Speed Wi-Fi", emoji: "📶", icon: Wifi },
+//   { key: "parking", label: "Reserved Parking", emoji: "🅿️", icon: ParkingCircle },
+//   { key: "lockers", label: "Secure Lockers", emoji: "🔐", icon: Lock },
+//   { key: "privateWashroom", label: "Private Washroom", emoji: "🚿", icon: Bath },
+//   { key: "secureAccess", label: "24/7 Secure Access", emoji: "🛡️", icon: Shield },
+//   { key: "comfortSeating", label: "Premium Seating", emoji: "🪑", icon: Armchair },
+//   { key: "coffee", label: "Coffee & Tea", emoji: "☕", icon: Coffee },
+//   { key: "gym", label: "Gym Access", emoji: "💪", icon: Dumbbell },
+//   { key: "ac", label: "Air Conditioning", emoji: "❄️", icon: Fan },
+//   { key: "tv", label: "Smart TV", emoji: "📺", icon: Tv },
+//   { key: "printer", label: "Printer Access", emoji: "🖨️", icon: Printer },
+//   { key: "phone", label: "Conference Phone", emoji: "📞", icon: Phone },
+// ];
+
+// const MyCabin = () => {
+//   const [cabins, setCabins] = useState([]);
+//   const [loading, setLoading] = useState(true);
+//   const [searchTerm, setSearchTerm] = useState("");
+//   const [isModalOpen, setIsModalOpen] = useState(false);
+//   const [submitting, setSubmitting] = useState(false);
+//   const [pricingPlans, setPricingPlans] = useState([]);
+//   const [cabinCount, setCabinCount] = useState(0);
+//   const [showConfirmModal, setShowConfirmModal] = useState(false);
+//   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
+//   const [paymentProcessing, setPaymentProcessing] = useState(false);
+//   const [showViewModal, setShowViewModal] = useState(false);
+//   const [selectedCabin, setSelectedCabin] = useState(null);
+//   const [filters, setFilters] = useState({
+//     name: '',
+//     address: '',
+//     priceMin: '',
+//     priceMax: '',
+//     status: 'all'
+//   });
+//   const [countdowns, setCountdowns] = useState({});
+//   const navigate = useNavigate();
+
+//   // Seat management state
+//   const [seats, setSeats] = useState([]);
+//   const [seatInput, setSeatInput] = useState({ name: '', number: '' });
+//   const [showSeatModal, setShowSeatModal] = useState(false);
+//   const [editingSeatIndex, setEditingSeatIndex] = useState(null);
+//   const [seatGenerationMode, setSeatGenerationMode] = useState(false);
+//   const [seatGenerationCount, setSeatGenerationCount] = useState(0);
+//   const [seatBatchMode, setSeatBatchMode] = useState(false);
+//   const [batchSeatNumber, setBatchSeatNumber] = useState(1);
+
+//   // ✅ NEW: Videos state
+//   const [videos, setVideos] = useState([]);
+
+//   const [formData, setFormData] = useState({
+//     name: "",
+//     description: "",
+//     capacity: "",
+//     address: "",
+//     price: "",
+//     cabin: "",
+//     cabinType: "normal",
+//     is24x7: false,
+//     openTime: "09:00",
+//     closeTime: "21:00",
+//     amenities: {
+//       wifi: false,
+//       parking: false,
+//       lockers: false,
+//       privateWashroom: false,
+//       secureAccess: false,
+//       comfortSeating: false,
+//       coffee: false,
+//       gym: false,
+//       ac: false,
+//       tv: false,
+//       printer: false,
+//       phone: false,
+//     },
+//   });
+//   const [images, setImages] = useState([]);
+
+//   const getAmenitiesForType = (type) => {
+//     return type === 'exclusive' ? EXCLUSIVE_AMENITIES : NORMAL_AMENITIES;
+//   };
+
+//   const resetAmenitiesForType = (type) => {
+//     const amenitiesKeys = getAmenitiesForType(type).map(a => a.key);
+//     const newAmenities = {};
+//     amenitiesKeys.forEach(key => {
+//       newAmenities[key] = false;
+//     });
+//     setFormData(prev => ({
+//       ...prev,
+//       amenities: newAmenities
+//     }));
+//   };
+
+//   useEffect(() => {
+//     loadRazorpayScript().then((loaded) => {
+//       setRazorpayLoaded(loaded);
+//       if (!loaded) {
+//         toast.error("Failed to load Razorpay. Please refresh the page.");
+//       }
+//     });
+//   }, []);
+
+//   // Countdown timer effect
+//   useEffect(() => {
+//     const interval = setInterval(() => {
+//       setCountdowns(prev => {
+//         const updated = { ...prev };
+//         let hasChanges = false;
+//         Object.keys(updated).forEach(key => {
+//           if (updated[key] > 0) {
+//             updated[key] = updated[key] - 1;
+//             hasChanges = true;
+//           }
+//         });
+//         return hasChanges ? updated : prev;
+//       });
+//     }, 1000);
+
+//     return () => clearInterval(interval);
+//   }, []);
+
+//   const getImageUrl = (img) => {
+//     if (!img) return PLACEHOLDER_IMAGE;
+//     if (img.startsWith("http")) return img;
+//     const cleanPath = img.replace(/\\/g, "/").replace(/^\/+/, "");
+//     return `${API_URL}/${cleanPath}`;
+//   };
+
+//   const getAuthHeader = () => {
+//     const token = localStorage.getItem("token");
+//     return { headers: { Authorization: `Bearer ${token}` } };
+//   };
+
+//   // ✅ LOGGING: Fetch cabins with user info
+//   const fetchCabins = async () => {
+//     console.log("========================================");
+//     console.log("📋 FETCHING CABINS");
+    
+//     // Log current user from localStorage
+//     const userStr = localStorage.getItem("user");
+//     const adminStr = localStorage.getItem("admin");
+    
+//     if (userStr) {
+//       const user = JSON.parse(userStr);
+//       console.log("👤 Current User:", {
+//         id: user._id,
+//         name: user.name,
+//         email: user.email,
+//         role: user.role
+//       });
+//     } else if (adminStr) {
+//       const admin = JSON.parse(adminStr);
+//       console.log("👑 Current Admin:", {
+//         id: admin._id,
+//         name: admin.name,
+//         role: admin.role
+//       });
+//     } else {
+//       console.log("❌ No user or admin found in localStorage!");
+//     }
+//     console.log("========================================");
+    
+//     setLoading(true);
+//     try {
+//       const token = localStorage.getItem("token");
+//       if (!token) {
+//         console.log("❌ No token found, redirecting to login");
+//         setLoading(false);
+//         navigate("/login");
+//         return;
+//       }
+
+//       console.log("🔑 Token found, fetching cabins...");
+//       const res = await axios.get(`${API_URL}/api/cabins/user`, getAuthHeader());
+//       const data = res.data.cabins || res.data;
+//       const cabinList = Array.isArray(data) ? data : [];
+      
+//       console.log(`📦 Fetched ${cabinList.length} cabins`);
+      
+//       // Log each cabin's owner
+//       cabinList.forEach((cabin, index) => {
+//         console.log(`  Cabin ${index + 1}: "${cabin.name}" - Owner: ${cabin.owner || 'No owner'}`);
+//       });
+      
+//       setCabins(cabinList);
+//       setCabinCount(cabinList.length);
+      
+//       // Initialize countdowns for cabins with expiry date
+//       const initialCountdowns = {};
+//       cabinList.forEach(cabin => {
+//         if (cabin.expiryDate) {
+//           const expiry = new Date(cabin.expiryDate);
+//           const now = new Date();
+//           const diff = Math.max(0, Math.floor((expiry - now) / 1000));
+//           initialCountdowns[cabin._id] = diff;
+//         }
+//       });
+//       setCountdowns(initialCountdowns);
+      
+//       console.log("✅ Cabin fetch complete");
+//       console.log("========================================");
+      
+//     } catch (err) {
+//       console.error("❌ Error fetching cabins:", err);
+//       console.error("❌ Error Response:", err.response?.data);
+//       toast.error("Failed to fetch cabins");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   useEffect(() => {
+//     fetchCabins();
+//   }, []);
+
+//   const handleDelete = async (e, id) => {
+//     e.stopPropagation();
+//     if (!window.confirm("Are you sure you want to delete this cabin?")) return;
+
+//     try {
+//       await axios.delete(`${API_URL}/api/cabins/${id}`, getAuthHeader());
+//       setCabins(cabins.filter(c => c._id !== id));
+//       setCabinCount(prev => prev - 1);
+//       toast.success("Cabin deleted successfully");
+//     } catch (error) {
+//       console.error("Error deleting cabin", error);
+//       toast.error("Failed to delete cabin");
+//     }
+//   };
+
+//   const handleChange = (e) => {
+//     const { name, value, type, checked } = e.target;
+//     if (type === 'checkbox') {
+//       setFormData({ ...formData, [name]: checked });
+//     } else {
+//       setFormData({ ...formData, [name]: value });
+//     }
+//   };
+
+//   const handleCabinTypeChange = (type) => {
+//     setFormData({ ...formData, cabinType: type });
+//     resetAmenitiesForType(type);
+//   };
+
+//   const toggleAmenity = (key) => {
+//     setFormData((prev) => ({
+//       ...prev,
+//       amenities: {
+//         ...prev.amenities,
+//         [key]: !prev.amenities[key],
+//       },
+//     }));
+//   };
+
+//   const handleImageChange = (e) => {
+//     setImages(Array.from(e.target.files));
+//   };
+
+//   // ✅ NEW: Video handlers
+//   const handleVideoChange = (e) => {
+//     setVideos(Array.from(e.target.files));
+//   };
+
+//   const removeVideo = (index) => {
+//     setVideos(videos.filter((_, i) => i !== index));
+//   };
+
+//   const removeImage = (index) => {
+//     setImages(images.filter((_, i) => i !== index));
+//   };
+
+//   // Open seat modal with batch mode
+//   const openSeatModal = () => {
+//     setSeatInput({ name: '', number: '' });
+//     setEditingSeatIndex(null);
+//     setSeatBatchMode(false);
+//     setShowSeatModal(true);
+//   };
+
+//   // Open seat modal in batch mode with starting number
+//   const openBatchSeatModal = () => {
+//     const capacity = parseInt(formData.capacity);
+//     if (!capacity || capacity < 1) {
+//       toast.error("Please enter number of seats first");
+//       return;
+//     }
+    
+//     // Check if we already have seats
+//     if (seats.length >= capacity) {
+//       toast.error(`Already added ${seats.length} seats. Capacity is ${capacity}`);
+//       return;
+//     }
+    
+//     // Set batch mode with next seat number
+//     const nextNumber = seats.length + 1;
+//     setBatchSeatNumber(nextNumber);
+//     setSeatBatchMode(true);
+//     setSeatInput({ name: `Seat ${nextNumber}`, number: nextNumber.toString() });
+//     setEditingSeatIndex(null);
+//     setShowSeatModal(true);
+//   };
+
+//   // Seat Management Functions
+//   const addSeat = () => {
+//     if (!seatInput.name.trim()) {
+//       toast.error("Please enter a seat name");
+//       return;
+//     }
+//     if (!seatInput.number || seatInput.number < 1) {
+//       toast.error("Please enter a valid seat number");
+//       return;
+//     }
+
+//     const seatNumber = parseInt(seatInput.number);
+    
+//     // Check for duplicate seat number
+//     if (seats.some(s => s.number === seatNumber)) {
+//       toast.error(`Seat #${seatNumber} already exists`);
+//       return;
+//     }
+
+//     // Check capacity
+//     const capacity = parseInt(formData.capacity);
+//     if (capacity && seats.length >= capacity) {
+//       toast.error(`Cannot add more than ${capacity} seats`);
+//       return;
+//     }
+
+//     if (editingSeatIndex !== null) {
+//       // Update existing seat
+//       const updatedSeats = [...seats];
+//       updatedSeats[editingSeatIndex] = {
+//         name: seatInput.name.trim(),
+//         number: seatNumber
+//       };
+//       setSeats(updatedSeats);
+//       setEditingSeatIndex(null);
+//       toast.success("Seat updated successfully");
+//     } else {
+//       // Add new seat
+//       setSeats([...seats, {
+//         name: seatInput.name.trim(),
+//         number: seatNumber
+//       }]);
+//       toast.success(`Seat #${seatNumber} added successfully`);
+//     }
+
+//     setSeatInput({ name: '', number: '' });
+//     setShowSeatModal(false);
+//     setSeatBatchMode(false);
+    
+//     // Check if all seats are added
+//     if (capacity && seats.length + 1 >= capacity) {
+//       toast.success(`✅ All ${capacity} seats added!`);
+//     }
+//   };
+
+//   const editSeat = (index) => {
+//     setSeatInput({
+//       name: seats[index].name,
+//       number: seats[index].number.toString()
+//     });
+//     setEditingSeatIndex(index);
+//     setSeatBatchMode(false);
+//     setShowSeatModal(true);
+//   };
+
+//   const removeSeat = (index) => {
+//     if (window.confirm(`Remove seat "${seats[index].name}"?`)) {
+//       setSeats(seats.filter((_, i) => i !== index));
+//       if (editingSeatIndex === index) {
+//         setEditingSeatIndex(null);
+//         setSeatInput({ name: '', number: '' });
+//       }
+//       toast.success("Seat removed");
+//     }
+//   };
+
+//   // Auto-generate all seats based on capacity
+//   const generateAllSeats = () => {
+//     const capacity = parseInt(formData.capacity);
+//     if (!capacity || capacity < 1) {
+//       toast.error("Please enter a valid number of seats");
+//       return;
+//     }
+
+//     if (seats.length > 0) {
+//       if (!window.confirm(`This will replace all ${seats.length} existing seats. Continue?`)) {
+//         return;
+//       }
+//     }
+
+//     const newSeats = [];
+//     for (let i = 1; i <= capacity; i++) {
+//       newSeats.push({
+//         name: `Seat ${i}`,
+//         number: i
+//       });
+//     }
+//     setSeats(newSeats);
+//     toast.success(`✅ Generated ${capacity} seats`);
+//   };
+
+//   const calculateGST = (amount) => {
+//     const gstAmount = amount * GST_RATE;
+//     const totalWithGST = amount + gstAmount;
+//     return { gstAmount, totalWithGST };
+//   };
+
+//   const getFeeWithGST = () => {
+//     const baseFee = isFirstCabin ? 2000 : 1000;
+//     const { gstAmount, totalWithGST } = calculateGST(baseFee);
+//     return { baseFee, gstAmount, totalWithGST };
+//   };
+
+//   const initiateRazorpayPayment = async (cabinId, orderData) => {
+//     setPaymentProcessing(true);
+//     try {
+//       if (typeof window.Razorpay === 'undefined') {
+//         toast.error('Razorpay not loaded. Please refresh the page.');
+//         setPaymentProcessing(false);
+//         return;
+//       }
+
+//       const razorpayKey = orderData.razorpayKey || 'rzp_test_BxtRNvflG06PTV';
+      
+//       const options = {
+//         key: razorpayKey,
+//         amount: orderData.order.amount * 100,
+//         currency: "INR",
+//         name: "Cabin Registration",
+//         description: `Cabin #${cabinCount + 1} Registration Fee (incl. GST)`,
+//         order_id: orderData.order.razorpayOrderId,
+//         handler: async function(response) {
+//           try {
+//             const verifyRes = await axios.post(
+//               `${API_URL}/api/cabins/verify-cabin-payment`,
+//               {
+//                 razorpay_order_id: response.razorpay_order_id,
+//                 razorpay_payment_id: response.razorpay_payment_id,
+//                 razorpay_signature: response.razorpay_signature,
+//                 cabinId: cabinId
+//               },
+//               getAuthHeader()
+//             );
+
+//             if (verifyRes.data.success) {
+//               const transactionId = verifyRes.data.transactionId || 
+//                                    verifyRes.data.order?.transactionId || 
+//                                    'N/A';
+              
+//               toast.success(
+//                 <div>
+//                   <div style={{ fontWeight: 'bold' }}>Payment Successful! 🎉</div>
+//                   <div style={{ fontSize: '0.8rem', marginTop: '4px' }}>
+//                     Transaction ID: {transactionId}
+//                   </div>
+//                 </div>,
+//                 { autoClose: 5000 }
+//               );
+              
+//               setShowConfirmModal(false);
+//               setIsModalOpen(false);
+//               setPaymentProcessing(false);
+              
+//               setFormData({
+//                 name: "",
+//                 description: "",
+//                 capacity: "",
+//                 address: "",
+//                 price: "",
+//                 cabin: "",
+//                 cabinType: "normal",
+//                 is24x7: false,
+//                 openTime: "09:00",
+//                 closeTime: "21:00",
+//                 amenities: {
+//                   wifi: false,
+//                   parking: false,
+//                   lockers: false,
+//                   privateWashroom: false,
+//                   secureAccess: false,
+//                   comfortSeating: false,
+//                   coffee: false,
+//                   gym: false,
+//                   ac: false,
+//                   tv: false,
+//                   printer: false,
+//                   phone: false,
+//                 },
+//               });
+//               setImages([]);
+//               setVideos([]);
+//               setPricingPlans([]);
+//               setSeats([]);
+//               setSeatBatchMode(false);
+//               await fetchCabins();
+//             } else {
+//               toast.error('Payment verification failed');
+//               setPaymentProcessing(false);
+//             }
+//           } catch (error) {
+//             console.error("Payment verification error:", error);
+//             toast.error(error.response?.data?.error || "Payment verification failed");
+//             setPaymentProcessing(false);
+//           }
+//         },
+//         prefill: {
+//           name: localStorage.getItem("userName") || "",
+//           email: localStorage.getItem("userEmail") || "",
+//           contact: localStorage.getItem("userPhone") || "",
+//         },
+//         theme: {
+//           color: "#6366f1",
+//         },
+//         modal: {
+//           ondismiss: function() {
+//             toast.warning("Payment cancelled");
+//             setPaymentProcessing(false);
+//           }
+//         }
+//       };
+
+//       const razorpay = new window.Razorpay(options);
+//       razorpay.open();
+//     } catch (error) {
+//       console.error("Razorpay error:", error);
+//       toast.error("Failed to initiate payment: " + error.message);
+//       setPaymentProcessing(false);
+//     }
+//   };
+
+//   // ✅ LOGGING: Create cabin with detailed logs
+//   const createCabinAndOrder = async () => {
+//     console.log("========================================");
+//     console.log("🏪 CREATING NEW CABIN");
+    
+//     // Get current user from localStorage
+//     const userStr = localStorage.getItem("user");
+//     const adminStr = localStorage.getItem("admin");
+    
+//     let currentUser = null;
+//     let userId = null;
+//     let userRole = null;
+    
+//     if (userStr) {
+//       currentUser = JSON.parse(userStr);
+//       userId = currentUser._id || currentUser.id;
+//       userRole = currentUser.role;
+//       console.log("👤 Current User from localStorage:");
+//       console.log("  - ID:", userId);
+//       console.log("  - Name:", currentUser.name);
+//       console.log("  - Email:", currentUser.email);
+//       console.log("  - Role:", userRole);
+//     } else if (adminStr) {
+//       currentUser = JSON.parse(adminStr);
+//       userId = currentUser._id || currentUser.id;
+//       userRole = currentUser.role;
+//       console.log("👑 Current Admin from localStorage:");
+//       console.log("  - ID:", userId);
+//       console.log("  - Name:", currentUser.name);
+//       console.log("  - Role:", userRole);
+//     } else {
+//       console.log("❌ No user or admin found in localStorage!");
+//       toast.error("Please login again");
+//       setSubmitting(false);
+//       return;
+//     }
+    
+//     console.log("🆔 User ID to be used as owner:", userId);
+//     console.log("========================================");
+    
+//     setSubmitting(true);
+//     const data = new FormData();
+//     const cabinName = formData.cabin ? `${formData.name} - ${formData.cabin}` : formData.name;
+//     data.append("name", cabinName);
+//     data.append("description", formData.description);
+//     data.append("capacity", formData.capacity);
+//     data.append("address", formData.address);
+//     data.append("price", formData.price);
+//     data.append("cabinType", formData.cabinType);
+//     data.append("is24x7", formData.is24x7);
+//     data.append("openTime", formData.openTime);
+//     data.append("closeTime", formData.closeTime);
+//     data.append("pricingPlans", JSON.stringify(pricingPlans));
+//     data.append("amenities", JSON.stringify(formData.amenities));
+//     data.append("seats", JSON.stringify(seats));
+//     images.forEach((img) => data.append("images", img));
+//     videos.forEach((video) => data.append("videos", video));
+
+//     console.log("📋 Cabin Data being sent:");
+//     console.log("  - Name:", cabinName);
+//     console.log("  - Address:", formData.address);
+//     console.log("  - Price:", formData.price);
+//     console.log("  - Capacity:", formData.capacity);
+//     console.log("  - Type:", formData.cabinType);
+//     console.log("  - is24x7:", formData.is24x7);
+//     console.log("  - openTime:", formData.openTime);
+//     console.log("  - closeTime:", formData.closeTime);
+//     console.log("  - Seats:", seats.length);
+//     console.log("  - Images:", images.length);
+//     console.log("  - Videos:", videos.length);
+//     console.log("  - Pricing Plans:", pricingPlans.length);
+
+//     try {
+//       const token = localStorage.getItem("token");
+//       console.log("🔑 Token present:", token ? "✅ Yes" : "❌ No");
+      
+//       console.log("📡 Sending POST request to create cabin...");
+//       const cabinRes = await axios.post(`${API_URL}/api/cabins`, data, {
+//         headers: { 
+//           Authorization: `Bearer ${token}`,
+//           'Content-Type': 'multipart/form-data'
+//         },
+//       });
+
+//       const newCabin = cabinRes.data.cabin;
+//       console.log("✅ Cabin created successfully!");
+//       console.log("📦 New Cabin Data:");
+//       console.log("  - ID:", newCabin._id);
+//       console.log("  - Name:", newCabin.name);
+//       console.log("  - Owner ID:", newCabin.owner);
+//       console.log("  - Expiry Date:", newCabin.expiryDate);
+//       console.log("========================================");
+      
+//       toast.success("Cabin created successfully!");
+
+//       const orderRes = await axios.post(
+//         `${API_URL}/api/cabins/createcabinorder`,
+//         { cabinId: newCabin._id },
+//         getAuthHeader()
+//       );
+
+//       if (orderRes.data.success) {
+//         setShowConfirmModal(false);
+//         setSubmitting(false);
+//         await initiateRazorpayPayment(newCabin._id, orderRes.data);
+//       }
+      
+//     } catch (err) {
+//       console.error("❌ Error creating cabin:", err);
+//       console.error("❌ Error Response:", err.response?.data);
+//       console.error("❌ Error Status:", err.response?.status);
+//       console.error("❌ Error Message:", err.message);
+//       console.log("========================================");
+//       toast.error(err.response?.data?.error || "Failed to create cabin and order");
+//       setSubmitting(false);
+//     } finally {
+//       setSubmitting(false);
+//     }
+//   };
+
+//   const handleSubmit = (e) => {
+//     e.preventDefault();
+    
+//     console.log("========================================");
+//     console.log("📝 FORM SUBMITTED");
+//     console.log("Form Data:", formData);
+//     console.log("Seats:", seats.length);
+//     console.log("Images:", images.length);
+//     console.log("Videos:", videos.length);
+//     console.log("Pricing Plans:", pricingPlans.length);
+//     console.log("========================================");
+    
+//     if (!formData.name || !formData.address || !formData.capacity || !formData.price || !formData.cabin) {
+//       toast.error("Please fill all required fields");
+//       return;
+//     }
+
+//     // Validate seats
+//     if (seats.length === 0) {
+//       toast.error("Please add at least one seat to the cabin");
+//       return;
+//     }
+
+//     // Validate seat count matches capacity
+//     if (seats.length !== parseInt(formData.capacity)) {
+//       toast.error(`Number of seats (${seats.length}) does not match capacity (${formData.capacity})`);
+//       return;
+//     }
+    
+//     setShowConfirmModal(true);
+//   };
+
+//   // Filter cabins based on all filters
+//   const filteredCabins = cabins.filter(cabin => {
+//     const searchLower = searchTerm.toLowerCase();
+//     const matchesSearch = cabin.name?.toLowerCase().includes(searchLower) ||
+//                          cabin.address?.toLowerCase().includes(searchLower);
+    
+//     const matchesName = cabin.name?.toLowerCase().includes(filters.name.toLowerCase());
+//     const matchesAddress = cabin.address?.toLowerCase().includes(filters.address.toLowerCase());
+    
+//     const price = cabin.price || 0;
+//     const matchesPriceMin = filters.priceMin === '' || price >= Number(filters.priceMin);
+//     const matchesPriceMax = filters.priceMax === '' || price <= Number(filters.priceMax);
+    
+//     const isActive = cabin.isActive === true;
+//     const matchesStatus = filters.status === 'all' || 
+//                          (filters.status === 'active' && isActive) ||
+//                          (filters.status === 'inactive' && !isActive);
+    
+//     return matchesSearch && matchesName && matchesAddress && 
+//            matchesPriceMin && matchesPriceMax && matchesStatus;
+//   });
+
+//   const getCabinStatus = (cabin) => {
+//     if (cabin.isActive === true) {
+//       return { status: 'Active', color: 'green' };
+//     }
+//     return { status: 'Inactive', color: 'gray' };
+//   };
+
+//   const isFirstCabin = cabinCount === 0;
+//   const currentAmenities = getAmenitiesForType(formData.cabinType);
+//   const { baseFee, gstAmount, totalWithGST } = getFeeWithGST();
+
+//   const handleViewCabin = (cabin) => {
+//     console.log("👁️ Viewing cabin:", cabin._id, cabin.name);
+//     console.log("  Owner:", cabin.owner);
+//     setSelectedCabin(cabin);
+//     setShowViewModal(true);
+//   };
+
+//   const closeViewModal = () => {
+//     setShowViewModal(false);
+//     setSelectedCabin(null);
+//   };
+
+//   const formatDate = (dateString) => {
+//     if (!dateString) return "N/A";
+//     const date = new Date(dateString);
+//     return date.toLocaleDateString('en-US', {
+//       year: 'numeric',
+//       month: 'short',
+//       day: 'numeric'
+//     });
+//   };
+
+//   const formatCountdown = (seconds) => {
+//     if (!seconds || seconds <= 0) return 'Expired';
+//     const days = Math.floor(seconds / 86400);
+//     const hours = Math.floor((seconds % 86400) / 3600);
+//     const minutes = Math.floor((seconds % 3600) / 60);
+//     const secs = seconds % 60;
+    
+//     if (days > 0) {
+//       return `${days}d ${hours}h`;
+//     }
+//     return `${hours}h ${minutes}m`;
+//   };
+
+//   const getCountdownColor = (seconds) => {
+//     if (!seconds || seconds <= 0) return 'text-red-600';
+//     if (seconds < 86400) return 'text-orange-500';
+//     if (seconds < 172800) return 'text-yellow-500';
+//     return 'text-emerald-600';
+//   };
+
+//   const clearFilters = () => {
+//     setFilters({
+//       name: '',
+//       address: '',
+//       priceMin: '',
+//       priceMax: '',
+//       status: 'all'
+//     });
+//     setSearchTerm('');
+//   };
+
+//   const activeCount = cabins.filter(c => c.isActive === true).length;
+//   const inactiveCount = cabins.filter(c => c.isActive !== true).length;
+//   const exclusiveCount = cabins.filter(c => c.cabinType === 'exclusive').length;
+
+//   // ✅ LOGGING: Component mount
+//   useEffect(() => {
+//     console.log("========================================");
+//     console.log("🏪 MY CABIN PAGE LOADED");
+//     const userStr = localStorage.getItem("user");
+//     const adminStr = localStorage.getItem("admin");
+    
+//     if (userStr) {
+//       const user = JSON.parse(userStr);
+//       console.log("👤 Logged in as USER:");
+//       console.log("  - ID:", user._id);
+//       console.log("  - Name:", user.name);
+//       console.log("  - Role:", user.role);
+//     } else if (adminStr) {
+//       const admin = JSON.parse(adminStr);
+//       console.log("👑 Logged in as ADMIN:");
+//       console.log("  - ID:", admin._id);
+//       console.log("  - Name:", admin.name);
+//       console.log("  - Role:", admin.role);
+//     } else {
+//       console.log("❌ No user logged in!");
+//     }
+//     console.log("========================================");
+//   }, []);
+
+//   return (
+//     <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
+//       <UsersNavbar />
+
+//       <div className="pt-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
+//         {/* Header */}
+//         <div className="admin-dash__header">
+//           <div>
+//             <h1 className="admin-dash__greeting">
+//               My <span>Cabins</span>
+//             </h1>
+//           </div>
+//         </div>
+
+//         {/* Stats Cards */}
+//         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
+//           <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
+//             <p className="text-xs text-gray-500 font-medium">Total Cabins</p>
+//             <p className="text-xl sm:text-2xl font-bold text-indigo-600">{cabins.length}</p>
+//           </div>
+//           <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
+//             <p className="text-xs text-gray-500 font-medium">Active</p>
+//             <p className="text-xl sm:text-2xl font-bold text-emerald-600">{activeCount}</p>
+//           </div>
+//           <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
+//             <p className="text-xs text-gray-500 font-medium">Inactive</p>
+//             <p className="text-xl sm:text-2xl font-bold text-gray-600">{inactiveCount}</p>
+//           </div>
+//           <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
+//             <p className="text-xs text-gray-500 font-medium">Exclusive</p>
+//             <p className="text-xl sm:text-2xl font-bold text-amber-600">{exclusiveCount}</p>
+//           </div>
+//         </div>
+
+//         <div className="space-y-6">
+//           {/* Cabins Table Section */}
+//           <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
+//             <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
+//               <div className="flex items-center gap-3">
+//                 <h3 className="admin-dash__card-title">Registered Cabins</h3>
+//                 <span className="px-2.5 py-0.5 text-xs font-bold text-indigo-700 bg-indigo-100 rounded-full">
+//                   {filteredCabins.length}
+//                 </span>
+//               </div>
+//               <div className="flex flex-wrap items-center gap-2">
+//                 {/* Search Bar */}
+//                 <div className="relative w-full sm:w-48">
+//                   <Search
+//                     size={16}
+//                     className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+//                   />
+//                   <input
+//                     type="text"
+//                     placeholder="Search cabins..."
+//                     value={searchTerm}
+//                     onChange={(e) => setSearchTerm(e.target.value)}
+//                     className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+//                   />
+//                 </div>
+
+//                 {/* Filters - Always Visible */}
+//                 <div className="flex items-center gap-2 flex-wrap">
+//                   <input
+//                     type="text"
+//                     placeholder="Name"
+//                     value={filters.name}
+//                     onChange={(e) => setFilters({...filters, name: e.target.value})}
+//                     className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700 w-28"
+//                   />
+//                   <input
+//                     type="text"
+//                     placeholder="Address"
+//                     value={filters.address}
+//                     onChange={(e) => setFilters({...filters, address: e.target.value})}
+//                     className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700 w-28"
+//                   />
+//                   <input
+//                     type="number"
+//                     placeholder="Min Price"
+//                     value={filters.priceMin}
+//                     onChange={(e) => setFilters({...filters, priceMin: e.target.value})}
+//                     className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700 w-24"
+//                   />
+//                   <input
+//                     type="number"
+//                     placeholder="Max Price"
+//                     value={filters.priceMax}
+//                     onChange={(e) => setFilters({...filters, priceMax: e.target.value})}
+//                     className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700 w-24"
+//                   />
+//                   <select
+//                     value={filters.status}
+//                     onChange={(e) => setFilters({...filters, status: e.target.value})}
+//                     className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700"
+//                   >
+//                     <option value="all">All Status</option>
+//                     <option value="active">Active</option>
+//                     <option value="inactive">Inactive</option>
+//                   </select>
+//                   {(filters.name || filters.address || filters.priceMin || filters.priceMax || filters.status !== 'all' || searchTerm) && (
+//                     <button
+//                       onClick={clearFilters}
+//                       className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+//                     >
+//                       <XCircle size={14} />
+//                       Clear
+//                     </button>
+//                   )}
+//                 </div>
+
+//                 <button
+//                   onClick={() => navigate("/my-cabin-payments")}
+//                   className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200"
+//                 >
+//                   <CreditCard size={14} />
+//                   <span className="hidden xs:inline">Payments</span>
+//                   <span className="xs:hidden">Pmt</span>
+//                 </button>
+
+//                 <button
+//                   onClick={() => navigate("/cabin-bookings")}
+//                   className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+//                 >
+//                   <FileText size={14} className="text-indigo-600" />
+//                   <span className="hidden xs:inline">Bookings</span>
+//                   <span className="xs:hidden">Bkgs</span>
+//                 </button>
+
+//                 <button
+//                   onClick={() => {
+//                     console.log("🔄 Opening Add Cabin Modal");
+//                     setIsModalOpen(true);
+//                     setSeats([]);
+//                     setSeatBatchMode(false);
+//                     setVideos([]);
+//                   }}
+//                   className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors"
+//                 >
+//                   <Plus size={14} />
+//                   <span className="hidden xs:inline">Add Cabin</span>
+//                   <span className="xs:hidden">Add</span>
+//                 </button>
+//               </div>
+//             </div>
+
+//             {/* Table Container */}
+//             <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
+//               {loading ? (
+//                 <div className="flex flex-col items-center justify-center gap-3 py-20">
+//                   <div className="w-12 h-12 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin"></div>
+//                   <p className="text-gray-500">Loading cabins...</p>
+//                 </div>
+//               ) : filteredCabins.length === 0 ? (
+//                 <div className="flex flex-col items-center justify-center gap-3 py-20 text-gray-400">
+//                   <BuildingIcon size={48} className="opacity-20" />
+//                   <p className="text-lg font-medium">No cabins found</p>
+//                   <p className="text-sm">Try adjusting your filters or add a new cabin.</p>
+//                 </div>
+//               ) : (
+//                 <table className="w-full min-w-[1200px] text-left">
+//                   <thead>
+//                     <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
+//                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
+//                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
+//                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Address</th>
+//                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Type</th>
+//                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Price</th>
+//                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Seats</th>
+//                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
+//                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Expiry</th>
+//                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Joined</th>
+//                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Actions</th>
+//                     </tr>
+//                   </thead>
+//                   <tbody className="divide-y divide-gray-100">
+//                     {filteredCabins.map((cabin, index) => {
+//                       const cabinStatus = getCabinStatus(cabin);
+//                       const isExclusive = cabin.cabinType === 'exclusive';
+//                       const countdown = countdowns[cabin._id] || 0;
+//                       const hasExpiry = cabin.expiryDate ? true : false;
+//                       const isExpired = cabin.expiryDate && new Date(cabin.expiryDate) < new Date();
+//                       const seatCount = cabin.seats?.length || 0;
+                      
+//                       return (
+//                         <tr key={cabin._id} className="transition-colors group hover:bg-gray-50/80">
+//                           <td className="p-4">
+//                             <span className="text-sm font-semibold text-gray-400">#{index + 1}</span>
+//                           </td>
+//                           <td className="p-4">
+//                             <div className="flex items-center gap-3">
+//                               <div className="flex-shrink-0 w-10 h-10 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
+//                                 <img
+//                                   src={cabin.images?.[0] ? getImageUrl(cabin.images[0]) : PLACEHOLDER_IMAGE}
+//                                   alt={cabin.name}
+//                                   className="w-full h-full object-cover"
+//                                   onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
+//                                 />
+//                               </div>
+//                               <div>
+//                                 <p className="font-semibold text-gray-900 text-sm">{cabin.name || 'N/A'}</p>
+//                                 <p className="text-[10px] text-gray-400">{cabin.cabin || 'N/A'}</p>
+//                               </div>
+//                             </div>
+//                           </td>
+//                           <td className="p-4">
+//                             <span className="text-sm font-medium text-gray-700 flex items-center gap-1.5">
+//                               <MapPin size={14} className="text-gray-400 flex-shrink-0" />
+//                               <span className="truncate max-w-[150px]">{cabin.address || "N/A"}</span>
+//                             </span>
+//                           </td>
+//                           <td className="p-4">
+//                             <span className={`px-3 py-1 text-xs font-bold rounded-full inline-flex items-center gap-1.5 ${
+//                               isExclusive ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
+//                             }`}>
+//                               {isExclusive ? <><Crown size={12} /> Exclusive</> : 'Normal'}
+//                             </span>
+//                           </td>
+//                           <td className="p-4">
+//                             <span className="text-sm font-bold text-gray-900">₹{cabin.price || 0}</span>
+//                             <span className="text-xs text-gray-400 ml-0.5">/hr</span>
+//                           </td>
+//                           <td className="p-4">
+//                             <div className="flex items-center gap-1.5">
+//                               <Armchair size={14} className="text-gray-400" />
+//                               <span className="text-sm font-medium text-gray-700">{seatCount}</span>
+//                               <span className="text-xs text-gray-400">seats</span>
+//                             </div>
+//                           </td>
+//                           <td className="p-4">
+//                             <span className={`px-3 py-1 text-xs font-bold rounded-full ${
+//                               cabinStatus.color === 'green' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'
+//                             }`}>
+//                               {cabinStatus.status}
+//                             </span>
+//                           </td>
+//                           <td className="p-4">
+//                             {hasExpiry ? (
+//                               <div className="flex flex-col gap-0.5">
+//                                 <span className="text-sm text-gray-600">{formatDate(cabin.expiryDate)}</span>
+//                                 {countdown > 0 && (
+//                                   <span className={`text-[10px] font-mono font-medium flex items-center gap-1 ${getCountdownColor(countdown)}`}>
+//                                     <Timer size={10} />
+//                                     {formatCountdown(countdown)}
+//                                   </span>
+//                                 )}
+//                                 {isExpired && <span className="text-[10px] text-red-500 font-medium">🔴 Expired</span>}
+//                               </div>
+//                             ) : (
+//                               <span className="text-sm text-gray-400">No expiry</span>
+//                             )}
+//                           </td>
+//                           <td className="p-4">
+//                             <span className="text-sm text-gray-500">{formatDate(cabin.createdAt)}</span>
+//                           </td>
+//                           <td className="p-4">
+//                             <div className="flex items-center gap-1.5 flex-wrap">
+//                               <button
+//                                 onClick={() => handleViewCabin(cabin)}
+//                                 className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors whitespace-nowrap"
+//                               >
+//                                 <Eye size={13} /> View
+//                               </button>
+//                               <button
+//                                 onClick={() => navigate(`/cabin/${cabin._id}`)}
+//                                 className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-orange-50 text-orange-700 hover:bg-orange-100 transition-colors whitespace-nowrap"
+//                               >
+//                                 <Home size={13} /> Open
+//                               </button>
+//                               <button 
+//                                 className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-red-50 text-red-700 hover:bg-red-100 transition-colors whitespace-nowrap"
+//                                 onClick={(e) => handleDelete(e, cabin._id)}
+//                               >
+//                                 <Trash2 size={13} /> Delete
+//                               </button>
+//                             </div>
+//                           </td>
+//                         </tr>
+//                       );
+//                     })}
+//                   </tbody>
+//                 </table>
+//               )}
+//             </div>
+
+//             {/* Footer */}
+//             {!loading && filteredCabins.length > 0 && (
+//               <div className="px-4 py-3 border-t border-gray-100 rounded-b-2xl flex flex-wrap items-center justify-between gap-2" style={{ backgroundColor: '#fafafa' }}>
+//                 <span className="text-xs text-gray-500">
+//                   Showing <strong>{filteredCabins.length}</strong> of <strong>{cabins.length}</strong> cabins
+//                 </span>
+//                 <div className="flex items-center gap-3 text-xs text-gray-500">
+//                   <span className="flex items-center gap-1">
+//                     <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+//                     Active: {activeCount}
+//                   </span>
+//                   <span className="flex items-center gap-1">
+//                     <span className="w-2 h-2 rounded-full bg-gray-400"></span>
+//                     Inactive: {inactiveCount}
+//                   </span>
+//                   <span className="flex items-center gap-1">
+//                     <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+//                     Exclusive: {exclusiveCount}
+//                   </span>
+//                 </div>
+//               </div>
+//             )}
+//           </div>
+//         </div>
+//       </div>
+
+//       {/* View Cabin Modal */}
+//       {showViewModal && selectedCabin && (
+//         <div 
+//           className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+//           onClick={(e) => {
+//             if (e.target === e.currentTarget) {
+//               closeViewModal();
+//             }
+//           }}
+//         >
+//           <div 
+//             className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
+//             onClick={(e) => e.stopPropagation()}
+//           >
+//             <div className={`p-6 ${
+//               selectedCabin.cabinType === 'exclusive' 
+//                 ? 'bg-gradient-to-br from-amber-500 to-amber-600' 
+//                 : 'bg-gradient-to-br from-indigo-600 to-purple-600'
+//             } text-white sticky top-0 z-10`}>
+//               <div className="flex items-start justify-between">
+//                 <div className="flex items-center gap-4">
+//                   <div className="w-16 h-16 rounded-xl bg-white/20 flex items-center justify-center overflow-hidden backdrop-blur-sm">
+//                     {selectedCabin.images?.[0] ? (
+//                       <img 
+//                         src={getImageUrl(selectedCabin.images[0])} 
+//                         alt={selectedCabin.name}
+//                         className="w-full h-full object-cover"
+//                       />
+//                     ) : (
+//                       <Building2 size={28} className="text-white" />
+//                     )}
+//                   </div>
+//                   <div>
+//                     <h3 className="text-2xl font-bold">{selectedCabin.name || 'N/A'}</h3>
+//                     <p className="text-sm opacity-80 flex items-center gap-2">
+//                       <MapPin size={14} />
+//                       {selectedCabin.address || 'No address'}
+//                     </p>
+//                   </div>
+//                 </div>
+//                 <button
+//                   onClick={closeViewModal}
+//                   className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+//                 >
+//                   <X size={20} />
+//                 </button>
+//               </div>
+//             </div>
+
+//             <div className="p-6 space-y-6">
+//               <div className="grid grid-cols-2 gap-4">
+//                 <div className="p-4 bg-gray-50 rounded-xl">
+//                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Type</p>
+//                   <p className="mt-1 font-medium text-gray-700 flex items-center gap-2">
+//                     {selectedCabin.cabinType === 'exclusive' ? (
+//                       <><Crown size={16} className="text-amber-500" /> Exclusive</>
+//                     ) : 'Normal'}
+//                   </p>
+//                 </div>
+//                 <div className="p-4 bg-gray-50 rounded-xl">
+//                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Price</p>
+//                   <p className="mt-1 font-bold text-gray-700 flex items-center gap-1">
+//                     ₹{selectedCabin.price || 0}
+//                     <span className="text-sm font-normal text-gray-400">/hr</span>
+//                   </p>
+//                 </div>
+//                 <div className="p-4 bg-gray-50 rounded-xl">
+//                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Seats</p>
+//                   <p className="mt-1 font-medium text-gray-700 flex items-center gap-2">
+//                     <Armchair size={16} className="text-gray-400" />
+//                     {selectedCabin.seats?.length || 0} seats
+//                   </p>
+//                 </div>
+//                 <div className="p-4 bg-gray-50 rounded-xl">
+//                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Status</p>
+//                   <p className="mt-1 font-medium">
+//                     <span className={`px-3 py-1 text-xs font-bold rounded-full ${
+//                       selectedCabin.isActive === true 
+//                         ? 'bg-emerald-100 text-emerald-700' 
+//                         : 'bg-gray-100 text-gray-600'
+//                     }`}>
+//                       {selectedCabin.isActive === true ? 'Active' : 'Inactive'}
+//                     </span>
+//                   </p>
+//                 </div>
+//               </div>
+
+//               {/* Seats List */}
+//               {selectedCabin.seats && selectedCabin.seats.length > 0 && (
+//                 <div className="p-4 bg-gray-50 rounded-xl">
+//                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Seats</p>
+//                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mt-2">
+//                     {selectedCabin.seats.map((seat, idx) => (
+//                       <div key={idx} className="bg-white p-2 rounded-lg border border-gray-200 text-center">
+//                         <Armchair size={14} className="mx-auto text-indigo-500 mb-1" />
+//                         <p className="text-xs font-medium text-gray-700">{seat.name}</p>
+//                         <p className="text-[10px] text-gray-400">#{seat.number}</p>
+//                       </div>
+//                     ))}
+//                   </div>
+//                 </div>
+//               )}
+
+//               <div className="p-4 bg-gray-50 rounded-xl">
+//                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Expiry Date</p>
+//                 <p className="mt-1 font-medium text-gray-700 flex items-center gap-2">
+//                   <Calendar size={16} className="text-gray-400" />
+//                   {selectedCabin.expiryDate ? (
+//                     <span>
+//                       {formatDate(selectedCabin.expiryDate)}
+//                       {new Date(selectedCabin.expiryDate) < new Date() ? (
+//                         <span className="ml-2 px-2 py-0.5 text-[10px] font-bold bg-red-100 text-red-700 rounded-full">Expired</span>
+//                       ) : (
+//                         <span className="ml-2 px-2 py-0.5 text-[10px] font-bold bg-emerald-100 text-emerald-700 rounded-full">Valid</span>
+//                       )}
+//                     </span>
+//                   ) : (
+//                     <span className="text-gray-400">No expiry date set</span>
+//                   )}
+//                 </p>
+//               </div>
+
+//               {selectedCabin.description && (
+//                 <div className="p-4 bg-gray-50 rounded-xl">
+//                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Description</p>
+//                   <p className="mt-1 text-gray-700">{selectedCabin.description}</p>
+//                 </div>
+//               )}
+
+//               {selectedCabin.amenities && Object.values(selectedCabin.amenities).some(v => v) && (
+//                 <div className="p-4 bg-gray-50 rounded-xl">
+//                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Amenities</p>
+//                   <div className="flex flex-wrap gap-1.5 mt-2">
+//                     {Object.entries(selectedCabin.amenities)
+//                       .filter(([key, value]) => value)
+//                       .map(([key]) => {
+//                         const allAmenities = [...NORMAL_AMENITIES, ...EXCLUSIVE_AMENITIES];
+//                         const amenity = allAmenities.find(a => a.key === key);
+//                         const Icon = amenity?.icon;
+//                         return (
+//                           <span key={key} className="px-2.5 py-1 bg-white rounded-full text-xs text-gray-700 border border-gray-200 flex items-center gap-1">
+//                             {Icon && <Icon size={12} className="text-indigo-500" />}
+//                             {amenity?.label || key}
+//                           </span>
+//                         );
+//                       })}
+//                   </div>
+//                 </div>
+//               )}
+
+//               {selectedCabin.pricingPlans && selectedCabin.pricingPlans.length > 0 && (
+//                 <div className="p-4 bg-gray-50 rounded-xl">
+//                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Pricing Plans</p>
+//                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
+//                     {selectedCabin.pricingPlans.map((plan, idx) => (
+//                       <div key={idx} className="bg-white p-2 rounded-lg border border-gray-200 text-center">
+//                         <p className="text-xs font-bold text-gray-700">{plan.label || `Plan ${idx + 1}`}</p>
+//                         <p className="text-xs text-gray-500">{plan.hours}h · ₹{plan.cost}</p>
+//                         <p className="text-[10px] text-gray-400">{plan.validity}d validity</p>
+//                       </div>
+//                     ))}
+//                   </div>
+//                 </div>
+//               )}
+
+//               <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-200">
+//                 <button
+//                   onClick={() => {
+//                     closeViewModal();
+//                     navigate(`/cabin/${selectedCabin._id}`);
+//                   }}
+//                   className="flex-1 min-w-[120px] py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-sm active:scale-[0.98]"
+//                 >
+//                   <Home size={16} className="inline mr-2" />
+//                   Open Cabin
+//                 </button>
+//                 <button
+//                   onClick={() => {
+//                     closeViewModal();
+//                     navigate("/cabin-bookings");
+//                   }}
+//                   className="flex-1 min-w-[120px] py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition shadow-sm active:scale-[0.98]"
+//                 >
+//                   <Calendar size={16} className="inline mr-2" />
+//                   View Bookings
+//                 </button>
+//               </div>
+//             </div>
+//           </div>
+//         </div>
+//       )}
+
+//       {/* Add Cabin Modal */}
+//       {isModalOpen && (
+//         <div className="fixed inset-0 z-[1100] flex items-end sm:items-center justify-center p-2 sm:p-4 bg-slate-900/50 backdrop-blur-sm">
+//           <div
+//             className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200"
+//             style={{ maxHeight: "95vh" }}
+//           >
+//             <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 sm:p-5 flex items-center justify-between flex-shrink-0">
+//               <div className="flex items-center gap-3">
+//                 <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-white/20 flex items-center justify-center">
+//                   <Home size={18} className="text-white sm:w-5 sm:h-5" />
+//                 </div>
+//                 <div>
+//                   <h2 className="text-base sm:text-lg font-bold text-white">
+//                     Add New Cabin #{cabinCount + 1}
+//                   </h2>
+//                   <p className="text-[10px] sm:text-xs text-white/75">
+//                     Fee: ₹{isFirstCabin ? '2,000' : '1,000'} + GST (18%)
+//                   </p>
+//                 </div>
+//               </div>
+//               <button
+//                 onClick={() => {
+//                   setIsModalOpen(false);
+//                   setVideos([]);
+//                 }}
+//                 className="w-8 h-8 rounded-xl bg-white/15 hover:bg-white/25 transition-colors flex items-center justify-center text-white"
+//               >
+//                 <X size={18} />
+//               </button>
+//             </div>
+
+//             <div className="overflow-y-auto p-4 sm:p-6 flex-1">
+//               <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+//                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+//                   <div>
+//                     <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Building Name *</label>
+//                     <input
+//                       className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+//                       type="text" name="name"
+//                       placeholder="e.g. Tech Hub"
+//                       value={formData.name}
+//                       onChange={handleChange}
+//                       required
+//                     />
+//                   </div>
+//                   <div>
+//                     <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Address *</label>
+//                     <input
+//                       className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+//                       type="text" name="address"
+//                       placeholder="e.g. Bangalore"
+//                       value={formData.address}
+//                       onChange={handleChange}
+//                       required
+//                     />
+//                   </div>
+//                 </div>
+
+//                 <div className="grid grid-cols-1 xs:grid-cols-3 gap-3 sm:gap-4">
+//                   <div>
+//                     <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Cabin Spec *</label>
+//                     <input
+//                       className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+//                       type="text" name="cabin"
+//                       placeholder="e.g. Office B"
+//                       value={formData.cabin}
+//                       onChange={handleChange}
+//                       required
+//                     />
+//                   </div>
+//                   <div>
+//                     <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Price/hr *</label>
+//                     <input
+//                       className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+//                       type="number" name="price" min="0"
+//                       placeholder="25000"
+//                       value={formData.price}
+//                       onChange={handleChange}
+//                       required
+//                     />
+//                   </div>
+//                   <div>
+//                     <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Number of Seats *</label>
+//                     <div className="flex items-center gap-2 mt-1">
+//                       <input
+//                         className="flex-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+//                         type="number" name="capacity" min="1"
+//                         placeholder="e.g. 5"
+//                         value={formData.capacity}
+//                         onChange={handleChange}
+//                         required
+//                       />
+//                       <button
+//                         type="button"
+//                         onClick={openBatchSeatModal}
+//                         disabled={!formData.capacity || parseInt(formData.capacity) < 1}
+//                         className={`px-3 py-2.5 sm:py-3 rounded-xl text-xs font-bold transition-colors whitespace-nowrap ${
+//                           !formData.capacity || parseInt(formData.capacity) < 1
+//                             ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+//                             : 'bg-indigo-600 text-white hover:bg-indigo-700'
+//                         }`}
+//                       >
+//                         <Plus size={14} className="inline mr-1" /> Add
+//                       </button>
+//                     </div>
+//                     {formData.capacity && parseInt(formData.capacity) > 0 && (
+//                       <p className="text-[10px] text-slate-400 mt-0.5">
+//                         {seats.length} of {formData.capacity} seats added
+//                         {seats.length > 0 && seats.length === parseInt(formData.capacity) && (
+//                           <span className="text-emerald-600 font-bold ml-1">✅ Complete!</span>
+//                         )}
+//                         {seats.length > 0 && seats.length < parseInt(formData.capacity) && (
+//                           <span className="text-amber-600 ml-1">⚠️ {parseInt(formData.capacity) - seats.length} more needed</span>
+//                         )}
+//                       </p>
+//                     )}
+//                   </div>
+//                 </div>
+
+//                 {/* Seat Management Section */}
+//                 <div>
+//                   <div className="flex justify-between items-center mb-1.5">
+//                     <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">
+//                       Seat List ({seats.length} / {formData.capacity || '0'})
+//                     </label>
+//                     <div className="flex gap-1.5">
+//                       {formData.capacity && parseInt(formData.capacity) > 0 && seats.length === 0 && (
+//                         <button
+//                           type="button"
+//                           onClick={generateAllSeats}
+//                           className="text-[10px] sm:text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 sm:px-3 py-1 rounded-lg hover:bg-emerald-100 transition-colors flex items-center gap-1"
+//                         >
+//                           <GridIcon size={12} /> Generate All
+//                         </button>
+//                       )}
+//                       <button
+//                         type="button"
+//                         onClick={openSeatModal}
+//                         className="text-[10px] sm:text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 sm:px-3 py-1 rounded-lg hover:bg-indigo-100 transition-colors flex items-center gap-1"
+//                       >
+//                         <Plus size={12} /> Add Manual
+//                       </button>
+//                     </div>
+//                   </div>
+                  
+//                   {seats.length > 0 ? (
+//                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+//                       {seats.map((seat, idx) => (
+//                         <div key={idx} className="bg-slate-50 rounded-lg border border-slate-200 p-2 text-center relative group">
+//                           <Armchair size={14} className="mx-auto text-indigo-500 mb-1" />
+//                           <p className="text-xs font-medium text-gray-700 truncate">{seat.name}</p>
+//                           <p className="text-[10px] text-gray-400">#{seat.number}</p>
+//                           <div className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+//                             <button
+//                               type="button"
+//                               onClick={() => editSeat(idx)}
+//                               className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-[8px] hover:bg-indigo-200 transition-colors"
+//                             >
+//                               ✎
+//                             </button>
+//                             <button
+//                               type="button"
+//                               onClick={() => removeSeat(idx)}
+//                               className="w-5 h-5 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-[8px] hover:bg-red-200 transition-colors"
+//                             >
+//                               ×
+//                             </button>
+//                           </div>
+//                         </div>
+//                       ))}
+//                     </div>
+//                   ) : (
+//                     <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center">
+//                       <p className="text-xs text-slate-400">
+//                         {formData.capacity && parseInt(formData.capacity) > 0 ? (
+//                           <>Click <strong>"Add"</strong> next to seats field to add seats one by one, or <strong>"Generate All"</strong> to create all at once.</>
+//                         ) : (
+//                           <>Enter number of seats first, then click <strong>"Add"</strong> to add seats.</>
+//                         )}
+//                       </p>
+//                     </div>
+//                   )}
+//                 </div>
+
+//                 {/* ✅ NEW: Operating Hours Section */}
+//                 <div>
+//                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Operating Hours</label>
+//                   <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-1">
+//                     <button
+//                       type="button"
+//                       onClick={() => setFormData(prev => ({ ...prev, is24x7: !prev.is24x7 }))}
+//                       className={`py-2.5 sm:py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold border-2 transition-all flex items-center justify-center gap-2 ${
+//                         formData.is24x7
+//                           ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+//                           : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+//                       }`}
+//                     >
+//                       {formData.is24x7 ? '✅ 24x7' : '⏰ Set Hours'}
+//                     </button>
+//                     {!formData.is24x7 && (
+//                       <>
+//                         <div>
+//                           <label className="text-[8px] font-bold text-slate-400">Open</label>
+//                           <input
+//                             type="time"
+//                             name="openTime"
+//                             value={formData.openTime}
+//                             onChange={handleChange}
+//                             className="w-full mt-0.5 px-2 py-1.5 border border-slate-200 rounded-lg text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none"
+//                           />
+//                         </div>
+//                         <div>
+//                           <label className="text-[8px] font-bold text-slate-400">Close</label>
+//                           <input
+//                             type="time"
+//                             name="closeTime"
+//                             value={formData.closeTime}
+//                             onChange={handleChange}
+//                             className="w-full mt-0.5 px-2 py-1.5 border border-slate-200 rounded-lg text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none"
+//                           />
+//                         </div>
+//                       </>
+//                     )}
+//                   </div>
+//                 </div>
+
+//                 <div>
+//                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Cabin Type</label>
+//                   <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-1">
+//                     <button
+//                       type="button"
+//                       onClick={() => handleCabinTypeChange("normal")}
+//                       className={`py-2.5 sm:py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold border-2 transition-all ${
+//                         formData.cabinType === 'normal'
+//                           ? 'border-indigo-600 bg-indigo-50 text-indigo-600'
+//                           : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+//                       }`}
+//                     >
+//                       <Building2 size={14} className="inline mr-1.5" />
+//                       Normal
+//                     </button>
+//                     <button
+//                       type="button"
+//                       onClick={() => handleCabinTypeChange("exclusive")}
+//                       className={`py-2.5 sm:py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold border-2 transition-all ${
+//                         formData.cabinType === 'exclusive'
+//                           ? 'border-amber-500 bg-amber-50 text-amber-600'
+//                           : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+//                       }`}
+//                     >
+//                       <Crown size={14} className="inline mr-1.5 text-amber-500" />
+//                       Exclusive
+//                     </button>
+//                   </div>
+//                 </div>
+
+//                 <div>
+//                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Amenities</label>
+//                   <div className="grid grid-cols-2 xs:grid-cols-3 gap-1.5 sm:gap-2 mt-1">
+//                     {currentAmenities.map(item => {
+//                       const Icon = item.icon;
+//                       const isActive = formData.amenities[item.key] || false;
+//                       return (
+//                         <button
+//                           key={item.key}
+//                           type="button"
+//                           onClick={() => toggleAmenity(item.key)}
+//                           className={`flex items-center gap-1.5 sm:gap-2 p-2 sm:p-2.5 rounded-lg text-[10px] sm:text-xs font-semibold border transition-all ${
+//                             isActive
+//                               ? 'border-indigo-500 bg-indigo-50 text-indigo-600'
+//                               : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+//                           }`}
+//                         >
+//                           <span className={`w-1.5 h-1.5 rounded-full border-2 ${
+//                             isActive ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300'
+//                           }`}></span>
+//                           <Icon size={12} className="sm:w-3.5 sm:h-3.5" />
+//                           <span className="truncate">{item.label}</span>
+//                         </button>
+//                       );
+//                     })}
+//                   </div>
+//                 </div>
+
+//                 <div>
+//                   <div className="flex justify-between items-center mb-1.5">
+//                     <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Pricing Plans</label>
+//                     <button
+//                       type="button"
+//                       onClick={() => {
+//                         const label = prompt("Plan Label:");
+//                         const hours = prompt("Included Hours:");
+//                         const cost = prompt("Cost (₹):");
+//                         const validity = prompt("Validity (Days):");
+//                         if (hours && cost && validity) {
+//                           setPricingPlans([...pricingPlans, {
+//                             label: (label || "").trim(),
+//                             hours: Number(hours),
+//                             cost: Number(cost),
+//                             validity: Number(validity)
+//                           }]);
+//                         }
+//                       }}
+//                       className="text-[10px] sm:text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 sm:px-3 py-1 rounded-lg hover:bg-indigo-100 transition-colors"
+//                     >
+//                       + Add Plan
+//                     </button>
+//                   </div>
+//                   {pricingPlans.length > 0 ? (
+//                     <div className="grid grid-cols-1 xs:grid-cols-2 gap-1.5 sm:gap-2">
+//                       {pricingPlans.map((plan, idx) => (
+//                         <div key={idx} className="p-2 sm:p-2.5 bg-slate-50 rounded-lg text-[10px] sm:text-xs border border-slate-200 relative">
+//                           <div><strong>{plan.label || "Plan"}</strong></div>
+//                           <div>{plan.hours}h · ₹{plan.cost}</div>
+//                           <div className="text-slate-400">{plan.validity}d validity</div>
+//                           <button
+//                             type="button"
+//                             onClick={() => setPricingPlans(pricingPlans.filter((_, i) => i !== idx))}
+//                             className="absolute top-1 right-1 text-red-500 hover:text-red-700 text-xs font-bold"
+//                           >
+//                             ×
+//                           </button>
+//                         </div>
+//                       ))}
+//                     </div>
+//                   ) : (
+//                     <p className="text-[10px] sm:text-xs text-slate-400">No plans defined. Hourly booking only.</p>
+//                   )}
+//                 </div>
+
+//                 <div>
+//                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Description</label>
+//                   <textarea
+//                     className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all resize-none"
+//                     name="description"
+//                     placeholder="Describe your workspace..."
+//                     value={formData.description}
+//                     onChange={handleChange}
+//                     rows={2}
+//                   />
+//                 </div>
+
+//                 {/* Photos */}
+//                 <div>
+//                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Photos</label>
+//                   <div className="mt-1 border-2 border-dashed border-indigo-200 rounded-xl p-4 sm:p-6 text-center hover:border-indigo-400 transition-colors relative">
+//                     <input
+//                       type="file" multiple accept="image/*"
+//                       onChange={handleImageChange}
+//                       className="absolute inset-0 opacity-0 cursor-pointer"
+//                     />
+//                     <Upload size={20} className="mx-auto text-indigo-400 sm:w-6 sm:h-6" />
+//                     <p className="text-[10px] sm:text-xs text-slate-500 mt-1">Click to upload photos</p>
+//                     <p className="text-[8px] sm:text-[10px] text-slate-400">PNG, JPG, WEBP</p>
+//                   </div>
+//                   {images.length > 0 && (
+//                     <div className="grid grid-cols-3 xs:grid-cols-4 sm:grid-cols-5 gap-2 mt-2">
+//                       {images.map((file, index) => (
+//                         <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-slate-200">
+//                           <img src={URL.createObjectURL(file)} alt="preview" className="w-full h-full object-cover" />
+//                           <button
+//                             type="button"
+//                             onClick={() => removeImage(index)}
+//                             className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs"
+//                           >
+//                             ×
+//                           </button>
+//                         </div>
+//                       ))}
+//                     </div>
+//                   )}
+//                 </div>
+
+//                 {/* ✅ NEW: Videos Upload */}
+//                 <div>
+//                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Videos</label>
+//                   <div className="mt-1 border-2 border-dashed border-purple-200 rounded-xl p-4 sm:p-6 text-center hover:border-purple-400 transition-colors relative">
+//                     <input
+//                       type="file" multiple accept="video/*"
+//                       onChange={handleVideoChange}
+//                       className="absolute inset-0 opacity-0 cursor-pointer"
+//                     />
+//                     <Video size={20} className="mx-auto text-purple-400 sm:w-6 sm:h-6" />
+//                     <p className="text-[10px] sm:text-xs text-slate-500 mt-1">Click to upload videos</p>
+//                     <p className="text-[8px] sm:text-[10px] text-slate-400">MP4, MOV, AVI</p>
+//                   </div>
+//                   {videos.length > 0 && (
+//                     <div className="grid grid-cols-3 xs:grid-cols-4 sm:grid-cols-5 gap-2 mt-2">
+//                       {videos.map((file, index) => (
+//                         <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-slate-200 bg-slate-900 flex items-center justify-center">
+//                           <Video size={24} className="text-white/50" />
+//                           <p className="absolute bottom-1 left-1 right-1 text-[8px] text-white truncate">{file.name}</p>
+//                           <button
+//                             type="button"
+//                             onClick={() => removeVideo(index)}
+//                             className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs"
+//                           >
+//                             ×
+//                           </button>
+//                         </div>
+//                       ))}
+//                     </div>
+//                   )}
+//                 </div>
+
+//                 <div className={`p-3 sm:p-4 rounded-xl ${
+//                   formData.cabinType === 'exclusive' ? 'bg-amber-50 border border-amber-200' : 'bg-emerald-50 border border-emerald-200'
+//                 }`}>
+//                   <div className="flex items-center gap-2 sm:gap-3">
+//                     {formData.cabinType === 'exclusive' ? (
+//                       <Crown size={16} className="text-amber-600 sm:w-5 sm:h-5" />
+//                     ) : (
+//                       <CreditCard size={16} className="text-emerald-600 sm:w-5 sm:h-5" />
+//                     )}
+//                     <div className="flex-1 min-w-0">
+//                       <p className="text-[10px] sm:text-xs font-bold text-slate-700">
+//                         Cabin #{cabinCount + 1} {formData.cabinType === 'exclusive' ? '⭐ Exclusive' : 'Normal'}
+//                       </p>
+//                       <p className="text-[8px] sm:text-[10px] text-slate-600 truncate">
+//                         Base: ₹{baseFee} | GST: ₹{gstAmount.toFixed(2)} | Total: ₹{totalWithGST.toFixed(2)}
+//                       </p>
+//                     </div>
+//                   </div>
+//                 </div>
+
+//                 <div className="grid grid-cols-2 gap-2 sm:gap-3 pt-2">
+//                   <button
+//                     type="button"
+//                     onClick={() => {
+//                       setIsModalOpen(false);
+//                       setVideos([]);
+//                     }}
+//                     className="py-2.5 sm:py-3 rounded-xl border border-slate-200 text-slate-600 font-semibold text-xs sm:text-sm hover:bg-slate-50 transition-colors"
+//                   >
+//                     Cancel
+//                   </button>
+//                   <button
+//                     type="submit"
+//                     disabled={paymentProcessing}
+//                     className={`py-2.5 sm:py-3 rounded-xl text-white font-bold text-xs sm:text-sm transition-all ${
+//                       paymentProcessing
+//                         ? 'bg-slate-400 cursor-not-allowed'
+//                         : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:shadow-lg'
+//                     }`}
+//                   >
+//                     {paymentProcessing ? (
+//                       <Loader2 size={16} className="animate-spin mx-auto" />
+//                     ) : (
+//                       `Pay ₹${totalWithGST.toFixed(2)}`
+//                     )}
+//                   </button>
+//                 </div>
+//               </form>
+//             </div>
+//           </div>
+//         </div>
+//       )}
+
+//       {/* Seat Add/Edit Modal */}
+//       {showSeatModal && (
+//         <div className="fixed inset-0 z-[1150] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+//           <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+//             <div className="p-5">
+//               <div className="flex items-center justify-between mb-4">
+//                 <h3 className="text-lg font-bold text-slate-900">
+//                   {editingSeatIndex !== null ? 'Edit Seat' : seatBatchMode ? `Add Seat ${batchSeatNumber}` : 'Add Seat'}
+//                 </h3>
+//                 <button
+//                   onClick={() => {
+//                     setShowSeatModal(false);
+//                     setSeatInput({ name: '', number: '' });
+//                     setEditingSeatIndex(null);
+//                     setSeatBatchMode(false);
+//                   }}
+//                   className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors flex items-center justify-center text-slate-600"
+//                 >
+//                   <X size={16} />
+//                 </button>
+//               </div>
+
+//               <div className="space-y-4">
+//                 <div>
+//                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Seat Name *</label>
+//                   <input
+//                     type="text"
+//                     placeholder="e.g. Seat A1, Desk 1, CEO Chair"
+//                     value={seatInput.name}
+//                     onChange={(e) => setSeatInput({ ...seatInput, name: e.target.value })}
+//                     className="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+//                     autoFocus
+//                   />
+//                   {seatBatchMode && (
+//                     <p className="text-[10px] text-indigo-500 mt-0.5">💡 Seat {batchSeatNumber} of {formData.capacity}</p>
+//                   )}
+//                 </div>
+
+//                 <div>
+//                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Seat Number *</label>
+//                   <input
+//                     type="number"
+//                     min="1"
+//                     placeholder="e.g. 1"
+//                     value={seatInput.number}
+//                     onChange={(e) => setSeatInput({ ...seatInput, number: e.target.value })}
+//                     className="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+//                   />
+//                   <p className="text-[10px] text-slate-400 mt-0.5">Each seat must have a unique number</p>
+//                 </div>
+
+//                 <div className="grid grid-cols-2 gap-3 pt-2">
+//                   <button
+//                     onClick={() => {
+//                       setShowSeatModal(false);
+//                       setSeatInput({ name: '', number: '' });
+//                       setEditingSeatIndex(null);
+//                       setSeatBatchMode(false);
+//                     }}
+//                     className="py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold text-sm hover:bg-slate-50 transition-colors"
+//                   >
+//                     Cancel
+//                   </button>
+//                   <button
+//                     onClick={addSeat}
+//                     className="py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition-colors"
+//                   >
+//                     {editingSeatIndex !== null ? 'Update' : seatBatchMode ? 'Add & Next' : 'Add'}
+//                   </button>
+//                 </div>
+//               </div>
+//             </div>
+//           </div>
+//         </div>
+//       )}
+
+//       {/* Confirm Modal */}
+//       {showConfirmModal && (
+//         <div className="fixed inset-0 z-[1200] flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm">
+//           <div className="bg-white w-full max-w-sm sm:max-w-md rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
+//             <div className={`p-4 sm:p-6 text-center ${
+//               formData.cabinType === 'exclusive' 
+//                 ? 'bg-gradient-to-r from-amber-500 to-amber-600'
+//                 : 'bg-gradient-to-r from-indigo-600 to-purple-600'
+//             }`}>
+//               <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-white/20 flex items-center justify-center mx-auto">
+//                 {formData.cabinType === 'exclusive' ? (
+//                   <Crown size={24} className="text-white sm:w-8 sm:h-8" />
+//                 ) : (
+//                   <CreditCard size={24} className="text-white sm:w-8 sm:h-8" />
+//                 )}
+//               </div>
+//               <h3 className="text-white font-bold text-base sm:text-lg mt-2">
+//                 {formData.cabinType === 'exclusive' ? '⭐ Exclusive Cabin' : 'Confirm Cabin'}
+//               </h3>
+//               <p className="text-white/80 text-xs sm:text-sm">
+//                 {formData.cabinType === 'exclusive' ? 'Premium exclusive cabin' : 'Review details below'}
+//               </p>
+//             </div>
+
+//             <div className="p-4 sm:p-6">
+//               <div className="bg-slate-50 rounded-xl p-3 sm:p-4 space-y-2 sm:space-y-3 text-xs sm:text-sm">
+//                 <div className="flex justify-between"><span className="text-slate-500">Cabin</span><span className="font-semibold">#{cabinCount + 1}</span></div>
+//                 <div className="flex justify-between"><span className="text-slate-500">Type</span>
+//                   <span className={`font-semibold ${formData.cabinType === 'exclusive' ? 'text-amber-600' : 'text-indigo-600'}`}>
+//                     {formData.cabinType === 'exclusive' ? '⭐ Exclusive' : 'Normal'}
+//                   </span>
+//                 </div>
+//                 <div className="flex justify-between"><span className="text-slate-500">Capacity</span>
+//                   <span className="font-semibold">{formData.capacity} seats</span>
+//                 </div>
+//                 <div className="flex justify-between"><span className="text-slate-500">Seats Added</span>
+//                   <span className="font-semibold">{seats.length} seats</span>
+//                 </div>
+//                 <div className="flex justify-between"><span className="text-slate-500">Amenities</span>
+//                   <span className="font-semibold">{Object.values(formData.amenities).filter(v => v).length} / {currentAmenities.length}</span>
+//                 </div>
+//                 <div className="flex justify-between"><span className="text-slate-500">Timings</span>
+//                   <span className="font-semibold">
+//                     {formData.is24x7 ? '24x7 Open' : `${formData.openTime} - ${formData.closeTime}`}
+//                   </span>
+//                 </div>
+//                 <div className="border-t border-slate-200 pt-2 flex justify-between"><span className="text-slate-500">Base Fee</span><span>₹{baseFee}</span></div>
+//                 <div className="flex justify-between"><span className="text-slate-500">GST (18%)</span><span>₹{gstAmount.toFixed(2)}</span></div>
+//                 <div className="border-t border-slate-200 pt-2 flex justify-between font-bold"><span>Total</span><span className="text-indigo-600">₹{totalWithGST.toFixed(2)}</span></div>
+//               </div>
+
+//               <div className="mt-3 sm:mt-4 p-2.5 sm:p-3 bg-amber-50 rounded-lg text-[10px] sm:text-xs text-amber-700 flex items-start gap-2">
+//                 <Receipt size={14} className="shrink-0 mt-0.5" />
+//                 <span>Total includes 18% GST (₹{gstAmount.toFixed(2)}) | Expires in 1 month</span>
+//               </div>
+
+//               <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-3 sm:mt-4">
+//                 <button
+//                   onClick={() => setShowConfirmModal(false)}
+//                   disabled={paymentProcessing}
+//                   className="py-2.5 sm:py-3 rounded-xl border border-slate-200 text-slate-600 font-semibold text-xs sm:text-sm hover:bg-slate-50 transition-colors"
+//                 >
+//                   Cancel
+//                 </button>
+//                 <button
+//                   onClick={createCabinAndOrder}
+//                   disabled={submitting || !razorpayLoaded || paymentProcessing}
+//                   className={`py-2.5 sm:py-3 rounded-xl text-white font-bold text-xs sm:text-sm transition-all ${
+//                     (submitting || !razorpayLoaded || paymentProcessing)
+//                       ? 'bg-slate-400 cursor-not-allowed'
+//                       : formData.cabinType === 'exclusive'
+//                         ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:shadow-lg'
+//                         : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:shadow-lg'
+//                   }`}
+//                 >
+//                   {submitting || paymentProcessing ? (
+//                     <Loader2 size={16} className="animate-spin mx-auto" />
+//                   ) : !razorpayLoaded ? (
+//                     "Loading..."
+//                   ) : (
+//                     `Pay ₹${totalWithGST.toFixed(2)}`
+//                   )}
+//                 </button>
+//               </div>
+//             </div>
+//           </div>
+//         </div>
+//       )}
+//     </div>
+//   );
+// };
+
+// export default MyCabin;
+
+
+
+
 import axios from "axios";
 import {
   Building2,
@@ -45,7 +2058,9 @@ import {
   Timer,
   List as ListIcon,
   Grid as GridIcon,
-  Video
+  Video,
+  Stethoscope,
+  Briefcase
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -68,28 +2083,20 @@ const API_URL = "https://spaceapi.iryax.com";
 const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
 const GST_RATE = 0.18;
 
-// Normal Amenities
-const NORMAL_AMENITIES = [
-  { key: "wifi", label: "Wi-Fi", emoji: "📶", icon: Wifi },
-  { key: "parking", label: "Parking", emoji: "🅿️", icon: ParkingCircle },
-  { key: "lockers", label: "Lockers", emoji: "🔐", icon: Lock },
-  { key: "comfortSeating", label: "Comfort Seating", emoji: "🪑", icon: Armchair },
-];
-
-// Exclusive Amenities
-const EXCLUSIVE_AMENITIES = [
-  { key: "wifi", label: "High-Speed Wi-Fi", emoji: "📶", icon: Wifi },
-  { key: "parking", label: "Reserved Parking", emoji: "🅿️", icon: ParkingCircle },
-  { key: "lockers", label: "Secure Lockers", emoji: "🔐", icon: Lock },
-  { key: "privateWashroom", label: "Private Washroom", emoji: "🚿", icon: Bath },
-  { key: "secureAccess", label: "24/7 Secure Access", emoji: "🛡️", icon: Shield },
-  { key: "comfortSeating", label: "Premium Seating", emoji: "🪑", icon: Armchair },
-  { key: "coffee", label: "Coffee & Tea", emoji: "☕", icon: Coffee },
-  { key: "gym", label: "Gym Access", emoji: "💪", icon: Dumbbell },
-  { key: "ac", label: "Air Conditioning", emoji: "❄️", icon: Fan },
-  { key: "tv", label: "Smart TV", emoji: "📺", icon: Tv },
-  { key: "printer", label: "Printer Access", emoji: "🖨️", icon: Printer },
-  { key: "phone", label: "Conference Phone", emoji: "📞", icon: Phone },
+// ALL AMENITIES - Combined list
+const ALL_AMENITIES = [
+  { key: "wifi", label: "Wi-Fi", icon: Wifi },
+  { key: "parking", label: "Parking", icon: ParkingCircle },
+  { key: "lockers", label: "Lockers", icon: Lock },
+  { key: "comfortSeating", label: "Comfort Seating", icon: Armchair },
+  { key: "privateWashroom", label: "Private Washroom", icon: Bath },
+  { key: "secureAccess", label: "24/7 Secure Access", icon: Shield },
+  { key: "coffee", label: "Coffee & Tea", icon: Coffee },
+  { key: "gym", label: "Gym Access", icon: Dumbbell },
+  { key: "ac", label: "Air Conditioning", icon: Fan },
+  { key: "tv", label: "Smart TV", icon: Tv },
+  { key: "printer", label: "Printer Access", icon: Printer },
+  { key: "phone", label: "Conference Phone", icon: Phone },
 ];
 
 const MyCabin = () => {
@@ -99,6 +2106,9 @@ const MyCabin = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [pricingPlans, setPricingPlans] = useState([]);
+  const [showPlanModal, setShowPlanModal] = useState(false);
+  const [editingPlanIndex, setEditingPlanIndex] = useState(null);
+  const [planInput, setPlanInput] = useState({ label: '', hours: '', cost: '', validity: '' });
   const [cabinCount, setCabinCount] = useState(0);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
@@ -125,7 +2135,7 @@ const MyCabin = () => {
   const [seatBatchMode, setSeatBatchMode] = useState(false);
   const [batchSeatNumber, setBatchSeatNumber] = useState(1);
 
-  // ✅ NEW: Videos state
+  // Videos state
   const [videos, setVideos] = useState([]);
 
   const [formData, setFormData] = useState({
@@ -136,6 +2146,7 @@ const MyCabin = () => {
     price: "",
     cabin: "",
     cabinType: "normal",
+    isChamber: false,
     is24x7: false,
     openTime: "09:00",
     closeTime: "21:00",
@@ -155,9 +2166,59 @@ const MyCabin = () => {
     },
   });
   const [images, setImages] = useState([]);
+  const [errors, setErrors] = useState({
+    name: "",
+    address: "",
+    cabin: "",
+    description: "",
+  });
+
+  // Validation functions
+  const validateField = (name, value) => {
+    let error = "";
+    
+    switch (name) {
+      case "name":
+        if (!value) {
+          error = "Building Name is required";
+        } else if (value.length > 30) {
+          error = "Building Name must be 30 characters or less";
+        } else if (!/^[a-zA-Z0-9\s]+$/.test(value)) {
+          error = "Building Name can only contain letters, digits, and spaces";
+        }
+        break;
+      case "address":
+        if (!value) {
+          error = "Address is required";
+        } else if (value.length > 50) {
+          error = "Address must be 50 characters or less";
+        } else if (!/^[a-zA-Z0-9\s,.-]+$/.test(value)) {
+          error = "Address can only contain letters, digits, spaces, commas, dots, and hyphens";
+        }
+        break;
+      case "cabin":
+        if (!value) {
+          error = "Cabin Spec is required";
+        } else if (value.length > 15) {
+          error = "Cabin Spec must be 15 characters or less";
+        } else if (!/^[a-zA-Z0-9-]+$/.test(value)) {
+          error = "Cabin Spec can only contain letters, digits, and hyphens";
+        }
+        break;
+      case "description":
+        if (value && (value.length < 150 || value.length > 200)) {
+          error = "Description must be between 150 and 200 characters";
+        }
+        break;
+      default:
+        break;
+    }
+    
+    return error;
+  };
 
   const getAmenitiesForType = (type) => {
-    return type === 'exclusive' ? EXCLUSIVE_AMENITIES : NORMAL_AMENITIES;
+    return ALL_AMENITIES;
   };
 
   const resetAmenitiesForType = (type) => {
@@ -212,12 +2273,10 @@ const MyCabin = () => {
     return { headers: { Authorization: `Bearer ${token}` } };
   };
 
-  // ✅ LOGGING: Fetch cabins with user info
   const fetchCabins = async () => {
     console.log("========================================");
     console.log("📋 FETCHING CABINS");
     
-    // Log current user from localStorage
     const userStr = localStorage.getItem("user");
     const adminStr = localStorage.getItem("admin");
     
@@ -258,7 +2317,6 @@ const MyCabin = () => {
       
       console.log(`📦 Fetched ${cabinList.length} cabins`);
       
-      // Log each cabin's owner
       cabinList.forEach((cabin, index) => {
         console.log(`  Cabin ${index + 1}: "${cabin.name}" - Owner: ${cabin.owner || 'No owner'}`);
       });
@@ -266,7 +2324,6 @@ const MyCabin = () => {
       setCabins(cabinList);
       setCabinCount(cabinList.length);
       
-      // Initialize countdowns for cabins with expiry date
       const initialCountdowns = {};
       cabinList.forEach(cabin => {
         if (cabin.expiryDate) {
@@ -315,6 +2372,9 @@ const MyCabin = () => {
       setFormData({ ...formData, [name]: checked });
     } else {
       setFormData({ ...formData, [name]: value });
+      
+      const error = validateField(name, value);
+      setErrors({ ...errors, [name]: error });
     }
   };
 
@@ -337,7 +2397,6 @@ const MyCabin = () => {
     setImages(Array.from(e.target.files));
   };
 
-  // ✅ NEW: Video handlers
   const handleVideoChange = (e) => {
     setVideos(Array.from(e.target.files));
   };
@@ -366,13 +2425,11 @@ const MyCabin = () => {
       return;
     }
     
-    // Check if we already have seats
     if (seats.length >= capacity) {
       toast.error(`Already added ${seats.length} seats. Capacity is ${capacity}`);
       return;
     }
     
-    // Set batch mode with next seat number
     const nextNumber = seats.length + 1;
     setBatchSeatNumber(nextNumber);
     setSeatBatchMode(true);
@@ -394,13 +2451,11 @@ const MyCabin = () => {
 
     const seatNumber = parseInt(seatInput.number);
     
-    // Check for duplicate seat number
     if (seats.some(s => s.number === seatNumber)) {
       toast.error(`Seat #${seatNumber} already exists`);
       return;
     }
 
-    // Check capacity
     const capacity = parseInt(formData.capacity);
     if (capacity && seats.length >= capacity) {
       toast.error(`Cannot add more than ${capacity} seats`);
@@ -408,7 +2463,6 @@ const MyCabin = () => {
     }
 
     if (editingSeatIndex !== null) {
-      // Update existing seat
       const updatedSeats = [...seats];
       updatedSeats[editingSeatIndex] = {
         name: seatInput.name.trim(),
@@ -418,7 +2472,6 @@ const MyCabin = () => {
       setEditingSeatIndex(null);
       toast.success("Seat updated successfully");
     } else {
-      // Add new seat
       setSeats([...seats, {
         name: seatInput.name.trim(),
         number: seatNumber
@@ -430,7 +2483,6 @@ const MyCabin = () => {
     setShowSeatModal(false);
     setSeatBatchMode(false);
     
-    // Check if all seats are added
     if (capacity && seats.length + 1 >= capacity) {
       toast.success(`✅ All ${capacity} seats added!`);
     }
@@ -455,6 +2507,63 @@ const MyCabin = () => {
       }
       toast.success("Seat removed");
     }
+  };
+
+  // ─── PRICING PLAN FUNCTIONS ───
+  const openPlanModal = () => {
+    setPlanInput({ label: "", hours: "", cost: "", validity: "" });
+    setEditingPlanIndex(null);
+    setShowPlanModal(true);
+  };
+
+  const openEditPlanModal = (index) => {
+    const targetPlan = pricingPlans[index];
+    if (targetPlan) {
+      setPlanInput({
+        label: targetPlan.label || "",
+        hours: targetPlan.hours !== undefined ? targetPlan.hours.toString() : "",
+        cost: targetPlan.cost !== undefined ? targetPlan.cost.toString() : "",
+        validity: targetPlan.validity !== undefined ? targetPlan.validity.toString() : ""
+      });
+      setEditingPlanIndex(index);
+      setShowPlanModal(true);
+    }
+  };
+
+  const savePlanModal = () => {
+    if (!planInput.hours || Number(planInput.hours) <= 0) {
+      toast.error("Please enter valid included hours");
+      return;
+    }
+    if (!planInput.cost || Number(planInput.cost) <= 0) {
+      toast.error("Please enter valid cost (₹)");
+      return;
+    }
+    if (!planInput.validity || Number(planInput.validity) <= 0) {
+      toast.error("Please enter valid validity days");
+      return;
+    }
+
+    const newPlan = {
+      label: planInput.label.trim() || `${planInput.hours} Hours Plan`,
+      hours: Number(planInput.hours),
+      cost: Number(planInput.cost),
+      validity: Number(planInput.validity)
+    };
+
+    if (editingPlanIndex !== null) {
+      setPricingPlans(prev => prev.map((p, i) => (i === editingPlanIndex ? newPlan : p)));
+    } else {
+      setPricingPlans(prev => [...prev, newPlan]);
+    }
+
+    setShowPlanModal(false);
+    setPlanInput({ label: "", hours: "", cost: "", validity: "" });
+    setEditingPlanIndex(null);
+  };
+
+  const removePlan = (index) => {
+    setPricingPlans(pricingPlans.filter((_, i) => i !== index));
   };
 
   // Auto-generate all seats based on capacity
@@ -552,6 +2661,7 @@ const MyCabin = () => {
                 price: "",
                 cabin: "",
                 cabinType: "normal",
+                isChamber: false,
                 is24x7: false,
                 openTime: "09:00",
                 closeTime: "21:00",
@@ -611,12 +2721,10 @@ const MyCabin = () => {
     }
   };
 
-  // ✅ LOGGING: Create cabin with detailed logs
   const createCabinAndOrder = async () => {
     console.log("========================================");
     console.log("🏪 CREATING NEW CABIN");
     
-    // Get current user from localStorage
     const userStr = localStorage.getItem("user");
     const adminStr = localStorage.getItem("admin");
     
@@ -660,6 +2768,7 @@ const MyCabin = () => {
     data.append("address", formData.address);
     data.append("price", formData.price);
     data.append("cabinType", formData.cabinType);
+    data.append("isChamber", formData.isChamber);
     data.append("is24x7", formData.is24x7);
     data.append("openTime", formData.openTime);
     data.append("closeTime", formData.closeTime);
@@ -675,6 +2784,7 @@ const MyCabin = () => {
     console.log("  - Price:", formData.price);
     console.log("  - Capacity:", formData.capacity);
     console.log("  - Type:", formData.cabinType);
+    console.log("  - isChamber:", formData.isChamber);
     console.log("  - is24x7:", formData.is24x7);
     console.log("  - openTime:", formData.openTime);
     console.log("  - closeTime:", formData.closeTime);
@@ -743,21 +2853,40 @@ const MyCabin = () => {
     console.log("Pricing Plans:", pricingPlans.length);
     console.log("========================================");
     
+    const nameError = validateField("name", formData.name);
+    const addressError = validateField("address", formData.address);
+    const cabinError = validateField("cabin", formData.cabin);
+    const descriptionError = validateField("description", formData.description);
+    
+    const newErrors = {
+      name: nameError,
+      address: addressError,
+      cabin: cabinError,
+      description: descriptionError,
+    };
+    
+    setErrors(newErrors);
+    
+    if (nameError || addressError || cabinError || descriptionError) {
+      toast.error("Please fix the validation errors before submitting");
+      return;
+    }
+    
     if (!formData.name || !formData.address || !formData.capacity || !formData.price || !formData.cabin) {
       toast.error("Please fill all required fields");
       return;
     }
 
-    // Validate seats
-    if (seats.length === 0) {
-      toast.error("Please add at least one seat to the cabin");
-      return;
-    }
-
-    // Validate seat count matches capacity
-    if (seats.length !== parseInt(formData.capacity)) {
-      toast.error(`Number of seats (${seats.length}) does not match capacity (${formData.capacity})`);
-      return;
+    // Validate seats only for Co-Working spaces
+    if (!formData.isChamber) {
+      if (seats.length === 0) {
+        toast.error("Please add at least one seat to the cabin");
+        return;
+      }
+      if (seats.length !== parseInt(formData.capacity)) {
+        toast.error(`Number of seats (${seats.length}) does not match capacity (${formData.capacity})`);
+        return;
+      }
     }
     
     setShowConfirmModal(true);
@@ -853,7 +2982,8 @@ const MyCabin = () => {
   const inactiveCount = cabins.filter(c => c.isActive !== true).length;
   const exclusiveCount = cabins.filter(c => c.cabinType === 'exclusive').length;
 
-  // ✅ LOGGING: Component mount
+  const showSeatsSection = !formData.isChamber;
+
   useEffect(() => {
     console.log("========================================");
     console.log("🏪 MY CABIN PAGE LOADED");
@@ -893,23 +3023,67 @@ const MyCabin = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
-            <p className="text-xs text-gray-500 font-medium">Total Cabins</p>
-            <p className="text-xl sm:text-2xl font-bold text-indigo-600">{cabins.length}</p>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
-            <p className="text-xs text-gray-500 font-medium">Active</p>
-            <p className="text-xl sm:text-2xl font-bold text-emerald-600">{activeCount}</p>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
-            <p className="text-xs text-gray-500 font-medium">Inactive</p>
-            <p className="text-xl sm:text-2xl font-bold text-gray-600">{inactiveCount}</p>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm">
-            <p className="text-xs text-gray-500 font-medium">Exclusive</p>
-            <p className="text-xl sm:text-2xl font-bold text-amber-600">{exclusiveCount}</p>
-          </div>
+        <div className="admin-dash__stats" style={{ marginBottom: '16px' }}>
+          {[
+            {
+              label: "Total Cabins",
+              value: cabins.length,
+              meta: "all registered cabins",
+              icon: Building2,
+              color: "indigo",
+              onClick: () => clearFilters()
+            },
+            {
+              label: "Active",
+              value: activeCount,
+              meta: "active & visible spaces",
+              icon: CheckCircle,
+              color: "emerald",
+              onClick: () => setFilters({...filters, status: 'active'})
+            },
+            {
+              label: "Inactive",
+              value: inactiveCount,
+              meta: "expired or paused",
+              icon: AlertCircle,
+              color: "amber",
+              onClick: () => setFilters({...filters, status: 'inactive'})
+            },
+            {
+              label: "Exclusive",
+              value: exclusiveCount,
+              meta: "premium cabins",
+              icon: Crown,
+              color: "purple"
+            },
+            {
+              label: "Normal Spaces",
+              value: cabins.length - exclusiveCount,
+              meta: "standard cabins",
+              icon: Home,
+              color: "cyan"
+            }
+          ].map((stat, index) => (
+            <div
+              key={index}
+              className="admin-dash__stat"
+              onClick={stat.onClick}
+              style={{ 
+                cursor: stat.onClick ? 'pointer' : 'default',
+                padding: '12px 14px',
+                minHeight: '80px'
+              }}
+            >
+              <div className="admin-dash__stat-top">
+                <span className="admin-dash__stat-label" style={{ fontSize: '11px' }}>{stat.label}</span>
+                <div className={`admin-dash__stat-icon admin-dash__stat-icon--${stat.color}`} style={{ width: '28px', height: '28px' }}>
+                  <stat.icon size={14} />
+                </div>
+              </div>
+              <div className="admin-dash__stat-value" style={{ fontSize: '18px', fontWeight: '700' }}>{stat.value}</div>
+              <div className="admin-dash__stat-meta" style={{ fontSize: '9px' }}>{stat.meta}</div>
+            </div>
+          ))}
         </div>
 
         <div className="space-y-6">
@@ -938,7 +3112,7 @@ const MyCabin = () => {
                   />
                 </div>
 
-                {/* Filters - Always Visible */}
+                {/* Filters */}
                 <div className="flex items-center gap-2 flex-wrap">
                   <input
                     type="text"
@@ -1040,7 +3214,7 @@ const MyCabin = () => {
                 <table className="w-full min-w-[1200px] text-left">
                   <thead>
                     <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
-                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
+                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">S.No</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Address</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Type</th>
@@ -1060,11 +3234,12 @@ const MyCabin = () => {
                       const hasExpiry = cabin.expiryDate ? true : false;
                       const isExpired = cabin.expiryDate && new Date(cabin.expiryDate) < new Date();
                       const seatCount = cabin.seats?.length || 0;
+                      const isChamber = cabin.isChamber || false;
                       
                       return (
                         <tr key={cabin._id} className="transition-colors group hover:bg-gray-50/80">
                           <td className="p-4">
-                            <span className="text-sm font-semibold text-gray-400">#{index + 1}</span>
+                            <span className="text-sm font-semibold text-gray-400">{index + 1}</span>
                           </td>
                           <td className="p-4">
                             <div className="flex items-center gap-3">
@@ -1079,6 +3254,9 @@ const MyCabin = () => {
                               <div>
                                 <p className="font-semibold text-gray-900 text-sm">{cabin.name || 'N/A'}</p>
                                 <p className="text-[10px] text-gray-400">{cabin.cabin || 'N/A'}</p>
+                                {isChamber && (
+                                  <span className="text-[8px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full">Medical</span>
+                                )}
                               </div>
                             </div>
                           </td>
@@ -1248,6 +3426,16 @@ const MyCabin = () => {
                   </p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-xl">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Space Type</p>
+                  <p className="mt-1 font-medium text-gray-700 flex items-center gap-2">
+                    {selectedCabin.isChamber ? (
+                      <><Stethoscope size={16} className="text-emerald-500" /> Medical Chamber</>
+                    ) : (
+                      <><Briefcase size={16} className="text-blue-500" /> Co-Working</>
+                    )}
+                  </p>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-xl">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Price</p>
                   <p className="mt-1 font-bold text-gray-700 flex items-center gap-1">
                     ₹{selectedCabin.price || 0}
@@ -1324,8 +3512,7 @@ const MyCabin = () => {
                     {Object.entries(selectedCabin.amenities)
                       .filter(([key, value]) => value)
                       .map(([key]) => {
-                        const allAmenities = [...NORMAL_AMENITIES, ...EXCLUSIVE_AMENITIES];
-                        const amenity = allAmenities.find(a => a.key === key);
+                        const amenity = ALL_AMENITIES.find(a => a.key === key);
                         const Icon = amenity?.icon;
                         return (
                           <span key={key} className="px-2.5 py-1 bg-white rounded-full text-xs text-gray-700 border border-gray-200 flex items-center gap-1">
@@ -1380,24 +3567,30 @@ const MyCabin = () => {
         </div>
       )}
 
-      {/* Add Cabin Modal */}
+      {/* Add Cabin Modal - UPDATED */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[1100] flex items-end sm:items-center justify-center p-2 sm:p-4 bg-slate-900/50 backdrop-blur-sm">
-          <div
-            className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200"
-            style={{ maxHeight: "95vh" }}
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setIsModalOpen(false);
+            }
+          }}
+        >
+          <div 
+            className="bg-white w-full max-w-3xl max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
           >
+            {/* Modal Header */}
             <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 sm:p-5 flex items-center justify-between flex-shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-white/20 flex items-center justify-center">
-                  <Home size={18} className="text-white sm:w-5 sm:h-5" />
+                  <Plus size={18} className="text-white sm:w-5 sm:h-5" />
                 </div>
                 <div>
-                  <h2 className="text-base sm:text-lg font-bold text-white">
-                    Add New Cabin #{cabinCount + 1}
-                  </h2>
+                  <h2 className="text-base sm:text-lg font-bold text-white">Add New Space</h2>
                   <p className="text-[10px] sm:text-xs text-white/75">
-                    Fee: ₹{isFirstCabin ? '2,000' : '1,000'} + GST (18%)
+                    {formData.isChamber ? 'Medical Chamber' : 'Co-Working Space'}
                   </p>
                 </div>
               </div>
@@ -1413,29 +3606,62 @@ const MyCabin = () => {
             </div>
 
             <div className="overflow-y-auto p-4 sm:p-6 flex-1">
-              <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* ─── SPACE TYPE SELECTION ─── */}
+                <div>
+                  <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Space Type *</label>
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-1">
+                    <button
+                      type="button"
+                      onClick={() => setFormData({...formData, isChamber: true})}
+                      className={`py-2.5 sm:py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold border-2 transition-all flex items-center justify-center gap-2 ${
+                        formData.isChamber === true
+                          ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      <Stethoscope size={16} className={formData.isChamber ? 'text-emerald-500' : 'text-slate-400'} />
+                      Medical Chamber
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({...formData, isChamber: false})}
+                      className={`py-2.5 sm:py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold border-2 transition-all flex items-center justify-center gap-2 ${
+                        formData.isChamber === false
+                          ? 'border-blue-500 bg-blue-50 text-blue-700'
+                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      <Briefcase size={16} className={formData.isChamber === false ? 'text-blue-500' : 'text-slate-400'} />
+                      Co-Working Space
+                    </button>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Building Name *</label>
                     <input
-                      className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                      className={`w-full mt-1 px-3 py-2.5 sm:py-3 border rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all ${errors.name ? 'border-red-500 focus:border-red-500' : 'border-slate-200 focus:border-indigo-500'}`}
                       type="text" name="name"
                       placeholder="e.g. Tech Hub"
                       value={formData.name}
                       onChange={handleChange}
                       required
                     />
+                    {errors.name && <p className="text-[10px] text-red-500 mt-1">{errors.name}</p>}
                   </div>
                   <div>
                     <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Address *</label>
                     <input
-                      className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                      className={`w-full mt-1 px-3 py-2.5 sm:py-3 border rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all ${errors.address ? 'border-red-500 focus:border-red-500' : 'border-slate-200 focus:border-indigo-500'}`}
                       type="text" name="address"
-                      placeholder="e.g. Bangalore"
+                      placeholder="e.g. Bangalore, Karnataka"
                       value={formData.address}
                       onChange={handleChange}
                       required
                     />
+                    {errors.address && <p className="text-[10px] text-red-500 mt-1">{errors.address}</p>}
                   </div>
                 </div>
 
@@ -1443,10 +3669,22 @@ const MyCabin = () => {
                   <div>
                     <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Cabin Spec *</label>
                     <input
-                      className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                      className={`w-full mt-1 px-3 py-2.5 sm:py-3 border rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all ${errors.cabin ? 'border-red-500 focus:border-red-500' : 'border-slate-200 focus:border-indigo-500'}`}
                       type="text" name="cabin"
                       placeholder="e.g. Office B"
                       value={formData.cabin}
+                      onChange={handleChange}
+                      required
+                    />
+                    {errors.cabin && <p className="text-[10px] text-red-500 mt-1">{errors.cabin}</p>}
+                  </div>
+                  <div>
+                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Capacity *</label>
+                    <input
+                      className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                      type="number" name="capacity" min="1"
+                      placeholder="10"
+                      value={formData.capacity}
                       onChange={handleChange}
                       required
                     />
@@ -1462,110 +3700,105 @@ const MyCabin = () => {
                       required
                     />
                   </div>
-                  <div>
-                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Number of Seats *</label>
-                    <div className="flex items-center gap-2 mt-1">
-                      <input
-                        className="flex-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
-                        type="number" name="capacity" min="1"
-                        placeholder="e.g. 5"
-                        value={formData.capacity}
-                        onChange={handleChange}
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={openBatchSeatModal}
-                        disabled={!formData.capacity || parseInt(formData.capacity) < 1}
-                        className={`px-3 py-2.5 sm:py-3 rounded-xl text-xs font-bold transition-colors whitespace-nowrap ${
-                          !formData.capacity || parseInt(formData.capacity) < 1
-                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                            : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                        }`}
-                      >
-                        <Plus size={14} className="inline mr-1" /> Add
-                      </button>
-                    </div>
-                    {formData.capacity && parseInt(formData.capacity) > 0 && (
-                      <p className="text-[10px] text-slate-400 mt-0.5">
-                        {seats.length} of {formData.capacity} seats added
-                        {seats.length > 0 && seats.length === parseInt(formData.capacity) && (
-                          <span className="text-emerald-600 font-bold ml-1">✅ Complete!</span>
-                        )}
-                        {seats.length > 0 && seats.length < parseInt(formData.capacity) && (
-                          <span className="text-amber-600 ml-1">⚠️ {parseInt(formData.capacity) - seats.length} more needed</span>
-                        )}
-                      </p>
-                    )}
-                  </div>
                 </div>
 
-                {/* Seat Management Section */}
-                <div>
-                  <div className="flex justify-between items-center mb-1.5">
-                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">
-                      Seat List ({seats.length} / {formData.capacity || '0'})
-                    </label>
-                    <div className="flex gap-1.5">
-                      {formData.capacity && parseInt(formData.capacity) > 0 && seats.length === 0 && (
+                {/* ─── SEATS SECTION (Only for Co-Working) ─── */}
+                {showSeatsSection && (
+                  <div>
+                    <div className="flex justify-between items-center mb-1.5">
+                      <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">
+                        Seat List ({seats.length} / {formData.capacity || '0'})
+                      </label>
+                      <div className="flex gap-1.5">
+                        {formData.capacity && parseInt(formData.capacity) > 0 && seats.length === 0 && (
+                          <button
+                            type="button"
+                            onClick={generateAllSeats}
+                            className="text-[10px] sm:text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 sm:px-3 py-1 rounded-lg hover:bg-emerald-100 transition-colors flex items-center gap-1"
+                          >
+                            <GridIcon size={12} /> Generate All
+                          </button>
+                        )}
                         <button
                           type="button"
-                          onClick={generateAllSeats}
-                          className="text-[10px] sm:text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 sm:px-3 py-1 rounded-lg hover:bg-emerald-100 transition-colors flex items-center gap-1"
+                          onClick={openSeatModal}
+                          className="text-[10px] sm:text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 sm:px-3 py-1 rounded-lg hover:bg-indigo-100 transition-colors flex items-center gap-1"
                         >
-                          <GridIcon size={12} /> Generate All
+                          <Plus size={12} /> Add Manual
                         </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={openSeatModal}
-                        className="text-[10px] sm:text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 sm:px-3 py-1 rounded-lg hover:bg-indigo-100 transition-colors flex items-center gap-1"
-                      >
-                        <Plus size={12} /> Add Manual
-                      </button>
+                      </div>
                     </div>
-                  </div>
-                  
-                  {seats.length > 0 ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                      {seats.map((seat, idx) => (
-                        <div key={idx} className="bg-slate-50 rounded-lg border border-slate-200 p-2 text-center relative group">
-                          <Armchair size={14} className="mx-auto text-indigo-500 mb-1" />
-                          <p className="text-xs font-medium text-gray-700 truncate">{seat.name}</p>
-                          <p className="text-[10px] text-gray-400">#{seat.number}</p>
-                          <div className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
-                              type="button"
-                              onClick={() => editSeat(idx)}
-                              className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-[8px] hover:bg-indigo-200 transition-colors"
-                            >
-                              ✎
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => removeSeat(idx)}
-                              className="w-5 h-5 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-[8px] hover:bg-red-200 transition-colors"
-                            >
-                              ×
-                            </button>
+                    
+                    {seats.length > 0 ? (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                        {seats.map((seat, idx) => (
+                          <div key={idx} className="bg-slate-50 rounded-lg border border-slate-200 p-2 text-center relative group">
+                            <Armchair size={14} className="mx-auto text-indigo-500 mb-1" />
+                            <p className="text-xs font-medium text-gray-700 truncate">{seat.name}</p>
+                            <p className="text-[10px] text-gray-400">#{seat.number}</p>
+                            <div className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                type="button"
+                                onClick={() => editSeat(idx)}
+                                className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-[8px] hover:bg-indigo-200 transition-colors"
+                              >
+                                ✎
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => removeSeat(idx)}
+                                className="w-5 h-5 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-[8px] hover:bg-red-200 transition-colors"
+                              >
+                                ×
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center">
-                      <p className="text-xs text-slate-400">
-                        {formData.capacity && parseInt(formData.capacity) > 0 ? (
-                          <>Click <strong>"Add"</strong> next to seats field to add seats one by one, or <strong>"Generate All"</strong> to create all at once.</>
-                        ) : (
-                          <>Enter number of seats first, then click <strong>"Add"</strong> to add seats.</>
-                        )}
-                      </p>
-                    </div>
-                  )}
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center">
+                        <p className="text-xs text-slate-400">
+                          {formData.capacity && parseInt(formData.capacity) > 0 ? (
+                            <>Click <strong>"Add"</strong> next to seats field to add seats one by one, or <strong>"Generate All"</strong> to create all at once.</>
+                          ) : (
+                            <>Enter number of seats first, then click <strong>"Add"</strong> to add seats.</>
+                          )}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div>
+                  <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Cabin Type</label>
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-1">
+                    <button
+                      type="button"
+                      onClick={() => setFormData({...formData, cabinType: "normal"})}
+                      className={`py-2.5 sm:py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold border-2 transition-all ${
+                        formData.cabinType === 'normal'
+                          ? 'border-indigo-600 bg-indigo-50 text-indigo-600'
+                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      <Building2 size={14} className="inline mr-1.5" />
+                      Normal
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({...formData, cabinType: "exclusive"})}
+                      className={`py-2.5 sm:py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold border-2 transition-all ${
+                        formData.cabinType === 'exclusive'
+                          ? 'border-amber-500 bg-amber-50 text-amber-600'
+                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      <Crown size={14} className="inline mr-1.5 text-amber-500" />
+                      Exclusive
+                    </button>
+                  </div>
                 </div>
 
-                {/* ✅ NEW: Operating Hours Section */}
                 <div>
                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Operating Hours</label>
                   <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-1">
@@ -1608,57 +3841,24 @@ const MyCabin = () => {
                 </div>
 
                 <div>
-                  <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Cabin Type</label>
-                  <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-1">
-                    <button
-                      type="button"
-                      onClick={() => handleCabinTypeChange("normal")}
-                      className={`py-2.5 sm:py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold border-2 transition-all ${
-                        formData.cabinType === 'normal'
-                          ? 'border-indigo-600 bg-indigo-50 text-indigo-600'
-                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
-                      }`}
-                    >
-                      <Building2 size={14} className="inline mr-1.5" />
-                      Normal
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleCabinTypeChange("exclusive")}
-                      className={`py-2.5 sm:py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold border-2 transition-all ${
-                        formData.cabinType === 'exclusive'
-                          ? 'border-amber-500 bg-amber-50 text-amber-600'
-                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
-                      }`}
-                    >
-                      <Crown size={14} className="inline mr-1.5 text-amber-500" />
-                      Exclusive
-                    </button>
-                  </div>
-                </div>
-
-                <div>
                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Amenities</label>
-                  <div className="grid grid-cols-2 xs:grid-cols-3 gap-1.5 sm:gap-2 mt-1">
-                    {currentAmenities.map(item => {
-                      const Icon = item.icon;
+                  <div className="grid grid-cols-2 xs:grid-cols-3 gap-1.5 mt-1">
+                    {ALL_AMENITIES.map(item => {
                       const isActive = formData.amenities[item.key] || false;
+                      const Icon = item.icon;
                       return (
                         <button
                           key={item.key}
                           type="button"
                           onClick={() => toggleAmenity(item.key)}
-                          className={`flex items-center gap-1.5 sm:gap-2 p-2 sm:p-2.5 rounded-lg text-[10px] sm:text-xs font-semibold border transition-all ${
+                          className={`flex items-center gap-1.5 p-2 rounded-lg text-[10px] sm:text-xs font-semibold border transition-all ${
                             isActive
                               ? 'border-indigo-500 bg-indigo-50 text-indigo-600'
                               : 'border-slate-200 text-slate-600 hover:bg-slate-50'
                           }`}
                         >
-                          <span className={`w-1.5 h-1.5 rounded-full border-2 ${
-                            isActive ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300'
-                          }`}></span>
-                          <Icon size={12} className="sm:w-3.5 sm:h-3.5" />
-                          <span className="truncate">{item.label}</span>
+                          <Icon size={14} className={isActive ? 'text-indigo-500' : 'text-gray-400'} />
+                          {item.label}
                         </button>
                       );
                     })}
@@ -1667,63 +3867,70 @@ const MyCabin = () => {
 
                 <div>
                   <div className="flex justify-between items-center mb-1.5">
-                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Pricing Plans</label>
+                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      Pricing Plans ({pricingPlans.length})
+                    </label>
                     <button
                       type="button"
-                      onClick={() => {
-                        const label = prompt("Plan Label:");
-                        const hours = prompt("Included Hours:");
-                        const cost = prompt("Cost (₹):");
-                        const validity = prompt("Validity (Days):");
-                        if (hours && cost && validity) {
-                          setPricingPlans([...pricingPlans, {
-                            label: (label || "").trim(),
-                            hours: Number(hours),
-                            cost: Number(cost),
-                            validity: Number(validity)
-                          }]);
-                        }
-                      }}
-                      className="text-[10px] sm:text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 sm:px-3 py-1 rounded-lg hover:bg-indigo-100 transition-colors"
+                      onClick={openPlanModal}
+                      className="text-[10px] sm:text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 sm:px-3 py-1 rounded-lg hover:bg-indigo-100 transition-colors flex items-center gap-1 cursor-pointer"
                     >
-                      + Add Plan
+                      <Plus size={12} /> Add Manual
                     </button>
                   </div>
                   {pricingPlans.length > 0 ? (
-                    <div className="grid grid-cols-1 xs:grid-cols-2 gap-1.5 sm:gap-2">
+                    <div className="grid grid-cols-1 xs:grid-cols-2 gap-2">
                       {pricingPlans.map((plan, idx) => (
-                        <div key={idx} className="p-2 sm:p-2.5 bg-slate-50 rounded-lg text-[10px] sm:text-xs border border-slate-200 relative">
-                          <div><strong>{plan.label || "Plan"}</strong></div>
-                          <div>{plan.hours}h · ₹{plan.cost}</div>
-                          <div className="text-slate-400">{plan.validity}d validity</div>
-                          <button
-                            type="button"
-                            onClick={() => setPricingPlans(pricingPlans.filter((_, i) => i !== idx))}
-                            className="absolute top-1 right-1 text-red-500 hover:text-red-700 text-xs font-bold"
-                          >
-                            ×
-                          </button>
+                        <div key={idx} className="p-2.5 bg-slate-50 rounded-xl text-xs border border-slate-200 relative group flex justify-between items-center">
+                          <div>
+                            <div className="font-bold text-slate-800">{plan.label || "Plan"}</div>
+                            <div className="text-indigo-600 font-semibold">{plan.hours}h · ₹{plan.cost}</div>
+                            <div className="text-[10px] text-slate-400">{plan.validity} days validity</div>
+                          </div>
+                          <div className="flex items-center gap-1 opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              type="button"
+                              onClick={() => openEditPlanModal(idx)}
+                              className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs hover:bg-indigo-200 transition-colors cursor-pointer"
+                              title="Edit Plan"
+                            >
+                              ✎
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removePlan(idx)}
+                              className="w-6 h-6 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-xs hover:bg-red-200 transition-colors cursor-pointer"
+                              title="Delete Plan"
+                            >
+                              ×
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-[10px] sm:text-xs text-slate-400">No plans defined. Hourly booking only.</p>
+                    <div className="border-2 border-dashed border-slate-200 rounded-xl p-3 text-center">
+                      <p className="text-xs text-slate-400">No custom plans added. Click <strong>"+ Add Manual"</strong> to add plan details.</p>
+                    </div>
                   )}
                 </div>
 
                 <div>
                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Description</label>
                   <textarea
-                    className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all resize-none"
+                    className={`w-full mt-1 px-3 py-2.5 sm:py-3 border rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all resize-none ${errors.description ? 'border-red-500 focus:border-red-500' : 'border-slate-200 focus:border-indigo-500'}`}
                     name="description"
-                    placeholder="Describe your workspace..."
+                    placeholder="Describe your space (150-200 characters)..."
                     value={formData.description}
                     onChange={handleChange}
                     rows={2}
                   />
+                  {errors.description && <p className="text-[10px] text-red-500 mt-1">{errors.description}</p>}
+                  {!errors.description && formData.description && (
+                    <p className="text-[10px] text-slate-400 mt-1">{formData.description.length}/200 characters</p>
+                  )}
                 </div>
 
-                {/* Photos */}
                 <div>
                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Photos</label>
                   <div className="mt-1 border-2 border-dashed border-indigo-200 rounded-xl p-4 sm:p-6 text-center hover:border-indigo-400 transition-colors relative">
@@ -1754,7 +3961,6 @@ const MyCabin = () => {
                   )}
                 </div>
 
-                {/* ✅ NEW: Videos Upload */}
                 <div>
                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Videos</label>
                   <div className="mt-1 border-2 border-dashed border-purple-200 rounded-xl p-4 sm:p-6 text-center hover:border-purple-400 transition-colors relative">
@@ -1797,7 +4003,7 @@ const MyCabin = () => {
                     )}
                     <div className="flex-1 min-w-0">
                       <p className="text-[10px] sm:text-xs font-bold text-slate-700">
-                        Cabin #{cabinCount + 1} {formData.cabinType === 'exclusive' ? '⭐ Exclusive' : 'Normal'}
+                        Space #{cabinCount + 1} {formData.cabinType === 'exclusive' ? '⭐ Exclusive' : 'Normal'}
                       </p>
                       <p className="text-[8px] sm:text-[10px] text-slate-600 truncate">
                         Base: ₹{baseFee} | GST: ₹{gstAmount.toFixed(2)} | Total: ₹{totalWithGST.toFixed(2)}
@@ -1819,18 +4025,14 @@ const MyCabin = () => {
                   </button>
                   <button
                     type="submit"
-                    disabled={paymentProcessing}
+                    disabled={submitting || !razorpayLoaded}
                     className={`py-2.5 sm:py-3 rounded-xl text-white font-bold text-xs sm:text-sm transition-all ${
-                      paymentProcessing
+                      (submitting || !razorpayLoaded)
                         ? 'bg-slate-400 cursor-not-allowed'
                         : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:shadow-lg'
                     }`}
                   >
-                    {paymentProcessing ? (
-                      <Loader2 size={16} className="animate-spin mx-auto" />
-                    ) : (
-                      `Pay ₹${totalWithGST.toFixed(2)}`
-                    )}
+                    {submitting ? 'Processing...' : !razorpayLoaded ? 'Loading Payment...' : `Pay ₹${totalWithGST.toFixed(2)}`}
                   </button>
                 </div>
               </form>
@@ -1915,6 +4117,106 @@ const MyCabin = () => {
         </div>
       )}
 
+      {/* ─── PRICING PLAN MODAL ─── */}
+      {showPlanModal && (
+        <div className="fixed inset-0 z-[10500] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-slate-900">
+                  {editingPlanIndex !== null ? 'Edit Pricing Plan' : 'Add Pricing Plan'}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPlanModal(false);
+                    setPlanInput({ label: '', hours: '', cost: '', validity: '' });
+                    setEditingPlanIndex(null);
+                  }}
+                  className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors flex items-center justify-center text-slate-600 cursor-pointer"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Plan Label</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Weekly Flexi, Dedicated Desk, Monthly 50h"
+                    value={planInput.label}
+                    onChange={(e) => setPlanInput({ ...planInput, label: e.target.value })}
+                    className="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                    autoFocus
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Included Hours *</label>
+                    <input
+                      type="number"
+                      min="1"
+                      placeholder="e.g. 40"
+                      value={planInput.hours}
+                      onChange={(e) => setPlanInput({ ...planInput, hours: e.target.value })}
+                      className="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Cost (₹) *</label>
+                    <input
+                      type="number"
+                      min="1"
+                      placeholder="e.g. 5000"
+                      value={planInput.cost}
+                      onChange={(e) => setPlanInput({ ...planInput, cost: e.target.value })}
+                      className="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Validity (Days) *</label>
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder="e.g. 30"
+                    value={planInput.validity}
+                    onChange={(e) => setPlanInput({ ...planInput, validity: e.target.value })}
+                    className="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-0.5">Number of days plan stays valid after purchase</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowPlanModal(false);
+                      setPlanInput({ label: '', hours: '', cost: '', validity: '' });
+                      setEditingPlanIndex(null);
+                    }}
+                    className="py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold text-sm hover:bg-slate-50 transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={savePlanModal}
+                    className="py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition-colors shadow-sm cursor-pointer"
+                  >
+                    {editingPlanIndex !== null ? 'Update Plan' : 'Add Plan'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Confirm Modal */}
       {showConfirmModal && (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm">
@@ -1947,14 +4249,21 @@ const MyCabin = () => {
                     {formData.cabinType === 'exclusive' ? '⭐ Exclusive' : 'Normal'}
                   </span>
                 </div>
+                <div className="flex justify-between"><span className="text-slate-500">Space Type</span>
+                  <span className={`font-semibold ${formData.isChamber ? 'text-emerald-600' : 'text-blue-600'}`}>
+                    {formData.isChamber ? '🏥 Medical Chamber' : '💼 Co-Working'}
+                  </span>
+                </div>
                 <div className="flex justify-between"><span className="text-slate-500">Capacity</span>
-                  <span className="font-semibold">{formData.capacity} seats</span>
+                  <span className="font-semibold">{formData.capacity} {formData.isChamber ? '' : 'seats'}</span>
                 </div>
-                <div className="flex justify-between"><span className="text-slate-500">Seats Added</span>
-                  <span className="font-semibold">{seats.length} seats</span>
-                </div>
+                {!formData.isChamber && (
+                  <div className="flex justify-between"><span className="text-slate-500">Seats Added</span>
+                    <span className="font-semibold">{seats.length} seats</span>
+                  </div>
+                )}
                 <div className="flex justify-between"><span className="text-slate-500">Amenities</span>
-                  <span className="font-semibold">{Object.values(formData.amenities).filter(v => v).length} / {currentAmenities.length}</span>
+                  <span className="font-semibold">{Object.values(formData.amenities).filter(v => v).length} / {ALL_AMENITIES.length}</span>
                 </div>
                 <div className="flex justify-between"><span className="text-slate-500">Timings</span>
                   <span className="font-semibold">

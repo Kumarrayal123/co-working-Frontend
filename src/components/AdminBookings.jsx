@@ -996,118 +996,99 @@ const AdminBookings = () => {
         </div>
 
         {/* Filters */}
-        <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
-          <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
-            <div className="flex items-center gap-3">
-              <h3 className="admin-dash__card-title">
-                {activeTab === 'all' ? 'All Bookings' : activeTab === 'visits' ? 'Site Visits' : 'Space Bookings'}
-              </h3>
-              <span className="px-2.5 py-0.5 text-xs font-bold text-indigo-700 bg-indigo-100 rounded-full">
-                {displayBookings.length}
-              </span>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-3 mb-4">
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="flex-1 relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search bookings..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+              />
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              {/* Search Bar */}
-              <div className="relative w-full sm:w-44">
-                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search bookings..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                />
-              </div>
-
-              {/* Date From Filter */}
-              <div className="min-w-[150px]">
-                <label className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">From</label>
-                <input
-                  type="date"
-                  value={filterDateFrom}
-                  onChange={(e) => setFilterDateFrom(e.target.value)}
-                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                />
-              </div>
-
-              {/* Date To Filter */}
-              <div className="min-w-[150px]">
-                <label className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">To</label>
-                <input
-                  type="date"
-                  value={filterDateTo}
-                  onChange={(e) => setFilterDateTo(e.target.value)}
-                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                />
-              </div>
-
-              {/* Status Filter */}
-              <div className="min-w-[130px]">
-                <label className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">Status</label>
-                <select
-                  value={filters.status}
-                  onChange={(e) => setFilters({...filters, status: e.target.value})}
-                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
-                >
-                  <option value="all">All</option>
-                  <option value="pending">Pending</option>
-                  <option value="confirmed">Confirmed</option>
-                  <option value="active">Active</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
-              </div>
-
-              {/* Payment Status Filter */}
-              <div className="min-w-[140px]">
-                <label className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">Payment Status</label>
-                <select
-                  value={filters.paymentStatus}
-                  onChange={(e) => setFilters({...filters, paymentStatus: e.target.value})}
-                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
-                >
-                  <option value="all">All</option>
-                  <option value="pending">Pending</option>
-                  <option value="paid">Paid</option>
-                  <option value="failed">Failed</option>
-                  <option value="refunded">Refunded</option>
-                </select>
-              </div>
-
-              {/* Payment Method Filter */}
-              <div className="min-w-[140px]">
-                <label className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">Payment Method</label>
-                <select
-                  value={filters.paymentMethod}
-                  onChange={(e) => setFilters({...filters, paymentMethod: e.target.value})}
-                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
-                >
-                  <option value="all">All</option>
-                  <option value="online">Online</option>
-                  <option value="cash">Cash</option>
-                  <option value="counter">Counter</option>
-                  <option value="upi">UPI</option>
-                  <option value="card">Card</option>
-                </select>
-              </div>
-
-              {/* Clear Filters Button */}
+              <input
+                type="date"
+                value={filterDateFrom}
+                onChange={(e) => setFilterDateFrom(e.target.value)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                placeholder="From date"
+              />
+              <input
+                type="date"
+                value={filterDateTo}
+                onChange={(e) => setFilterDateTo(e.target.value)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                placeholder="To date"
+              />
+              <select
+                value={filters.status}
+                onChange={(e) => setFilters({...filters, status: e.target.value})}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+              >
+                <option value="all">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="active">Active</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+              <select
+                value={activeTab}
+                onChange={(e) => setActiveTab(e.target.value)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+              >
+                <option value="all">All Bookings ({totalCount})</option>
+                <option value="visits">Site Visits ({visitCount})</option>
+                <option value="spaces">Space Bookings ({spaceCount})</option>
+              </select>
+              <select
+                value={filters.paymentStatus}
+                onChange={(e) => setFilters({...filters, paymentStatus: e.target.value})}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+              >
+                <option value="all">Payment Status</option>
+                <option value="pending">Pending</option>
+                <option value="paid">Paid</option>
+                <option value="failed">Failed</option>
+                <option value="refunded">Refunded</option>
+              </select>
+              <select
+                value={filters.paymentMethod}
+                onChange={(e) => setFilters({...filters, paymentMethod: e.target.value})}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+              >
+                <option value="all">Payment Method</option>
+                <option value="online">Online</option>
+                <option value="cash">Cash</option>
+                <option value="counter">Counter</option>
+                <option value="upi">UPI</option>
+                <option value="card">Card</option>
+              </select>
               {(filters.status !== 'all' || filters.paymentStatus !== 'all' || filters.paymentMethod !== 'all' || filterDateFrom || filterDateTo || searchTerm) && (
                 <button
                   onClick={clearFilters}
-                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors mt-auto"
+                  className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                  title="Clear filters"
                 >
-                  <XCircleIcon size={14} /> Clear
+                  <XCircleIcon size={16} />
                 </button>
               )}
-
               {displayBookings.length > 0 && (
-                <button onClick={exportToExcel} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200 mt-auto">
+                <button
+                  onClick={exportToExcel}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition"
+                >
                   <Download size={14} />
                   <span className="hidden xs:inline">Export</span>
                 </button>
               )}
             </div>
+          </div>
+          <div className="mt-1.5 text-[10px] text-gray-400">
+            Showing {displayBookings.length} of {bookings.length} bookings
           </div>
         </div>
 
@@ -1173,10 +1154,10 @@ const AdminBookings = () => {
               <table className="w-full min-w-[1700px] text-left">
                 <thead>
                   <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Booking ID</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">S.No</th>
+                    {/* <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Booking ID</th> */}
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Space</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Space Type </th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Customer</th>
                     {activeTab === 'visits' ? (
                       <>
@@ -1192,7 +1173,7 @@ const AdminBookings = () => {
                         <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">End</th>
                         <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Hours</th>
                         <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Days</th>
-                        <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Daily Hrs</th>
+                        {/* <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Daily Hrs</th> */}
                         <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Seats</th>
                         <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
                         <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Payment</th>
@@ -1221,13 +1202,13 @@ const AdminBookings = () => {
 
                     return (
                       <tr key={booking._id} className="transition-colors group hover:bg-gray-50/80">
-                        <td className="p-4"><span className="text-sm font-semibold text-gray-400">#{idx + 1}</span></td>
-                        <td className="p-4">
+                        <td className="p-4"><span className="text-sm font-semibold text-gray-400">{idx + 1}</span></td>
+                        {/* <td className="p-4">
                           <div>
                             <p className="font-mono text-xs font-bold text-indigo-600">{bookingId}</p>
                             <p className="text-[9px] text-gray-400">{booking.bookingType === 'visit' ? 'Visit' : 'Booking'}</p>
                           </div>
-                        </td>
+                        </td> */}
                         <td className="p-4">
                           <div>
                             <p className="font-semibold text-gray-900 text-sm">{booking.cabin?.name || "Unknown"}</p>
@@ -1305,7 +1286,7 @@ const AdminBookings = () => {
                             <td className="p-4">
                               <span className="px-2.5 py-1 bg-purple-50 text-purple-700 rounded-full text-xs font-bold">{totalDays}d</span>
                             </td>
-                            <td className="p-4">
+                            {/* <td className="p-4">
                               <div className="flex flex-wrap gap-0.5">
                                 {booking.dailyHours?.map((h, i) => (
                                   <span key={i} className="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded text-[9px] font-medium">
@@ -1313,7 +1294,7 @@ const AdminBookings = () => {
                                   </span>
                                 )) || <span className="text-[10px] text-gray-400">N/A</span>}
                               </div>
-                            </td>
+                            </td> */}
                             <td className="p-4">
                               <div>
                                 <span className="flex items-center gap-1 text-sm font-medium text-gray-700">

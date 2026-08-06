@@ -26,7 +26,8 @@ import {
   DollarSign,
   XCircle as XCircleIcon,
   Home,
-  Users
+  Users,
+  TrendingUp
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
@@ -453,28 +454,68 @@ const AllWallets = () => {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-4 text-white shadow-lg shadow-indigo-500/25">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-200">Total Wallets</p>
-            <p className="text-2xl font-bold">{stats.totalWallets}</p>
-            <div className="mt-2 pt-2 border-t border-white/20 flex justify-between text-[10px]">
-              <span className="text-indigo-200">Balance</span>
-              <span className="font-semibold">{formatCurrency(stats.totalBalance)}</span>
+        {/* Stats Cards - Exact MyBookings / AdminDashboard style */}
+        <div className="admin-dash__stats" style={{ marginBottom: '16px' }}>
+          {[
+            {
+              label: "Total Wallets",
+              value: stats.totalWallets,
+              meta: "registered user wallets",
+              icon: Wallet,
+              color: "indigo",
+              onClick: () => clearFilters()
+            },
+            {
+              label: "Total Balance",
+              value: formatCurrency(stats.totalBalance),
+              meta: "current wallet balance",
+              icon: CreditCard,
+              color: "emerald",
+              onClick: () => setFilterHasBalance("hasBalance")
+            },
+            {
+              label: "Active Wallets",
+              value: stats.activeWallets,
+              meta: "wallets with balance",
+              icon: CheckCircle,
+              color: "cyan",
+              onClick: () => setFilterHasBalance("hasBalance")
+            },
+            {
+              label: "Total Earned",
+              value: formatCurrency(stats.totalEarned),
+              meta: "lifetime total earnings",
+              icon: TrendingUp,
+              color: "amber"
+            },
+            {
+              label: "Transactions",
+              value: stats.totalTransactions,
+              meta: "credits & withdrawals",
+              icon: History,
+              color: "purple"
+            }
+          ].map((stat, index) => (
+            <div
+              key={index}
+              className="admin-dash__stat"
+              onClick={stat.onClick}
+              style={{ 
+                cursor: stat.onClick ? 'pointer' : 'default',
+                padding: '12px 14px',
+                minHeight: '80px'
+              }}
+            >
+              <div className="admin-dash__stat-top">
+                <span className="admin-dash__stat-label" style={{ fontSize: '11px' }}>{stat.label}</span>
+                <div className={`admin-dash__stat-icon admin-dash__stat-icon--${stat.color}`} style={{ width: '28px', height: '28px' }}>
+                  <stat.icon size={14} />
+                </div>
+              </div>
+              <div className="admin-dash__stat-value" style={{ fontSize: '18px', fontWeight: '700' }}>{stat.value}</div>
+              <div className="admin-dash__stat-meta" style={{ fontSize: '9px' }}>{stat.meta}</div>
             </div>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm text-center">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Active</p>
-            <p className="text-2xl font-bold text-emerald-600">{stats.activeWallets}</p>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm text-center">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Total Earned</p>
-            <p className="text-2xl font-bold text-amber-600">{formatCurrency(stats.totalEarned)}</p>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm text-center">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-purple-600">Transactions</p>
-            <p className="text-2xl font-bold text-purple-600">{stats.totalTransactions}</p>
-          </div>
+          ))}
         </div>
 
         {/* Table Section */}

@@ -103,6 +103,13 @@
   }
 }
 
+/* Variant: 6 KPI cards (used by user dashboard) */
+@media (min-width: 1024px) {
+  .admin-dash__stats--six {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
 .admin-dash__stat {
   background: var(--ad-surface);
   border: 1px solid var(--ad-border);
@@ -117,6 +124,21 @@
   box-shadow: var(--ad-shadow-md);
   border-color: #d0d5dd;
   transform: translateY(-2px);
+}
+
+.admin-dash__stat--active {
+  border-color: var(--ad-primary);
+  background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+  box-shadow: 0 0 0 3px rgba(23, 92, 211, 0.12), var(--ad-shadow-md);
+}
+
+.admin-dash__stat--active .admin-dash__stat-label,
+.admin-dash__stat--active .admin-dash__stat-value {
+  color: var(--ad-primary);
+}
+
+.admin-dash__stat--active .admin-dash__stat-meta {
+  color: #475467;
 }
 
 .admin-dash__stat-top {

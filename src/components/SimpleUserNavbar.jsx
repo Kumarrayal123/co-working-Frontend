@@ -87,8 +87,8 @@ function SimpleUserNavbar() {
           fixed top-0 left-0 right-0 z-[1100] 
           transition-all duration-300 ease-in-out
           h-16
-          ${scrolled 
-            ? 'bg-white/95 shadow-[0_1px_12px_rgba(0,0,0,0.06)]' 
+          ${scrolled
+            ? 'bg-white/95 shadow-[0_1px_12px_rgba(0,0,0,0.06)]'
             : 'bg-white/85 backdrop-blur-[12px] border-b border-slate-200/60'
           }
         `}
@@ -168,9 +168,8 @@ function SimpleUserNavbar() {
                 </div>
                 <ChevronDown
                   size={14}
-                  className={`text-slate-400 transition-transform duration-200 ${
-                    profileOpen ? 'rotate-180' : ''
-                  }`}
+                  className={`text-slate-400 transition-transform duration-200 ${profileOpen ? 'rotate-180' : ''
+                    }`}
                 />
               </button>
 
@@ -198,6 +197,17 @@ function SimpleUserNavbar() {
                   >
                     <User size={15} className="text-slate-400" /> My Profile
                   </button>
+
+                  {/* My Bookings */}
+<button
+  className="flex items-center gap-2.5 w-full px-3 py-1.75 border-none bg-transparent rounded-lg text-xs font-medium text-slate-600 cursor-pointer transition-all duration-150 hover:bg-slate-100 hover:text-slate-900 font-inherit"
+  onClick={() => {
+    setProfileOpen(false);
+    navigate("/mybookings");
+  }}
+>
+  <BookOpen size={15} className="text-slate-400" /> My Bookings
+</button>
 
                   {/* My Wishlist */}
                   <button
@@ -348,6 +358,18 @@ function SimpleUserNavbar() {
             >
               <User size={17} className="text-slate-400" />
               <span>My Profile</span>
+            </button>
+
+
+            {/* My Bookings */}
+            <button
+              className="flex items-center gap-2.5 w-full px-3 py-1.75 border-none bg-transparent rounded-lg text-xs font-medium text-slate-600 cursor-pointer transition-all duration-150 hover:bg-slate-100 hover:text-slate-900 font-inherit"
+              onClick={() => {
+                setProfileOpen(false);
+                navigate("/mybookings");
+              }}
+            >
+              <BookOpen size={15} className="text-slate-400" /> My Bookings
             </button>
 
             {/* My Wishlist in Mobile Drawer */}

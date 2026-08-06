@@ -21,7 +21,8 @@ import {
   Crown,
   Shield,
   Download,
-  FileText
+  FileText,
+  Stethoscope
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import AdminNavbar from "./AdminNavbar";
@@ -229,17 +230,6 @@ export default function AllUsers() {
             </h1>
           </div>
           <div className="flex items-center gap-2">
-            {/* Export Button */}
-            {filtered.length > 0 && (
-              <button
-                onClick={exportToExcel}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-medium hover:bg-emerald-100 transition-colors border border-emerald-200"
-              >
-                <Download size={14} />
-                <span className="hidden xs:inline">Export</span>
-              </button>
-            )}
-
             <button
               onClick={fetchUsers}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200"
@@ -250,193 +240,146 @@ export default function AllUsers() {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4 mb-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Total Users</p>
-            <p className="text-2xl font-bold text-indigo-600 mt-1">{totalUsers}</p>
+        {/* Stats Cards - Exact AdminDashboard style */}
+        <div className="admin-dash__stats" style={{ marginBottom: '16px' }}>
+          {[
+            {
+              label: "Total Users",
+              value: totalUsers,
+              meta: "registered members",
+              icon: Users,
+              color: "rose"
+            },
+            {
+              label: "Doctors",
+              value: totalDoctors,
+              meta: "medical practitioners",
+              icon: Stethoscope,
+              color: "indigo"
+            },
+            {
+              label: "Active",
+              value: totalActive,
+              meta: "active & approved",
+              icon: CheckCircle,
+              color: "emerald"
+            },
+            {
+              label: "Pending",
+              value: totalPending,
+              meta: "awaiting approval",
+              icon: Clock,
+              color: "amber"
+            },
+            {
+              label: "Rejected",
+              value: totalRejected,
+              meta: "rejected accounts",
+              icon: UserX,
+              color: "cyan"
+            }
+          ].map((stat, index) => (
+            <div
+              key={index}
+              className="admin-dash__stat"
+              style={{ 
+                padding: '12px 14px',
+                minHeight: '80px'
+              }}
+            >
+              <div className="admin-dash__stat-top">
+                <span className="admin-dash__stat-label" style={{ fontSize: '11px' }}>{stat.label}</span>
+                <div className={`admin-dash__stat-icon admin-dash__stat-icon--${stat.color}`} style={{ width: '28px', height: '28px' }}>
+                  <stat.icon size={14} />
+                </div>
+              </div>
+              <div className="admin-dash__stat-value" style={{ fontSize: '18px', fontWeight: '700' }}>{stat.value}</div>
+              <div className="admin-dash__stat-meta" style={{ fontSize: '9px' }}>{stat.meta}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Filters */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-3 mb-4">
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="flex-1 relative">
+              <Users size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search by name..."
+                value={filterName}
+                onChange={(e) => setFilterName(e.target.value)}
+                className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+              />
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                type="text"
+                placeholder="Phone..."
+                value={filterPhone}
+                onChange={(e) => setFilterPhone(e.target.value)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 w-32"
+              />
+              <input
+                type="date"
+                value={filterJoinedFrom}
+                onChange={(e) => setFilterJoinedFrom(e.target.value)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+              />
+              <input
+                type="date"
+                value={filterJoinedTo}
+                onChange={(e) => setFilterJoinedTo(e.target.value)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+              />
+              <select
+                value={filterRole}
+                onChange={(e) => setFilterRole(e.target.value)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+              >
+                <option value="all">All Roles</option>
+                <option value="user">User</option>
+                <option value="doctor">Doctor</option>
+                <option value="admin">Admin</option>
+              </select>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+              >
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+              </select>
+              {hasActiveFilters && (
+                <button
+                  onClick={clearFilters}
+                  className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                  title="Clear filters"
+                >
+                  <XCircleIcon size={16} />
+                </button>
+              )}
+              {filtered.length > 0 && (
+                <button
+                  onClick={exportToExcel}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition"
+                >
+                  <Download size={14} />
+                  <span className="hidden xs:inline">Export</span>
+                </button>
+              )}
+            </div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-purple-600">Doctors</p>
-            <p className="text-2xl font-bold text-purple-600 mt-1">{totalDoctors}</p>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Active</p>
-            <p className="text-2xl font-bold text-emerald-600 mt-1">{totalActive}</p>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-yellow-600">Pending</p>
-            <p className="text-2xl font-bold text-yellow-600 mt-1">{totalPending}</p>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-red-600">Rejected</p>
-            <p className="text-2xl font-bold text-red-600 mt-1">{totalRejected}</p>
+          <div className="mt-1.5 text-[10px] text-gray-400">
+            Showing {filtered.length} of {users.length} users
           </div>
         </div>
 
         {/* Table Section */}
         <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
-          <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
-            <div className="flex items-center gap-3">
-              <h3 className="admin-dash__card-title">All Users</h3>
-              <span className="px-2.5 py-0.5 text-xs font-bold text-indigo-700 bg-indigo-100 rounded-full">
-                {filtered.length}
-              </span>
-            </div>
-          </div>
-
-          {/* ─── FILTERS - ALWAYS VISIBLE ─── */}
-          <div className="px-4 pt-4 pb-3 border-b border-gray-100" style={{ backgroundColor: '#fafafa' }}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {/* Name Filter */}
-              <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Name</label>
-                <input
-                  type="text"
-                  placeholder="Filter by name..."
-                  value={filterName}
-                  onChange={(e) => setFilterName(e.target.value)}
-                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                />
-              </div>
-
-              {/* Phone Filter */}
-              <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Phone</label>
-                <input
-                  type="text"
-                  placeholder="Filter by phone..."
-                  value={filterPhone}
-                  onChange={(e) => setFilterPhone(e.target.value)}
-                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                />
-              </div>
-
-              {/* Address Filter */}
-              <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Address</label>
-                <input
-                  type="text"
-                  placeholder="Filter by address..."
-                  value={filterAddress}
-                  onChange={(e) => setFilterAddress(e.target.value)}
-                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                />
-              </div>
-
-              {/* Role Filter */}
-              <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Role</label>
-                <select
-                  value={filterRole}
-                  onChange={(e) => setFilterRole(e.target.value)}
-                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                >
-                  <option value="all">All Roles</option>
-                  <option value="user">User</option>
-                  <option value="doctor">Doctor</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
-
-              {/* Status Filter */}
-              <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</label>
-                <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                >
-                  <option value="all">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="pending">Pending</option>
-                  <option value="approved">Approved</option>
-                  <option value="rejected">Rejected</option>
-                </select>
-              </div>
-
-              {/* Date Range - From */}
-              <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Joined From</label>
-                <input
-                  type="date"
-                  value={filterJoinedFrom}
-                  onChange={(e) => setFilterJoinedFrom(e.target.value)}
-                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                />
-              </div>
-
-              {/* Date Range - To */}
-              <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Joined To</label>
-                <input
-                  type="date"
-                  value={filterJoinedTo}
-                  onChange={(e) => setFilterJoinedTo(e.target.value)}
-                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                />
-              </div>
-
-              {/* Clear Button */}
-              <div className="flex items-end">
-                <button 
-                  onClick={clearFilters} 
-                  className="w-full px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-red-600 transition-colors border border-gray-200 rounded-lg hover:border-red-300 flex items-center justify-center gap-1"
-                >
-                  <XCircleIcon size={14} /> Clear All
-                </button>
-              </div>
-            </div>
-
-            {/* Active Filters Display */}
-            {hasActiveFilters && (
-              <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-gray-200">
-                <span className="text-[10px] text-gray-500 font-medium">Active Filters:</span>
-                {filterName && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] rounded-full">
-                    Name: {filterName}
-                    <button onClick={() => setFilterName("")} className="hover:text-red-500">×</button>
-                  </span>
-                )}
-                {filterPhone && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] rounded-full">
-                    Phone: {filterPhone}
-                    <button onClick={() => setFilterPhone("")} className="hover:text-red-500">×</button>
-                  </span>
-                )}
-                {filterAddress && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] rounded-full">
-                    Address: {filterAddress}
-                    <button onClick={() => setFilterAddress("")} className="hover:text-red-500">×</button>
-                  </span>
-                )}
-                {filterRole !== "all" && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] rounded-full">
-                    Role: {filterRole}
-                    <button onClick={() => setFilterRole("all")} className="hover:text-red-500">×</button>
-                  </span>
-                )}
-                {filterStatus !== "all" && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] rounded-full">
-                    Status: {filterStatus}
-                    <button onClick={() => setFilterStatus("all")} className="hover:text-red-500">×</button>
-                  </span>
-                )}
-                {filterJoinedFrom && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] rounded-full">
-                    From: {formatDate(filterJoinedFrom)}
-                    <button onClick={() => setFilterJoinedFrom("")} className="hover:text-red-500">×</button>
-                  </span>
-                )}
-                {filterJoinedTo && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] rounded-full">
-                    To: {formatDate(filterJoinedTo)}
-                    <button onClick={() => setFilterJoinedTo("")} className="hover:text-red-500">×</button>
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
 
           {/* Table Container */}
           <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
@@ -461,7 +404,7 @@ export default function AllUsers() {
               <table className="w-full min-w-[1100px] text-left">
                 <thead>
                   <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">S.No</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">User</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Contact</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Role</th>
@@ -480,7 +423,7 @@ export default function AllUsers() {
                     return (
                       <tr key={user._id} className="transition-colors group hover:bg-gray-50/80">
                         <td className="p-4">
-                          <span className="text-sm font-semibold text-gray-400">#{idx + 1}</span>
+                          <span className="text-sm font-semibold text-gray-400">{idx + 1}</span>
                         </td>
                         <td className="p-4">
                           <div className="flex items-center gap-3">

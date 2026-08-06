@@ -763,26 +763,26 @@ const DoctorDashboard = () => {
   ];
 
   // ✅ FOOTER STATS - 4 cards
-  const footerStats = [
-    {
-      label: "Total Revenue",
-      value: formatCurrency(cabinRevenue),
-      icon: IndianRupee,
-      iconBg: "bg-emerald-100 text-emerald-600"
-    },
-    {
-      label: "Total Bookings",
-      value: cabinBookingsCount,
-      icon: Calendar,
-      iconBg: "bg-blue-100 text-blue-600"
-    },
-    {
-      label: "Wallet Withdrawals",
-      value: wallet.withdrawals || 0,
-      icon: Wallet,
-      iconBg: "bg-rose-100 text-rose-600"
-    }
-  ];
+  // const footerStats = [
+  //   {
+  //     label: "Total Revenue",
+  //     value: formatCurrency(cabinRevenue),
+  //     icon: IndianRupee,
+  //     iconBg: "bg-emerald-100 text-emerald-600"
+  //   },
+  //   {
+  //     label: "Total Bookings",
+  //     value: cabinBookingsCount,
+  //     icon: Calendar,
+  //     iconBg: "bg-blue-100 text-blue-600"
+  //   },
+  //   {
+  //     label: "Wallet Withdrawals",
+  //     value: wallet.withdrawals || 0,
+  //     icon: Wallet,
+  //     iconBg: "bg-rose-100 text-rose-600"
+  //   }
+  // ];
 
   const latestMyBookings = myBookings.slice(0, 5);
   const latestCabinBookings = myCabinBookings.slice(0, 5);
@@ -794,160 +794,170 @@ const DoctorDashboard = () => {
     <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
       <DoctorNavbar />
 
-      <div className="pt-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
+      <div className="pt-20 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
         {/* Header with Profile Completion */}
-        <div className="admin-dash__header mb-4">
+        <div className="admin-dash__header" style={{ marginBottom: "8px" }}>
           <div>
-            <h1 className="admin-dash__greeting">
+            <h1 className="admin-dash__greeting" style={{ fontSize: "1.25rem" }}>
               Doctor <span>Dashboard</span>
             </h1>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <p className="admin-dash__subtitle" style={{ fontSize: "11px" }}>
               Welcome back, <span className="font-semibold text-gray-700">{profileName}</span>
             </p>
           </div>
         </div>
 
         {/* Profile Completion Card with Circular Progress */}
-        <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 rounded-2xl border border-indigo-200 shadow-sm p-4 sm:p-5 mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+        <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 rounded-xl border border-indigo-200 shadow-sm p-3 sm:p-4 mb-5">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             {/* Circular Progress */}
             <div className="flex-shrink-0 flex justify-center">
               <CircularProgress 
                 percentage={animatedPercentage || completionPercentage} 
-                size={100} 
-                strokeWidth={8}
+                size={80}
+                strokeWidth={7}
               />
             </div>
 
             {/* Details */}
             <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xl">{getCompletionEmoji(completionPercentage)}</span>
-                <h3 className="text-sm font-semibold text-gray-800">Profile Completion</h3>
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="text-lg">{getCompletionEmoji(completionPercentage)}</span>
+                <h3 className="text-xs font-semibold text-gray-800">Profile Completion</h3>
               </div>
               
-              <div className="flex flex-wrap items-center gap-2 mt-1">
-                <div className="flex items-center gap-1.5 bg-white/80 backdrop-blur-sm px-3 py-1 rounded-lg border border-gray-200">
-                  <span className="text-[9px] font-medium text-gray-500">Completed:</span>
-                  <span className={`text-sm font-bold ${getCompletionColor(completionPercentage)}`}>{completionPercentage}%</span>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <div className="flex items-center gap-1 bg-white/80 backdrop-blur-sm px-2 py-0.5 rounded-lg border border-gray-200">
+                  <span className="text-[8px] font-medium text-gray-500">Completed:</span>
+                  <span className={`text-xs font-bold ${getCompletionColor(completionPercentage)}`}>{completionPercentage}%</span>
                 </div>
-                <div className="flex items-center gap-1.5 bg-white/80 backdrop-blur-sm px-3 py-1 rounded-lg border border-gray-200">
-                  <span className="text-[9px] font-medium text-gray-500">Pending:</span>
-                  <span className="text-sm font-bold text-amber-600">{missingFields.length}</span>
+                <div className="flex items-center gap-1 bg-white/80 backdrop-blur-sm px-2 py-0.5 rounded-lg border border-gray-200">
+                  <span className="text-[8px] font-medium text-gray-500">Pending:</span>
+                  <span className="text-xs font-bold text-amber-600">{missingFields.length}</span>
                 </div>
               </div>
 
               {missingFields.length > 0 && (
-                <div className="mt-2 flex flex-wrap items-center gap-1.5 bg-white/60 backdrop-blur-sm px-2.5 py-1.5 rounded-lg border border-amber-200">
-                  <AlertTriangle size={12} className="text-amber-500 flex-shrink-0" />
-                  <p className="text-[10px] text-gray-700">
+                <div className="mt-1 flex flex-wrap items-center gap-1 bg-white/60 backdrop-blur-sm px-2 py-1 rounded-lg border border-amber-200">
+                  <AlertTriangle size={10} className="text-amber-500 flex-shrink-0" />
+                  <p className="text-[8px] text-gray-700">
                     <span className="font-semibold text-amber-600">{missingFields.length}</span> fields remaining
                   </p>
                   <button
                     onClick={() => navigate("/doctorprofile")}
-                    className="inline-flex items-center gap-0.5 text-[10px] font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
+                    className="inline-flex items-center gap-0.5 text-[8px] font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
                   >
-                    Complete Now <ArrowRight size={10} />
+                    Complete Now <ArrowRight size={8} />
                   </button>
                 </div>
               )}
               
               {missingFields.length === 0 && (
-                <div className="mt-2 flex items-center gap-1.5 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
-                  <CheckCircle size={12} className="text-emerald-500" />
-                  <p className="text-[10px] font-medium text-emerald-700">Your profile is 100% complete! 🎉</p>
+                <div className="mt-1 flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
+                  <CheckCircle size={10} className="text-emerald-500" />
+                  <p className="text-[8px] font-medium text-emerald-700">Your profile is 100% complete! 🎉</p>
                 </div>
               )}
 
               {/* Missing Fields Tags - Small */}
-              {missingFields.length > 0 && (
-                <div className="mt-1.5 flex flex-wrap gap-1">
-                  {missingFields.slice(0, 4).map((field, index) => (
-                    <span key={index} className="inline-flex items-center gap-0.5 bg-white/70 backdrop-blur-sm px-1.5 py-0.5 rounded border border-red-200 text-[7px] font-medium text-gray-700">
-                      <AlertCircle size={8} className="text-red-400" />
-                      {field}
-                    </span>
-                  ))}
-                  {missingFields.length > 4 && (
-                    <span className="text-[7px] font-medium text-gray-400 px-1 py-0.5">
-                      +{missingFields.length - 4} more
-                    </span>
-                  )}
-                </div>
-              )}
+              {/* (Hidden on doctor dashboard for cleaner parity with /userdashboard) */}
             </div>
             
             {/* Quick Action Button */}
             <button
               onClick={() => navigate("/doctorprofile")}
-              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors shadow-sm shadow-indigo-200"
+              className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1.5 bg-indigo-600 text-white rounded-lg text-[10px] font-medium hover:bg-indigo-700 transition-colors shadow-sm shadow-indigo-200"
             >
-              <User size={14} />
+              <User size={12} />
               View Profile
             </button>
           </div>
         </div>
 
         {/* Row 1: Stats Cards */}
-        <div className="admin-dash__stats">
+        <div className="admin-dash__stats" style={{ marginBottom: "16px" }}>
           {statsCards.map((stat, index) => (
             <div
               key={index}
               className="admin-dash__stat cursor-pointer"
               onClick={stat.onClick}
+              style={{
+                padding: "12px 14px",
+                minHeight: "80px",
+              }}
             >
               <div className="admin-dash__stat-top">
-                <span className="admin-dash__stat-label">{stat.label}</span>
-                <div className={`admin-dash__stat-icon ${stat.iconBg}`}>
-                  <stat.icon size={18} />
+                <span className="admin-dash__stat-label" style={{ fontSize: "11px" }}>
+                  {stat.label}
+                </span>
+                <div
+                  className={`admin-dash__stat-icon ${stat.iconBg}`}
+                  style={{ width: "28px", height: "28px" }}
+                >
+                  <stat.icon size={14} />
                 </div>
               </div>
-              <div className="admin-dash__stat-value">{stat.value}</div>
-              <div className="admin-dash__stat-meta">{stat.meta}</div>
+              <div className="admin-dash__stat-value" style={{ fontSize: "18px", fontWeight: "700" }}>
+                {stat.value}
+              </div>
+              <div className="admin-dash__stat-meta" style={{ fontSize: "9px" }}>
+                {stat.meta}
+              </div>
             </div>
           ))}
         </div>
 
         {/* Row 2: Footer Stats */}
-        <div className="admin-dash__stats mt-4">
+        {/* <div className="admin-dash__stats mt-4">
           {footerStats.map((stat, index) => (
             <div
               key={index}
               className="admin-dash__stat"
+              style={{
+                padding: "12px 14px",
+                minHeight: "80px",
+              }}
             >
               <div className="admin-dash__stat-top">
-                <span className="admin-dash__stat-label">{stat.label}</span>
-                <div className={`admin-dash__stat-icon ${stat.iconBg}`}>
-                  <stat.icon size={18} />
+                <span className="admin-dash__stat-label" style={{ fontSize: "11px" }}>
+                  {stat.label}
+                </span>
+                <div
+                  className={`admin-dash__stat-icon ${stat.iconBg}`}
+                  style={{ width: "28px", height: "28px" }}
+                >
+                  <stat.icon size={14} />
                 </div>
               </div>
-              <div className="admin-dash__stat-value">{stat.value}</div>
+              <div className="admin-dash__stat-value" style={{ fontSize: "18px", fontWeight: "700" }}>
+                {stat.value}
+              </div>
             </div>
           ))}
-          {/* Empty placeholder to maintain grid */}
+        
           <div className="admin-dash__stat" style={{ visibility: 'hidden' }}>
           </div>
-        </div>
+        </div> */}
 
-        {/* Row 3: Filter Section - (Keep existing code) */}
-        <div className="admin-dash__card mt-6">
-          <div className="admin-dash__card-body py-3 px-4">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center text-indigo-600">
-                  <Filter size={16} />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-gray-800">Filter Analytics</h4>
-                  <p className="text-[8px] text-gray-400 font-bold uppercase tracking-widest">Select Filters</p>
-                </div>
+        {/* Row 3: Filter Section (match /userdashboard style) */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-3 mb-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center text-indigo-600">
+                <Filter size={16} />
               </div>
-              <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-                <select
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(e.target.value)}
-                  className="text-xs bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold text-gray-700 shadow-sm"
-                >
+              <div>
+                <h4 className="text-sm font-semibold text-gray-800">Filters</h4>
+                <p className="text-[10px] text-gray-400">Refine analytics view</p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+              >
                   <option value="all">All Months</option>
                   {availableMonths.map(month => {
                     const [year, monthNum] = month.split('-');
@@ -958,57 +968,57 @@ const DoctorDashboard = () => {
                       </option>
                     );
                   })}
-                </select>
+              </select>
 
-                <select
-                  value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="text-xs bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold text-gray-700 shadow-sm"
-                >
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+              >
                   <option value="all">All Status</option>
                   <option value="pending">Pending</option>
                   <option value="confirmed">Confirmed</option>
                   <option value="active">Active</option>
                   <option value="completed">Completed</option>
                   <option value="cancelled">Cancelled</option>
-                </select>
+              </select>
 
-                <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg border flex-1 md:flex-none">
-                  <span className="text-[8px] font-black text-gray-400 uppercase">From</span>
-                  <input
-                    type="date"
-                    value={dateFrom}
-                    onChange={(e) => setDateFrom(e.target.value)}
-                    className="bg-transparent text-xs font-bold outline-none text-gray-700"
-                  />
-                </div>
-                <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg border flex-1 md:flex-none">
-                  <span className="text-[8px] font-black text-gray-400 uppercase">To</span>
-                  <input
-                    type="date"
-                    value={dateTo}
-                    onChange={(e) => setDateTo(e.target.value)}
-                    className="bg-transparent text-xs font-bold outline-none text-gray-700"
-                  />
-                </div>
-
-                <button
-                  onClick={applyFilters}
-                  className="px-4 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg text-xs font-bold hover:from-indigo-700 hover:to-purple-700 transition-colors flex items-center gap-2 shadow-sm shadow-indigo-200"
-                >
-                  <Filter size={14} />
-                  Apply
-                </button>
-
-                {(selectedMonth !== "all" || selectedStatus !== "all" || dateFrom || dateTo) && (
-                  <button
-                    onClick={clearFilters}
-                    className="px-3 py-1.5 text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                  >
-                    Reset
-                  </button>
-                )}
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-gray-500">From</span>
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                />
               </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-gray-500">To</span>
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                />
+              </div>
+
+              <button
+                onClick={applyFilters}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition flex items-center gap-2 shadow-sm shadow-indigo-200"
+              >
+                <Filter size={16} />
+                Apply
+              </button>
+
+              {(selectedMonth !== "all" || selectedStatus !== "all" || dateFrom || dateTo) && (
+                <button
+                  onClick={clearFilters}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition"
+                >
+                  Reset
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -1142,7 +1152,7 @@ const DoctorDashboard = () => {
               <table className="w-full min-w-[700px] text-left">
                 <thead>
                   <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
-                    <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
+                    <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">S.No</th>
                     <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Chamber</th>
                     <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Address</th>
                     <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Type</th>
@@ -1158,7 +1168,7 @@ const DoctorDashboard = () => {
                     return (
                       <tr key={chamber._id} className="transition-colors hover:bg-gray-50/80 cursor-pointer" onClick={() => navigate(`/cabin/${chamber._id}`)}>
                         <td className="p-3">
-                          <span className="text-xs font-semibold text-gray-400">#{index + 1}</span>
+                          <span className="text-xs font-semibold text-gray-400">{index + 1}</span>
                         </td>
                         <td className="p-3">
                           <div className="flex items-center gap-2.5">
@@ -1244,7 +1254,7 @@ const DoctorDashboard = () => {
               <table className="w-full min-w-[700px] text-left">
                 <thead>
                   <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
-                    <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
+                    <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">S.No</th>
                     <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Chamber</th>
                     <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Date</th>
                     <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
@@ -1259,7 +1269,7 @@ const DoctorDashboard = () => {
                     return (
                       <tr key={b._id} className="transition-colors hover:bg-gray-50/80 cursor-pointer" onClick={() => navigate("/doctorbookings")}>
                         <td className="p-3">
-                          <span className="text-xs font-semibold text-gray-400">#{idx + 1}</span>
+                          <span className="text-xs font-semibold text-gray-400">{idx + 1}</span>
                         </td>
                         <td className="p-3">
                           <div>
@@ -1314,7 +1324,7 @@ const DoctorDashboard = () => {
               <table className="w-full min-w-[700px] text-left">
                 <thead>
                   <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
-                    <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
+                    <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">S.No</th>
                     <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Chamber</th>
                     <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Customer</th>
                     <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Date</th>
@@ -1332,7 +1342,7 @@ const DoctorDashboard = () => {
                     return (
                       <tr key={b._id} className="transition-colors hover:bg-gray-50/80 cursor-pointer" onClick={() => navigate("/chamberbookings")}>
                         <td className="p-3">
-                          <span className="text-xs font-semibold text-gray-400">#{idx + 1}</span>
+                          <span className="text-xs font-semibold text-gray-400">{idx + 1}</span>
                         </td>
                         <td className="p-3">
                           <div>
@@ -1370,3 +1380,8 @@ const DoctorDashboard = () => {
 };
 
 export default DoctorDashboard;
+
+
+
+
+

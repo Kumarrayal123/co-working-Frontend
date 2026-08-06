@@ -463,137 +463,138 @@ const AllCabinPayments = () => {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-4 text-white shadow-lg shadow-indigo-500/25">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-200">Total Orders</p>
-            <p className="text-2xl font-bold">{stats.total}</p>
-            <div className="mt-2 pt-2 border-t border-white/20 flex justify-between text-[10px]">
-              <span className="text-indigo-200">Amount</span>
-              <span className="font-semibold">{formatCurrency(stats.totalAmount)}</span>
+        {/* Stats Cards - Exact AdminDashboard style */}
+        <div className="admin-dash__stats" style={{ marginBottom: '16px' }}>
+          {[
+            {
+              label: "Total Orders",
+              value: stats.total,
+              meta: "all transactions",
+              icon: CreditCard,
+              color: "indigo"
+            },
+            {
+              label: "Total Amount",
+              value: formatCurrency(stats.totalAmount),
+              meta: "from cabin orders",
+              icon: IndianRupee,
+              color: "amber"
+            },
+            {
+              label: "Active",
+              value: stats.active,
+              meta: "active subscriptions",
+              icon: CheckCircle,
+              color: "emerald"
+            },
+            {
+              label: "Expired",
+              value: stats.expired,
+              meta: "expired subscriptions",
+              icon: XCircle,
+              color: "rose"
+            },
+            {
+              label: "Payments",
+              value: stats.totalPayments,
+              meta: "total payment entries",
+              icon: Wallet,
+              color: "cyan"
+            }
+          ].map((stat, index) => (
+            <div
+              key={index}
+              className="admin-dash__stat"
+              style={{ 
+                padding: '12px 14px',
+                minHeight: '80px'
+              }}
+            >
+              <div className="admin-dash__stat-top">
+                <span className="admin-dash__stat-label" style={{ fontSize: '11px' }}>{stat.label}</span>
+                <div className={`admin-dash__stat-icon admin-dash__stat-icon--${stat.color}`} style={{ width: '28px', height: '28px' }}>
+                  <stat.icon size={14} />
+                </div>
+              </div>
+              <div className="admin-dash__stat-value" style={{ fontSize: '18px', fontWeight: '700' }}>{stat.value}</div>
+              <div className="admin-dash__stat-meta" style={{ fontSize: '9px' }}>{stat.meta}</div>
             </div>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm text-center">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Active</p>
-            <p className="text-2xl font-bold text-emerald-600">{stats.active}</p>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm text-center">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-red-600">Expired</p>
-            <p className="text-2xl font-bold text-red-600">{stats.expired}</p>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm text-center">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-purple-600">Payments</p>
-            <p className="text-2xl font-bold text-purple-600">{stats.totalPayments}</p>
-          </div>
+          ))}
         </div>
 
-        {/* Table Section */}
-        <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
-          <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
-            <div className="flex items-center gap-3">
-              <h3 className="admin-dash__card-title">Payment History</h3>
-              <span className="px-2.5 py-0.5 text-xs font-bold text-indigo-700 bg-indigo-100 rounded-full">
-                {filteredOrders.length}
-              </span>
+        {/* Filters */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-3 mb-4">
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="flex-1 relative">
+              <CreditCard size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search cabin..."
+                value={filterCabinName}
+                onChange={(e) => setFilterCabinName(e.target.value)}
+                className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+              />
             </div>
-            {filteredOrders.length > 0 && (
-              <button onClick={exportToExcel} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200">
-                <Download size={14} /> Export
-              </button>
-            )}
-          </div>
-
-          {/* ─── ALL FILTERS IN SINGLE ROW ─── */}
-          <div className="px-4 pt-3 pb-3 border-b border-gray-100" style={{ backgroundColor: '#fafafa' }}>
             <div className="flex flex-wrap items-center gap-2">
-              {/* Cabin Name */}
-              <div className="min-w-[120px] flex-1">
-                <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider block">Cabin</label>
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  value={filterCabinName}
-                  onChange={(e) => setFilterCabinName(e.target.value)}
-                  className="w-full px-2 py-1 text-xs border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                />
-              </div>
-
-              {/* Owner Name */}
-              <div className="min-w-[120px] flex-1">
-                <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider block">Owner</label>
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  value={filterOwnerName}
-                  onChange={(e) => setFilterOwnerName(e.target.value)}
-                  className="w-full px-2 py-1 text-xs border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                />
-              </div>
-
-              {/* Status */}
-              <div className="min-w-[100px]">
-                <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider block">Status</label>
-                <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                  className="w-full px-2 py-1 text-xs border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
-                >
-                  <option value="all">All</option>
-                  <option value="active">Active</option>
-                  <option value="expired">Expired</option>
-                  <option value="pending">Pending</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
-              </div>
-
-              {/* From Date */}
-              <div className="min-w-[130px]">
-                <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider block">From</label>
-                <input
-                  type="date"
-                  value={filterDateFrom}
-                  onChange={(e) => setFilterDateFrom(e.target.value)}
-                  className="w-full px-2 py-1 text-xs border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                />
-              </div>
-
-              {/* To Date */}
-              <div className="min-w-[130px]">
-                <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider block">To</label>
-                <input
-                  type="date"
-                  value={filterDateTo}
-                  onChange={(e) => setFilterDateTo(e.target.value)}
-                  className="w-full px-2 py-1 text-xs border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                />
-              </div>
-
-              {/* Clear Button */}
+              <input
+                type="text"
+                placeholder="Owner name..."
+                value={filterOwnerName}
+                onChange={(e) => setFilterOwnerName(e.target.value)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 w-36"
+              />
+              <input
+                type="date"
+                value={filterDateFrom}
+                onChange={(e) => setFilterDateFrom(e.target.value)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+              />
+              <input
+                type="date"
+                value={filterDateTo}
+                onChange={(e) => setFilterDateTo(e.target.value)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+              />
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+              >
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="expired">Expired</option>
+                <option value="pending">Pending</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
               {(filterStatus !== "all" || filterCabinName || filterOwnerName || filterDateFrom || filterDateTo) && (
                 <button
                   onClick={clearFilters}
-                  className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors mt-auto"
+                  className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                  title="Clear filters"
                 >
-                  <XCircleIcon size={14} /> Clear
+                  <XCircleIcon size={16} />
+                </button>
+              )}
+              {filteredOrders.length > 0 && (
+                <button
+                  onClick={exportToExcel}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition"
+                >
+                  <Download size={14} />
+                  <span className="hidden xs:inline">Export</span>
                 </button>
               )}
             </div>
-
-            {/* Active Filters Display */}
-            {(filterDateFrom || filterDateTo) && (
-              <div className="mt-1.5 flex items-center gap-2 text-[10px] text-gray-500">
-                <CalendarDays size={12} className="text-indigo-400" />
-                <span>
-                  {filterDateFrom && <span className="font-medium text-gray-700">From {formatDate(filterDateFrom)}</span>}
-                  {filterDateFrom && filterDateTo && <span className="text-gray-300 mx-1">→</span>}
-                  {filterDateTo && <span className="font-medium text-gray-700">To {formatDate(filterDateTo)}</span>}
-                </span>
-              </div>
-            )}
           </div>
-
+          <div className="mt-1.5 text-[10px] text-gray-400">
+            Showing {filteredOrders.length} of {orders.length} payments
+          </div>
+        </div>
+        {/* Table Section */}
+        <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
           {/* Table Container */}
           <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
+
             {filteredOrders.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-3 py-20 text-gray-400">
                 <CreditCard size={48} className="opacity-20" />
@@ -604,7 +605,7 @@ const AllCabinPayments = () => {
               <table className="w-full min-w-[1300px] text-left">
                 <thead>
                   <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">S.No</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Owner</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Amount</th>
@@ -629,7 +630,7 @@ const AllCabinPayments = () => {
                     return (
                       <tr key={order._id} className="transition-colors group hover:bg-gray-50/80">
                         <td className="p-4">
-                          <span className="text-sm font-semibold text-gray-400">#{idx + 1}</span>
+                          <span className="text-sm font-semibold text-gray-400">{idx + 1}</span>
                         </td>
                         <td className="p-4">
                           <div>

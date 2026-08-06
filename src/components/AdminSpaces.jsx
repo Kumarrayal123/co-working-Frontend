@@ -74,6 +74,14 @@ const AdminSpaces = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [pricingPlans, setPricingPlans] = useState([]);
+  const [showPlanModal, setShowPlanModal] = useState(false);
+  const [editingPlanIndex, setEditingPlanIndex] = useState(null);
+  const [planInput, setPlanInput] = useState({
+    label: "",
+    hours: "",
+    cost: "",
+    validity: ""
+  });
   const [images, setImages] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
@@ -99,6 +107,57 @@ const AdminSpaces = () => {
       phone: false,
     },
   });
+
+  const [errors, setErrors] = useState({
+    name: "",
+    address: "",
+    cabin: "",
+    description: "",
+  });
+
+  // Validation functions
+  const validateField = (name, value) => {
+    let error = "";
+    
+    switch (name) {
+      case "name":
+        if (!value) {
+          error = "Building Name is required";
+        } else if (value.length > 30) {
+          error = "Building Name must be 30 characters or less";
+        } else if (!/^[a-zA-Z0-9\s]+$/.test(value)) {
+          error = "Building Name can only contain letters, digits, and spaces";
+        }
+        break;
+      case "address":
+        if (!value) {
+          error = "Address is required";
+        } else if (value.length > 50) {
+          error = "Address must be 50 characters or less";
+        } else if (!/^[a-zA-Z0-9\s,.-]+$/.test(value)) {
+          error = "Address can only contain letters, digits, spaces, commas, dots, and hyphens";
+        }
+        break;
+      case "cabin":
+        if (!value) {
+          error = "Cabin Spec is required";
+        } else if (value.length > 15) {
+          error = "Cabin Spec must be 15 characters or less";
+        } else if (!/^[a-zA-Z0-9-]+$/.test(value)) {
+          error = "Cabin Spec can only contain letters, digits, and hyphens";
+        }
+        break;
+      case "description":
+        if (value && (value.length < 150 || value.length > 200)) {
+          error = "Description must be between 150 and 200 characters";
+        }
+        break;
+      default:
+        break;
+    }
+    
+    return error;
+  };
 
   const navigate = useNavigate();
 
@@ -234,6 +293,10 @@ const AdminSpaces = () => {
   const handleAddChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+    
+    // Validate field on change
+    const error = validateField(name, value);
+    setErrors({ ...errors, [name]: error });
   };
 
   const toggleAddAmenity = (key) => {
@@ -254,19 +317,56 @@ const AdminSpaces = () => {
     setImages(images.filter((_, i) => i !== index));
   };
 
-  const addPlan = () => {
-    const label = prompt("Plan Label:");
-    const hours = prompt("Included Hours:");
-    const cost = prompt("Cost (₹):");
-    const validity = prompt("Validity (Days):");
-    if (hours && cost && validity) {
-      setPricingPlans([...pricingPlans, {
-        label: (label || "").trim(),
-        hours: Number(hours),
-        cost: Number(cost),
-        validity: Number(validity)
-      }]);
+  const openPlanModal = () => {
+    setPlanInput({ label: "", hours: "", cost: "", validity: "" });
+    setEditingPlanIndex(null);
+    setShowPlanModal(true);
+  };
+
+  const openEditPlanModal = (index) => {
+    const targetPlan = pricingPlans[index];
+    if (targetPlan) {
+      setPlanInput({
+        label: targetPlan.label || "",
+        hours: targetPlan.hours !== undefined ? targetPlan.hours.toString() : "",
+        cost: targetPlan.cost !== undefined ? targetPlan.cost.toString() : "",
+        validity: targetPlan.validity !== undefined ? targetPlan.validity.toString() : ""
+      });
+      setEditingPlanIndex(index);
+      setShowPlanModal(true);
     }
+  };
+
+  const savePlanModal = () => {
+    if (!planInput.hours || Number(planInput.hours) <= 0) {
+      toast.error("Please enter valid included hours");
+      return;
+    }
+    if (!planInput.cost || Number(planInput.cost) <= 0) {
+      toast.error("Please enter valid cost (₹)");
+      return;
+    }
+    if (!planInput.validity || Number(planInput.validity) <= 0) {
+      toast.error("Please enter valid validity days");
+      return;
+    }
+
+    const newPlan = {
+      label: planInput.label.trim() || `${planInput.hours} Hours Plan`,
+      hours: Number(planInput.hours),
+      cost: Number(planInput.cost),
+      validity: Number(planInput.validity)
+    };
+
+    if (editingPlanIndex !== null) {
+      setPricingPlans(prev => prev.map((p, i) => (i === editingPlanIndex ? newPlan : p)));
+    } else {
+      setPricingPlans(prev => [...prev, newPlan]);
+    }
+
+    setShowPlanModal(false);
+    setPlanInput({ label: "", hours: "", cost: "", validity: "" });
+    setEditingPlanIndex(null);
   };
 
   const removePlan = (index) => {
@@ -275,6 +375,28 @@ const AdminSpaces = () => {
 
   const handleAddSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate all fields before submission
+    const nameError = validateField("name", formData.name);
+    const addressError = validateField("address", formData.address);
+    const cabinError = validateField("cabin", formData.cabin);
+    const descriptionError = validateField("description", formData.description);
+    
+    const newErrors = {
+      name: nameError,
+      address: addressError,
+      cabin: cabinError,
+      description: descriptionError,
+    };
+    
+    setErrors(newErrors);
+    
+    // Check if there are any errors
+    if (nameError || addressError || cabinError || descriptionError) {
+      toast.error("Please fix the validation errors before submitting");
+      return;
+    }
+    
     setSubmitting(true);
 
     const data = new FormData();
@@ -972,24 +1094,26 @@ const AdminSpaces = () => {
                   <div>
                     <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Building Name *</label>
                     <input
-                      className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                      className={`w-full mt-1 px-3 py-2.5 sm:py-3 border rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all ${errors.name ? 'border-red-500 focus:border-red-500' : 'border-slate-200 focus:border-indigo-500'}`}
                       type="text" name="name"
                       placeholder="e.g. Tech Hub"
                       value={formData.name}
                       onChange={handleAddChange}
                       required
                     />
+                    {errors.name && <p className="text-[10px] text-red-500 mt-1">{errors.name}</p>}
                   </div>
                   <div>
                     <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Address *</label>
                     <input
-                      className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                      className={`w-full mt-1 px-3 py-2.5 sm:py-3 border rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all ${errors.address ? 'border-red-500 focus:border-red-500' : 'border-slate-200 focus:border-indigo-500'}`}
                       type="text" name="address"
                       placeholder="e.g. Bangalore, Karnataka"
                       value={formData.address}
                       onChange={handleAddChange}
                       required
                     />
+                    {errors.address && <p className="text-[10px] text-red-500 mt-1">{errors.address}</p>}
                   </div>
                 </div>
 
@@ -997,13 +1121,14 @@ const AdminSpaces = () => {
                   <div>
                     <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Cabin Spec *</label>
                     <input
-                      className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                      className={`w-full mt-1 px-3 py-2.5 sm:py-3 border rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all ${errors.cabin ? 'border-red-500 focus:border-red-500' : 'border-slate-200 focus:border-indigo-500'}`}
                       type="text" name="cabin"
                       placeholder="e.g. Office B"
                       value={formData.cabin}
                       onChange={handleAddChange}
                       required
                     />
+                    {errors.cabin && <p className="text-[10px] text-red-500 mt-1">{errors.cabin}</p>}
                   </div>
                   <div>
                     <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Capacity *</label>
@@ -1086,47 +1211,68 @@ const AdminSpaces = () => {
 
                 <div>
                   <div className="flex justify-between items-center mb-1.5">
-                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Pricing Plans</label>
+                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      Pricing Plans ({pricingPlans.length})
+                    </label>
                     <button
                       type="button"
-                      onClick={addPlan}
-                      className="text-[10px] sm:text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 sm:px-3 py-1 rounded-lg hover:bg-indigo-100 transition-colors"
+                      onClick={openPlanModal}
+                      className="text-[10px] sm:text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 sm:px-3 py-1 rounded-lg hover:bg-indigo-100 transition-colors flex items-center gap-1 cursor-pointer"
                     >
-                      + Add Plan
+                      <Plus size={12} /> Add Manual
                     </button>
                   </div>
                   {pricingPlans.length > 0 ? (
-                    <div className="grid grid-cols-1 xs:grid-cols-2 gap-1.5">
+                    <div className="grid grid-cols-1 xs:grid-cols-2 gap-2">
                       {pricingPlans.map((plan, idx) => (
-                        <div key={idx} className="p-2 bg-slate-50 rounded-lg text-[10px] sm:text-xs border border-slate-200 relative">
-                          <div><strong>{plan.label || "Plan"}</strong></div>
-                          <div>{plan.hours}h · ₹{plan.cost}</div>
-                          <div className="text-slate-400">{plan.validity}d validity</div>
-                          <button
-                            type="button"
-                            onClick={() => removePlan(idx)}
-                            className="absolute top-1 right-1 text-red-500 hover:text-red-700 text-xs font-bold"
-                          >
-                            ×
-                          </button>
+                        <div key={idx} className="p-2.5 bg-slate-50 rounded-xl text-xs border border-slate-200 relative group flex justify-between items-center">
+                          <div>
+                            <div className="font-bold text-slate-800">{plan.label || "Plan"}</div>
+                            <div className="text-indigo-600 font-semibold">{plan.hours}h · ₹{plan.cost}</div>
+                            <div className="text-[10px] text-slate-400">{plan.validity} days validity</div>
+                          </div>
+                          <div className="flex items-center gap-1 opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              type="button"
+                              onClick={() => openEditPlanModal(idx)}
+                              className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs hover:bg-indigo-200 transition-colors cursor-pointer"
+                              title="Edit Plan"
+                            >
+                              ✎
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removePlan(idx)}
+                              className="w-6 h-6 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-xs hover:bg-red-200 transition-colors cursor-pointer"
+                              title="Delete Plan"
+                            >
+                              ×
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-[10px] sm:text-xs text-slate-400">No plans defined. Hourly booking only.</p>
+                    <div className="border-2 border-dashed border-slate-200 rounded-xl p-3 text-center">
+                      <p className="text-xs text-slate-400">No custom plans added. Click <strong>"+ Add Manual"</strong> to add plan details.</p>
+                    </div>
                   )}
                 </div>
 
                 <div>
                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Description</label>
                   <textarea
-                    className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all resize-none"
+                    className={`w-full mt-1 px-3 py-2.5 sm:py-3 border rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all resize-none ${errors.description ? 'border-red-500 focus:border-red-500' : 'border-slate-200 focus:border-indigo-500'}`}
                     name="description"
-                    placeholder="Describe your space..."
+                    placeholder="Describe your space (150-200 characters)..."
                     value={formData.description}
                     onChange={handleAddChange}
                     rows={2}
                   />
+                  {errors.description && <p className="text-[10px] text-red-500 mt-1">{errors.description}</p>}
+                  {!errors.description && formData.description && (
+                    <p className="text-[10px] text-slate-400 mt-1">{formData.description.length}/200 characters</p>
+                  )}
                 </div>
 
                 <div>
@@ -1181,6 +1327,106 @@ const AdminSpaces = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── ADD/EDIT PLAN MODAL ─── */}
+      {showPlanModal && (
+        <div className="fixed inset-0 z-[10500] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-slate-900">
+                  {editingPlanIndex !== null ? 'Edit Pricing Plan' : 'Add Pricing Plan'}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPlanModal(false);
+                    setPlanInput({ label: '', hours: '', cost: '', validity: '' });
+                    setEditingPlanIndex(null);
+                  }}
+                  className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors flex items-center justify-center text-slate-600 cursor-pointer"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Plan Label</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Weekly Flexi, Dedicated Desk, Monthly 50h"
+                    value={planInput.label}
+                    onChange={(e) => setPlanInput({ ...planInput, label: e.target.value })}
+                    className="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                    autoFocus
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Included Hours *</label>
+                    <input
+                      type="number"
+                      min="1"
+                      placeholder="e.g. 40"
+                      value={planInput.hours}
+                      onChange={(e) => setPlanInput({ ...planInput, hours: e.target.value })}
+                      className="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Cost (₹) *</label>
+                    <input
+                      type="number"
+                      min="1"
+                      placeholder="e.g. 5000"
+                      value={planInput.cost}
+                      onChange={(e) => setPlanInput({ ...planInput, cost: e.target.value })}
+                      className="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Validity (Days) *</label>
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder="e.g. 30"
+                    value={planInput.validity}
+                    onChange={(e) => setPlanInput({ ...planInput, validity: e.target.value })}
+                    className="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-0.5">Number of days plan stays valid after purchase</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowPlanModal(false);
+                      setPlanInput({ label: '', hours: '', cost: '', validity: '' });
+                      setEditingPlanIndex(null);
+                    }}
+                    className="py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold text-sm hover:bg-slate-50 transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={savePlanModal}
+                    className="py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition-colors shadow-sm cursor-pointer"
+                  >
+                    {editingPlanIndex !== null ? 'Update Plan' : 'Add Plan'}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

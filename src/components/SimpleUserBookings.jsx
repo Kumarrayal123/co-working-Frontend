@@ -665,7 +665,7 @@ const SimpleUserBookings = () => {
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100">
                 <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">#</th>
-                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Booking ID</th>
+                {/* <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Booking ID</th> */}
                 <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Cabin</th>
                 <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Space</th>
                 <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Visit Date</th>
@@ -772,15 +772,15 @@ const SimpleUserBookings = () => {
           <table className="w-full text-left text-sm min-w-[1400px]">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100">
-                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">#</th>
-                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Booking ID</th>
+                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">S. No</th>
+                {/* <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Booking ID</th> */}
                 <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Cabin</th>
                 <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Space</th>
                 <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Start</th>
                 <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">End</th>
                 <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Hours</th>
                 <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Days</th>
-                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Daily Hrs</th>
+                {/* <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Daily Hrs</th> */}
                 <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Seats</th>
                 <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Status</th>
                 <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Payment</th>
@@ -804,11 +804,11 @@ const SimpleUserBookings = () => {
                 return (
                   <tr key={b._id} className="hover:bg-gray-50/80 transition-colors">
                     <td className="px-3 py-2">
-                      <span className="text-[10px] font-semibold text-gray-400">#{idx + 1}</span>
+                      <span className="text-[10px] font-semibold text-gray-400">{idx + 1}</span>
                     </td>
-                    <td className="px-3 py-2">
+                    {/* <td className="px-3 py-2">
                       <span className="font-mono text-[10px] font-bold text-indigo-600">{bookingId}</span>
-                    </td>
+                    </td> */}
                     <td className="px-3 py-2">
                       <div>
                         <p className="font-semibold text-gray-900 text-xs">
@@ -851,7 +851,7 @@ const SimpleUserBookings = () => {
                     <td className="px-3 py-2">
                       <span className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded-full text-[9px] font-bold">{totalDays}d</span>
                     </td>
-                    <td className="px-3 py-2">
+                    {/* <td className="px-3 py-2">
                       <div className="flex flex-wrap gap-0.5">
                         {b.dailyHours?.map((h, i) => (
                           <span key={i} className="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded text-[8px] font-medium">
@@ -859,7 +859,7 @@ const SimpleUserBookings = () => {
                           </span>
                         )) || <span className="text-[9px] text-gray-400">N/A</span>}
                       </div>
-                    </td>
+                    </td> */}
                     <td className="px-3 py-2">
                       <span className="flex items-center gap-1 text-xs font-medium text-gray-700">
                         <Armchair size={12} className="text-indigo-500" />
@@ -1017,13 +1017,13 @@ const SimpleUserBookings = () => {
             <p className="admin-dash__subtitle" style={{ fontSize: '11px' }}>Manage all your workspace bookings</p>
           </div>
           <div className="flex items-center gap-2">
-            <button
+            {/* <button
               onClick={() => navigate("/spaceforusers")}
               className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition flex items-center gap-2 shadow-sm shadow-indigo-200"
             >
               <Building2 size={16} />
               Find New Space
-            </button>
+            </button> */}
           </div>
         </div>
 
@@ -1086,6 +1086,15 @@ const SimpleUserBookings = () => {
                 <option value="cancelled">Cancelled</option>
               </select>
               <select
+                value={activeTab}
+                onChange={(e) => setActiveTab(e.target.value)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+              >
+                <option value="all">All Bookings ({bookings.length})</option>
+                <option value="visits">Site Visits ({visitCount})</option>
+                <option value="spaces">Space Bookings ({regularCount})</option>
+              </select>
+              <select
                 value={filters.paymentStatus}
                 onChange={(e) => setFilters({...filters, paymentStatus: e.target.value})}
                 className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
@@ -1118,55 +1127,6 @@ const SimpleUserBookings = () => {
           <div className="mt-1.5 text-[10px] text-gray-400">
             Showing {displayBookings.length} of {bookings.length} bookings
           </div>
-        </div>
-
-        {/* ✅ TAB SWITCHER */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-1 mb-4 flex">
-          <button
-            onClick={() => setActiveTab('all')}
-            className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
-              activeTab === 'all'
-                ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200'
-                : 'text-gray-500 hover:bg-gray-50'
-            }`}
-          >
-            All Bookings
-            <span className={`ml-1.5 px-1.5 py-0.5 text-[9px] rounded-full ${
-              activeTab === 'all' ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-600'
-            }`}>
-              {bookings.length}
-            </span>
-          </button>
-          <button
-            onClick={() => setActiveTab('visits')}
-            className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
-              activeTab === 'visits'
-                ? 'bg-purple-600 text-white shadow-sm shadow-purple-200'
-                : 'text-gray-500 hover:bg-gray-50'
-            }`}
-          >
-            Site Visits
-            <span className={`ml-1.5 px-1.5 py-0.5 text-[9px] rounded-full ${
-              activeTab === 'visits' ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-600'
-            }`}>
-              {visitCount}
-            </span>
-          </button>
-          <button
-            onClick={() => setActiveTab('spaces')}
-            className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
-              activeTab === 'spaces'
-                ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-200'
-                : 'text-gray-500 hover:bg-gray-50'
-            }`}
-          >
-            Space Bookings
-            <span className={`ml-1.5 px-1.5 py-0.5 text-[9px] rounded-full ${
-              activeTab === 'spaces' ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-600'
-            }`}>
-              {regularCount}
-            </span>
-          </button>
         </div>
 
         {/* ✅ RENDER BASED ON ACTIVE TAB */}

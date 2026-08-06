@@ -20,6 +20,7 @@ function AdminAddCabin() {
     cabin: "",
     monthlyCost: "",
     maxWorkingHours: "",
+    operatingHours: "",
     amenities: {
       wifi: false,
       parking: false,
@@ -29,8 +30,11 @@ function AdminAddCabin() {
       comfortSeating: false,
     },
   });
+  const [openTime, setOpenTime] = useState('09:00');
+  const [closeTime, setCloseTime] = useState('21:00');
 
   const [images, setImages] = useState([]);
+  const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -105,6 +109,10 @@ function AdminAddCabin() {
     setImages(Array.from(e.target.files));
   };
 
+  const handleVideoChange = (e) => {
+    setVideos(Array.from(e.target.files));
+  };
+
   const removeImage = (index) => {
     setImages(images.filter((_, i) => i !== index));
   };
@@ -125,7 +133,11 @@ function AdminAddCabin() {
     data.append("price", formData.price);
     data.append("pricingPlans", JSON.stringify(pricingPlans));
     data.append("amenities", JSON.stringify(formData.amenities));
+    data.append("operatingHours", formData.operatingHours);
+    data.append("openTime", openTime);
+    data.append("closeTime", closeTime);
     images.forEach((img) => data.append("images", img));
+    videos.forEach((video) => data.append("videos", video));
 
     try {
       const token = localStorage.getItem("token");
@@ -562,6 +574,39 @@ function AdminAddCabin() {
                     <span className="text-sm font-medium">Click to upload photos</span>
                   </div>
                 </div>
+
+            {/* Video Upload */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Upload Videos (Optional)</label>
+              <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:bg-gray-50 transition-colors cursor-pointer relative group">
+                <input
+                  type="file"
+                  multiple
+                  accept="video/*"
+                  onChange={handleVideoChange}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
+                <div className="flex flex-col items-center gap-2 text-gray-500 group-hover:text-indigo-600 transition-colors">
+                  <Upload size={32} />
+                  <span className="text-sm font-medium">Click to upload videos</span>
+                </div>
+              </div>
+
+              {/* Video Previews */}
+                {videos.length > 0 && (
+                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-3 mt-4">
+                    {videos.map((file, index) => (
+                      <div key={index} className="relative group aspect-square rounded-lg overflow-hidden border border-gray-200">
+                        <video
+                          src={URL.createObjectURL(file)}
+                          controls
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+            </div>
 
                 {/* Image Previews */}
                 {images.length > 0 && (

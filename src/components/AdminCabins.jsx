@@ -1,4 +1,3 @@
-// AdminCabins.jsx - Complete with Multi-Filter, All Images in Cards & Modal + Razorpay + 24x7 Checkbox + Open/Close Time
 import axios from "axios";
 import {
   Building2,
@@ -13,7 +12,6 @@ import {
   Upload,
   Users,
   X,
-  Building2 as BuildingIcon,
   Calendar,
   Clock,
   Eye,
@@ -227,6 +225,7 @@ const AdminCabins = () => {
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [cabinCount, setCabinCount] = useState(0);
   
+  // ✅ Get admin ID from localStorage
   const getAdminId = () => {
     const admin = localStorage.getItem("admin");
     if (admin) {
@@ -236,6 +235,7 @@ const AdminCabins = () => {
     return null;
   };
 
+  // ✅ GET TOKEN
   const getToken = () => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -243,6 +243,7 @@ const AdminCabins = () => {
       toast.error("Please login again");
       return null;
     }
+    console.log("🔑 Token found, length:", token.length);
     return token;
   };
 
@@ -253,7 +254,7 @@ const AdminCabins = () => {
     priceMin: "",
     priceMax: "",
     address: "",
-    spaceType: "all"
+    spaceType: "all"  // ✅ NEW: Space Type filter
   });
   
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -266,6 +267,7 @@ const AdminCabins = () => {
   const [addressPopup, setAddressPopup] = useState({ show: false, address: "", x: 0, y: 0 });
   const [galleryModal, setGalleryModal] = useState({ isOpen: false, images: [], cabinName: "" });
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [newCabinData, setNewCabinData] = useState(null);
   const navigate = useNavigate();
 
   // ─── SEAT MANAGEMENT ───
@@ -306,6 +308,63 @@ const AdminCabins = () => {
   });
   const [images, setImages] = useState([]);
   const [videos, setVideos] = useState([]);
+  const [errors, setErrors] = useState({
+    name: "",
+    address: "",
+    cabin: "",
+    description: "",
+  });
+
+  const [editErrors, setEditErrors] = useState({
+    name: "",
+    address: "",
+    cabin: "",
+    description: "",
+  });
+
+  // Validation functions
+  const validateField = (name, value) => {
+    let error = "";
+    
+    switch (name) {
+      case "name":
+        if (!value) {
+          error = "Building Name is required";
+        } else if (value.length > 30) {
+          error = "Building Name must be 30 characters or less";
+        } else if (!/^[a-zA-Z0-9\s]+$/.test(value)) {
+          error = "Building Name can only contain letters, digits, and spaces";
+        }
+        break;
+      case "address":
+        if (!value) {
+          error = "Address is required";
+        } else if (value.length > 50) {
+          error = "Address must be 50 characters or less";
+        } else if (!/^[a-zA-Z0-9\s,.-]+$/.test(value)) {
+          error = "Address can only contain letters, digits, spaces, commas, dots, and hyphens";
+        }
+        break;
+      case "cabin":
+        if (!value) {
+          error = "Cabin Spec is required";
+        } else if (value.length > 15) {
+          error = "Cabin Spec must be 15 characters or less";
+        } else if (!/^[a-zA-Z0-9-]+$/.test(value)) {
+          error = "Cabin Spec can only contain letters, digits, and hyphens";
+        }
+        break;
+      case "description":
+        if (value && (value.length < 150 || value.length > 200)) {
+          error = "Description must be between 150 and 200 characters";
+        }
+        break;
+      default:
+        break;
+    }
+    
+    return error;
+  };
 
   // ─── EDIT FORM STATE ───
   const [editFormData, setEditFormData] = useState({
@@ -343,6 +402,7 @@ const AdminCabins = () => {
   const [removeExistingImageIndexes, setRemoveExistingImageIndexes] = useState([]);
   const [removeExistingVideoIndexes, setRemoveExistingVideoIndexes] = useState([]);
 
+  // ─── ALL AMENITIES ───
   const ALL_AMENITIES = [
     { key: "wifi", label: "Wi-Fi", icon: Wifi },
     { key: "parking", label: "Parking", icon: ParkingCircle },
@@ -376,6 +436,7 @@ const AdminCabins = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // ─── LOAD RAZORPAY ───
   useEffect(() => {
     loadRazorpayScript().then((loaded) => {
       setRazorpayLoaded(loaded);
@@ -385,6 +446,7 @@ const AdminCabins = () => {
     });
   }, []);
 
+  // ─── HELPERS ───
   const getImageUrl = (img) => {
     if (!img) return PLACEHOLDER_IMAGE;
     if (img.startsWith("http")) return img;
@@ -413,6 +475,7 @@ const AdminCabins = () => {
       const data = res.data.cabins || res.data;
       const allCabins = Array.isArray(data) ? data : [];
 
+      // ✅ Filter cabins by admin ID from localStorage
       const adminCabins = allCabins.filter(cabin =>
         cabin.owner === adminId
       );
@@ -469,6 +532,7 @@ const AdminCabins = () => {
     }
   };
 
+  // ─── FILTERS ───
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
@@ -481,20 +545,28 @@ const AdminCabins = () => {
       priceMin: "",
       priceMax: "",
       address: "",
-      spaceType: "all"
+      spaceType: "all"  // ✅ Reset space type
     });
   };
 
+  // ✅ UPDATED: Filter with Space Type
   const filteredCabins = cabins.filter(cabin => {
-    if (filters.search && !cabin.name?.toLowerCase().includes(filters.search.toLowerCase())) return false;
-    if (filters.cabinType !== "all" && cabin.cabinType !== filters.cabinType) return false;
+    if (filters.search && !cabin.name?.toLowerCase().includes(filters.search.toLowerCase())) {
+      return false;
+    }
+    if (filters.cabinType !== "all" && cabin.cabinType !== filters.cabinType) {
+      return false;
+    }
     if (filters.status !== "all") {
       if (filters.status === "active" && cabin.isActive !== true) return false;
       if (filters.status === "inactive" && cabin.isActive !== false) return false;
     }
     if (filters.priceMin && (cabin.price || 0) < Number(filters.priceMin)) return false;
     if (filters.priceMax && (cabin.price || 0) > Number(filters.priceMax)) return false;
-    if (filters.address && !cabin.address?.toLowerCase().includes(filters.address.toLowerCase())) return false;
+    if (filters.address && !cabin.address?.toLowerCase().includes(filters.address.toLowerCase())) {
+      return false;
+    }
+    // ✅ NEW: Space Type filter
     if (filters.spaceType !== "all") {
       if (filters.spaceType === "medical" && cabin.isChamber !== true) return false;
       if (filters.spaceType === "coworking" && cabin.isChamber !== false) return false;
@@ -525,7 +597,10 @@ const AdminCabins = () => {
     const days = Math.floor(seconds / 86400);
     const hours = Math.floor((seconds % 86400) / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
-    if (days > 0) return `${days}d ${hours}h`;
+    
+    if (days > 0) {
+      return `${days}d ${hours}h`;
+    }
     return `${hours}h ${minutes}m`;
   };
 
@@ -847,6 +922,10 @@ const AdminCabins = () => {
       setFormData({ ...formData, [name]: checked });
     } else {
       setFormData({ ...formData, [name]: value });
+      
+      // Validate field on change
+      const error = validateField(name, value);
+      setErrors({ ...errors, [name]: error });
     }
   };
 
@@ -877,18 +956,69 @@ const AdminCabins = () => {
   };
 
   const addPlan = () => {
-    const label = prompt("Plan Label:");
-    const hours = prompt("Included Hours:");
-    const cost = prompt("Cost (₹):");
-    const validity = prompt("Validity (Days):");
-    if (hours && cost && validity) {
-      setPricingPlans([...pricingPlans, {
-        label: (label || "").trim(),
-        hours: Number(hours),
-        cost: Number(cost),
-        validity: Number(validity)
-      }]);
+    openPlanModal();
+  };
+
+  // Plan Modal State
+  const [showPlanModal, setShowPlanModal] = useState(false);
+  const [editingPlanIndex, setEditingPlanIndex] = useState(null);
+  const [planInput, setPlanInput] = useState({
+    label: "",
+    hours: "",
+    cost: "",
+    validity: ""
+  });
+
+  const openPlanModal = () => {
+    setPlanInput({ label: "", hours: "", cost: "", validity: "" });
+    setEditingPlanIndex(null);
+    setShowPlanModal(true);
+  };
+
+  const openEditPlanModal = (index) => {
+    const targetPlan = pricingPlans[index];
+    if (targetPlan) {
+      setPlanInput({
+        label: targetPlan.label || "",
+        hours: targetPlan.hours !== undefined ? targetPlan.hours.toString() : "",
+        cost: targetPlan.cost !== undefined ? targetPlan.cost.toString() : "",
+        validity: targetPlan.validity !== undefined ? targetPlan.validity.toString() : ""
+      });
+      setEditingPlanIndex(index);
+      setShowPlanModal(true);
     }
+  };
+
+  const savePlanModal = () => {
+    if (!planInput.hours || Number(planInput.hours) <= 0) {
+      toast.error("Please enter valid included hours");
+      return;
+    }
+    if (!planInput.cost || Number(planInput.cost) <= 0) {
+      toast.error("Please enter valid cost (₹)");
+      return;
+    }
+    if (!planInput.validity || Number(planInput.validity) <= 0) {
+      toast.error("Please enter valid validity days");
+      return;
+    }
+
+    const newPlan = {
+      label: planInput.label.trim() || `${planInput.hours} Hours Plan`,
+      hours: Number(planInput.hours),
+      cost: Number(planInput.cost),
+      validity: Number(planInput.validity)
+    };
+
+    if (editingPlanIndex !== null) {
+      setPricingPlans(prev => prev.map((p, i) => (i === editingPlanIndex ? newPlan : p)));
+    } else {
+      setPricingPlans(prev => [...prev, newPlan]);
+    }
+
+    setShowPlanModal(false);
+    setPlanInput({ label: "", hours: "", cost: "", validity: "" });
+    setEditingPlanIndex(null);
   };
 
   const removePlan = (index) => {
@@ -955,6 +1085,7 @@ const AdminCabins = () => {
               setIsModalOpen(false);
               setPaymentProcessing(false);
               
+              // Reset form
               setFormData({
                 name: "",
                 description: "",
@@ -1061,6 +1192,7 @@ const AdminCabins = () => {
       images.forEach((img) => data.append("images", img));
       videos.forEach((video) => data.append("videos", video));
 
+      // ✅ CREATE CABIN WITH AUTH TOKEN
       const cabinRes = await axios.post(`${API_URL}/api/cabins`, data, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -1072,6 +1204,7 @@ const AdminCabins = () => {
         const newCabin = cabinRes.data.cabin;
         toast.success("Cabin created successfully!");
 
+        // ✅ CREATE ORDER WITH AUTH TOKEN
         const orderRes = await axios.post(
           `${API_URL}/api/cabins/createcabinorder`,
           { cabinId: newCabin._id },
@@ -1113,11 +1246,33 @@ const AdminCabins = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Validate all fields before submission
+    const nameError = validateField("name", formData.name);
+    const addressError = validateField("address", formData.address);
+    const cabinError = validateField("cabin", formData.cabin);
+    const descriptionError = validateField("description", formData.description);
+    
+    const newErrors = {
+      name: nameError,
+      address: addressError,
+      cabin: cabinError,
+      description: descriptionError,
+    };
+    
+    setErrors(newErrors);
+    
+    // Check if there are any validation errors
+    if (nameError || addressError || cabinError || descriptionError) {
+      toast.error("Please fix the validation errors before submitting");
+      return;
+    }
+    
     if (!formData.name || !formData.address || !formData.capacity || !formData.price || !formData.cabin) {
       toast.error("Please fill all required fields");
       return;
     }
 
+    // Validate seats for Co-Working
     if (!formData.isChamber) {
       if (seats.length === 0) {
         toast.error("Please add at least one seat to the cabin");
@@ -1129,6 +1284,7 @@ const AdminCabins = () => {
       }
     }
     
+    // Check Razorpay
     if (!razorpayLoaded) {
       toast.error("Payment system not loaded. Please refresh the page.");
       return;
@@ -1137,13 +1293,16 @@ const AdminCabins = () => {
     setShowConfirmModal(true);
   };
 
+  // Check if seats should be shown
   const showSeatsSection = !formData.isChamber;
 
+  // Calculate fee
   const isFirstCabin = cabinCount === 0;
   const baseFee = isFirstCabin ? 2000 : 1000;
   const gstAmount = baseFee * 0.18;
   const totalWithGST = baseFee + gstAmount;
 
+  // ─── RENDER ───
   if (loading) {
     return (
       <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
@@ -1186,38 +1345,86 @@ const AdminCabins = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Total Cabins</p>
-            <p className="text-2xl font-bold text-indigo-600 mt-1">{cabins.length}</p>
+        <div className="admin-dash__stats">
+          <div className="admin-dash__stat">
+            <div className="admin-dash__stat-top">
+              <span className="admin-dash__stat-label">Total Spaces</span>
+              <div className="admin-dash__stat-icon bg-indigo-100 text-indigo-600">
+                <Home size={18} />
+              </div>
+            </div>
+            <div className="admin-dash__stat-value">{cabins.length}</div>
+            <div className="admin-dash__stat-meta">{activeCount} active</div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Active</p>
-            <p className="text-2xl font-bold text-emerald-600 mt-1">{activeCount}</p>
+
+          <div className="admin-dash__stat">
+            <div className="admin-dash__stat-top">
+              <span className="admin-dash__stat-label">Active</span>
+              <div className="admin-dash__stat-icon bg-emerald-100 text-emerald-600">
+                <CheckCircle size={18} />
+              </div>
+            </div>
+            <div className="admin-dash__stat-value">{activeCount}</div>
+            <div className="admin-dash__stat-meta">Available spaces</div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-600">Inactive</p>
-            <p className="text-2xl font-bold text-gray-600 mt-1">{inactiveCount}</p>
+
+          <div className="admin-dash__stat">
+            <div className="admin-dash__stat-top">
+              <span className="admin-dash__stat-label">Inactive</span>
+              <div className="admin-dash__stat-icon bg-gray-100 text-gray-600">
+                <XCircleIcon size={18} />
+              </div>
+            </div>
+            <div className="admin-dash__stat-value">{inactiveCount}</div>
+            <div className="admin-dash__stat-meta">Unavailable</div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-purple-600">With Expiry</p>
-            <p className="text-2xl font-bold text-purple-600 mt-1">{withExpiryCount}</p>
+
+          <div className="admin-dash__stat">
+            <div className="admin-dash__stat-top">
+              <span className="admin-dash__stat-label">Medical</span>
+              <div className="admin-dash__stat-icon bg-rose-100 text-rose-600">
+                <Stethoscope size={18} />
+              </div>
+            </div>
+            <div className="admin-dash__stat-value">{medicalCount}</div>
+            <div className="admin-dash__stat-meta">Chamber spaces</div>
+          </div>
+
+          <div className="admin-dash__stat">
+            <div className="admin-dash__stat-top">
+              <span className="admin-dash__stat-label">Co-Working</span>
+              <div className="admin-dash__stat-icon bg-blue-100 text-blue-600">
+                <Briefcase size={18} />
+              </div>
+            </div>
+            <div className="admin-dash__stat-value">{coworkingCount}</div>
+            <div className="admin-dash__stat-meta">Shared workspaces</div>
           </div>
         </div>
 
-        {/* Space Type Stats */}
+        {/* ─── MINI STATS ─── */}
         <div className="grid grid-cols-2 gap-3 mb-6">
-          <div className="bg-emerald-50 rounded-xl border border-emerald-200 p-3 text-center">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 flex items-center justify-center gap-1">
-              <Stethoscope size={14} /> Medical Chambers
-            </p>
-            <p className="text-2xl font-bold text-emerald-700">{medicalCount}</p>
+          <div className="bg-amber-50/80 rounded-xl border border-amber-200/80 p-3 flex items-center justify-between shadow-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600">
+                <Crown size={16} />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700">Exclusive Cabins</p>
+                <p className="text-sm font-bold text-amber-900">{exclusiveCount} Premium</p>
+              </div>
+            </div>
           </div>
-          <div className="bg-blue-50 rounded-xl border border-blue-200 p-3 text-center">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-blue-600 flex items-center justify-center gap-1">
-              <Briefcase size={14} /> Co-Working Spaces
-            </p>
-            <p className="text-2xl font-bold text-blue-700">{coworkingCount}</p>
+          <div className="bg-purple-50/80 rounded-xl border border-purple-200/80 p-3 flex items-center justify-between shadow-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600">
+                <Clock size={16} />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-purple-700">Expiring Cabins</p>
+                <p className="text-sm font-bold text-purple-900">{withExpiryCount} With Expiry</p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1232,7 +1439,7 @@ const AdminCabins = () => {
             </div>
           </div>
 
-          {/* Filter Panel */}
+          {/* ─── MULTI FILTER PANEL ─── */}
           <div className="px-4 pt-4 pb-3 border-b border-gray-100" style={{ backgroundColor: '#fafafa' }}>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
               <div>
@@ -1275,6 +1482,7 @@ const AdminCabins = () => {
                 </select>
               </div>
 
+              {/* ✅ NEW: Space Type Filter */}
               <div>
                 <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Space Type</label>
                 <select
@@ -1336,7 +1544,7 @@ const AdminCabins = () => {
           <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
             {filteredCabins.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-3 py-20 text-gray-400">
-                <BuildingIcon size={48} className="opacity-20" />
+                <Building2 size={48} className="opacity-20" />
                 <p className="text-lg font-medium">No cabins found</p>
                 <p className="text-sm">Try adjusting your filters or add a new cabin.</p>
               </div>
@@ -1508,17 +1716,32 @@ const AdminCabins = () => {
             )}
           </div>
 
-          <div className="px-4 py-3 border-t border-gray-100 rounded-b-2xl flex flex-wrap items-center justify-between gap-2" style={{ backgroundColor: '#fafafa' }}>
-            <span className="text-xs text-gray-500">
-              Showing <strong>{filteredCabins.length}</strong> of <strong>{cabins.length}</strong> cabins
-            </span>
-            <div className="flex items-center gap-3 text-xs text-gray-500">
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> Active: {activeCount}</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-400"></span> Inactive: {inactiveCount}</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500"></span> Exclusive: {exclusiveCount}</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500"></span> Normal: {normalCount}</span>
+          {/* Footer */}
+          {!loading && filteredCabins.length > 0 && (
+            <div className="px-4 py-3 border-t border-gray-100 rounded-b-2xl flex flex-wrap items-center justify-between gap-2" style={{ backgroundColor: '#fafafa' }}>
+              <span className="text-xs text-gray-500">
+                Showing <strong>{filteredCabins.length}</strong> of <strong>{cabins.length}</strong> cabins
+              </span>
+              <div className="flex items-center gap-3 text-xs text-gray-500">
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  Active: {activeCount}
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-gray-400"></span>
+                  Inactive: {inactiveCount}
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                  Exclusive: {exclusiveCount}
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                  Normal: {normalCount}
+                </span>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
@@ -1537,7 +1760,10 @@ const AdminCabins = () => {
             <MapPin size={16} className="text-indigo-600 mt-0.5 flex-shrink-0" />
             <p className="text-sm text-gray-700 leading-relaxed">{addressPopup.address}</p>
           </div>
-          <button onClick={closeAddressPopup} className="absolute top-1 right-1 p-1 rounded-full hover:bg-gray-100 transition-colors">
+          <button 
+            onClick={closeAddressPopup}
+            className="absolute top-1 right-1 p-1 rounded-full hover:bg-gray-100 transition-colors"
+          >
             <X size={14} className="text-gray-400" />
           </button>
         </div>
@@ -1552,23 +1778,30 @@ const AdminCabins = () => {
       />
 
       {/* ====================== */}
-      {/* ADD CABIN MODAL - 24x7 + Open/Close Time BOTH VISIBLE */}
-      {/* ====================== */}
+      {/* ─── ADD CABIN MODAL ─── */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[1100] flex items-end sm:items-center justify-center p-2 sm:p-4 bg-slate-900/50 backdrop-blur-sm">
-          <div
-            className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200"
-            style={{ maxHeight: "95vh" }}
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setIsModalOpen(false);
+            }
+          }}
+        >
+          <div 
+            className="bg-white w-full max-w-3xl max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
           >
+            {/* Modal Header */}
             <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 sm:p-5 flex items-center justify-between flex-shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-white/20 flex items-center justify-center">
-                  <Home size={18} className="text-white sm:w-5 sm:h-5" />
+                  <Plus size={18} className="text-white sm:w-5 sm:h-5" />
                 </div>
                 <div>
-                  <h2 className="text-base sm:text-lg font-bold text-white">Add New Cabin #{cabinCount + 1}</h2>
+                  <h2 className="text-base sm:text-lg font-bold text-white">Add New Space</h2>
                   <p className="text-[10px] sm:text-xs text-white/75">
-                    Fee: ₹{isFirstCabin ? '2,000' : '1,000'} + GST (18%)
+                    {formData.isChamber ? 'Medical Chamber' : 'Co-Working Space'}
                   </p>
                 </div>
               </div>
@@ -1582,16 +1815,13 @@ const AdminCabins = () => {
 
             <div className="overflow-y-auto p-4 sm:p-6 flex-1">
               <form onSubmit={handleSubmit} className="space-y-4">
-                {/* ─── SPACE TYPE ─── */}
+                {/* ─── SPACE TYPE SELECTION ─── */}
                 <div>
                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Space Type *</label>
                   <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-1">
                     <button
                       type="button"
-                      onClick={() => {
-                        setFormData({...formData, isChamber: true});
-                        setSeats([]);
-                      }}
+                      onClick={() => setFormData({...formData, isChamber: true})}
                       className={`py-2.5 sm:py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold border-2 transition-all flex items-center justify-center gap-2 ${
                         formData.isChamber === true
                           ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
@@ -1620,24 +1850,26 @@ const AdminCabins = () => {
                   <div>
                     <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Building Name *</label>
                     <input
-                      className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                      className={`w-full mt-1 px-3 py-2.5 sm:py-3 border rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all ${errors.name ? 'border-red-500 focus:border-red-500' : 'border-slate-200 focus:border-indigo-500'}`}
                       type="text" name="name"
                       placeholder="e.g. Tech Hub"
                       value={formData.name}
                       onChange={handleChange}
                       required
                     />
+                    {errors.name && <p className="text-[10px] text-red-500 mt-1">{errors.name}</p>}
                   </div>
                   <div>
                     <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Address *</label>
                     <input
-                      className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                      className={`w-full mt-1 px-3 py-2.5 sm:py-3 border rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all ${errors.address ? 'border-red-500 focus:border-red-500' : 'border-slate-200 focus:border-indigo-500'}`}
                       type="text" name="address"
-                      placeholder="e.g. Bangalore"
+                      placeholder="e.g. Bangalore, Karnataka"
                       value={formData.address}
                       onChange={handleChange}
                       required
                     />
+                    {errors.address && <p className="text-[10px] text-red-500 mt-1">{errors.address}</p>}
                   </div>
                 </div>
 
@@ -1645,10 +1877,22 @@ const AdminCabins = () => {
                   <div>
                     <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Cabin Spec *</label>
                     <input
-                      className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                      className={`w-full mt-1 px-3 py-2.5 sm:py-3 border rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all ${errors.cabin ? 'border-red-500 focus:border-red-500' : 'border-slate-200 focus:border-indigo-500'}`}
                       type="text" name="cabin"
                       placeholder="e.g. Office B"
                       value={formData.cabin}
+                      onChange={handleChange}
+                      required
+                    />
+                    {errors.cabin && <p className="text-[10px] text-red-500 mt-1">{errors.cabin}</p>}
+                  </div>
+                  <div>
+                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Capacity *</label>
+                    <input
+                      className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                      type="number" name="capacity" min="1"
+                      placeholder="10"
+                      value={formData.capacity}
                       onChange={handleChange}
                       required
                     />
@@ -1664,123 +1908,7 @@ const AdminCabins = () => {
                       required
                     />
                   </div>
-                  <div>
-                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Number of Seats *</label>
-                    <div className="flex items-center gap-2 mt-1">
-                      <input
-                        className="flex-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
-                        type="number" name="capacity" min="1"
-                        placeholder="e.g. 5"
-                        value={formData.capacity}
-                        onChange={handleChange}
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={openBatchSeatModal}
-                        disabled={!formData.capacity || parseInt(formData.capacity) < 1 || formData.isChamber}
-                        className={`px-3 py-2.5 sm:py-3 rounded-xl text-xs font-bold transition-colors whitespace-nowrap ${
-                          !formData.capacity || parseInt(formData.capacity) < 1 || formData.isChamber
-                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                            : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                        }`}
-                      >
-                        <Plus size={14} className="inline mr-1" /> Add
-                      </button>
-                    </div>
-                    {formData.capacity && parseInt(formData.capacity) > 0 && !formData.isChamber && (
-                      <p className="text-[10px] text-slate-400 mt-0.5">
-                        {seats.length} of {formData.capacity} seats added
-                        {seats.length > 0 && seats.length === parseInt(formData.capacity) && (
-                          <span className="text-emerald-600 font-bold ml-1">✅ Complete!</span>
-                        )}
-                        {seats.length > 0 && seats.length < parseInt(formData.capacity) && (
-                          <span className="text-amber-600 ml-1">⚠️ {parseInt(formData.capacity) - seats.length} more needed</span>
-                        )}
-                      </p>
-                    )}
-                    {formData.isChamber && (
-                      <p className="text-[10px] text-slate-400 mt-0.5">🚫 Seats not required for Medical Chamber</p>
-                    )}
-                  </div>
                 </div>
-
-                {/* ─── SEAT LIST ─── */}
-                {showSeatsSection && (
-                  <div>
-                    <div className="flex justify-between items-center mb-1.5">
-                      <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">
-                        Seat List ({seats.length} / {formData.capacity || '0'})
-                      </label>
-                      <div className="flex gap-1.5">
-                        {formData.capacity && parseInt(formData.capacity) > 0 && seats.length === 0 && (
-                          <button
-                            type="button"
-                            onClick={generateAllSeats}
-                            className="text-[10px] sm:text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 sm:px-3 py-1 rounded-lg hover:bg-emerald-100 transition-colors flex items-center gap-1"
-                          >
-                            <GridIcon size={12} /> Generate All
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          onClick={openSeatModal}
-                          className="text-[10px] sm:text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 sm:px-3 py-1 rounded-lg hover:bg-indigo-100 transition-colors flex items-center gap-1"
-                        >
-                          <Plus size={12} /> Add Manual
-                        </button>
-                      </div>
-                    </div>
-                    
-                    {seats.length > 0 ? (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                        {seats.map((seat, idx) => (
-                          <div key={idx} className="bg-slate-50 rounded-lg border border-slate-200 p-2 text-center relative group">
-                            <Armchair size={14} className="mx-auto text-indigo-500 mb-1" />
-                            <p className="text-xs font-medium text-gray-700 truncate">{seat.name}</p>
-                            <p className="text-[10px] text-gray-400">#{seat.number}</p>
-                            <div className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button
-                                type="button"
-                                onClick={() => editSeat(idx)}
-                                className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-[8px] hover:bg-indigo-200 transition-colors"
-                              >
-                                ✎
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => removeSeat(idx)}
-                                className="w-5 h-5 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-[8px] hover:bg-red-200 transition-colors"
-                              >
-                                ×
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center">
-                        <p className="text-xs text-slate-400">
-                          {formData.capacity && parseInt(formData.capacity) > 0 ? (
-                            <>Click <strong>"Add"</strong> next to seats field to add seats one by one, or <strong>"Generate All"</strong> to create all at once.</>
-                          ) : (
-                            <>Enter number of seats first, then click <strong>"Add"</strong> to add seats.</>
-                          )}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* ─── MEDICAL CHAMBER NOTE ─── */}
-                {formData.isChamber && (
-                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
-                    <div className="flex items-center gap-2">
-                      <Stethoscope size={16} className="text-emerald-600" />
-                      <p className="text-xs text-emerald-700 font-medium">Medical Chamber - No seats required</p>
-                    </div>
-                  </div>
-                )}
 
                 <div>
                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Cabin Type</label>
@@ -1812,69 +1940,6 @@ const AdminCabins = () => {
                   </div>
                 </div>
 
-                {/* ─── TIMINGS - BOTH 24x7 AND OPEN/CLOSE TIME VISIBLE ─── */}
-                <div>
-                  <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Timings</label>
-                  
-                  {/* 24x7 Checkbox */}
-                  <div className="flex items-center gap-3 mt-1.5 p-2.5 bg-slate-50 rounded-xl border border-slate-200">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        name="is24x7"
-                        checked={formData.is24x7}
-                        onChange={handleChange}
-                        className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
-                      />
-                      <span className="text-xs font-medium text-slate-700">24×7 Open</span>
-                    </label>
-                    {formData.is24x7 && (
-                      <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-full">✅ Always Open</span>
-                    )}
-                  </div>
-
-                  {/* Open/Close Time - ALWAYS VISIBLE, but disabled if 24x7 is checked */}
-                  <div className="grid grid-cols-2 gap-3 mt-2">
-                    <div>
-                      <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Open Time</label>
-                      <input
-                        type="time"
-                        name="openTime"
-                        value={formData.openTime}
-                        onChange={handleChange}
-                        disabled={formData.is24x7}
-                        className={`w-full mt-0.5 px-3 py-2 border rounded-lg text-sm outline-none transition-all ${
-                          formData.is24x7
-                            ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
-                            : 'border-slate-200 bg-white text-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20'
-                        }`}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Close Time</label>
-                      <input
-                        type="time"
-                        name="closeTime"
-                        value={formData.closeTime}
-                        onChange={handleChange}
-                        disabled={formData.is24x7}
-                        className={`w-full mt-0.5 px-3 py-2 border rounded-lg text-sm outline-none transition-all ${
-                          formData.is24x7
-                            ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
-                            : 'border-slate-200 bg-white text-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20'
-                        }`}
-                      />
-                    </div>
-                  </div>
-
-                  {formData.is24x7 && (
-                    <div className="mt-1.5 text-[10px] text-emerald-600 bg-emerald-50/50 px-3 py-1.5 rounded-lg border border-emerald-200">
-                      🕒 24×7 mode enabled. Open/Close times are not applicable.
-                    </div>
-                  )}
-                </div>
-
-                {/* ─── AMENITIES ─── */}
                 <div>
                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Amenities</label>
                   <div className="grid grid-cols-2 xs:grid-cols-3 gap-1.5 mt-1">
@@ -1900,54 +1965,72 @@ const AdminCabins = () => {
                   </div>
                 </div>
 
-                {/* ─── PRICING PLANS ─── */}
                 <div>
                   <div className="flex justify-between items-center mb-1.5">
-                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Pricing Plans</label>
+                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      Pricing Plans ({pricingPlans.length})
+                    </label>
                     <button
                       type="button"
-                      onClick={addPlan}
-                      className="text-[10px] sm:text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 sm:px-3 py-1 rounded-lg hover:bg-indigo-100 transition-colors"
+                      onClick={openPlanModal}
+                      className="text-[10px] sm:text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 sm:px-3 py-1 rounded-lg hover:bg-indigo-100 transition-colors flex items-center gap-1 cursor-pointer"
                     >
-                      + Add Plan
+                      <Plus size={12} /> Add Manual
                     </button>
                   </div>
                   {pricingPlans.length > 0 ? (
-                    <div className="grid grid-cols-1 xs:grid-cols-2 gap-1.5">
+                    <div className="grid grid-cols-1 xs:grid-cols-2 gap-2">
                       {pricingPlans.map((plan, idx) => (
-                        <div key={idx} className="p-2 bg-slate-50 rounded-lg text-[10px] sm:text-xs border border-slate-200 relative">
-                          <div><strong>{plan.label || "Plan"}</strong></div>
-                          <div>{plan.hours}h · ₹{plan.cost}</div>
-                          <div className="text-slate-400">{plan.validity}d validity</div>
-                          <button
-                            type="button"
-                            onClick={() => removePlan(idx)}
-                            className="absolute top-1 right-1 text-red-500 hover:text-red-700 text-xs font-bold"
-                          >
-                            ×
-                          </button>
+                        <div key={idx} className="p-2.5 bg-slate-50 rounded-xl text-xs border border-slate-200 relative group flex justify-between items-center">
+                          <div>
+                            <div className="font-bold text-slate-800">{plan.label || "Plan"}</div>
+                            <div className="text-indigo-600 font-semibold">{plan.hours}h · ₹{plan.cost}</div>
+                            <div className="text-[10px] text-slate-400">{plan.validity} days validity</div>
+                          </div>
+                          <div className="flex items-center gap-1 opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              type="button"
+                              onClick={() => openEditPlanModal(idx)}
+                              className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs hover:bg-indigo-200 transition-colors cursor-pointer"
+                              title="Edit Plan"
+                            >
+                              ✎
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removePlan(idx)}
+                              className="w-6 h-6 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-xs hover:bg-red-200 transition-colors cursor-pointer"
+                              title="Delete Plan"
+                            >
+                              ×
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-[10px] sm:text-xs text-slate-400">No plans defined. Hourly booking only.</p>
+                    <div className="border-2 border-dashed border-slate-200 rounded-xl p-3 text-center">
+                      <p className="text-xs text-slate-400">No custom plans added. Click <strong>"+ Add Manual"</strong> to add plan details.</p>
+                    </div>
                   )}
                 </div>
 
-                {/* ─── DESCRIPTION ─── */}
                 <div>
                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Description</label>
                   <textarea
-                    className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all resize-none"
+                    className={`w-full mt-1 px-3 py-2.5 sm:py-3 border rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all resize-none ${errors.description ? 'border-red-500 focus:border-red-500' : 'border-slate-200 focus:border-indigo-500'}`}
                     name="description"
-                    placeholder="Describe your workspace..."
+                    placeholder="Describe your space (150-200 characters)..."
                     value={formData.description}
                     onChange={handleChange}
                     rows={2}
                   />
+                  {errors.description && <p className="text-[10px] text-red-500 mt-1">{errors.description}</p>}
+                  {!errors.description && formData.description && (
+                    <p className="text-[10px] text-slate-400 mt-1">{formData.description.length}/200 characters</p>
+                  )}
                 </div>
 
-                {/* ─── PHOTOS ─── */}
                 <div>
                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Photos</label>
                   <div className="mt-1 border-2 border-dashed border-indigo-200 rounded-xl p-4 sm:p-6 text-center hover:border-indigo-400 transition-colors relative">
@@ -1968,38 +2051,6 @@ const AdminCabins = () => {
                           <button
                             type="button"
                             onClick={() => removeImage(index)}
-                            className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs"
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* ─── VIDEOS ─── */}
-                <div>
-                  <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Videos</label>
-                  <div className="mt-1 border-2 border-dashed border-purple-200 rounded-xl p-4 sm:p-6 text-center hover:border-purple-400 transition-colors relative">
-                    <input
-                      type="file" multiple accept="video/*"
-                      onChange={handleVideoChange}
-                      className="absolute inset-0 opacity-0 cursor-pointer"
-                    />
-                    <Video size={20} className="mx-auto text-purple-400 sm:w-6 sm:h-6" />
-                    <p className="text-[10px] sm:text-xs text-slate-500 mt-1">Click to upload videos</p>
-                    <p className="text-[8px] sm:text-[10px] text-slate-400">MP4, MOV, AVI</p>
-                  </div>
-                  {videos.length > 0 && (
-                    <div className="grid grid-cols-3 xs:grid-cols-4 sm:grid-cols-5 gap-2 mt-2">
-                      {videos.map((file, index) => (
-                        <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-slate-200 bg-slate-900 flex items-center justify-center">
-                          <Video size={24} className="text-white/50" />
-                          <p className="absolute bottom-1 left-1 right-1 text-[8px] text-white truncate">{file.name}</p>
-                          <button
-                            type="button"
-                            onClick={() => removeVideo(index)}
                             className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs"
                           >
                             ×
@@ -2032,6 +2083,106 @@ const AdminCabins = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── PRICING PLAN MODAL ─── */}
+      {showPlanModal && (
+        <div className="fixed inset-0 z-[10500] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-slate-900">
+                  {editingPlanIndex !== null ? 'Edit Pricing Plan' : 'Add Pricing Plan'}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPlanModal(false);
+                    setPlanInput({ label: '', hours: '', cost: '', validity: '' });
+                    setEditingPlanIndex(null);
+                  }}
+                  className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors flex items-center justify-center text-slate-600 cursor-pointer"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Plan Label</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Weekly Flexi, Dedicated Desk, Monthly 50h"
+                    value={planInput.label}
+                    onChange={(e) => setPlanInput({ ...planInput, label: e.target.value })}
+                    className="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                    autoFocus
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Included Hours *</label>
+                    <input
+                      type="number"
+                      min="1"
+                      placeholder="e.g. 40"
+                      value={planInput.hours}
+                      onChange={(e) => setPlanInput({ ...planInput, hours: e.target.value })}
+                      className="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Cost (₹) *</label>
+                    <input
+                      type="number"
+                      min="1"
+                      placeholder="e.g. 5000"
+                      value={planInput.cost}
+                      onChange={(e) => setPlanInput({ ...planInput, cost: e.target.value })}
+                      className="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Validity (Days) *</label>
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder="e.g. 30"
+                    value={planInput.validity}
+                    onChange={(e) => setPlanInput({ ...planInput, validity: e.target.value })}
+                    className="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-0.5">Number of days plan stays valid after purchase</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowPlanModal(false);
+                      setPlanInput({ label: '', hours: '', cost: '', validity: '' });
+                      setEditingPlanIndex(null);
+                    }}
+                    className="py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold text-sm hover:bg-slate-50 transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={savePlanModal}
+                    className="py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition-colors shadow-sm cursor-pointer"
+                  >
+                    {editingPlanIndex !== null ? 'Update Plan' : 'Add Plan'}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -2114,7 +2265,7 @@ const AdminCabins = () => {
       )}
 
       {/* ====================== */}
-      {/* EDIT CABIN MODAL - 24x7 + Open/Close Time BOTH VISIBLE */}
+      {/* EDIT CABIN MODAL */}
       {/* ====================== */}
       {isEditModalOpen && editingCabin && (
         <div className="fixed inset-0 z-[1100] flex items-end sm:items-center justify-center p-2 sm:p-4 bg-slate-900/50 backdrop-blur-sm">
@@ -2269,66 +2420,46 @@ const AdminCabins = () => {
                   </div>
                 </div>
 
-                {/* ─── EDIT TIMINGS - BOTH 24x7 AND OPEN/CLOSE TIME VISIBLE ─── */}
+                {/* Timings */}
                 <div>
                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Timings</label>
-                  
-                  {/* 24x7 Checkbox */}
-                  <div className="flex items-center gap-3 mt-1.5 p-2.5 bg-slate-50 rounded-xl border border-slate-200">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        name="is24x7"
-                        checked={editFormData.is24x7}
-                        onChange={handleEditChange}
-                        className="w-4 h-4 rounded border-slate-300 text-amber-600 focus:ring-2 focus:ring-amber-500/20 cursor-pointer"
-                      />
-                      <span className="text-xs font-medium text-slate-700">24×7 Open</span>
-                    </label>
-                    {editFormData.is24x7 && (
-                      <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-full">✅ Always Open</span>
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-1">
+                    <button
+                      type="button"
+                      onClick={() => setEditFormData({...editFormData, is24x7: !editFormData.is24x7})}
+                      className={`py-2.5 sm:py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold border-2 transition-all flex items-center justify-center gap-2 ${
+                        editFormData.is24x7
+                          ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      {editFormData.is24x7 ? '✅ 24x7' : '⏰ Set Hours'}
+                    </button>
+                    {!editFormData.is24x7 && (
+                      <>
+                        <div>
+                          <label className="text-[8px] font-bold text-slate-400">Open</label>
+                          <input
+                            type="time"
+                            name="openTime"
+                            value={editFormData.openTime}
+                            onChange={handleEditChange}
+                            className="w-full mt-0.5 px-2 py-1.5 border border-slate-200 rounded-lg text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[8px] font-bold text-slate-400">Close</label>
+                          <input
+                            type="time"
+                            name="closeTime"
+                            value={editFormData.closeTime}
+                            onChange={handleEditChange}
+                            className="w-full mt-0.5 px-2 py-1.5 border border-slate-200 rounded-lg text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none"
+                          />
+                        </div>
+                      </>
                     )}
                   </div>
-
-                  {/* Open/Close Time - ALWAYS VISIBLE, but disabled if 24x7 is checked */}
-                  <div className="grid grid-cols-2 gap-3 mt-2">
-                    <div>
-                      <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Open Time</label>
-                      <input
-                        type="time"
-                        name="openTime"
-                        value={editFormData.openTime}
-                        onChange={handleEditChange}
-                        disabled={editFormData.is24x7}
-                        className={`w-full mt-0.5 px-3 py-2 border rounded-lg text-sm outline-none transition-all ${
-                          editFormData.is24x7
-                            ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
-                            : 'border-slate-200 bg-white text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20'
-                        }`}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Close Time</label>
-                      <input
-                        type="time"
-                        name="closeTime"
-                        value={editFormData.closeTime}
-                        onChange={handleEditChange}
-                        disabled={editFormData.is24x7}
-                        className={`w-full mt-0.5 px-3 py-2 border rounded-lg text-sm outline-none transition-all ${
-                          editFormData.is24x7
-                            ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
-                            : 'border-slate-200 bg-white text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20'
-                        }`}
-                      />
-                    </div>
-                  </div>
-
-                  {editFormData.is24x7 && (
-                    <div className="mt-1.5 text-[10px] text-emerald-600 bg-emerald-50/50 px-3 py-1.5 rounded-lg border border-emerald-200">
-                      🕒 24×7 mode enabled. Open/Close times are not applicable.
-                    </div>
-                  )}
                 </div>
 
                 {/* Amenities */}
@@ -2567,12 +2698,6 @@ const AdminCabins = () => {
                 <div className="flex justify-between">
                   <span className="text-slate-500">Capacity</span>
                   <span className="font-semibold">{formData.capacity} {formData.isChamber ? '' : 'seats'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">24×7</span>
-                  <span className={`font-semibold ${formData.is24x7 ? 'text-emerald-600' : 'text-slate-400'}`}>
-                    {formData.is24x7 ? '✅ Yes' : '❌ No'}
-                  </span>
                 </div>
                 {!formData.isChamber && (
                   <div className="flex justify-between">

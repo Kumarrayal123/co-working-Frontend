@@ -1,4 +1,4 @@
-// MyChamberPayments.jsx - Complete with Multi-Filters (Chamber Name, Date Range, Status)
+// MyChamberPayments.jsx - Complete with Multi-Filters (Cabin Name, Date Range, Status)
 import axios from "axios";
 import {
   CreditCard,
@@ -60,11 +60,9 @@ const MyChamberPayments = () => {
 
   // ✅ MULTI-FILTERS
   const [filterStatus, setFilterStatus] = useState("all");
-  const [filterChamberName, setFilterChamberName] = useState("");
+  const [filterCabinName, setFilterCabinName] = useState("");
   const [filterDateFrom, setFilterDateFrom] = useState("");
   const [filterDateTo, setFilterDateTo] = useState("");
-  const [filterMinAmount, setFilterMinAmount] = useState("");
-  const [filterMaxAmount, setFilterMaxAmount] = useState("");
 
   const navigate = useNavigate();
 
@@ -133,14 +131,24 @@ const MyChamberPayments = () => {
     fetchPayments();
   }, []);
 
+  // Format date to dd/mm/yyyy
+  const formatDateDMY = (dateStr) => {
+    if (!dateStr) return "N/A";
+    const d = new Date(dateStr);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
   // ✅ FILTER LOGIC WITH ALL FILTERS
   const filteredOrders = orders.filter(order => {
     // Status filter
     const matchStatus = filterStatus === 'all' || order.status === filterStatus;
 
-    // Chamber name filter
-    const matchChamberName = filterChamberName === "" || 
-      order.cabin?.name?.toLowerCase().includes(filterChamberName.toLowerCase());
+    // Cabin name filter
+    const matchCabinName = filterCabinName === "" || 
+      order.cabin?.name?.toLowerCase().includes(filterCabinName.toLowerCase());
 
     // Date range filter
     let matchDate = true;
@@ -156,13 +164,7 @@ const MyChamberPayments = () => {
       if (orderDate > toDate) matchDate = false;
     }
 
-    // Amount range filter
-    let matchAmount = true;
-    const amount = order.amount || 0;
-    if (filterMinAmount && amount < Number(filterMinAmount)) matchAmount = false;
-    if (filterMaxAmount && amount > Number(filterMaxAmount)) matchAmount = false;
-
-    return matchStatus && matchChamberName && matchDate && matchAmount;
+    return matchStatus && matchCabinName && matchDate;
   });
 
   // ✅ SORT BY DATE (Latest first)
@@ -220,21 +222,17 @@ const MyChamberPayments = () => {
     return 'text-emerald-600';
   };
 
-  const getChamberName = (order) => {
-    return order.cabin?.name || 'Chamber Deleted';
+  const getCabinName = (order) => {
+    return order.cabin?.name || 'Cabin Deleted';
   };
 
-  const getChamberAddress = (order) => {
+  const getCabinAddress = (order) => {
     return order.cabin?.address || 'N/A';
   };
 
   const formatDate = (date) => {
     if (!date) return 'N/A';
-    return new Date(date).toLocaleDateString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    });
+    return formatDateDMY(date);
   };
 
   const formatDateTime = (date) => {
@@ -273,7 +271,7 @@ const MyChamberPayments = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      toast.success(`Chamber renewed successfully! Amount: ₹${res.data.amount}`);
+      toast.success(`Cabin renewed successfully! Amount: ₹${res.data.amount}`);
       setShowRenewModal(false);
       setRenewOrder(null);
 
@@ -281,7 +279,7 @@ const MyChamberPayments = () => {
 
     } catch (err) {
       console.error("Renew payment error:", err);
-      toast.error(err.response?.data?.error || "Failed to renew chamber");
+      toast.error(err.response?.data?.error || "Failed to renew cabin");
     } finally {
       setRenewing(false);
     }
@@ -301,8 +299,8 @@ const MyChamberPayments = () => {
 
       const exportData = sortedOrders.map((order, index) => ({
         'S.No': index + 1,
-        'Chamber Name': getChamberName(order),
-        'Address': getChamberAddress(order),
+        'Cabin Name': getCabinName(order),
+        'Address': getCabinAddress(order),
         'Amount': order.amount || 0,
         'Transaction ID': order.transactionId || 'N/A',
         'Payment Count': order.paymentCount || 1,
@@ -316,10 +314,10 @@ const MyChamberPayments = () => {
 
       const ws = XLSX.utils.json_to_sheet(exportData);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Chamber_Payments');
+      XLSX.utils.book_append_sheet(wb, ws, 'Cabin_Payments');
 
       const date = new Date().toISOString().split('T')[0];
-      XLSX.writeFile(wb, `chamber_payments_${date}.xlsx`);
+      XLSX.writeFile(wb, `cabin_payments_${date}.xlsx`);
 
       toast.success(`Exported ${sortedOrders.length} payments to Excel!`);
     } catch (error) {
@@ -333,11 +331,9 @@ const MyChamberPayments = () => {
   // ======================
   const clearFilters = () => {
     setFilterStatus("all");
-    setFilterChamberName("");
+    setFilterCabinName("");
     setFilterDateFrom("");
     setFilterDateTo("");
-    setFilterMinAmount("");
-    setFilterMaxAmount("");
     setCurrentPage(1);
   };
 
@@ -346,11 +342,9 @@ const MyChamberPayments = () => {
   // ======================
   const hasActiveFilters = () => {
     return filterStatus !== 'all' || 
-           filterChamberName !== "" || 
+           filterCabinName !== "" || 
            filterDateFrom !== "" || 
-           filterDateTo !== "" || 
-           filterMinAmount !== "" || 
-           filterMaxAmount !== "";
+           filterDateTo !== "";
   };
 
   // ======================
@@ -359,8 +353,8 @@ const MyChamberPayments = () => {
   const downloadInvoice = (order) => {
     try {
       const cabin = order.cabin || {};
-      const chamberName = cabin.name || 'Chamber Deleted';
-      const chamberAddress = cabin.address || 'N/A';
+      const cabinName = cabin.name || 'Cabin Deleted';
+      const cabinAddress = cabin.address || 'N/A';
 
       const amount = order.amount || 0;
       const baseAmount = order.baseAmount || amount;
@@ -430,18 +424,18 @@ const MyChamberPayments = () => {
           <body>
             <div class="invoice-container">
               <div class="invoice-header">
-                <div class="brand"><h1>${chamberName.toUpperCase()}</h1><div class="gst">GST: ${(gstRate * 100).toFixed(0)}%</div><div class="address-line">${chamberAddress}</div></div>
+                <div class="brand"><h1>${cabinName.toUpperCase()}</h1><div class="gst">GST: ${(gstRate * 100).toFixed(0)}%</div><div class="address-line">${cabinAddress}</div></div>
                 <div class="invoice-number"><div class="label">Invoice</div><div class="number">#${orderId}</div><div class="date">${today}</div></div>
               </div>
               <div class="info-grid">
-                <div><div class="title">Bill To</div><div class="value">${localStorage.getItem('userName') || 'Customer'}</div><div class="value-small">Chamber Registration</div></div>
-                <div><div class="title">Chamber Details</div><div class="value">${chamberName}</div><div class="address-line">${chamberAddress}</div><div class="value-small" style="margin-top:4px;">${order.isFirstCabin ? '⭐ First Chamber' : 'Payment #' + paymentCount}</div></div>
+                <div><div class="title">Bill To</div><div class="value">${localStorage.getItem('userName') || 'Customer'}</div><div class="value-small">Cabin Registration</div></div>
+                <div><div class="title">Cabin Details</div><div class="value">${cabinName}</div><div class="address-line">${cabinAddress}</div><div class="value-small" style="margin-top:4px;">${order.isFirstCabin ? '⭐ First Cabin' : 'Payment #' + paymentCount}</div></div>
               </div>
               <table class="invoice-table"><thead><tr><th>Description</th><th>Details</th><th>Amount</th></tr></thead>
-                <tbody><tr><td><strong>Chamber Registration</strong></td><td>${chamberName}<br><span style="font-size:11px;color:#666666;">${order.isFirstCabin ? 'First Chamber Registration' : 'Chamber Registration'}</span>${transactionId !== 'N/A' ? `<br><span style="font-size:10px;color:#888888;font-family:monospace;">TXN: ${transactionId}</span>` : ''}${paymentCount > 1 ? `<br><span style="font-size:11px;color:#059669;font-weight:600;">🔄 Renewal #${paymentCount}</span>` : ''}</td><td>₹${baseAmount.toFixed(2)}</td></tr></tbody></table>
+                <tbody><tr><td><strong>Cabin Registration</strong></td><td>${cabinName}<br><span style="font-size:11px;color:#666666;">${order.isFirstCabin ? 'First Cabin Registration' : 'Cabin Registration'}</span>${transactionId !== 'N/A' ? `<br><span style="font-size:10px;color:#888888;font-family:monospace;">TXN: ${transactionId}</span>` : ''}${paymentCount > 1 ? `<br><span style="font-size:11px;color:#059669;font-weight:600;">🔄 Renewal #${paymentCount}</span>` : ''}</td><td>₹${baseAmount.toFixed(2)}</td></tr></tbody></table>
               <div class="status-row"><div class="item"><div class="label">Payment Method</div><div class="value">Online</div></div><div class="item"><div class="label">Payment Status</div><div class="value">${paymentStatus}</div></div><div class="item"><div class="label">Order Status</div><div class="value">${status}</div></div>${transactionId !== 'N/A' ? `<div class="item"><div class="label">Transaction ID</div><div class="value" style="font-family:monospace;font-size:11px;">${transactionId}</div></div>` : ''}</div>
               <div class="totals"><div class="totals-box"><div class="totals-row"><span>Subtotal</span><span>₹${baseAmount.toFixed(2)}</span></div><div class="totals-row"><span>GST (${(gstRate * 100).toFixed(0)}%)</span><span>₹${gstAmount.toFixed(2)}</span></div><div class="totals-row total"><span>Total Amount</span><span class="amount">₹${amount.toFixed(2)}</span></div></div></div>
-              <div class="footer"><div class="powered">POWERED BY <span>IRYAX SPACE</span></div><div class="sub">Thank you for choosing ${chamberName}</div><div class="sub" style="margin-top:2px;">This is a system generated invoice</div></div>
+              <div class="footer"><div class="powered">POWERED BY <span>IRYAX SPACE</span></div><div class="sub">Thank you for choosing ${cabinName}</div><div class="sub" style="margin-top:2px;">This is a system generated invoice</div></div>
             </div>
             <button class="print-btn" onclick="window.print()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M18 9H6"/><path d="M18 13v6H6v-6"/><rect x="8" y="2" width="8" height="4" rx="1"/><rect x="8" y="13" width="8" height="4" rx="1"/></svg>Print / Save PDF</button>
           </body></html>
@@ -466,83 +460,86 @@ const MyChamberPayments = () => {
         {/* Header */}
         <div className="admin-dash__header">
           <div>
-            <h1 className="admin-dash__greeting">
-              My <span>Chamber Payments</span>
+            <h1 className="admin-dash__greeting" style={{ fontSize: '1.25rem' }}>
+              My <span>Cabin Payments</span>
             </h1>
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="admin-dash__stats grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="admin-dash__stat">
-            <div className="admin-dash__stat-top">
-              <span className="admin-dash__stat-label">Total Payments</span>
-              <div className="admin-dash__stat-icon bg-indigo-100 text-indigo-600">
-                <Receipt size={18} />
+        {/* Stats Cards - Small and Clean */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+          <div className="bg-white rounded-xl border border-gray-100 p-3 shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Payments</span>
+              <div className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                <Receipt size={14} />
               </div>
             </div>
-            <div className="admin-dash__stat-value">{stats.total}</div>
-            <div className="admin-dash__stat-meta">All transaction records</div>
+            <div className="text-xl font-bold text-gray-800 mt-1">{stats.total}</div>
+            <div className="text-[9px] text-gray-400">All transaction records</div>
           </div>
 
-          <div className="admin-dash__stat">
-            <div className="admin-dash__stat-top">
-              <span className="admin-dash__stat-label">Active</span>
-              <div className="admin-dash__stat-icon bg-emerald-100 text-emerald-600">
-                <CheckCircle size={18} />
+          <div className="bg-white rounded-xl border border-gray-100 p-3 shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Active</span>
+              <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
+                <CheckCircle size={14} />
               </div>
             </div>
-            <div className="admin-dash__stat-value">{stats.active}</div>
-            <div className="admin-dash__stat-meta">Currently active chambers</div>
+            <div className="text-xl font-bold text-emerald-600 mt-1">{stats.active}</div>
+            <div className="text-[9px] text-gray-400">Currently active cabins</div>
           </div>
 
-          <div className="admin-dash__stat">
-            <div className="admin-dash__stat-top">
-              <span className="admin-dash__stat-label">Expired</span>
-              <div className="admin-dash__stat-icon bg-rose-100 text-rose-600">
-                <XCircle size={18} />
+          <div className="bg-white rounded-xl border border-gray-100 p-3 shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Expired</span>
+              <div className="w-7 h-7 rounded-lg bg-rose-50 flex items-center justify-center text-rose-600">
+                <XCircle size={14} />
               </div>
             </div>
-            <div className="admin-dash__stat-value">{stats.expired}</div>
-            <div className="admin-dash__stat-meta">Expired / Pending renewal</div>
+            <div className="text-xl font-bold text-rose-600 mt-1">{stats.expired}</div>
+            <div className="text-[9px] text-gray-400">Expired / Pending renewal</div>
           </div>
 
-          <div className="admin-dash__stat">
-            <div className="admin-dash__stat-top">
-              <span className="admin-dash__stat-label">Total Spent</span>
-              <div className="admin-dash__stat-icon bg-purple-100 text-purple-600">
-                <IndianRupee size={18} />
+          <div className="bg-white rounded-xl border border-gray-100 p-3 shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Spent</span>
+              <div className="w-7 h-7 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600">
+                <IndianRupee size={14} />
               </div>
             </div>
-            <div className="admin-dash__stat-value">{formatCurrency(stats.totalAmount)}</div>
-            <div className="admin-dash__stat-meta">Lifetime chamber payments</div>
+            <div className="text-xl font-bold text-purple-600 mt-1">{formatCurrency(stats.totalAmount)}</div>
+            <div className="text-[9px] text-gray-400">Lifetime cabin payments</div>
           </div>
         </div>
 
         {/* Table Section */}
-        <div className="admin-dash__card mt-4" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
-          <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
-            <div className="flex items-center gap-3">
-              <h3 className="admin-dash__card-title">Payment History</h3>
-              <span className="px-2.5 py-0.5 text-xs font-bold text-indigo-700 bg-indigo-100 rounded-full">
+        <div className="admin-dash__card mt-2" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden' }}>
+          <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-2 p-3" style={{ backgroundColor: '#fafafa', borderBottom: '1px solid #e5e7eb' }}>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-bold text-gray-700">Payment History</h3>
+              <span className="px-2 py-0.5 text-[10px] font-bold text-indigo-700 bg-indigo-100 rounded-full">
                 {sortedOrders.length}
               </span>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              {/* Chamber Name Filter */}
-              <input
-                type="text"
-                placeholder="Filter by chamber..."
-                value={filterChamberName}
-                onChange={(e) => setFilterChamberName(e.target.value)}
-                className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700 w-32 sm:w-40"
-              />
+            <div className="flex flex-wrap items-center gap-1.5">
+              {/* Cabin Name Filter */}
+              <div className="relative">
+                <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Filter cabin..."
+                  value={filterCabinName}
+                  onChange={(e) => setFilterCabinName(e.target.value)}
+                  className="text-xs bg-white border border-gray-200 rounded-lg pl-8 pr-2.5 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 w-28 sm:w-36"
+                />
+              </div>
 
               {/* Status Filter */}
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700"
+                className="text-xs bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20"
               >
                 <option value="all">All Status</option>
                 <option value="active">Active</option>
@@ -552,48 +549,34 @@ const MyChamberPayments = () => {
               </select>
 
               {/* Date From */}
-              <input
-                type="date"
-                value={filterDateFrom}
-                onChange={(e) => setFilterDateFrom(e.target.value)}
-                className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700 w-32"
-                title="From Date"
-              />
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] text-gray-400 font-medium">From</span>
+                <input
+                  type="date"
+                  value={filterDateFrom}
+                  onChange={(e) => setFilterDateFrom(e.target.value)}
+                  className="text-xs bg-white border border-gray-200 rounded-lg px-2 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 w-28"
+                />
+              </div>
 
               {/* Date To */}
-              <input
-                type="date"
-                value={filterDateTo}
-                onChange={(e) => setFilterDateTo(e.target.value)}
-                className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700 w-32"
-                title="To Date"
-              />
-
-              {/* Min Amount */}
-              <input
-                type="number"
-                placeholder="Min ₹"
-                value={filterMinAmount}
-                onChange={(e) => setFilterMinAmount(e.target.value)}
-                className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700 w-20"
-              />
-
-              {/* Max Amount */}
-              <input
-                type="number"
-                placeholder="Max ₹"
-                value={filterMaxAmount}
-                onChange={(e) => setFilterMaxAmount(e.target.value)}
-                className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700 w-20"
-              />
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] text-gray-400 font-medium">To</span>
+                <input
+                  type="date"
+                  value={filterDateTo}
+                  onChange={(e) => setFilterDateTo(e.target.value)}
+                  className="text-xs bg-white border border-gray-200 rounded-lg px-2 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 w-28"
+                />
+              </div>
 
               {/* Clear Filters */}
               {hasActiveFilters() && (
                 <button
                   onClick={clearFilters}
-                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                 >
-                  <X size={14} /> Clear
+                  <X size={12} /> Clear
                 </button>
               )}
 
@@ -601,9 +584,9 @@ const MyChamberPayments = () => {
               {sortedOrders.length > 0 && (
                 <button
                   onClick={exportToExcel}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-medium hover:bg-emerald-100 transition-colors border border-emerald-200"
+                  className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-[10px] font-medium hover:bg-emerald-100 transition-colors border border-emerald-200"
                 >
-                  <Download size={14} />
+                  <Download size={13} />
                   <span>Export</span>
                 </button>
               )}
@@ -613,28 +596,29 @@ const MyChamberPayments = () => {
           {/* Table Container */}
           <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
             {loading ? (
-              <div className="flex flex-col items-center justify-center gap-3 py-20">
-                <div className="w-12 h-12 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin" />
-                <p className="text-gray-500">Loading payments...</p>
+              <div className="flex flex-col items-center justify-center gap-3 py-16">
+                <div className="w-10 h-10 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin" />
+                <p className="text-sm text-gray-500">Loading payments...</p>
               </div>
             ) : sortedOrders.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-3 py-20 text-gray-400">
-                <CreditCard size={48} className="opacity-20" />
-                <p className="text-lg font-medium">No payments found</p>
-                <p className="text-sm">Add a chamber to start your payment history.</p>
+              <div className="flex flex-col items-center justify-center gap-2 py-16 text-gray-400">
+                <CreditCard size={40} className="opacity-20" />
+                <p className="text-base font-medium">No payments found</p>
+                <p className="text-xs">Add a cabin to start your payment history.</p>
               </div>
             ) : (
-              <table className="w-full min-w-[1000px] text-left">
+              <table className="w-full min-w-[900px] text-left text-sm">
                 <thead>
                   <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Chamber</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Amount</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">TXN ID</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Payments</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Expiry</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Actions</th>
+                    <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">#</th>
+                    <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Cabin</th>
+                    <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Amount</th>
+                    <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">TXN ID</th>
+                    <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Payments</th>
+                    <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Status</th>
+                    <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Expiry</th>
+                    <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Created</th>
+                    <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -646,90 +630,93 @@ const MyChamberPayments = () => {
 
                     return (
                       <tr key={order._id} className="transition-colors group hover:bg-gray-50/80">
-                        <td className="p-4">
-                          <span className="text-sm font-semibold text-gray-400">#{indexOfFirstItem + idx + 1}</span>
+                        <td className="px-3 py-2.5">
+                          <span className="text-[10px] font-semibold text-gray-400">#{indexOfFirstItem + idx + 1}</span>
                         </td>
-                        <td className="p-4">
+                        <td className="px-3 py-2.5">
                           <div>
-                            <p className="font-semibold text-gray-900 text-sm flex items-center gap-1">
-                              {getChamberName(order)}
+                            <p className="font-semibold text-gray-900 text-xs flex items-center gap-1">
+                              {getCabinName(order)}
                               {order.isFirstCabin && (
-                                <span className="text-[10px] text-indigo-600 font-bold">⭐</span>
+                                <span className="text-[9px] text-indigo-600 font-bold">⭐</span>
                               )}
                             </p>
-                            <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
-                              <MapPin size={12} className="text-gray-400" />
-                              {getChamberAddress(order)}
+                            <p className="text-[9px] text-gray-500 flex items-center gap-0.5 mt-0.5">
+                              <MapPin size={10} className="text-gray-400" />
+                              {getCabinAddress(order)}
                             </p>
                             {order.cabin === null && (
-                              <span className="text-[10px] text-red-500 font-medium">⚠️ Chamber Deleted</span>
+                              <span className="text-[8px] text-red-500 font-medium">⚠️ Cabin Deleted</span>
                             )}
                           </div>
                         </td>
-                        <td className="p-4">
-                          <span className="text-sm font-bold text-indigo-600">{formatCurrency(order.amount)}</span>
+                        <td className="px-3 py-2.5">
+                          <span className="text-xs font-bold text-indigo-600">{formatCurrency(order.amount)}</span>
                         </td>
-                        <td className="p-4">
+                        <td className="px-3 py-2.5">
                           {order.transactionId ? (
-                            <span className="text-xs font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                            <span className="text-[9px] font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">
                               {order.transactionId.slice(0, 8)}...
                             </span>
                           ) : (
-                            <span className="text-xs text-gray-400">N/A</span>
+                            <span className="text-[9px] text-gray-400">N/A</span>
                           )}
                         </td>
-                        <td className="p-4">
-                          <div className="flex items-center gap-1">
-                            <History size={14} className="text-indigo-400" />
-                            <span className="text-sm font-semibold text-gray-700">{order.paymentCount || 1}</span>
+                        <td className="px-3 py-2.5">
+                          <div className="flex items-center gap-0.5">
+                            <History size={12} className="text-indigo-400" />
+                            <span className="text-xs font-semibold text-gray-700">{order.paymentCount || 1}</span>
                           </div>
                         </td>
-                        <td className="p-4">
-                          <div className="flex flex-col gap-1">
-                            <span className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-bold rounded-full border ${status.color}`}>
+                        <td className="px-3 py-2.5">
+                          <div className="flex flex-col gap-0.5">
+                            <span className={`inline-flex items-center gap-0.5 px-2 py-0.5 text-[9px] font-bold rounded-full border ${status.color}`}>
                               {status.icon} {status.label}
                             </span>
                             {order.status === 'active' && countdown > 0 && (
-                              <span className={`text-xs font-mono font-medium flex items-center gap-1 ${getCountdownColor(countdown)}`}>
-                                <Timer size={12} />
+                              <span className={`text-[9px] font-mono font-medium flex items-center gap-0.5 ${getCountdownColor(countdown)}`}>
+                                <Timer size={10} />
                                 {formatCountdown(countdown)}
                               </span>
                             )}
                             {isExpired && (
-                              <span className="text-[10px] text-red-500 font-medium">🔴 Expired - Renew now!</span>
+                              <span className="text-[8px] text-red-500 font-medium">🔴 Expired - Renew!</span>
                             )}
                             {isExpiringSoon && order.status === 'active' && (
-                              <span className="text-[10px] text-orange-500 font-medium animate-pulse">⚠️ Expiring soon!</span>
+                              <span className="text-[8px] text-orange-500 font-medium animate-pulse">⚠️ Expiring soon!</span>
                             )}
                           </div>
                         </td>
-                        <td className="p-4">
-                          <span className="text-sm text-gray-600">{formatDate(order.expiryDate)}</span>
+                        <td className="px-3 py-2.5">
+                          <span className="text-xs text-gray-600">{formatDate(order.expiryDate)}</span>
                         </td>
-                        <td className="p-4">
-                          <div className="flex items-center gap-1.5 flex-wrap">
+                        <td className="px-3 py-2.5">
+                          <span className="text-[9px] text-gray-500">{formatDate(order.createdAt)}</span>
+                        </td>
+                        <td className="px-3 py-2.5">
+                          <div className="flex items-center justify-center gap-1">
                             <button
                               onClick={() => handleViewDetails(order)}
-                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors whitespace-nowrap"
+                              className="p-1 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors"
                               title="View Details"
                             >
-                              <Eye size={13} /> View
+                              <Eye size={13} />
                             </button>
 
                             <button
                               onClick={() => downloadInvoice(order)}
-                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors whitespace-nowrap"
+                              className="p-1 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
                               title="Download Invoice"
                             >
-                              <FileDown size={13} /> Invoice
+                              <FileDown size={13} />
                             </button>
 
                             <button
                               onClick={() => { setRenewOrder(order); setShowRenewModal(true); }}
-                              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${isExpired ? 'bg-red-50 text-red-700 hover:bg-red-100' : 'bg-orange-50 text-orange-700 hover:bg-orange-100'}`}
-                              title={isExpired ? "Renew Expired Chamber" : "Extend Validity"}
+                              className={`p-1 rounded-lg transition-colors ${isExpired ? 'bg-red-50 text-red-700 hover:bg-red-100' : 'bg-orange-50 text-orange-700 hover:bg-orange-100'}`}
+                              title={isExpired ? "Renew Expired Cabin" : "Extend Validity"}
                             >
-                              <RefreshCw size={13} /> Renew
+                              <RefreshCw size={13} />
                             </button>
                           </div>
                         </td>
@@ -743,21 +730,21 @@ const MyChamberPayments = () => {
 
           {/* Footer with stats */}
           {!loading && sortedOrders.length > 0 && (
-            <div className="px-4 py-3 border-t border-gray-100 rounded-b-2xl flex flex-wrap items-center justify-between gap-2" style={{ backgroundColor: '#fafafa' }}>
-              <span className="text-xs text-gray-500">
+            <div className="px-3 py-2 border-t border-gray-100 flex flex-wrap items-center justify-between gap-1" style={{ backgroundColor: '#fafafa' }}>
+              <span className="text-[9px] text-gray-500">
                 Showing <strong>{sortedOrders.length}</strong> of <strong>{orders.length}</strong> payments
               </span>
-              <div className="flex items-center gap-3 text-xs text-gray-500">
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <div className="flex items-center gap-2 text-[9px] text-gray-500">
+                <span className="flex items-center gap-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                   Active: {stats.active}
                 </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                <span className="flex items-center gap-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
                   Expired: {stats.expired}
                 </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
+                <span className="flex items-center gap-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
                   Total: {stats.total}
                 </span>
               </div>
@@ -766,25 +753,25 @@ const MyChamberPayments = () => {
 
           {/* Pagination */}
           {!loading && sortedOrders.length > 0 && totalPages > 1 && (
-            <div className="px-4 py-3 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#fafafa' }}>
-              <p className="text-xs text-gray-500">
+            <div className="px-3 py-2 border-t border-gray-100 flex flex-wrap items-center justify-between gap-2" style={{ backgroundColor: '#fafafa' }}>
+              <p className="text-[9px] text-gray-500">
                 Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, sortedOrders.length)} of {sortedOrders.length} entries
               </p>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1">
                 <button
                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'}`}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-medium transition-colors ${currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'}`}
                 >
                   Previous
                 </button>
-                <span className="text-xs font-medium text-gray-600 px-2">
-                  Page {currentPage} of {totalPages}
+                <span className="text-[10px] font-medium text-gray-600 px-1.5">
+                  {currentPage} / {totalPages}
                 </span>
                 <button
                   onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${currentPage === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'}`}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-medium transition-colors ${currentPage === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'}`}
                 >
                   Next
                 </button>
@@ -800,44 +787,44 @@ const MyChamberPayments = () => {
       {showDetailModal && selectedOrder && (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setShowDetailModal(false); }}>
           <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="sticky top-0 bg-gradient-to-br from-indigo-600 to-purple-600 text-white p-6 rounded-t-3xl flex justify-between items-center">
+            <div className="sticky top-0 bg-gradient-to-br from-indigo-600 to-purple-600 text-white p-5 rounded-t-3xl flex justify-between items-center">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                  <CreditCard size={20} className="text-white" />
+                <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
+                  <CreditCard size={18} className="text-white" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold">Order Details</h3>
+                  <h3 className="text-xl font-bold">Order Details</h3>
                   <p className="text-sm text-indigo-200">#{selectedOrder._id.slice(-6).toUpperCase()}</p>
                 </div>
               </div>
-              <button onClick={() => setShowDetailModal(false)} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors">
-                <X size={20} />
+              <button onClick={() => setShowDetailModal(false)} className="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors">
+                <X size={18} />
               </button>
             </div>
-            <div className="p-6 space-y-4">
-              <div className="bg-gray-50 rounded-xl p-4">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Chamber Details</p>
-                <p className="mt-1 font-semibold text-gray-800">{getChamberName(selectedOrder)}</p>
-                <p className="text-sm text-gray-600 flex items-center gap-1 mt-0.5">
-                  <MapPin size={14} /> {getChamberAddress(selectedOrder)}
+            <div className="p-5 space-y-3">
+              <div className="bg-gray-50 rounded-xl p-3">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Cabin Details</p>
+                <p className="mt-1 font-semibold text-gray-800 text-sm">{getCabinName(selectedOrder)}</p>
+                <p className="text-xs text-gray-600 flex items-center gap-0.5 mt-0.5">
+                  <MapPin size={12} /> {getCabinAddress(selectedOrder)}
                 </p>
                 {selectedOrder.isFirstCabin && (
-                  <span className="text-xs text-indigo-600 font-medium mt-1 inline-block">⭐ First Chamber</span>
+                  <span className="text-[10px] text-indigo-600 font-medium mt-0.5 inline-block">⭐ First Cabin</span>
                 )}
               </div>
 
-              <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-100">
-                <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider">Amount Breakdown</p>
-                <div className="mt-2 space-y-1.5">
-                  <div className="flex justify-between text-sm">
+              <div className="bg-indigo-50 rounded-xl p-3 border border-indigo-100">
+                <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">Amount Breakdown</p>
+                <div className="mt-1.5 space-y-1 text-sm">
+                  <div className="flex justify-between text-xs">
                     <span className="text-gray-600">Base Amount</span>
                     <span className="font-semibold">₹{selectedOrder.baseAmount?.toFixed(2) || selectedOrder.amount}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
+                  <div className="flex justify-between text-xs">
                     <span className="text-gray-600">GST ({(selectedOrder.gstRate * 100).toFixed(0)}%)</span>
                     <span className="font-semibold">₹{selectedOrder.gstAmount?.toFixed(2) || '0.00'}</span>
                   </div>
-                  <div className="border-t border-indigo-200 pt-1.5 flex justify-between text-sm font-bold">
+                  <div className="border-t border-indigo-200 pt-1 flex justify-between text-xs font-bold">
                     <span>Total</span>
                     <span className="text-indigo-600">₹{selectedOrder.amount.toFixed(2)}</span>
                   </div>
@@ -845,82 +832,87 @@ const MyChamberPayments = () => {
               </div>
 
               {selectedOrder.transactionId && (
-                <div className="bg-gray-50 rounded-xl p-4">
+                <div className="bg-gray-50 rounded-xl p-3">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Hash size={18} className="text-indigo-600" />
-                      <span className="text-sm font-medium text-gray-700">Transaction ID</span>
+                    <div className="flex items-center gap-1.5">
+                      <Hash size={15} className="text-indigo-600" />
+                      <span className="text-xs font-medium text-gray-700">Transaction ID</span>
                     </div>
-                    <span className="text-sm font-mono font-bold text-indigo-600">{selectedOrder.transactionId}</span>
+                    <span className="text-xs font-mono font-bold text-indigo-600">{selectedOrder.transactionId}</span>
                   </div>
                 </div>
               )}
 
-              <div className="bg-purple-50 rounded-xl p-4 border border-purple-100">
+              <div className="bg-purple-50 rounded-xl p-3 border border-purple-100">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <History size={18} className="text-purple-600" />
-                    <span className="text-sm font-medium text-gray-700">Payment Count</span>
+                  <div className="flex items-center gap-1.5">
+                    <History size={15} className="text-purple-600" />
+                    <span className="text-xs font-medium text-gray-700">Payment Count</span>
                   </div>
-                  <span className="text-xl font-bold text-purple-600">{selectedOrder.paymentCount || 1}</span>
+                  <span className="text-lg font-bold text-purple-600">{selectedOrder.paymentCount || 1}</span>
                 </div>
               </div>
 
               {selectedOrder.status === 'active' && countdowns[selectedOrder._id] > 0 && (
-                <div className={`rounded-xl p-4 border ${countdowns[selectedOrder._id] < 86400 ? 'bg-orange-50 border-orange-200' : 'bg-emerald-50 border-emerald-200'}`}>
+                <div className={`rounded-xl p-3 border ${countdowns[selectedOrder._id] < 86400 ? 'bg-orange-50 border-orange-200' : 'bg-emerald-50 border-emerald-200'}`}>
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Timer size={18} className={countdowns[selectedOrder._id] < 86400 ? 'text-orange-500' : 'text-emerald-500'} />
-                      <span className="text-sm font-medium text-gray-700">Time Remaining</span>
+                    <div className="flex items-center gap-1.5">
+                      <Timer size={15} className={countdowns[selectedOrder._id] < 86400 ? 'text-orange-500' : 'text-emerald-500'} />
+                      <span className="text-xs font-medium text-gray-700">Time Remaining</span>
                     </div>
-                    <span className={`text-xl font-bold font-mono ${countdowns[selectedOrder._id] < 86400 ? 'text-orange-600' : 'text-emerald-600'}`}>
+                    <span className={`text-sm font-bold font-mono ${countdowns[selectedOrder._id] < 86400 ? 'text-orange-600' : 'text-emerald-600'}`}>
                       {formatCountdown(countdowns[selectedOrder._id])}
                     </span>
                   </div>
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Amount</p>
-                  <p className="text-xl font-bold text-indigo-600 mt-1">{formatCurrency(selectedOrder.amount)}</p>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-gray-50 rounded-xl p-3">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Amount</p>
+                  <p className="text-lg font-bold text-indigo-600 mt-0.5">{formatCurrency(selectedOrder.amount)}</p>
                 </div>
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Status</p>
-                  <span className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-bold rounded-full border mt-1 ${getStatusBadge(selectedOrder.status, selectedOrder.expiryDate).color}`}>
+                <div className="bg-gray-50 rounded-xl p-3">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Status</p>
+                  <span className={`inline-flex items-center gap-0.5 px-2 py-0.5 text-[10px] font-bold rounded-full border mt-0.5 ${getStatusBadge(selectedOrder.status, selectedOrder.expiryDate).color}`}>
                     {getStatusBadge(selectedOrder.status, selectedOrder.expiryDate).icon}
                     {getStatusBadge(selectedOrder.status, selectedOrder.expiryDate).label}
                   </span>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Start Date</p>
-                  <p className="text-sm font-medium text-gray-700 mt-1">{formatDate(selectedOrder.startDate)}</p>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-gray-50 rounded-xl p-3">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Start Date</p>
+                  <p className="text-xs font-medium text-gray-700 mt-0.5">{formatDate(selectedOrder.startDate)}</p>
                 </div>
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Expiry Date</p>
-                  <p className="text-sm font-medium text-gray-700 mt-1">{formatDate(selectedOrder.expiryDate)}</p>
+                <div className="bg-gray-50 rounded-xl p-3">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Expiry Date</p>
+                  <p className="text-xs font-medium text-gray-700 mt-0.5">{formatDate(selectedOrder.expiryDate)}</p>
                 </div>
               </div>
 
-              <div className="flex flex-col gap-3">
+              <div className="bg-gray-50 rounded-xl p-3">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Created At</p>
+                <p className="text-xs font-medium text-gray-700 mt-0.5">{formatDateTime(selectedOrder.createdAt)}</p>
+              </div>
+
+              <div className="flex flex-col gap-2 pt-1">
                 <button
                   onClick={() => { setShowDetailModal(false); downloadInvoice(selectedOrder); }}
-                  className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-sm active:scale-[0.98] flex items-center justify-center gap-2"
+                  className="w-full py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition shadow-sm active:scale-[0.98] flex items-center justify-center gap-2"
                 >
-                  <FileDown size={16} /> Download Invoice
+                  <FileDown size={15} /> Download Invoice
                 </button>
                 <button
                   onClick={() => { setShowDetailModal(false); setRenewOrder(selectedOrder); setShowRenewModal(true); }}
-                  className={`w-full py-3 rounded-xl font-bold transition shadow-sm active:scale-[0.98] flex items-center justify-center gap-2 ${
+                  className={`w-full py-2.5 rounded-xl text-sm font-bold transition shadow-sm active:scale-[0.98] flex items-center justify-center gap-2 ${
                     selectedOrder.status === 'expired' || new Date(selectedOrder.expiryDate) < new Date()
                       ? 'bg-red-600 text-white hover:bg-red-700'
                       : 'bg-orange-500 text-white hover:bg-orange-600'
                   }`}
                 >
-                  <RefreshCw size={16} />
+                  <RefreshCw size={15} />
                   {selectedOrder.status === 'expired' || new Date(selectedOrder.expiryDate) < new Date()
                     ? `Renew (${formatCurrency(selectedOrder.amount)})`
                     : `Extend (${formatCurrency(selectedOrder.amount)})`
@@ -928,7 +920,7 @@ const MyChamberPayments = () => {
                 </button>
                 <button
                   onClick={() => setShowDetailModal(false)}
-                  className="w-full py-3 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition"
+                  className="w-full py-2.5 border border-gray-200 rounded-xl text-gray-600 text-sm font-medium hover:bg-gray-50 transition"
                 >
                   Close
                 </button>
@@ -944,55 +936,55 @@ const MyChamberPayments = () => {
       {showRenewModal && renewOrder && (
         <div className="fixed inset-0 z-[1300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) { setShowRenewModal(false); setRenewOrder(null); } }}>
           <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
-            <div className={`p-6 text-center text-white ${renewOrder.status === 'expired' || new Date(renewOrder.expiryDate) < new Date() ? 'bg-gradient-to-br from-red-500 to-red-600' : 'bg-gradient-to-br from-orange-500 to-orange-600'}`}>
-              <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-3">
-                <RefreshCw size={32} className="text-white" />
+            <div className={`p-5 text-center text-white ${renewOrder.status === 'expired' || new Date(renewOrder.expiryDate) < new Date() ? 'bg-gradient-to-br from-red-500 to-red-600' : 'bg-gradient-to-br from-orange-500 to-orange-600'}`}>
+              <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-2">
+                <RefreshCw size={28} className="text-white" />
               </div>
-              <h3 className="text-xl font-bold">
+              <h3 className="text-lg font-bold">
                 {renewOrder.status === 'expired' || new Date(renewOrder.expiryDate) < new Date()
-                  ? 'Renew Expired Chamber'
-                  : 'Extend Chamber Validity'
+                  ? 'Renew Expired Cabin'
+                  : 'Extend Cabin Validity'
                 }
               </h3>
-              <p className="text-sm opacity-80 mt-1">
+              <p className="text-xs opacity-80 mt-0.5">
                 {renewOrder.status === 'expired' || new Date(renewOrder.expiryDate) < new Date()
-                  ? 'Your chamber has expired. Renew to activate for 30 more days.'
-                  : 'Extend your chamber validity for 30 more days.'
+                  ? 'Your cabin has expired. Renew to activate for 30 more days.'
+                  : 'Extend your cabin validity for 30 more days.'
                 }
               </p>
             </div>
-            <div className="p-5 space-y-4">
-              <div className="bg-gray-50 rounded-xl p-4 space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Chamber</span>
-                  <span className="font-semibold text-gray-800">{getChamberName(renewOrder)}</span>
+            <div className="p-5 space-y-3">
+              <div className="bg-gray-50 rounded-xl p-3 space-y-2 text-sm">
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-500">Cabin</span>
+                  <span className="font-semibold text-gray-800">{getCabinName(renewOrder)}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between text-xs">
                   <span className="text-gray-500">Current Status</span>
                   <span className={`font-medium ${renewOrder.status === 'expired' || new Date(renewOrder.expiryDate) < new Date() ? 'text-red-600' : 'text-emerald-600'}`}>
                     {renewOrder.status === 'expired' || new Date(renewOrder.expiryDate) < new Date() ? 'Expired' : 'Active'}
                   </span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between text-xs">
                   <span className="text-gray-500">Expiry Date</span>
                   <span className="font-medium">{formatDate(renewOrder.expiryDate)}</span>
                 </div>
-                <div className="flex justify-between border-t border-gray-200 pt-2">
+                <div className="flex justify-between border-t border-gray-200 pt-1.5 text-xs">
                   <span className="text-gray-500 font-bold">Renewal Fee</span>
-                  <span className="text-xl font-bold text-indigo-600">{formatCurrency(renewOrder.amount)}</span>
+                  <span className="text-lg font-bold text-indigo-600">{formatCurrency(renewOrder.amount)}</span>
                 </div>
               </div>
 
-              <div className="bg-amber-50 rounded-xl p-3 text-xs text-amber-700 flex items-start gap-2 border border-amber-200">
-                <AlertCircle size={16} className="shrink-0 mt-0.5" />
-                <span>Your chamber will be active for 30 more days after successful renewal.</span>
+              <div className="bg-amber-50 rounded-xl p-2.5 text-[10px] text-amber-700 flex items-start gap-1.5 border border-amber-200">
+                <AlertCircle size={14} className="shrink-0 mt-0.5" />
+                <span>Your cabin will be active for 30 more days after successful renewal.</span>
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 <button
                   onClick={handleRenewPayment}
                   disabled={renewing}
-                  className={`flex-1 py-3 rounded-xl text-white font-bold transition flex items-center justify-center gap-2 ${
+                  className={`flex-1 py-2.5 rounded-xl text-white text-sm font-bold transition flex items-center justify-center gap-2 ${
                     renewing ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:shadow-lg'
                   }`}
                 >
@@ -1000,7 +992,7 @@ const MyChamberPayments = () => {
                 </button>
                 <button
                   onClick={() => { setShowRenewModal(false); setRenewOrder(null); }}
-                  className="px-5 py-3 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition"
+                  className="px-4 py-2.5 border border-gray-200 rounded-xl text-gray-600 text-sm font-medium hover:bg-gray-50 transition"
                 >
                   Cancel
                 </button>

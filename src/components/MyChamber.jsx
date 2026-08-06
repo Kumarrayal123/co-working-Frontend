@@ -98,6 +98,17 @@ const EXCLUSIVE_AMENITIES = [
   { key: "phone", label: "Conference Phone", emoji: "📞", icon: Phone },
 ];
 
+// ─── HELPER: Format date to dd/mm/yyyy ───
+const formatDateToDDMMYYYY = (dateString) => {
+  if (!dateString) return "N/A";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "N/A";
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
 const MyChamber = () => {
   const [chambers, setChambers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -348,24 +359,24 @@ const MyChamber = () => {
 
       const res = await axios.get(`${API_URL}/api/cabins/user`, getAuthHeader());
       const data = res.data.cabins || res.data;
-      const chamberList = Array.isArray(data) ? data : [];
-      setChambers(chamberList);
-      setChamberCount(chamberList.length);
+      const cabinList = Array.isArray(data) ? data : [];
+      setChambers(cabinList);
+      setChamberCount(cabinList.length);
 
       const initialCountdowns = {};
-      chamberList.forEach(chamber => {
-        if (chamber.expiryDate) {
-          const expiry = new Date(chamber.expiryDate);
+      cabinList.forEach(cabin => {
+        if (cabin.expiryDate) {
+          const expiry = new Date(cabin.expiryDate);
           const now = new Date();
           const diff = Math.max(0, Math.floor((expiry - now) / 1000));
-          initialCountdowns[chamber._id] = diff;
+          initialCountdowns[cabin._id] = diff;
         }
       });
       setCountdowns(initialCountdowns);
 
     } catch (err) {
-      console.error("Error fetching chambers:", err);
-      toast.error("Failed to fetch chambers");
+      console.error("Error fetching cabins:", err);
+      toast.error("Failed to fetch cabins");
     } finally {
       setLoading(false);
     }
@@ -378,16 +389,16 @@ const MyChamber = () => {
   // ─── DELETE ───
   const handleDelete = async (e, id) => {
     e.stopPropagation();
-    if (!window.confirm("Are you sure you want to delete this chamber?")) return;
+    if (!window.confirm("Are you sure you want to delete this cabin?")) return;
 
     try {
       await axios.delete(`${API_URL}/api/cabins/${id}`, getAuthHeader());
       setChambers(chambers.filter(c => c._id !== id));
       setChamberCount(prev => prev - 1);
-      toast.success("Chamber deleted successfully");
+      toast.success("Cabin deleted successfully");
     } catch (error) {
-      console.error("Error deleting chamber", error);
-      toast.error("Failed to delete chamber");
+      console.error("Error deleting cabin", error);
+      toast.error("Failed to delete cabin");
     }
   };
 
@@ -537,7 +548,7 @@ const MyChamber = () => {
   };
 
   // ─── PAYMENT ───
-  const initiateRazorpayPayment = async (chamberId, orderData) => {
+  const initiateRazorpayPayment = async (cabinId, orderData) => {
     setPaymentProcessing(true);
     try {
       if (typeof window.Razorpay === 'undefined') {
@@ -552,8 +563,8 @@ const MyChamber = () => {
         key: razorpayKey,
         amount: orderData.order.amount * 100,
         currency: "INR",
-        name: "Chamber Registration",
-        description: `Chamber #${chamberCount + 1} Registration Fee (incl. GST)`,
+        name: "Cabin Registration",
+        description: `Cabin #${chamberCount + 1} Registration Fee (incl. GST)`,
         order_id: orderData.order.razorpayOrderId,
         handler: async function(response) {
           try {
@@ -563,7 +574,7 @@ const MyChamber = () => {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
-                cabinId: chamberId
+                cabinId: cabinId
               },
               getAuthHeader()
             );
@@ -657,12 +668,12 @@ const MyChamber = () => {
     }
   };
 
-  // ─── CREATE CHAMBER ───
+  // ─── CREATE CABIN ───
   const createChamberAndOrder = async () => {
     setSubmitting(true);
     const data = new FormData();
-    const chamberName = formData.cabin ? `${formData.name} - ${formData.cabin}` : formData.name;
-    data.append("name", chamberName);
+    const cabinName = formData.cabin ? `${formData.name} - ${formData.cabin}` : formData.name;
+    data.append("name", cabinName);
     data.append("description", formData.description);
     data.append("capacity", formData.capacity);
     data.append("address", formData.address);
@@ -682,19 +693,19 @@ const MyChamber = () => {
     try {
       const token = localStorage.getItem("token");
 
-      const chamberRes = await axios.post(`${API_URL}/api/cabins`, data, {
+      const cabinRes = await axios.post(`${API_URL}/api/cabins`, data, {
         headers: { 
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
         },
       });
 
-      const newChamber = chamberRes.data.cabin;
-      toast.success("Chamber created successfully!");
+      const newCabin = cabinRes.data.cabin;
+      toast.success("Cabin created successfully!");
 
       const orderRes = await axios.post(
         `${API_URL}/api/cabins/createcabinorder`,
-        { cabinId: newChamber._id },
+        { cabinId: newCabin._id },
         getAuthHeader()
       );
 
@@ -703,12 +714,12 @@ const MyChamber = () => {
         setIsModalOpen(false);
         setSubmitting(false);
         resetForm();
-        await initiateRazorpayPayment(newChamber._id, orderRes.data);
+        await initiateRazorpayPayment(newCabin._id, orderRes.data);
       }
 
     } catch (err) {
       console.error("Error:", err);
-      toast.error(err.response?.data?.error || "Failed to create chamber and order");
+      toast.error(err.response?.data?.error || "Failed to create cabin and order");
       setSubmitting(false);
     } finally {
       setSubmitting(false);
@@ -758,20 +769,20 @@ const MyChamber = () => {
     setShowConfirmModal(true);
   };
 
-  // Filter chambers
-  const filteredChambers = chambers.filter(chamber => {
+  // Filter cabins
+  const filteredChambers = chambers.filter(cabin => {
     const searchLower = searchTerm.toLowerCase();
-    const matchesSearch = chamber.name?.toLowerCase().includes(searchLower) ||
-                         chamber.address?.toLowerCase().includes(searchLower);
+    const matchesSearch = cabin.name?.toLowerCase().includes(searchLower) ||
+                         cabin.address?.toLowerCase().includes(searchLower);
 
-    const matchesName = chamber.name?.toLowerCase().includes(filters.name.toLowerCase());
-    const matchesAddress = chamber.address?.toLowerCase().includes(filters.address.toLowerCase());
+    const matchesName = cabin.name?.toLowerCase().includes(filters.name.toLowerCase());
+    const matchesAddress = cabin.address?.toLowerCase().includes(filters.address.toLowerCase());
 
-    const price = chamber.price || 0;
+    const price = cabin.price || 0;
     const matchesPriceMin = filters.priceMin === '' || price >= Number(filters.priceMin);
     const matchesPriceMax = filters.priceMax === '' || price <= Number(filters.priceMax);
 
-    const isActive = chamber.isActive === true;
+    const isActive = cabin.isActive === true;
     const matchesStatus = filters.status === 'all' || 
                          (filters.status === 'active' && isActive) ||
                          (filters.status === 'inactive' && !isActive);
@@ -780,8 +791,8 @@ const MyChamber = () => {
            matchesPriceMin && matchesPriceMax && matchesStatus;
   });
 
-  const getChamberStatus = (chamber) => {
-    if (chamber.isActive === true) {
+  const getChamberStatus = (cabin) => {
+    if (cabin.isActive === true) {
       return { status: 'Active', color: 'green' };
     }
     return { status: 'Inactive', color: 'gray' };
@@ -791,8 +802,8 @@ const MyChamber = () => {
   const currentAmenities = getAmenitiesForType(formData.cabinType);
   const { baseFee, gstAmount, totalWithGST } = getFeeWithGST();
 
-  const handleViewChamber = (chamber) => {
-    setSelectedChamber(chamber);
+  const handleViewChamber = (cabin) => {
+    setSelectedChamber(cabin);
     setShowViewModal(true);
   };
 
@@ -801,14 +812,9 @@ const MyChamber = () => {
     setSelectedChamber(null);
   };
 
+  // ─── UPDATED: Use dd/mm/yyyy format ───
   const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    return formatDateToDDMMYYYY(dateString);
   };
 
   const formatCountdown = (seconds) => {
@@ -845,7 +851,7 @@ const MyChamber = () => {
   const activeCount = chambers.filter(c => c.isActive === true).length;
   const inactiveCount = chambers.filter(c => c.isActive !== true).length;
   const exclusiveCount = chambers.filter(c => c.cabinType === 'exclusive').length;
-  const chamberCountFilter = chambers.filter(c => c.isChamber === true).length;
+  const cabinCountFilter = chambers.filter(c => c.isChamber === true).length;
 
   const formatTimeDisplay = (time) => {
     if (!time) return 'N/A';
@@ -868,7 +874,7 @@ const MyChamber = () => {
         <div className="admin-dash__header">
           <div>
             <h1 className="admin-dash__greeting">
-              My <span>Chambers</span>
+              My <span>Cabins</span>
             </h1>
           </div>
         </div>
@@ -877,7 +883,7 @@ const MyChamber = () => {
         <div className="admin-dash__stats">
           <div className="admin-dash__stat">
             <div className="admin-dash__stat-top">
-              <span className="admin-dash__stat-label">Total Chambers</span>
+              <span className="admin-dash__stat-label">Total Cabins</span>
               <div className="admin-dash__stat-icon bg-indigo-100 text-indigo-600">
                 <Home size={18} />
               </div>
@@ -916,7 +922,7 @@ const MyChamber = () => {
               </div>
             </div>
             <div className="admin-dash__stat-value">{exclusiveCount}</div>
-            <div className="admin-dash__stat-meta">Exclusive chambers</div>
+            <div className="admin-dash__stat-meta">Exclusive cabins</div>
           </div>
 
           <div className="admin-dash__stat">
@@ -926,18 +932,18 @@ const MyChamber = () => {
                 <Stethoscope size={18} />
               </div>
             </div>
-            <div className="admin-dash__stat-value">{chamberCountFilter}</div>
-            <div className="admin-dash__stat-meta">Chamber spaces</div>
+            <div className="admin-dash__stat-value">{cabinCountFilter}</div>
+            <div className="admin-dash__stat-meta">Cabin spaces</div>
           </div>
         </div>
 
         <div className="space-y-6">
-          {/* Chambers Table Section */}
+          {/* Cabins Table Section */}
           <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
             {/* Header with Filters */}
             <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
               <div className="flex items-center gap-3">
-                <h3 className="admin-dash__card-title">Registered Chambers</h3>
+                <h3 className="admin-dash__card-title">Registered Cabins</h3>
                 <span className="px-2.5 py-0.5 text-xs font-bold text-indigo-700 bg-indigo-100 rounded-full">
                   {filteredChambers.length}
                 </span>
@@ -1020,7 +1026,7 @@ const MyChamber = () => {
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors"
                 >
                   <Plus size={14} />
-                  <span>Add Chamber</span>
+                  <span>Add Cabin</span>
                 </button>
               </div>
             </div>
@@ -1030,14 +1036,14 @@ const MyChamber = () => {
               {loading ? (
                 <div className="flex flex-col items-center justify-center gap-3 py-20">
                   <div className="w-12 h-12 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin"></div>
-                  <p className="text-gray-500">Loading chambers...</p>
+                  <p className="text-gray-500">Loading cabins...</p>
                 </div>
               ) : (
                 <table className="w-full min-w-[1200px] text-left">
                   <thead>
                     <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
-                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Chamber</th>
+                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Address</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Type</th>
                       <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Price</th>
@@ -1050,18 +1056,18 @@ const MyChamber = () => {
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {filteredChambers.length > 0 ? (
-                      filteredChambers.map((chamber, index) => {
-                        const chamberStatus = getChamberStatus(chamber);
-                        const isExclusive = chamber.cabinType === 'exclusive';
-                        const countdown = countdowns[chamber._id] || 0;
-                        const hasExpiry = chamber.expiryDate ? true : false;
-                        const isExpired = chamber.expiryDate && new Date(chamber.expiryDate) < new Date();
-                        const is24x7 = chamber.is24x7 === true;
-                        const openTimeDisplay = chamber.openTime ? formatTimeDisplay(chamber.openTime) : 'N/A';
-                        const closeTimeDisplay = chamber.closeTime ? formatTimeDisplay(chamber.closeTime) : 'N/A';
+                      filteredChambers.map((cabin, index) => {
+                        const cabinStatus = getChamberStatus(cabin);
+                        const isExclusive = cabin.cabinType === 'exclusive';
+                        const countdown = countdowns[cabin._id] || 0;
+                        const hasExpiry = cabin.expiryDate ? true : false;
+                        const isExpired = cabin.expiryDate && new Date(cabin.expiryDate) < new Date();
+                        const is24x7 = cabin.is24x7 === true;
+                        const openTimeDisplay = cabin.openTime ? formatTimeDisplay(cabin.openTime) : 'N/A';
+                        const closeTimeDisplay = cabin.closeTime ? formatTimeDisplay(cabin.closeTime) : 'N/A';
 
                         return (
-                          <tr key={chamber._id} className="transition-colors group hover:bg-gray-50/80">
+                          <tr key={cabin._id} className="transition-colors group hover:bg-gray-50/80">
                             <td className="p-4">
                               <span className="text-sm font-semibold text-gray-400">#{index + 1}</span>
                             </td>
@@ -1069,22 +1075,22 @@ const MyChamber = () => {
                               <div className="flex items-center gap-3">
                                 <div className="flex-shrink-0 w-10 h-10 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
                                   <img
-                                    src={chamber.images?.[0] ? getImageUrl(chamber.images[0]) : PLACEHOLDER_IMAGE}
-                                    alt={chamber.name}
+                                    src={cabin.images?.[0] ? getImageUrl(cabin.images[0]) : PLACEHOLDER_IMAGE}
+                                    alt={cabin.name}
                                     className="w-full h-full object-cover"
                                     onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
                                   />
                                 </div>
                                 <div>
-                                  <p className="font-semibold text-gray-900 text-sm">{chamber.name || 'N/A'}</p>
-                                  <p className="text-[10px] text-gray-400">{chamber.cabin || 'N/A'}</p>
+                                  <p className="font-semibold text-gray-900 text-sm">{cabin.name || 'N/A'}</p>
+                                  <p className="text-[10px] text-gray-400">{cabin.cabin || 'N/A'}</p>
                                 </div>
                               </div>
                             </td>
                             <td className="p-4">
                               <span className="text-sm font-medium text-gray-700 flex items-center gap-1.5">
                                 <MapPin size={14} className="text-gray-400 flex-shrink-0" />
-                                <span className="truncate max-w-[150px]">{chamber.address || "N/A"}</span>
+                                <span className="truncate max-w-[150px]">{cabin.address || "N/A"}</span>
                               </span>
                             </td>
                             <td className="p-4">
@@ -1095,7 +1101,7 @@ const MyChamber = () => {
                               </span>
                             </td>
                             <td className="p-4">
-                              <span className="text-sm font-bold text-gray-900">₹{chamber.price || 0}</span>
+                              <span className="text-sm font-bold text-gray-900">₹{cabin.price || 0}</span>
                               <span className="text-xs text-gray-400 ml-0.5">/hr</span>
                             </td>
                             <td className="p-4">
@@ -1118,15 +1124,15 @@ const MyChamber = () => {
                             </td>
                             <td className="p-4">
                               <span className={`px-3 py-1 text-xs font-bold rounded-full ${
-                                chamberStatus.color === 'green' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'
+                                cabinStatus.color === 'green' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'
                               }`}>
-                                {chamberStatus.status}
+                                {cabinStatus.status}
                               </span>
                             </td>
                             <td className="p-4">
                               {hasExpiry ? (
                                 <div className="flex flex-col gap-0.5">
-                                  <span className="text-sm text-gray-600">{formatDate(chamber.expiryDate)}</span>
+                                  <span className="text-sm text-gray-600">{formatDate(cabin.expiryDate)}</span>
                                   {countdown > 0 && (
                                     <span className={`text-[10px] font-mono font-medium flex items-center gap-1 ${getCountdownColor(countdown)}`}>
                                       <Timer size={10} />
@@ -1140,25 +1146,25 @@ const MyChamber = () => {
                               )}
                             </td>
                             <td className="p-4">
-                              <span className="text-sm text-gray-500">{formatDate(chamber.createdAt)}</span>
+                              <span className="text-sm text-gray-500">{formatDate(cabin.createdAt)}</span>
                             </td>
                             <td className="p-4">
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <button
-                                  onClick={() => handleViewChamber(chamber)}
+                                  onClick={() => handleViewChamber(cabin)}
                                   className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors whitespace-nowrap"
                                 >
                                   <Eye size={13} /> View
                                 </button>
                                 <button
-                                  onClick={() => navigate(`/cabin/${chamber._id}`)}
+                                  onClick={() => navigate(`/cabin/${cabin._id}`)}
                                   className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-orange-50 text-orange-700 hover:bg-orange-100 transition-colors whitespace-nowrap"
                                 >
                                   <Home size={13} /> Open
                                 </button>
                                 <button 
                                   className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-red-50 text-red-700 hover:bg-red-100 transition-colors whitespace-nowrap"
-                                  onClick={(e) => handleDelete(e, chamber._id)}
+                                  onClick={(e) => handleDelete(e, cabin._id)}
                                 >
                                   <Trash2 size={13} /> Delete
                                 </button>
@@ -1172,8 +1178,8 @@ const MyChamber = () => {
                         <td colSpan={10} className="p-12 text-center">
                           <div className="flex flex-col items-center justify-center gap-3 text-gray-400">
                             <BuildingIcon size={48} className="opacity-20" />
-                            <p className="text-lg font-medium">No chambers found</p>
-                            <p className="text-sm">Try adjusting your filters or add a new chamber.</p>
+                            <p className="text-lg font-medium">No cabins found</p>
+                            <p className="text-sm">Try adjusting your filters or add a new cabin.</p>
                           </div>
                         </td>
                       </tr>
@@ -1187,7 +1193,7 @@ const MyChamber = () => {
             {!loading && filteredChambers.length > 0 && (
               <div className="px-4 py-3 border-t border-gray-100 rounded-b-2xl flex flex-wrap items-center justify-between gap-2" style={{ backgroundColor: '#fafafa' }}>
                 <span className="text-xs text-gray-500">
-                  Showing <strong>{filteredChambers.length}</strong> of <strong>{chambers.length}</strong> chambers
+                  Showing <strong>{filteredChambers.length}</strong> of <strong>{chambers.length}</strong> cabins
                 </span>
                 <div className="flex items-center gap-3 text-xs text-gray-500">
                   <span className="flex items-center gap-1">
@@ -1204,7 +1210,7 @@ const MyChamber = () => {
                   </span>
                   <span className="flex items-center gap-1">
                     <span className="w-2 h-2 rounded-full bg-rose-500"></span>
-                    Chambers: {chamberCountFilter}
+                    Cabins: {cabinCountFilter}
                   </span>
                 </div>
               </div>
@@ -1214,7 +1220,7 @@ const MyChamber = () => {
       </div>
 
       {/* ============================================================ */}
-      {/* VIEW CHAMBER MODAL */}
+      {/* VIEW CABIN MODAL */}
       {/* ============================================================ */}
       {showViewModal && selectedChamber && (
         <div 
@@ -1253,7 +1259,7 @@ const MyChamber = () => {
                       {selectedChamber.name || 'N/A'}
                       {selectedChamber.isChamber && (
                         <span className="text-xs bg-rose-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
-                          🏛️ Chamber
+                          🏛️ Cabin
                         </span>
                       )}
                     </h3>
@@ -1289,7 +1295,7 @@ const MyChamber = () => {
                       >
                         <img 
                           src={getImageUrl(img)} 
-                          alt={`Chamber ${idx + 1}`}
+                          alt={`Cabin ${idx + 1}`}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                           onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
                         />
@@ -1356,7 +1362,7 @@ const MyChamber = () => {
                 </div>
 
                 <div className="p-3 bg-gray-50 rounded-xl">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Chamber</p>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Cabin</p>
                   <p className="mt-1 font-medium">
                     {selectedChamber.isChamber ? (
                       <span className="text-rose-600 flex items-center gap-1.5">
@@ -1481,7 +1487,7 @@ const MyChamber = () => {
                 </div>
               )}
 
-              {/* Joined Date */}
+              {/* Joined Date - UPDATED to dd/mm/yyyy */}
               <div className="p-3 bg-gray-50 rounded-xl">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Joined</p>
                 <p className="mt-1 font-medium text-gray-700 flex items-center gap-2">
@@ -1500,7 +1506,7 @@ const MyChamber = () => {
                   className="flex-1 min-w-[120px] py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-sm active:scale-[0.98]"
                 >
                   <Home size={16} className="inline mr-2" />
-                  Open Chamber
+                  Open Cabin
                 </button>
                 <button
                   onClick={() => {
@@ -1553,7 +1559,7 @@ const MyChamber = () => {
       )}
 
       {/* ============================================================ */}
-      {/* ADD CHAMBER MODAL */}
+      {/* ADD CABIN MODAL */}
       {/* ============================================================ */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[1100] flex items-end sm:items-center justify-center p-2 sm:p-4 bg-slate-900/50 backdrop-blur-sm">
@@ -1568,7 +1574,7 @@ const MyChamber = () => {
                 </div>
                 <div>
                   <h2 className="text-base sm:text-lg font-bold text-white">
-                    Add New Chamber #{chamberCount + 1}
+                    Add New Cabin #{chamberCount + 1}
                   </h2>
                   <p className="text-[10px] sm:text-xs text-white/75">
                     Fee: ₹{isFirstChamber ? '2,000' : '1,000'} + GST (18%)
@@ -1656,7 +1662,7 @@ const MyChamber = () => {
 
                 {/* isChamber Checkbox */}
                 <div>
-                  <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Chamber Type</label>
+                  <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Cabin Type</label>
                   <div className="mt-2 flex items-center gap-4">
                     <div 
                       className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border-2 cursor-pointer transition-all ${
@@ -1672,13 +1678,13 @@ const MyChamber = () => {
                         {isChamber && <Check size={14} className="text-white" />}
                       </div>
                       <div>
-                        <span className="text-sm font-medium text-slate-700">This is a Chamber</span>
-                        <p className="text-[10px] text-slate-400">Mark as dedicated chamber space</p>
+                        <span className="text-sm font-medium text-slate-700">This is a Cabin</span>
+                        <p className="text-[10px] text-slate-400">Mark as dedicated cabin space</p>
                       </div>
                     </div>
                     {isChamber && (
                       <span className="text-xs font-bold text-rose-600 bg-rose-100 px-3 py-1 rounded-full">
-                        ✅ Chamber
+                        ✅ Cabin
                       </span>
                     )}
                   </div>
@@ -1956,8 +1962,8 @@ const MyChamber = () => {
                     )}
                     <div className="flex-1 min-w-0">
                       <p className="text-[10px] sm:text-xs font-bold text-slate-700">
-                        Chamber #{chamberCount + 1} {formData.cabinType === 'exclusive' ? '⭐ Exclusive' : 'Normal'}
-                        {isChamber && ' 🏛️ Chamber'}
+                        Cabin #{chamberCount + 1} {formData.cabinType === 'exclusive' ? '⭐ Exclusive' : 'Normal'}
+                        {isChamber && ' 🏛️ Cabin'}
                       </p>
                       <p className="text-[8px] sm:text-[10px] text-slate-600 truncate">
                         Base: ₹{baseFee} | GST: ₹{gstAmount.toFixed(2)} | Total: ₹{totalWithGST.toFixed(2)}
@@ -2021,24 +2027,24 @@ const MyChamber = () => {
                 )}
               </div>
               <h3 className="text-white font-bold text-base sm:text-lg mt-2">
-                {formData.cabinType === 'exclusive' ? '⭐ Exclusive Chamber' : 'Confirm Chamber'}
+                {formData.cabinType === 'exclusive' ? '⭐ Exclusive Cabin' : 'Confirm Cabin'}
                 {isChamber && ' 🏛️'}
               </h3>
               <p className="text-white/80 text-xs sm:text-sm">
-                {formData.cabinType === 'exclusive' ? 'Premium exclusive chamber' : 'Review details below'}
-                {isChamber && ' (Marked as Chamber)'}
+                {formData.cabinType === 'exclusive' ? 'Premium exclusive cabin' : 'Review details below'}
+                {isChamber && ' (Marked as Cabin)'}
               </p>
             </div>
 
             <div className="p-4 sm:p-6">
               <div className="bg-slate-50 rounded-xl p-3 sm:p-4 space-y-2 sm:space-y-3 text-xs sm:text-sm">
-                <div className="flex justify-between"><span className="text-slate-500">Chamber</span><span className="font-semibold">#{chamberCount + 1}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Cabin</span><span className="font-semibold">#{chamberCount + 1}</span></div>
                 <div className="flex justify-between"><span className="text-slate-500">Type</span>
                   <span className={`font-semibold ${formData.cabinType === 'exclusive' ? 'text-amber-600' : 'text-indigo-600'}`}>
                     {formData.cabinType === 'exclusive' ? '⭐ Exclusive' : 'Normal'}
                   </span>
                 </div>
-                <div className="flex justify-between"><span className="text-slate-500">Chamber</span>
+                <div className="flex justify-between"><span className="text-slate-500">Cabin</span>
                   <span className={`font-semibold ${isChamber ? 'text-rose-600' : 'text-slate-400'}`}>
                     {isChamber ? '✅ Yes' : 'No'}
                   </span>

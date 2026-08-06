@@ -9,18 +9,23 @@ import {
   User,
   Grid,
   BookOpen,
-  Heart
+  Heart,
+  CalendarDays,
+  Briefcase
 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import logo from "../assets/logo.png"; // Import logo
 
 function SimpleUserNavbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [bookingsDropdownOpen, setBookingsDropdownOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const profileRef = useRef(null);
+  const bookingsDropdownRef = useRef(null);
 
   // Effects
   useEffect(() => {
@@ -34,6 +39,9 @@ function SimpleUserNavbar() {
       if (profileRef.current && !profileRef.current.contains(event.target)) {
         setProfileOpen(false);
       }
+      if (bookingsDropdownRef.current && !bookingsDropdownRef.current.contains(event.target)) {
+        setBookingsDropdownOpen(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -43,6 +51,7 @@ function SimpleUserNavbar() {
     const handleEscape = (e) => {
       if (e.key === "Escape") {
         setProfileOpen(false);
+        setBookingsDropdownOpen(false);
         setOpen(false);
       }
     };
@@ -71,13 +80,30 @@ function SimpleUserNavbar() {
   const navLinks = [
     { name: "Dashboard", path: "/userdashboard", icon: LayoutDashboard },
     { name: "Spaces", path: "/spaceforusers", icon: Building2 },
-    { name: "My Bookings", path: "/userbooking", icon: Calendar },
     { name: "Wishlist", path: "/mywishlist", icon: Heart },
+  ];
+
+  // Bookings Dropdown Items
+  const bookingsDropdownItems = [
+    { 
+      name: "Space Bookings", 
+      path: "/userbooking", 
+      icon: Briefcase,
+      description: "Your workspace bookings"
+    },
+    { 
+      name: "Site Visits", 
+      path: "/usersitevisits", 
+      icon: CalendarDays,
+      description: "Your site visit appointments"
+    },
   ];
 
   const userString = localStorage.getItem("user");
   const currentUser = userString ? JSON.parse(userString) : { name: "User" };
   const initials = currentUser.name?.substring(0, 2).toUpperCase() || "US";
+
+  const isBookingsActive = location.pathname === "/userbooking" || location.pathname === "/usersitevisits";
 
   return (
     <>
@@ -94,11 +120,13 @@ function SimpleUserNavbar() {
         `}
       >
         <div className="max-w-[1400px] mx-auto px-5 h-16 flex items-center justify-between gap-3">
-          {/* Logo */}
+          {/* Logo - Using imported logo.png */}
           <Link to="/userdashboard" className="flex items-center gap-2.5 no-underline flex-shrink-0">
-            <div className="w-9 h-9 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-extrabold text-sm tracking-tight">I</span>
-            </div>
+            <img 
+              src={logo} 
+              alt="IRYAX SPACE" 
+              className="h-9 w-auto object-contain"
+            />
             <div className="flex flex-col leading-tight">
               <span className="text-base font-bold text-slate-900 tracking-tight">IRYAX SPACE</span>
             </div>
@@ -127,6 +155,70 @@ function SimpleUserNavbar() {
                 </Link>
               </li>
             ))}
+
+            {/* ===== MY BOOKINGS DROPDOWN ===== */}
+            <li className="relative" ref={bookingsDropdownRef}>
+              <button
+                onClick={() => setBookingsDropdownOpen(!bookingsDropdownOpen)}
+                className={`
+                  flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium 
+                  transition-all duration-150 cursor-pointer border-none bg-transparent
+                  ${isBookingsActive
+                    ? 'text-indigo-600 bg-indigo-50'
+                    : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
+                  }
+                `}
+                aria-expanded={bookingsDropdownOpen}
+                aria-haspopup="true"
+              >
+                <Calendar size={16} />
+                <span>My Bookings</span>
+                <ChevronDown
+                  size={14}
+                  className={`transition-transform duration-200 ${bookingsDropdownOpen ? 'rotate-180' : ''}`}
+                />
+                {isBookingsActive && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-600" />
+                )}
+              </button>
+
+              {bookingsDropdownOpen && (
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 min-w-[220px] bg-white rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.04)] p-1 z-50 animate-[dropdownIn_0.15s_ease]">
+                  {bookingsDropdownItems.map((item) => (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      onClick={() => setBookingsDropdownOpen(false)}
+                      className={`
+                        flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm 
+                        transition-all duration-150 no-underline
+                        ${isActive(item.path)
+                          ? 'bg-indigo-50 text-indigo-700'
+                          : 'text-slate-600 hover:bg-slate-100'
+                        }
+                      `}
+                    >
+                      <span className={`
+                        flex items-center justify-center w-8 h-8 rounded-lg flex-shrink-0
+                        ${isActive(item.path)
+                          ? 'bg-indigo-100 text-indigo-600'
+                          : 'bg-slate-100 text-slate-500'
+                        }
+                      `}>
+                        <item.icon size={16} />
+                      </span>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{item.name}</span>
+                        <span className="text-[10px] text-slate-400">{item.description}</span>
+                      </div>
+                      {isActive(item.path) && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 ml-auto flex-shrink-0" />
+                      )}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </li>
           </ul>
 
           {/* Right Section */}
@@ -168,8 +260,7 @@ function SimpleUserNavbar() {
                 </div>
                 <ChevronDown
                   size={14}
-                  className={`text-slate-400 transition-transform duration-200 ${profileOpen ? 'rotate-180' : ''
-                    }`}
+                  className={`text-slate-400 transition-transform duration-200 ${profileOpen ? 'rotate-180' : ''}`}
                 />
               </button>
 
@@ -198,16 +289,26 @@ function SimpleUserNavbar() {
                     <User size={15} className="text-slate-400" /> My Profile
                   </button>
 
-                  {/* My Bookings */}
-<button
-  className="flex items-center gap-2.5 w-full px-3 py-1.75 border-none bg-transparent rounded-lg text-xs font-medium text-slate-600 cursor-pointer transition-all duration-150 hover:bg-slate-100 hover:text-slate-900 font-inherit"
-  onClick={() => {
-    setProfileOpen(false);
-    navigate("/mybookings");
-  }}
->
-  <BookOpen size={15} className="text-slate-400" /> My Bookings
-</button>
+                  {/* My Bookings - Now with sub-items in profile too */}
+                  <button
+                    className="flex items-center gap-2.5 w-full px-3 py-1.75 border-none bg-transparent rounded-lg text-xs font-medium text-slate-600 cursor-pointer transition-all duration-150 hover:bg-slate-100 hover:text-slate-900 font-inherit"
+                    onClick={() => {
+                      setProfileOpen(false);
+                      navigate("/userbooking");
+                    }}
+                  >
+                    <Briefcase size={15} className="text-indigo-400" /> Space Bookings
+                  </button>
+
+                  <button
+                    className="flex items-center gap-2.5 w-full px-3 py-1.75 border-none bg-transparent rounded-lg text-xs font-medium text-slate-600 cursor-pointer transition-all duration-150 hover:bg-slate-100 hover:text-slate-900 font-inherit"
+                    onClick={() => {
+                      setProfileOpen(false);
+                      navigate("/usersitevisits");
+                    }}
+                  >
+                    <CalendarDays size={15} className="text-purple-400" /> Site Visits
+                  </button>
 
                   {/* My Wishlist */}
                   <button
@@ -262,17 +363,19 @@ function SimpleUserNavbar() {
         <div className="absolute top-0 left-0 bottom-0 w-[300px] max-w-[85vw] bg-white p-5 overflow-y-auto animate-[mobileIn_0.25s_ease]">
           {/* Drawer Header */}
           <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-extrabold text-sm tracking-tight">I</span>
-              </div>
+            <Link to="/userdashboard" className="flex items-center gap-2.5 no-underline">
+              <img 
+                src={logo} 
+                alt="IRYAX SPACE" 
+                className="h-8 w-auto object-contain"
+              />
               <div className="flex flex-col leading-tight">
                 <span className="text-base font-bold text-slate-900">IRYAX</span>
                 <span className="text-[9px] font-bold uppercase tracking-[0.06em] text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded w-fit">
                   User Portal
                 </span>
               </div>
-            </div>
+            </Link>
             <button
               className="bg-none border-none p-1 cursor-pointer text-slate-500 rounded-md hover:bg-slate-100"
               onClick={() => setOpen(false)}
@@ -302,11 +405,11 @@ function SimpleUserNavbar() {
               <span className="text-[10px] font-semibold text-indigo-600">Find Space</span>
             </button>
             <button
-              onClick={() => { setOpen(false); navigate("/userbooking"); }}
-              className="flex flex-col items-center gap-1 p-3 bg-emerald-50 rounded-xl hover:bg-emerald-100 transition-colors"
+              onClick={() => { setOpen(false); navigate("/mywishlist"); }}
+              className="flex flex-col items-center gap-1 p-3 bg-red-50 rounded-xl hover:bg-red-100 transition-colors"
             >
-              <Calendar size={18} className="text-emerald-600" />
-              <span className="text-[10px] font-semibold text-emerald-600">My Bookings</span>
+              <Heart size={18} className="text-red-600" />
+              <span className="text-[10px] font-semibold text-red-600">Wishlist</span>
             </button>
           </div>
 
@@ -345,6 +448,67 @@ function SimpleUserNavbar() {
                 </Link>
               </li>
             ))}
+
+            {/* ===== MY BOOKINGS SECTION IN MOBILE ===== */}
+            <li className="mb-1">
+              <div className="flex flex-col gap-0.5 mt-1">
+                <p className="text-[10px] font-bold uppercase tracking-[0.06em] text-slate-400 px-3 py-1 m-0">
+                  My Bookings
+                </p>
+                <Link
+                  to="/userbooking"
+                  onClick={() => setOpen(false)}
+                  className={`
+                    flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium 
+                    transition-all duration-150 ml-3
+                    ${isActive('/userbooking')
+                      ? 'text-indigo-600 bg-indigo-50'
+                      : 'text-slate-600 hover:bg-slate-100'
+                    }
+                  `}
+                >
+                  <span className={`
+                    flex items-center justify-center w-8 h-8 rounded-lg flex-shrink-0
+                    ${isActive('/userbooking')
+                      ? 'bg-indigo-50 text-indigo-600'
+                      : 'bg-slate-100 text-slate-500'
+                    }
+                  `}>
+                    <Briefcase size={16} />
+                  </span>
+                  <span className="flex-1">Space Bookings</span>
+                  {isActive('/userbooking') && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 flex-shrink-0" />
+                  )}
+                </Link>
+                <Link
+                  to="/usersitevisits"
+                  onClick={() => setOpen(false)}
+                  className={`
+                    flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium 
+                    transition-all duration-150 ml-3
+                    ${isActive('/usersitevisits')
+                      ? 'text-purple-600 bg-purple-50'
+                      : 'text-slate-600 hover:bg-slate-100'
+                    }
+                  `}
+                >
+                  <span className={`
+                    flex items-center justify-center w-8 h-8 rounded-lg flex-shrink-0
+                    ${isActive('/usersitevisits')
+                      ? 'bg-purple-50 text-purple-600'
+                      : 'bg-slate-100 text-slate-500'
+                    }
+                  `}>
+                    <CalendarDays size={16} />
+                  </span>
+                  <span className="flex-1">Site Visits</span>
+                  {isActive('/usersitevisits') && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-purple-600 flex-shrink-0" />
+                  )}
+                </Link>
+              </div>
+            </li>
           </ul>
 
           {/* Footer */}
@@ -358,30 +522,6 @@ function SimpleUserNavbar() {
             >
               <User size={17} className="text-slate-400" />
               <span>My Profile</span>
-            </button>
-
-
-            {/* My Bookings */}
-            <button
-              className="flex items-center gap-2.5 w-full px-3 py-1.75 border-none bg-transparent rounded-lg text-xs font-medium text-slate-600 cursor-pointer transition-all duration-150 hover:bg-slate-100 hover:text-slate-900 font-inherit"
-              onClick={() => {
-                setProfileOpen(false);
-                navigate("/mybookings");
-              }}
-            >
-              <BookOpen size={15} className="text-slate-400" /> My Bookings
-            </button>
-
-            {/* My Wishlist in Mobile Drawer */}
-            <button
-              onClick={() => {
-                setOpen(false);
-                navigate("/mywishlist");
-              }}
-              className="flex items-center gap-2.5 w-full px-3 py-2.5 border-none bg-transparent rounded-lg text-sm font-medium text-slate-600 cursor-pointer transition-all duration-150 hover:bg-slate-100 hover:text-slate-900 font-inherit"
-            >
-              <Heart size={17} className="text-red-400" />
-              <span>My Wishlist</span>
             </button>
 
             <button

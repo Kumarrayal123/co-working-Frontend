@@ -41,6 +41,7 @@ export default function CabinDetails() {
   const [activeImage, setActiveImage] = useState(0);
   const [loading, setLoading] = useState(true);
   const [bookedSlots, setBookedSlots] = useState([]);
+  const [filteredBookedSlots, setFilteredBookedSlots] = useState([]);
   const [images, setImages] = useState([]);
   const autoSlideRef = useRef(null);
 
@@ -95,6 +96,26 @@ export default function CabinDetails() {
     }
   };
 
+  // Get today's date in YYYY-MM-DD format
+  const getTodayDate = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Filter bookings to show only today and future
+  const filterBookings = (bookings) => {
+    const today = getTodayDate();
+    return bookings.filter(booking => {
+      // Check if booking has startDate
+      if (!booking.startDate) return false;
+      // Compare startDate with today
+      return booking.startDate >= today;
+    });
+  };
+
   useEffect(() => {
     window.scrollTo(0, 0);
     const fetchData = async () => {
@@ -121,10 +142,15 @@ export default function CabinDetails() {
 
         try {
           const slotsRes = await axios.get(`${API_URL}/api/bookings/cabin/${id}`);
-          setBookedSlots(slotsRes.data.bookedSlots || []);
+          const allBookings = slotsRes.data.bookedSlots || [];
+          setBookedSlots(allBookings);
+          // Filter bookings to show only today and future
+          const filtered = filterBookings(allBookings);
+          setFilteredBookedSlots(filtered);
         } catch (err) {
           console.error("Error fetching booked slots:", err);
           setBookedSlots([]);
+          setFilteredBookedSlots([]);
         }
 
       } catch (err) {
@@ -169,6 +195,16 @@ export default function CabinDetails() {
   const prevImage = () => {
     if (images.length <= 1) return;
     handleImageChange((activeImage - 1 + images.length) % images.length);
+  };
+
+  // Check if a date is today
+  const isToday = (dateStr) => {
+    return dateStr === getTodayDate();
+  };
+
+  // Check if a date is future
+  const isFuture = (dateStr) => {
+    return dateStr > getTodayDate();
   };
 
   if (loading) {
@@ -518,8 +554,6 @@ export default function CabinDetails() {
               </div>
             )}
 
-         
-
             {/* Info & Book */}
             <div className="pt-6 border-t border-slate-100 flex flex-col gap-6">
               <div className="flex gap-6 sm:gap-8 text-[11px] font-bold text-slate-400 uppercase tracking-widest flex-wrap">
@@ -559,7 +593,7 @@ export default function CabinDetails() {
           </div>
         </div>
 
-        {/* Booked Slots Section */}
+        {/* Booked Slots Section - Only showing today and future bookings */}
         <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm p-6 mt-6">
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-3">
@@ -568,32 +602,51 @@ export default function CabinDetails() {
               </div>
               <div>
                 <h3 className="text-sm font-bold text-slate-900">Already Booked Slots</h3>
-                <p className="text-xs text-slate-400">These time slots are unavailable</p>
+                <p className="text-xs text-slate-400">
+                  {filteredBookedSlots.length > 0 
+                    ? "These time slots are unavailable (Today & Future)" 
+                    : "No upcoming bookings"}
+                </p>
               </div>
             </div>
-            {bookedSlots.length > 0 && (
+            {filteredBookedSlots.length > 0 && (
               <div className="bg-red-100 text-red-600 text-xs font-bold px-3 py-1 rounded-full border border-red-200">
-                {bookedSlots.length} Booking{bookedSlots.length > 1 ? "s" : ""}
+                {filteredBookedSlots.length} Booking{filteredBookedSlots.length > 1 ? "s" : ""}
               </div>
             )}
           </div>
 
-          {bookedSlots.length === 0 ? (
+          {filteredBookedSlots.length === 0 ? (
             <div className="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
               <ShieldCheck size={22} color="#16a34a" />
               <div>
                 <p className="text-sm font-bold text-emerald-700">All Clear — Fully Available!</p>
-                <p className="text-xs text-emerald-500">No bookings yet. Go ahead and book your slot.</p>
+                <p className="text-xs text-emerald-500">No upcoming bookings. Go ahead and book your slot.</p>
               </div>
             </div>
           ) : (
             <div className="space-y-2">
-              {bookedSlots.map((slot, idx) => (
-                <div key={idx} className="flex items-center gap-4 p-3 bg-red-50 border border-red-200 rounded-xl flex-wrap">
-                  <div className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-sm shadow-red-200" />
+              {filteredBookedSlots.map((slot, idx) => (
+                <div 
+                  key={idx} 
+                  className={`flex items-center gap-4 p-3 rounded-xl flex-wrap ${
+                    isToday(slot.startDate) 
+                      ? 'bg-amber-50 border border-amber-300' 
+                      : 'bg-red-50 border border-red-200'
+                  }`}
+                >
+                  <div className={`w-2.5 h-2.5 rounded-full shadow-sm ${
+                    isToday(slot.startDate) 
+                      ? 'bg-amber-500 shadow-amber-200' 
+                      : 'bg-red-500 shadow-red-200'
+                  }`} />
                   <div className="min-w-[100px]">
-                    <div className="text-[10px] font-bold text-red-400 uppercase tracking-wider">Date</div>
-                    <div className="text-sm font-bold text-red-800">{formatDate(slot.startDate)}</div>
+                    <div className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-2">
+                      <span className={isToday(slot.startDate) ? 'text-amber-500' : 'text-red-400'}>
+                        {isToday(slot.startDate) ? '🔴 TODAY' : '📅 DATE'}
+                      </span>
+                    </div>
+                    <div className="text-sm font-bold text-slate-800">{formatDate(slot.startDate)}</div>
                   </div>
                   <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-full border border-red-300">
                     <Clock size={13} color="#ef4444" />

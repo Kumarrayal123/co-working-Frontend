@@ -17,9 +17,11 @@ import {
   Armchair,
   Calendar,
   Clock,
-  PhoneCall
+  PhoneCall,
+  AlertCircle,
+  Info
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import UsersNavbar from "./UsersNavbar";
@@ -33,20 +35,39 @@ const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526
 const GST_RATE = 0.18;
 const SEAT_EXTRA_CHARGE = 100;
 
-// Helper function to convert 12-hour time to 24-hour format
-const convertTo24Hour = (time12, amPm) => {
-  if (!time12) return "";
-  const [hours, minutes] = time12.split(':').map(Number);
-  if (isNaN(hours) || isNaN(minutes)) return time12;
+// Helper function to convert time to 24-hour format
+const convertTo24Hour = (timeStr, amPm) => {
+  if (!timeStr) return "";
   
-  let hours24 = hours;
-  if (amPm === 'PM' && hours !== 12) {
-    hours24 = hours + 12;
+  const parts = timeStr.split(':');
+  if (parts.length !== 2) return timeStr;
+  
+  let hours = parseInt(parts[0]);
+  const minutes = parts[1];
+  
+  if (isNaN(hours) || isNaN(minutes)) return timeStr;
+  
+  if (amPm === 'PM' && hours < 12) {
+    hours = hours + 12;
   } else if (amPm === 'AM' && hours === 12) {
-    hours24 = 0;
+    hours = 0;
   }
   
-  return `${String(hours24).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+};
+
+// Helper to convert 24hr to 12hr for display
+const convertTo12Hour = (time24) => {
+  if (!time24) return "N/A";
+  try {
+    const [hours, minutes] = time24.split(':').map(Number);
+    if (isNaN(hours) || isNaN(minutes)) return time24;
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const hour12 = hours % 12 || 12;
+    return `${hour12}:${String(minutes).padStart(2, '0')} ${ampm}`;
+  } catch {
+    return time24;
+  }
 };
 
 const getTodayDateString = () => {
@@ -64,77 +85,309 @@ const getCurrentTimeString = () => {
   return `${hours}:${minutes}`;
 };
 
+// Custom Calendar Component
+const CustomCalendar = ({ selectedDate, onSelectDate, bookedDates, onClose }) => {
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [viewDate, setViewDate] = useState(new Date());
+
+  useEffect(() => {
+    if (selectedDate) {
+      const [year, month, day] = selectedDate.split('-').map(Number);
+      setViewDate(new Date(year, month - 1, day));
+      setCurrentMonth(new Date(year, month - 1, day));
+    }
+  }, [selectedDate]);
+
+  const getDaysInMonth = (date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const firstDayOfMonth = new Date(year, month, 1).getDay();
+    return { daysInMonth, firstDayOfMonth };
+  };
+
+  const { daysInMonth, firstDayOfMonth } = getDaysInMonth(currentMonth);
+  const monthName = currentMonth.toLocaleString('default', { month: 'long' });
+  const year = currentMonth.getFullYear();
+
+  const isDateBooked = (dateStr) => {
+    return bookedDates.some(b => b.startDate === dateStr);
+  };
+
+  const isToday = (dateStr) => {
+    return dateStr === getTodayDateString();
+  };
+
+  const isSelected = (dateStr) => {
+    return dateStr === selectedDate;
+  };
+
+  const handleDateSelect = (day) => {
+    const month = String(currentMonth.getMonth() + 1).padStart(2, '0');
+    const dayStr = String(day).padStart(2, '0');
+    const dateStr = `${currentMonth.getFullYear()}-${month}-${dayStr}`;
+    onSelectDate(dateStr);
+    onClose();
+  };
+
+  const changeMonth = (delta) => {
+    const newDate = new Date(currentMonth);
+    newDate.setMonth(newDate.getMonth() + delta);
+    setCurrentMonth(newDate);
+  };
+
+  // Get bookings for selected date to show in tooltip
+  const getBookingsForDate = (dateStr) => {
+    return bookedDates.filter(b => b.startDate === dateStr);
+  };
+
+  const [hoveredDate, setHoveredDate] = useState(null);
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in">
+      <div className="bg-white rounded-3xl max-w-md w-full mx-4 p-6 shadow-2xl animate-in zoom-in duration-200">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold text-slate-900">Select Date</h3>
+          <button
+            onClick={onClose}
+            className="p-1 hover:bg-slate-100 rounded-lg transition-colors"
+          >
+            <X size={20} className="text-slate-400" />
+          </button>
+        </div>
+
+        {/* Month Navigation */}
+        <div className="flex items-center justify-between mb-4">
+          <button
+            onClick={() => changeMonth(-1)}
+            className="p-2 hover:bg-slate-100 rounded-xl transition-colors"
+          >
+            <ArrowLeft size={18} className="text-slate-600" />
+          </button>
+          <span className="text-sm font-bold text-slate-900">
+            {monthName} {year}
+          </span>
+          <button
+            onClick={() => changeMonth(1)}
+            className="p-2 hover:bg-slate-100 rounded-xl transition-colors"
+          >
+            <ArrowRight size={18} className="text-slate-600" />
+          </button>
+        </div>
+
+        {/* Day Headers */}
+        <div className="grid grid-cols-7 gap-1 mb-2">
+          {['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map((day) => (
+            <div key={day} className="text-center text-xs font-bold text-slate-400 py-1">
+              {day}
+            </div>
+          ))}
+        </div>
+
+        {/* Calendar Grid */}
+        <div className="grid grid-cols-7 gap-1">
+          {/* Empty cells for days before month starts */}
+          {Array.from({ length: firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1 }).map((_, index) => (
+            <div key={`empty-${index}`} className="aspect-square" />
+          ))}
+
+          {/* Days of the month */}
+          {Array.from({ length: daysInMonth }).map((_, index) => {
+            const day = index + 1;
+            const month = String(currentMonth.getMonth() + 1).padStart(2, '0');
+            const dayStr = String(day).padStart(2, '0');
+            const dateStr = `${currentMonth.getFullYear()}-${month}-${dayStr}`;
+            const isBooked = isDateBooked(dateStr);
+            const isTodayDate = isToday(dateStr);
+            const isSelectedDate = isSelected(dateStr);
+            const bookings = getBookingsForDate(dateStr);
+            const isPast = dateStr < getTodayDateString();
+
+            return (
+              <div
+                key={day}
+                className="relative aspect-square flex items-center justify-center"
+                onMouseEnter={() => setHoveredDate(dateStr)}
+                onMouseLeave={() => setHoveredDate(null)}
+              >
+                <button
+                  onClick={() => handleDateSelect(day)}
+                  disabled={isPast}
+                  className={`
+                    w-full h-full rounded-xl text-sm font-medium transition-all
+                    ${isPast ? 'text-slate-300 cursor-not-allowed' : 'hover:bg-indigo-50'}
+                    ${isSelectedDate ? 'bg-indigo-600 text-white hover:bg-indigo-700' : ''}
+                    ${!isSelectedDate && !isPast ? 'text-slate-700 hover:bg-indigo-50' : ''}
+                  `}
+                >
+                  {day}
+                </button>
+                
+                {/* Blue dot for booked dates */}
+                {isBooked && !isPast && (
+                  <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2">
+                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                  </div>
+                )}
+
+                {/* Today indicator */}
+                {isTodayDate && !isPast && (
+                  <div className="absolute top-1 right-1">
+                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
+                  </div>
+                )}
+
+                {/* Hover tooltip for booked dates */}
+                {isBooked && hoveredDate === dateStr && bookings.length > 0 && (
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 z-10 bg-slate-800 text-white rounded-xl p-3 min-w-[180px] shadow-xl">
+                    <div className="text-xs font-bold mb-1">
+                      {bookings.length} booking{bookings.length > 1 ? 's' : ''}
+                    </div>
+                    {bookings.slice(0, 3).map((booking, idx) => (
+                      <div key={idx} className="text-[10px] text-slate-300 py-0.5 border-t border-slate-700 mt-1 first:border-t-0 first:mt-0">
+                        {booking.name || 'Guest'} • {booking.startTime} - {booking.endTime}
+                      </div>
+                    ))}
+                    {bookings.length > 3 && (
+                      <div className="text-[10px] text-slate-400 mt-1">
+                        +{bookings.length - 3} more...
+                      </div>
+                    )}
+                    <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2">
+                      <div className="w-2 h-2 bg-slate-800 rotate-45"></div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Legend */}
+        <div className="flex items-center justify-center gap-4 mt-4 pt-3 border-t border-slate-100">
+          <div className="flex items-center gap-1.5">
+            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+            <span className="text-xs text-slate-500">Booked</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+            <span className="text-xs text-slate-500">Today</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-4 bg-indigo-600 rounded-md"></div>
+            <span className="text-xs text-slate-500">Selected</span>
+          </div>
+        </div>
+
+        {/* Clear and Today Buttons */}
+        <div className="flex gap-3 mt-4">
+          <button
+            onClick={() => {
+              onSelectDate('');
+              onClose();
+            }}
+            className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl transition-colors text-sm"
+          >
+            Clear
+          </button>
+          <button
+            onClick={() => {
+              onSelectDate(getTodayDateString());
+              onClose();
+            }}
+            className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl transition-colors text-sm"
+          >
+            Today
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const BookCabin = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   
-  // ✅ Get user data from localStorage
+  const startDateRef = useRef(null);
+  const endDateRef = useRef(null);
+  const startTimeRef = useRef(null);
+  const endTimeRef = useRef(null);
+  
   const getUserData = () => {
-    const userStr = localStorage.getItem("user");
-    if (userStr) {
-      try {
+    try {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
         const userData = JSON.parse(userStr);
-        if (userData && (userData.role === "doctor" || userData.isDoctor === true)) {
-          return { user: userData, role: "doctor" };
-        }
         if (userData && userData._id) {
-          return { user: userData, role: userData.role || "user" };
-        }
-      } catch (e) {
-        console.error("Error parsing user data:", e);
-      }
-    }
-
-    const doctorFlag = localStorage.getItem("doctor") || localStorage.getItem("isDoctor");
-    if (doctorFlag === "true") {
-      const userData = localStorage.getItem("user");
-      if (userData) {
-        try {
-          const parsed = JSON.parse(userData);
-          if (parsed && parsed._id) {
-            return { user: parsed, role: parsed.role || "doctor" };
-          }
-        } catch (e) {
-          console.error("Error parsing user data:", e);
+          const isCoworking = userData.role === "coworking" || userData.isCoworking === true;
+          const isDoctor = userData.isDoctor === true || userData.role === "doctor";
+          const isAdmin = userData.role === "admin";
+          
+          let role = "user";
+          if (isAdmin) role = "admin";
+          else if (isDoctor) role = "doctor";
+          else if (isCoworking) role = "coworking";
+          else role = "user";
+          
+          return { 
+            user: userData, 
+            role: role
+          };
         }
       }
-      return { user: null, role: "doctor" };
-    }
 
-    const adminStr = localStorage.getItem("admin");
-    if (adminStr) {
-      try {
+      const adminStr = localStorage.getItem("admin");
+      if (adminStr) {
         const adminData = JSON.parse(adminStr);
         if (adminData && adminData._id) {
           return { user: adminData, role: "admin" };
         }
-      } catch (e) {
-        console.error("Error parsing admin data:", e);
       }
-    }
 
-    return { user: null, role: "user" };
+      const token = localStorage.getItem("token");
+      if (token) {
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          const role = payload.role || payload.userRole || "user";
+          return { user: null, role: role };
+        } catch (e) {
+          return { user: null, role: "user" };
+        }
+      }
+
+      return { user: null, role: "user" };
+    } catch (e) {
+      console.error("Error getting user data:", e);
+      return { user: null, role: "user" };
+    }
   };
 
   const { user: currentUser, role: userRole } = getUserData();
   
   const isAdmin = userRole === "admin";
   const isDoctor = userRole === "doctor";
+  const isCoworking = userRole === "coworking";
 
   const renderNavbar = () => {
-    if (isDoctor) {
-      return <DoctorNavbar />;
-    } else if (isAdmin) {
+    if (isAdmin) {
       return <AdminNavbar />;
-    } else if (userRole === "user") {
-      return <SimpleUserNavbar />;
-    } else {
+    } else if (isDoctor) {
+      return <DoctorNavbar />;
+    } else if (isCoworking) {
       return <UsersNavbar />;
+    } else {
+      return <SimpleUserNavbar />;
     }
   };
 
   const [cabin, setCabin] = useState(null);
   const [relatedCabins, setRelatedCabins] = useState([]);
+  const [bookedSlots, setBookedSlots] = useState([]);
+
+  // Calendar state
+  const [showStartCalendar, setShowStartCalendar] = useState(false);
+  const [showEndCalendar, setShowEndCalendar] = useState(false);
 
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
@@ -144,6 +397,9 @@ const BookCabin = () => {
   const [endDate, setEndDate] = useState("");
   const [endTime, setEndTime] = useState("");
   const [endAmPm, setEndAmPm] = useState("PM");
+
+  const [timeError, setTimeError] = useState("");
+  const [showTimeErrorModal, setShowTimeErrorModal] = useState(false);
 
   const handleNameChange = (e) => {
     const val = e.target.value.replace(/[^A-Za-z\s]/g, "").slice(0, 25);
@@ -155,50 +411,167 @@ const BookCabin = () => {
     setMobile(val);
   };
 
-  const handleStartDateChange = (e) => {
-    const val = e.target.value;
+  const handleStartDateClick = () => {
+    setShowStartCalendar(true);
+  };
+
+  const handleEndDateClick = () => {
+    setShowEndCalendar(true);
+  };
+
+  const handleStartDateSelect = (date) => {
     const todayStr = getTodayDateString();
-    if (val && val < todayStr) {
+    if (date && date < todayStr) {
       toast.error("Previous dates cannot be selected.");
-      setStartDate(todayStr);
       return;
     }
-    setStartDate(val);
-    if (endDate && endDate < val) {
-      setEndDate(val);
+    setStartDate(date);
+    if (endDate && endDate < date) {
+      setEndDate(date);
     }
+    setTimeError("");
+    setShowTimeErrorModal(false);
+  };
+
+  const handleEndDateSelect = (date) => {
+    const minDate = startDate || getTodayDateString();
+    if (date && date < minDate) {
+      toast.error("End date cannot be before start date.");
+      return;
+    }
+    setEndDate(date);
+    setTimeError("");
+    setShowTimeErrorModal(false);
   };
 
   const handleStartTimeChange = (e) => {
     const val = e.target.value;
     setStartTime(val);
-  };
-
-  const handleEndDateChange = (e) => {
-    const val = e.target.value;
-    const minDate = startDate || getTodayDateString();
-    if (val && val < minDate) {
-      toast.error("End date cannot be before start date.");
-      setEndDate(minDate);
-      return;
+    if (val && endTime) {
+      validateTimeRange(val, startAmPm, endTime, endAmPm);
+    } else if (val && cabin && !cabin.is24x7) {
+      const openTime = cabin.openTime || "09:00";
+      const start24 = convertTo24Hour(val, startAmPm);
+      if (start24 < openTime) {
+        setTimeError(`Start time must be after ${convertTo12Hour(openTime)}`);
+        setShowTimeErrorModal(true);
+      } else {
+        setTimeError("");
+        setShowTimeErrorModal(false);
+      }
+    } else {
+      setTimeError("");
+      setShowTimeErrorModal(false);
     }
-    setEndDate(val);
   };
 
   const handleEndTimeChange = (e) => {
     const val = e.target.value;
     setEndTime(val);
+    if (startTime && val) {
+      validateTimeRange(startTime, startAmPm, val, endAmPm);
+    } else if (val && cabin && !cabin.is24x7) {
+      const closeTime = cabin.closeTime || "21:00";
+      const end24 = convertTo24Hour(val, endAmPm);
+      if (end24 > closeTime) {
+        setTimeError(`End time must be before ${convertTo12Hour(closeTime)}`);
+        setShowTimeErrorModal(true);
+      } else {
+        setTimeError("");
+        setShowTimeErrorModal(false);
+      }
+    } else {
+      setTimeError("");
+      setShowTimeErrorModal(false);
+    }
+  };
+
+  const handleStartAmPmChange = (e) => {
+    const val = e.target.value;
+    setStartAmPm(val);
+    if (startTime && endTime) {
+      validateTimeRange(startTime, val, endTime, endAmPm);
+    } else if (startTime && cabin && !cabin.is24x7) {
+      const openTime = cabin.openTime || "09:00";
+      const start24 = convertTo24Hour(startTime, val);
+      if (start24 < openTime) {
+        setTimeError(`Start time must be after ${convertTo12Hour(openTime)}`);
+        setShowTimeErrorModal(true);
+      } else {
+        setTimeError("");
+        setShowTimeErrorModal(false);
+      }
+    }
+  };
+
+  const handleEndAmPmChange = (e) => {
+    const val = e.target.value;
+    setEndAmPm(val);
+    if (startTime && endTime) {
+      validateTimeRange(startTime, startAmPm, endTime, val);
+    } else if (endTime && cabin && !cabin.is24x7) {
+      const closeTime = cabin.closeTime || "21:00";
+      const end24 = convertTo24Hour(endTime, val);
+      if (end24 > closeTime) {
+        setTimeError(`End time must be before ${convertTo12Hour(closeTime)}`);
+        setShowTimeErrorModal(true);
+      } else {
+        setTimeError("");
+        setShowTimeErrorModal(false);
+      }
+    }
+  };
+
+  const validateTimeRange = (start12, startAmPmVal, end12, endAmPmVal) => {
+    if (!cabin) return;
+    
+    if (cabin.is24x7) {
+      setTimeError("");
+      setShowTimeErrorModal(false);
+      return;
+    }
+
+    const openTime = cabin.openTime || "09:00";
+    const closeTime = cabin.closeTime || "21:00";
+
+    const start24 = convertTo24Hour(start12, startAmPmVal);
+    const end24 = convertTo24Hour(end12, endAmPmVal);
+
+    if (!start24 || !end24) {
+      setTimeError("");
+      setShowTimeErrorModal(false);
+      return;
+    }
+
+    if (start24 < openTime) {
+      setTimeError(`Start time must be after ${convertTo12Hour(openTime)}`);
+      setShowTimeErrorModal(true);
+      return;
+    }
+
+    if (end24 > closeTime) {
+      setTimeError(`End time must be before ${convertTo12Hour(closeTime)}`);
+      setShowTimeErrorModal(true);
+      return;
+    }
+
+    if (end24 <= start24) {
+      setTimeError("End time must be after start time");
+      setShowTimeErrorModal(true);
+      return;
+    }
+
+    setTimeError("");
+    setShowTimeErrorModal(false);
   };
 
   const [bookingBasis, setBookingBasis] = useState("hourly");
   const [selectedPlan, setSelectedPlan] = useState(null);
 
   const [termsAccepted, setTermsAccepted] = useState(false);
-  const [showTerms, setShowTerms] = useState(false);
   const [termsExpanded, setTermsExpanded] = useState(true);
 
   const [selectedSeats, setSelectedSeats] = useState([]);
-  const [selectedSeatCount, setSelectedSeatCount] = useState(0);
   const [extraCharge, setExtraCharge] = useState(0);
 
   const [totalHours, setTotalHours] = useState(0);
@@ -208,7 +581,6 @@ const BookCabin = () => {
   const [availabilityError, setAvailabilityError] = useState("");
   const [loading, setLoading] = useState(false);
   
-  // ✅ Multi-day slots
   const [bookingSlots, setBookingSlots] = useState([]);
 
   const getImageUrl = (img) => {
@@ -218,12 +590,6 @@ const BookCabin = () => {
     return `${API_URL}/${cleanPath}`;
   };
 
-  const getAuthHeader = () => {
-    const token = localStorage.getItem("token");
-    return { headers: { Authorization: `Bearer ${token}` } };
-  };
-
-  // ✅ Convert to Indian time format for display
   const convertToIndianTime = (timeStr) => {
     if (!timeStr) return "N/A";
     if (timeStr.includes('AM') || timeStr.includes('PM')) return timeStr;
@@ -243,7 +609,6 @@ const BookCabin = () => {
     }
   };
 
-  // ✅ Format date in Indian format
   const formatDateIndian = (dateStr) => {
     if (!dateStr) return "N/A";
     const d = new Date(dateStr);
@@ -253,7 +618,6 @@ const BookCabin = () => {
     return `${day}/${month}/${year}`;
   };
 
-  // ✅ Generate daily slots between start and end date automatically
   const generateDailySlots = (start, end, startTimeStr, endTimeStr) => {
     const slots = [];
     const [startYear, startMonth, startDay] = start.split('-').map(Number);
@@ -272,16 +636,35 @@ const BookCabin = () => {
       const day = String(current.getDate()).padStart(2, '0');
       const dateStr = `${year}-${month}-${day}`;
 
-      slots.push({
-        date: dateStr,
-        startTime: startTimeStr,
-        endTime: endTimeStr,
-        hours: calculateDailyHours(startTimeStr, endTimeStr)
-      });
+      let dailyStartTime = startTimeStr;
+      let dailyEndTime = endTimeStr;
+
+      if (dayCount === 0) {
+        dailyStartTime = startTimeStr;
+      } else {
+        dailyStartTime = cabin.openTime || "09:00";
+      }
+
+      if (current.getTime() === endDateObj.getTime()) {
+        dailyEndTime = endTimeStr;
+      } else {
+        dailyEndTime = cabin.closeTime || "21:00";
+      }
+
+      const hours = calculateDailyHours(dailyStartTime, dailyEndTime);
+      
+      if (hours > 0) {
+        slots.push({
+          date: dateStr,
+          startTime: dailyStartTime,
+          endTime: dailyEndTime,
+          hours: hours
+        });
+      }
+      
       current.setDate(current.getDate() + 1);
       dayCount++;
 
-      // Safety limit to prevent infinite loops
       if (dayCount > 365) break;
     }
 
@@ -307,6 +690,21 @@ const BookCabin = () => {
     return slots.reduce((total, slot) => total + slot.hours, 0);
   };
 
+  // Fetch booked slots
+  const fetchBookedSlots = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/api/bookings/cabin/${id}`);
+      if (response.data && response.data.bookedSlots) {
+        setBookedSlots(response.data.bookedSlots);
+      } else {
+        setBookedSlots([]);
+      }
+    } catch (err) {
+      console.error("Error fetching booked slots:", err);
+      setBookedSlots([]);
+    }
+  };
+
   useEffect(() => {
     window.scrollTo(0, 0);
     const fetchData = async () => {
@@ -319,6 +717,7 @@ const BookCabin = () => {
         setRelatedCabins(
           spacesRes.data.filter((c) => c._id !== id).slice(0, 3)
         );
+        await fetchBookedSlots();
       } catch (err) {
         console.error(err);
       }
@@ -326,9 +725,8 @@ const BookCabin = () => {
     fetchData();
   }, [id]);
 
-  // ✅ Auto-generate booking slots when date/time changes
   useEffect(() => {
-    if (bookingBasis === "hourly" && startDate && startTime && endDate && endTime) {
+    if (bookingBasis === "hourly" && startDate && startTime && endDate && endTime && !timeError) {
       const start24 = convertTo24Hour(startTime, startAmPm);
       const end24 = convertTo24Hour(endTime, endAmPm);
       
@@ -346,9 +744,8 @@ const BookCabin = () => {
     } else if (bookingBasis === "hourly") {
       setBookingSlots([]);
     }
-  }, [bookingBasis, startDate, startTime, startAmPm, endDate, endTime, endAmPm]);
+  }, [bookingBasis, startDate, startTime, startAmPm, endDate, endTime, endAmPm, timeError, cabin]);
 
-  // ✅ Calculate pricing
   useEffect(() => {
     if (!cabin) return;
 
@@ -359,7 +756,6 @@ const BookCabin = () => {
       hours = selectedPlan.hours || 0;
       basePrice = selectedPlan.cost || 0;
     } else if (bookingBasis === "hourly") {
-      // Calculate from booking slots or direct date/time
       if (bookingSlots.length > 0) {
         hours = calculateTotalHours(bookingSlots);
         basePrice = hours * (cabin.price || 0);
@@ -378,7 +774,6 @@ const BookCabin = () => {
       }
     }
 
-    // Calculate seat charges
     const seatExtra = selectedSeats.length * SEAT_EXTRA_CHARGE;
     const subtotalAmount = basePrice + seatExtra;
     const gst = subtotalAmount * GST_RATE;
@@ -392,10 +787,9 @@ const BookCabin = () => {
     
   }, [cabin, bookingBasis, selectedPlan, bookingSlots, startDate, startTime, startAmPm, endDate, endTime, endAmPm, selectedSeats]);
 
-  // ✅ Check availability
   useEffect(() => {
     const checkAvailability = async () => {
-      if (!cabin || !startDate || !startTime || !endDate || !endTime) {
+      if (!cabin || !startDate || !startTime || !endDate || !endTime || timeError) {
         setAvailabilityError("");
         return;
       }
@@ -423,14 +817,12 @@ const BookCabin = () => {
     };
 
     checkAvailability();
-  }, [cabin, id, startDate, startTime, startAmPm, endDate, endTime, endAmPm]);
+  }, [cabin, id, startDate, startTime, startAmPm, endDate, endTime, endAmPm, timeError]);
 
-  // ✅ Toggle terms
   const toggleTerms = () => {
     setTermsExpanded(!termsExpanded);
   };
 
-  // ✅ Handle booking submission
   const handleBooking = async (e) => {
     e.preventDefault();
 
@@ -481,7 +873,7 @@ const BookCabin = () => {
     const end24 = convertTo24Hour(endTime, endAmPm);
     
     if (startDate === todayStr && start24 < currentTimeStr) {
-      toast.error("Start time cannot be in the past.");
+      toast.error(`⏰ Start time (${convertTo12Hour(start24)}) is in the past. Current time is ${convertTo12Hour(currentTimeStr)}. Please select a future time.`);
       return;
     }
 
@@ -502,6 +894,12 @@ const BookCabin = () => {
       return;
     }
 
+    if (timeError) {
+      setShowTimeErrorModal(true);
+      toast.error("Please fix the time error before booking.");
+      return;
+    }
+
     if (!termsAccepted) {
       toast.error("Please accept the terms and conditions.");
       return;
@@ -518,6 +916,26 @@ const BookCabin = () => {
       const token = localStorage.getItem("token");
       if (!token) {
         toast.error("Please log in to book a cabin.");
+        navigate("/login");
+        setLoading(false);
+        return;
+      }
+
+      let userId = currentUser?._id;
+      if (!userId) {
+        try {
+          const userStr = localStorage.getItem("user");
+          if (userStr) {
+            const userData = JSON.parse(userStr);
+            userId = userData._id;
+          }
+        } catch (e) {
+          console.error("Error getting user ID:", e);
+        }
+      }
+
+      if (!userId) {
+        toast.error("User ID not found. Please login again.");
         navigate("/login");
         setLoading(false);
         return;
@@ -543,14 +961,24 @@ const BookCabin = () => {
       };
 
       const response = await axios.post(
-        `${API_URL}/api/bookings/createbooking/${currentUser._id}`,
+        `${API_URL}/api/bookings/createbooking/${userId}`,
         bookingData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       if (response.data.success) {
         toast.success("Booking successful!");
-        navigate("/mybookings");
+        // Navigate based on user role
+        if (userRole === "admin") {
+          navigate("/adminbookings");
+        } else if (userRole === "doctor") {
+          navigate("/doctorbookings");
+        } else if (userRole === "coworking") {
+          navigate("/coworkingbookings");
+        } else {
+          // Regular user goes to userbooking
+          navigate("/userbooking");
+        }
       } else {
         toast.error(response.data.message || "Booking failed");
       }
@@ -560,6 +988,56 @@ const BookCabin = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Time Error Modal Component
+  const TimeErrorModal = () => {
+    if (!showTimeErrorModal) return null;
+    
+    return (
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in">
+        <div className="bg-white rounded-3xl max-w-md w-full mx-4 p-6 shadow-2xl animate-in zoom-in duration-200">
+          <div className="flex items-start gap-4">
+            <div className="p-3 bg-red-100 rounded-2xl flex-shrink-0">
+              <AlertCircle size={28} className="text-red-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xl font-bold text-slate-900 mb-1">Invalid Time</h3>
+              <p className="text-slate-600 text-sm leading-relaxed">{timeError}</p>
+            </div>
+            <button
+              onClick={() => setShowTimeErrorModal(false)}
+              className="p-1 hover:bg-slate-100 rounded-lg transition-colors flex-shrink-0"
+            >
+              <X size={20} className="text-slate-400" />
+            </button>
+          </div>
+          
+          <div className="mt-6 pt-4 border-t border-slate-100">
+            <p className="text-xs text-slate-500 mb-3">
+              Please select a valid time within the workspace operating hours.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowTimeErrorModal(false)}
+                className="flex-1 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl transition-colors"
+              >
+                Dismiss
+              </button>
+              <button
+                onClick={() => {
+                  setTimeError("");
+                  setShowTimeErrorModal(false);
+                }}
+                className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-colors"
+              >
+                Fix Time
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   if (!cabin) {
@@ -577,8 +1055,30 @@ const BookCabin = () => {
     <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
       {renderNavbar()}
 
+      {/* Time Error Modal */}
+      <TimeErrorModal />
+
+      {/* Custom Calendar for Start Date */}
+      {showStartCalendar && (
+        <CustomCalendar
+          selectedDate={startDate}
+          onSelectDate={handleStartDateSelect}
+          bookedDates={bookedSlots}
+          onClose={() => setShowStartCalendar(false)}
+        />
+      )}
+
+      {/* Custom Calendar for End Date */}
+      {showEndCalendar && (
+        <CustomCalendar
+          selectedDate={endDate}
+          onSelectDate={handleEndDateSelect}
+          bookedDates={bookedSlots}
+          onClose={() => setShowEndCalendar(false)}
+        />
+      )}
+
       <div className="pt-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-7xl mx-auto pb-16">
-        {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm text-slate-500 mb-6">
           <button onClick={() => navigate(-1)} className="hover:text-indigo-600 transition-colors">
             <ArrowLeft size={16} />
@@ -602,6 +1102,18 @@ const BookCabin = () => {
                     {cabin.cabinType === 'exclusive' ? 'Premium' : 'Standard'}
                   </span>
                 </div>
+                <div className="absolute bottom-4 left-4 flex gap-2">
+                  {!cabin.is24x7 && cabin.openTime && cabin.closeTime && (
+                    <span className="px-3 py-1 bg-black/60 backdrop-blur-sm rounded-full text-[10px] text-white font-medium">
+                      ⏰ {convertTo12Hour(cabin.openTime)} - {convertTo12Hour(cabin.closeTime)}
+                    </span>
+                  )}
+                  {cabin.is24x7 && (
+                    <span className="px-3 py-1 bg-emerald-600/80 backdrop-blur-sm rounded-full text-[10px] text-white font-medium">
+                      🕐 24x7 Open
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div className="p-5 sm:p-6">
@@ -612,6 +1124,18 @@ const BookCabin = () => {
                       <MapPin size={14} />
                       <span>{cabin.address}</span>
                     </div>
+                    {!cabin.is24x7 && cabin.openTime && cabin.closeTime && (
+                      <div className="flex items-center gap-1 text-xs text-indigo-600 font-medium mt-1">
+                        <Clock size={12} />
+                        <span>Open: {convertTo12Hour(cabin.openTime)} - {convertTo12Hour(cabin.closeTime)}</span>
+                      </div>
+                    )}
+                    {cabin.is24x7 && (
+                      <div className="flex items-center gap-1 text-xs text-emerald-600 font-medium mt-1">
+                        <Clock size={12} />
+                        <span>24x7 Open</span>
+                      </div>
+                    )}
                   </div>
                   <div className="text-right">
                     <div className="text-2xl sm:text-3xl font-black text-indigo-600">
@@ -804,6 +1328,23 @@ const BookCabin = () => {
                   </h3>
                 </div>
 
+                {!cabin.is24x7 && cabin.openTime && cabin.closeTime && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4">
+                    <div className="flex items-center gap-2 text-xs text-amber-700">
+                      <Clock size={14} />
+                      <span>Available: <strong>{convertTo12Hour(cabin.openTime)}</strong> to <strong>{convertTo12Hour(cabin.closeTime)}</strong></span>
+                    </div>
+                  </div>
+                )}
+                {cabin.is24x7 && (
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 mb-4">
+                    <div className="flex items-center gap-2 text-xs text-emerald-700">
+                      <Clock size={14} />
+                      <span>Available: <strong>24x7</strong> - Always Open</span>
+                    </div>
+                  </div>
+                )}
+
                 {bookingBasis === "plan" && selectedPlan ? (
                   <div className="space-y-4">
                     <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
@@ -819,28 +1360,41 @@ const BookCabin = () => {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Start Date</label>
-                        <input
-                          type="date"
-                          value={startDate}
-                          onChange={handleStartDateChange}
-                          min={getTodayDateString()}
-                          className="w-full px-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-semibold text-sm text-slate-900"
-                          required
-                        />
+                        <div 
+                          className="relative cursor-pointer" 
+                          onClick={handleStartDateClick}
+                        >
+                          <input
+                            type="text"
+                            value={startDate ? formatDateIndian(startDate) : ''}
+                            placeholder="dd-mm-yyyy"
+                            className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-semibold text-sm text-slate-900 cursor-pointer"
+                            readOnly
+                          />
+                          <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                          {startDate && bookedSlots.some(b => b.startDate === startDate) && (
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                              <div className="w-2.5 h-2.5 bg-blue-500 rounded-full"></div>
+                            </div>
+                          )}
+                        </div>
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Start Time</label>
                         <div className="flex gap-2">
-                          <input
-                            type="time"
-                            value={startTime}
-                            onChange={handleStartTimeChange}
-                            className="flex-1 px-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-semibold text-sm text-slate-900"
-                            required
-                          />
+                          <div className="relative flex-1" onClick={() => startTimeRef.current?.showPicker?.() || startTimeRef.current?.click()}>
+                            <input
+                              ref={startTimeRef}
+                              type="time"
+                              value={startTime}
+                              onChange={handleStartTimeChange}
+                              className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-semibold text-sm text-slate-900 cursor-pointer [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:hidden"
+                            />
+                            <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                          </div>
                           <select
                             value={startAmPm}
-                            onChange={(e) => setStartAmPm(e.target.value)}
+                            onChange={handleStartAmPmChange}
                             className="px-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-semibold text-sm text-slate-900"
                           >
                             <option value="AM">AM</option>
@@ -855,28 +1409,41 @@ const BookCabin = () => {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Start Date</label>
-                        <input
-                          type="date"
-                          value={startDate}
-                          onChange={handleStartDateChange}
-                          min={getTodayDateString()}
-                          className="w-full px-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-semibold text-sm text-slate-900"
-                          required
-                        />
+                        <div 
+                          className="relative cursor-pointer" 
+                          onClick={handleStartDateClick}
+                        >
+                          <input
+                            type="text"
+                            value={startDate ? formatDateIndian(startDate) : ''}
+                            placeholder="dd-mm-yyyy"
+                            className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-semibold text-sm text-slate-900 cursor-pointer"
+                            readOnly
+                          />
+                          <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                          {startDate && bookedSlots.some(b => b.startDate === startDate) && (
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                              <div className="w-2.5 h-2.5 bg-blue-500 rounded-full"></div>
+                            </div>
+                          )}
+                        </div>
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Start Time</label>
                         <div className="flex gap-2">
-                          <input
-                            type="time"
-                            value={startTime}
-                            onChange={handleStartTimeChange}
-                            className="flex-1 px-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-semibold text-sm text-slate-900"
-                            required
-                          />
+                          <div className="relative flex-1" onClick={() => startTimeRef.current?.showPicker?.() || startTimeRef.current?.click()}>
+                            <input
+                              ref={startTimeRef}
+                              type="time"
+                              value={startTime}
+                              onChange={handleStartTimeChange}
+                              className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-semibold text-sm text-slate-900 cursor-pointer [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:hidden"
+                            />
+                            <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                          </div>
                           <select
                             value={startAmPm}
-                            onChange={(e) => setStartAmPm(e.target.value)}
+                            onChange={handleStartAmPmChange}
                             className="px-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-semibold text-sm text-slate-900"
                           >
                             <option value="AM">AM</option>
@@ -889,28 +1456,41 @@ const BookCabin = () => {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">End Date</label>
-                        <input
-                          type="date"
-                          value={endDate}
-                          onChange={handleEndDateChange}
-                          min={startDate || getTodayDateString()}
-                          className="w-full px-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-semibold text-sm text-slate-900"
-                          required
-                        />
+                        <div 
+                          className="relative cursor-pointer" 
+                          onClick={handleEndDateClick}
+                        >
+                          <input
+                            type="text"
+                            value={endDate ? formatDateIndian(endDate) : ''}
+                            placeholder="dd-mm-yyyy"
+                            className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-semibold text-sm text-slate-900 cursor-pointer"
+                            readOnly
+                          />
+                          <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                          {endDate && bookedSlots.some(b => b.startDate === endDate) && (
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                              <div className="w-2.5 h-2.5 bg-blue-500 rounded-full"></div>
+                            </div>
+                          )}
+                        </div>
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">End Time</label>
                         <div className="flex gap-2">
-                          <input
-                            type="time"
-                            value={endTime}
-                            onChange={handleEndTimeChange}
-                            className="flex-1 px-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-semibold text-sm text-slate-900"
-                            required
-                          />
+                          <div className="relative flex-1" onClick={() => endTimeRef.current?.showPicker?.() || endTimeRef.current?.click()}>
+                            <input
+                              ref={endTimeRef}
+                              type="time"
+                              value={endTime}
+                              onChange={handleEndTimeChange}
+                              className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-semibold text-sm text-slate-900 cursor-pointer [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:hidden"
+                            />
+                            <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                          </div>
                           <select
                             value={endAmPm}
-                            onChange={(e) => setEndAmPm(e.target.value)}
+                            onChange={handleEndAmPmChange}
                             className="px-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-semibold text-sm text-slate-900"
                           >
                             <option value="AM">AM</option>
@@ -920,8 +1500,7 @@ const BookCabin = () => {
                       </div>
                     </div>
 
-                    {/* Display Daily Slots */}
-                    {bookingSlots.length > 0 && (
+                    {bookingSlots.length > 0 && !timeError && (
                       <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
                         <div className="flex items-center justify-between mb-3">
                           <h4 className="text-sm font-bold text-indigo-900">Daily Schedule</h4>
@@ -1004,9 +1583,9 @@ const BookCabin = () => {
                 </div>
               </div>
 
-              {/* Price Summary - Always visible when there's a valid booking */}
-              {totalPrice > 0 && (
-                <div className=" p-6 sm:p-8 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl shadow-lg shadow-indigo-500/20 text-white">
+              {/* Price Summary */}
+              {totalPrice > 0 && !timeError && (
+                <div className="p-6 sm:p-8 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl shadow-lg shadow-indigo-500/20 text-white">
                   <h3 className="text-lg font-black mb-4">Price Summary</h3>
                   
                   <div className="space-y-3 mb-4">
@@ -1037,19 +1616,18 @@ const BookCabin = () => {
                 </div>
               )}
 
-              {/* Error Message */}
               {availabilityError && (
                 <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 text-sm">
                   {availabilityError}
                 </div>
               )}
 
-              {/* Submit Button */}
+              {/* Booking Button */}
               <button
                 type="submit"
-                disabled={loading || availabilityError || !totalPrice || isNaN(totalPrice) || totalPrice === 0}
+                disabled={loading || availabilityError || timeError || !totalPrice || isNaN(totalPrice) || totalPrice === 0}
                 className={`w-full py-4 rounded-xl font-bold text-white text-sm sm:text-base transition-all ${
-                  loading || availabilityError || !totalPrice || isNaN(totalPrice) || totalPrice === 0
+                  loading || availabilityError || timeError || !totalPrice || isNaN(totalPrice) || totalPrice === 0
                     ? 'bg-slate-400 cursor-not-allowed'
                     : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:shadow-lg hover:shadow-indigo-500/20'
                 }`}
@@ -1058,6 +1636,11 @@ const BookCabin = () => {
                   <span className="flex items-center justify-center gap-2">
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     Processing...
+                  </span>
+                ) : timeError ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <AlertCircle size={18} className="text-yellow-300" />
+                    Please select a valid time
                   </span>
                 ) : totalPrice && !isNaN(totalPrice) && totalPrice > 0 ? (
                   `Confirm Booking • ₹${totalPrice.toFixed(2)}`

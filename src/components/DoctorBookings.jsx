@@ -201,15 +201,42 @@ import {
   IndianRupee,
   Search,
   X,
-  Calendar as CalendarIcon
+  Calendar as CalendarIcon,
+  Building2,
+  Filter,
+  Crown,
+  Stethoscope,
+  Layout
 } from "lucide-react";
 import "./Dashboard.css";
+
+// ─── HELPER: Format date to dd/mm/yyyy ───
+const formatDateToDDMMYYYY = (dateString) => {
+  if (!dateString) return "N/A";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "N/A";
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
+// ─── FORMAT TIME ───
+const formatTime = (timeString) => {
+  if (!timeString) return "N/A";
+  const [hours, minutes] = timeString.split(':');
+  const h = parseInt(hours);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  return `${h12}:${minutes} ${ampm}`;
+};
 
 const DoctorBookings = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDate, setFilterDate] = useState("");
+  const [filterType, setFilterType] = useState("all"); // all, normal, exclusive, chamber
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -234,15 +261,65 @@ const DoctorBookings = () => {
       b.cabinId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
       b.cabinId?.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       b.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      b.userId?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+      b.userId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      b.cabinId?.cabin?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesDate = filterDate ? b.startDate === filterDate : true;
-    return matchesSearch && matchesDate;
+    
+    // Filter by cabin type
+    let matchesType = true;
+    if (filterType === "normal") {
+      matchesType = b.cabinId?.cabinType === "normal";
+    } else if (filterType === "exclusive") {
+      matchesType = b.cabinId?.cabinType === "exclusive";
+    } else if (filterType === "chamber") {
+      matchesType = b.cabinId?.isChamber === true;
+    }
+    
+    return matchesSearch && matchesDate && matchesType;
   });
+
+  // ─── CLEAR FILTERS ───
+  const clearFilters = () => {
+    setSearchTerm("");
+    setFilterDate("");
+    setFilterType("all");
+  };
+
+  const getCabinTypeBadge = (cabin) => {
+    if (!cabin) return null;
+    
+    if (cabin.isChamber) {
+      return {
+        label: "Chamber",
+        icon: Stethoscope,
+        className: "bg-rose-100 text-rose-700"
+      };
+    }
+    
+    if (cabin.cabinType === "exclusive") {
+      return {
+        label: "Exclusive",
+        icon: Crown,
+        className: "bg-amber-100 text-amber-700"
+      };
+    }
+    
+    return {
+      label: "Normal",
+      icon: Layout,
+      className: "bg-blue-100 text-blue-700"
+    };
+  };
+
+  const totalBookings = bookings.length;
+  const normalCount = bookings.filter(b => b.cabinId?.cabinType === "normal" && !b.cabinId?.isChamber).length;
+  const exclusiveCount = bookings.filter(b => b.cabinId?.cabinType === "exclusive" && !b.cabinId?.isChamber).length;
+  const chamberCount = bookings.filter(b => b.cabinId?.isChamber === true).length;
 
   return (
     <div className="admin-dash">
-      <AdminNavbar/>
+      <UsersNavbar />
 
       <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         {/* Header */}
@@ -255,39 +332,85 @@ const DoctorBookings = () => {
               A live overview of reservations across your listed cabins
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="relative">
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+            <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Total Bookings</p>
+            <p className="text-2xl font-black text-slate-900 mt-1">{totalBookings}</p>
+          </div>
+          <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+            <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Normal</p>
+            <p className="text-2xl font-black text-blue-600 mt-1">{normalCount}</p>
+          </div>
+          <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+            <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Exclusive</p>
+            <p className="text-2xl font-black text-amber-600 mt-1">{exclusiveCount}</p>
+          </div>
+          <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+            <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Chamber</p>
+            <p className="text-2xl font-black text-rose-600 mt-1">{chamberCount}</p>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-6 shadow-sm">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex-1 min-w-[200px] relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
               <input
                 type="text"
                 placeholder="Search bookings..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all w-64"
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
               />
             </div>
-            <input
-              type="date"
-              value={filterDate}
-              onChange={(e) => setFilterDate(e.target.value)}
-              className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-            />
-            {(searchTerm || filterDate) && (
+
+            <div className="relative">
+              <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <input
+                type="date"
+                value={filterDate}
+                onChange={(e) => setFilterDate(e.target.value)}
+                className="pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all w-48"
+              />
+            </div>
+
+            <div className="relative">
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all appearance-none cursor-pointer min-w-[160px]"
+              >
+                <option value="all">All Types</option>
+                <option value="normal">Normal</option>
+                <option value="exclusive">Exclusive</option>
+                <option value="chamber">Chamber</option>
+              </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              </div>
+            </div>
+
+            {(searchTerm || filterDate || filterType !== "all") && (
               <button
-                onClick={() => {
-                  setSearchTerm("");
-                  setFilterDate("");
-                }}
-                className="p-2.5 bg-slate-100 text-slate-500 rounded-xl hover:bg-slate-200 transition-colors"
-                title="Clear Filters"
+                onClick={clearFilters}
+                className="flex items-center gap-2 px-4 py-2.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-colors text-sm font-medium"
               >
                 <X size={18} />
+                Clear Filters
               </button>
             )}
-            <div className="px-4 py-2 bg-white border border-slate-200 rounded-xl shadow-sm">
-              <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider leading-none mb-1">Found</p>
-              <p className="text-lg font-black text-slate-900 leading-none">
-                {filteredBookings.length} <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-1">Results</span>
+
+            <div className="ml-auto px-4 py-2 bg-indigo-50 border border-indigo-200 rounded-xl">
+              <p className="text-[10px] uppercase font-bold text-indigo-500 tracking-wider leading-none mb-1">Found</p>
+              <p className="text-lg font-black text-indigo-700 leading-none">
+                {filteredBookings.length}
               </p>
             </div>
           </div>
@@ -307,9 +430,9 @@ const DoctorBookings = () => {
             <CalendarIcon size={48} className="text-slate-300 mb-4" />
             <p className="admin-dash__error-title" style={{ color: '#475569' }}>No bookings found</p>
             <p className="admin-dash__error-message">We couldn't find any bookings matching your search criteria.</p>
-            {(searchTerm || filterDate) && (
+            {(searchTerm || filterDate || filterType !== "all") && (
               <button
-                onClick={() => { setSearchTerm(""); setFilterDate(""); }}
+                onClick={clearFilters}
                 className="mt-4 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
               >
                 Reset Filters
@@ -321,7 +444,7 @@ const DoctorBookings = () => {
         {/* Table */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-[1200px]">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200">
                   <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
@@ -339,95 +462,139 @@ const DoctorBookings = () => {
                   <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
                     Duration
                   </th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    Type
+                  </th>
                   <th className="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">
                     Price
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredBookings.map((booking, index) => (
-                  <tr 
-                    key={booking._id} 
-                    className="hover:bg-slate-50 transition-colors"
-                  >
-                    <td className="px-6 py-4">
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
-                          <Calendar size={18} className="text-indigo-600" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-slate-900 text-sm">
-                            {booking.cabinId?.name || "Unknown Cabin"}
-                          </p>
-                          <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-1">
-                            <MapPin size={12} className="text-indigo-500" />
-                            {booking.cabinId?.address?.split(",")[0] || "No Address"}
+                {filteredBookings.map((booking, index) => {
+                  const typeBadge = getCabinTypeBadge(booking.cabinId);
+                  const Icon = typeBadge?.icon || Layout;
+                  
+                  return (
+                    <tr 
+                      key={booking._id} 
+                      className="hover:bg-slate-50 transition-colors"
+                    >
+                      <td className="px-6 py-4">
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
+                            <Building2 size={18} className="text-indigo-600" />
                           </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
-                          <User size={18} className="text-slate-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-slate-900 text-sm">
-                            {booking.name || booking.userId?.name || "Unknown Guest"}
-                          </p>
-                          {booking.userId?.address && (
+                          <div>
+                            <p className="font-semibold text-slate-900 text-sm">
+                              {booking.cabinId?.name || "Unknown Cabin"}
+                            </p>
                             <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-1">
                               <MapPin size={12} className="text-indigo-500" />
-                              {booking.userId?.address}
+                              {booking.cabinId?.address?.split(",")[0] || "No Address"}
                             </div>
-                          )}
+                            {booking.cabinId?.cabin && (
+                              <div className="text-[10px] text-slate-400 mt-0.5">
+                                Suite: {booking.cabinId?.cabin}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="space-y-1.5">
-                        <div className="flex items-center gap-2 text-sm text-slate-600">
-                          <Phone size={14} className="text-indigo-500" />
-                          {booking.mobile || booking.userId?.mobile || "No Mobile"}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
+                            <User size={18} className="text-slate-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-slate-900 text-sm">
+                              {booking.name || booking.userId?.name || "Unknown Guest"}
+                            </p>
+                            {booking.userId?.address && (
+                              <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-1">
+                                <MapPin size={12} className="text-indigo-500" />
+                                {booking.userId?.address}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-slate-600">
-                          <svg className="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                          </svg>
-                          {booking.userId?.email || "No Email"}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-2 text-sm text-slate-600">
+                            <Phone size={14} className="text-indigo-500" />
+                            {booking.mobile || booking.userId?.mobile || "No Mobile"}
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-slate-600">
+                            <svg className="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            </svg>
+                            {booking.userId?.email || "No Email"}
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-start gap-2">
-                        <Clock size={16} className="text-indigo-500 mt-0.5 flex-shrink-0" />
-                        <div className="space-y-1">
-                          <p className="text-sm text-slate-900 font-medium">
-                            {booking.startDate} · {booking.startTime}
-                          </p>
-                          <p className="text-sm text-slate-500">
-                            {booking.endDate} · {booking.endTime}
-                          </p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-start gap-2">
+                          <Clock size={16} className="text-indigo-500 mt-0.5 flex-shrink-0" />
+                          <div className="space-y-1">
+                            <p className="text-sm text-slate-900 font-medium">
+                              {formatDateToDDMMYYYY(booking.startDate)} · {formatTime(booking.startTime)}
+                            </p>
+                            <p className="text-sm text-slate-500">
+                              {formatDateToDDMMYYYY(booking.endDate)} · {formatTime(booking.endTime)}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold">
-                        {booking.totalHours} hrs
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-1 text-indigo-600 font-bold text-lg">
-                        <IndianRupee size={18} />
-                        {booking.totalPrice?.toLocaleString("en-IN") || "0"}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold">
+                          {booking.totalHours} hrs
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        {typeBadge && (
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${typeBadge.className}`}>
+                            <Icon size={12} />
+                            {typeBadge.label}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-1 text-indigo-600 font-bold text-lg">
+                          <IndianRupee size={18} />
+                          {booking.totalPrice?.toLocaleString("en-IN") || "0"}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         </div>
+
+        {/* Footer */}
+        {!loading && filteredBookings.length > 0 && (
+          <div className="mt-4 px-6 py-3 bg-white rounded-2xl border border-slate-200 flex flex-wrap items-center justify-between gap-2">
+            <span className="text-xs text-slate-500">
+              Showing <strong>{filteredBookings.length}</strong> of <strong>{bookings.length}</strong> bookings
+            </span>
+            <div className="flex items-center gap-4 text-xs text-slate-500">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                Normal: {normalCount}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                Exclusive: {exclusiveCount}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+                Chamber: {chamberCount}
+              </span>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

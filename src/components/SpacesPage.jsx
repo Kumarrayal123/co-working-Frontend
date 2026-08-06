@@ -450,35 +450,29 @@ function SpacesPage() {
     <div className="min-h-screen bg-gray-50">
       <SimpleUserNavbar />
 
-      {/* ============= HERO BANNER ============= */}
-      <div className="relative pt-20 overflow-hidden">
-        {/* Gradient Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800">
-          {/* Decorative Elements */}
+      {/* ============= HERO BANNER - CLEAN DESIGN ============= */}
+      <div className="relative pt-16 bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800">
+        {/* Decorative Elements */}
+        <div className="absolute inset-0">
           <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-white/5 to-transparent"></div>
           <div className="absolute bottom-0 left-0 w-1/3 h-1/2 bg-gradient-to-t from-purple-900/20 to-transparent"></div>
           
           {/* Floating Orbs */}
-          <div className="absolute top-10 right-20 w-72 h-72 bg-blue-400/20 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-10 left-10 w-80 h-80 bg-purple-400/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-300/10 rounded-full blur-3xl"></div>
-          
-          {/* Grid Pattern */}
-          <div className="absolute inset-0 opacity-5">
-            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyek0zNiAyNHYySDI0di0yaDEyeiIvPjwvZz48L2c+PC9zdmc+')] bg-repeat"></div>
-          </div>
+          <div className="absolute top-5 right-10 w-48 h-48 bg-blue-400/20 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-5 left-5 w-56 h-56 bg-purple-400/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-indigo-300/10 rounded-full blur-3xl"></div>
         </div>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
           <div className="text-center max-w-3xl mx-auto">
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/20 backdrop-blur-sm rounded-full text-white/90 text-xs font-medium tracking-wider mb-5">
-              <Sparkles size={14} className="text-yellow-300" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-white/90 text-[10px] font-medium tracking-wider mb-4">
+              <Sparkles size={12} className="text-yellow-300" />
               IRYAX SPACES
             </div>
 
             {/* Main Heading */}
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white tracking-tight leading-[1.1]">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight leading-[1.15]">
               Find Your Perfect
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-200 to-yellow-300">
                 Workspace Today
@@ -486,21 +480,21 @@ function SpacesPage() {
             </h1>
 
             {/* Description */}
-            <p className="mt-4 text-white/80 text-sm md:text-base max-w-xl mx-auto font-light leading-relaxed">
+            <p className="mt-3 text-white/80 text-xs sm:text-sm max-w-xl mx-auto font-light leading-relaxed">
               Discover premium co-working spaces, medical chambers, meeting rooms & private offices tailored to your professional needs
             </p>
 
             {/* Search Bar */}
-            <div className="mt-8 max-w-2xl mx-auto">
-              <div className="flex items-center bg-white/10 backdrop-blur-md rounded-full border border-white/20 p-1.5 shadow-lg">
+            <div className="mt-6 max-w-2xl mx-auto">
+              <div className="flex items-center bg-white/10 backdrop-blur-md rounded-full border border-white/20 p-1 shadow-lg">
                 <div className="flex-1 px-4 flex items-center gap-2">
-                  <Search size={18} className="text-white/50" />
+                  <Search size={16} className="text-white/50" />
                   <input
                     type="text"
                     placeholder="Search for spaces..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full bg-transparent text-white placeholder-white/40 text-sm outline-none"
+                    className="w-full bg-transparent text-white placeholder-white/40 text-xs outline-none"
                   />
                 </div>
                 <button 
@@ -508,77 +502,73 @@ function SpacesPage() {
                     const element = document.getElementById('spaces-section');
                     if (element) element.scrollIntoView({ behavior: 'smooth' });
                   }}
-                  className="px-6 py-2.5 bg-white text-indigo-700 rounded-full text-sm font-semibold hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center gap-2"
+                  className="px-5 py-2 bg-white text-indigo-700 rounded-full text-xs font-semibold hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center gap-1.5"
                 >
-                  Explore <ArrowRight size={16} />
+                  Explore <ArrowRight size={14} />
                 </button>
               </div>
             </div>
 
-            {/* Trust Badges */}
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-6">
+            {/* Stats */}
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-4 sm:gap-6">
               <div className="flex items-center gap-2 text-white/80">
-                <div className="w-9 h-9 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm">
-                  <Building2 size={16} className="text-white/70" />
+                <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm">
+                  <Building2 size={14} className="text-white/70" />
                 </div>
                 <div className="text-left">
-                  <p className="font-bold text-white text-lg">{cabins.length}+</p>
-                  <p className="text-[8px] text-white/40 font-light uppercase tracking-wider">Spaces</p>
+                  <p className="font-bold text-white text-sm">{cabins.length}+</p>
+                  <p className="text-[7px] text-white/40 font-light uppercase tracking-wider">Spaces</p>
                 </div>
               </div>
-              <div className="w-px h-10 bg-white/10"></div>
+              <div className="w-px h-8 bg-white/10"></div>
               <div className="flex items-center gap-2 text-white/80">
-                <div className="w-9 h-9 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm">
-                  <Users size={16} className="text-white/70" />
+                <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm">
+                  <Users size={14} className="text-white/70" />
                 </div>
                 <div className="text-left">
-                  <p className="font-bold text-white text-lg">100+</p>
-                  <p className="text-[8px] text-white/40 font-light uppercase tracking-wider">Seats</p>
+                  <p className="font-bold text-white text-sm">100+</p>
+                  <p className="text-[7px] text-white/40 font-light uppercase tracking-wider">Seats</p>
                 </div>
               </div>
-              <div className="w-px h-10 bg-white/10"></div>
+              <div className="w-px h-8 bg-white/10"></div>
               <div className="flex items-center gap-2 text-white/80">
-                <div className="w-9 h-9 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm">
-                  <Star size={16} className="text-white/70" />
+                <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm">
+                  <Star size={14} className="text-white/70" />
                 </div>
                 <div className="text-left">
-                  <p className="font-bold text-white text-lg">4.8★</p>
-                  <p className="text-[8px] text-white/40 font-light uppercase tracking-wider">Rating</p>
+                  <p className="font-bold text-white text-sm">4.8★</p>
+                  <p className="text-[7px] text-white/40 font-light uppercase tracking-wider">Rating</p>
                 </div>
               </div>
-              <div className="w-px h-10 bg-white/10"></div>
+              <div className="w-px h-8 bg-white/10"></div>
               <div className="flex items-center gap-2 text-white/80">
-                <div className="w-9 h-9 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm">
-                  <Clock size={16} className="text-white/70" />
+                <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm">
+                  <Clock size={14} className="text-white/70" />
                 </div>
                 <div className="text-left">
-                  <p className="font-bold text-white text-lg">24/7</p>
-                  <p className="text-[8px] text-white/40 font-light uppercase tracking-wider">Access</p>
+                  <p className="font-bold text-white text-sm">24/7</p>
+                  <p className="text-[7px] text-white/40 font-light uppercase tracking-wider">Access</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Curved Bottom */}
-        <div className="relative h-8">
-          <svg className="absolute bottom-0 w-full h-10 text-gray-50" viewBox="0 0 1440 48" fill="currentColor" preserveAspectRatio="none">
-            <path d="M0 48h1440V0c-192 32-384 48-576 48S384 32 192 0L0 48z"/>
-          </svg>
-        </div>
+        {/* Simple bottom border instead of curve */}
+        <div className="h-1 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
       </div>
 
       {/* ============= CATEGORIES SECTION ============= */}
       <div className="relative z-10 -mt-6 px-4 max-w-7xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200">
-                <Compass size={18} className="text-white" />
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200">
+                <Compass size={16} className="text-white" />
               </div>
               <div>
                 <h2 className="text-sm font-bold text-gray-900">Browse Categories</h2>
-                <p className="text-[10px] text-gray-400 font-light">Find the perfect space for your needs</p>
+                <p className="text-[9px] text-gray-400 font-light">Find the perfect space for your needs</p>
               </div>
             </div>
             {selectedCategory !== "all" && (
@@ -589,14 +579,14 @@ function SpacesPage() {
                   setFilteredCabins(cabins);
                   setSelectedType("all");
                 }}
-                className="text-xs text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1 bg-indigo-50 px-3 py-1.5 rounded-full"
+                className="text-[10px] text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1 bg-indigo-50 px-3 py-1 rounded-full"
               >
-                <XIcon size={12} /> Clear
+                <XIcon size={11} /> Clear
               </button>
             )}
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             {CATEGORIES.map((category) => {
               const Icon = category.icon;
               const isActive = selectedCategory === category.id;
@@ -604,39 +594,36 @@ function SpacesPage() {
                 <button
                   key={category.id}
                   onClick={() => handleCategorySelect(category.id)}
-                  className={`group relative p-4 rounded-xl border-2 transition-all duration-300 text-left ${
+                  className={`group relative p-3 rounded-xl border-2 transition-all duration-300 text-left ${
                     isActive
                       ? `${category.bgGradient} ${category.borderColor} shadow-lg shadow-${category.id === 'coworking' ? 'blue' : category.id === 'medical' ? 'red' : category.id === 'meeting' ? 'purple' : 'emerald'}-100`
                       : 'bg-gray-50 border-transparent hover:border-gray-200 hover:bg-white'
                   }`}
                 >
-                  <div className="flex items-start gap-3">
-                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-300 ${
+                  <div className="flex items-start gap-2.5">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${
                       isActive 
                         ? `bg-gradient-to-r ${category.gradient} text-white shadow-md`
                         : 'bg-white border border-gray-200 text-gray-500 group-hover:border-gray-300 group-hover:shadow-sm'
                     }`}>
-                      <Icon size={20} />
+                      <Icon size={18} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-bold ${isActive ? category.textColor : 'text-gray-700'}`}>
+                      <p className={`text-xs font-bold ${isActive ? category.textColor : 'text-gray-700'}`}>
                         {category.label}
                       </p>
-                      <p className="text-[10px] text-gray-400 font-light truncate">
+                      <p className="text-[9px] text-gray-400 font-light truncate">
                         {category.description}
                       </p>
-                      <p className="text-[9px] font-medium text-gray-400 mt-0.5">
+                      <p className="text-[8px] font-medium text-gray-400 mt-0.5">
                         {category.stats}
                       </p>
                     </div>
                   </div>
                   {isActive && (
-                    <div className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center shadow-lg shadow-green-200">
-                      <CheckCircle size={13} className="text-white" />
+                    <div className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center shadow-lg shadow-green-200">
+                      <CheckCircle size={11} className="text-white" />
                     </div>
-                  )}
-                  {!isActive && (
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent to-transparent group-hover:from-gray-50/50 group-hover:to-transparent rounded-xl transition"></div>
                   )}
                 </button>
               );
@@ -803,7 +790,7 @@ function SpacesPage() {
                       <span className="text-white font-bold text-sm">{formatCurrency(cabin.price)}</span>
                       <span className="text-white/50 text-[8px] font-light">/hour</span>
                     </div>
-                    {/* ✅ Wishlist button with API integration */}
+                    {/* Wishlist button with API integration */}
                     <button 
                       className={`absolute top-3 right-3 w-8 h-8 backdrop-blur-sm rounded-full flex items-center justify-center transition shadow-md ${
                         inWishlist 
@@ -827,7 +814,7 @@ function SpacesPage() {
                       <span className="line-clamp-1">{cabin.address?.split(',')[0] || 'N/A'}</span>
                     </p>
                     
-                    {/* ✅ TIMING DISPLAY - NO IST */}
+                    {/* Timing Display - NO IST */}
                     <div className={`flex items-center gap-1 mt-1 ${timing.color}`}>
                       <TimingIcon size={11} />
                       <span className="text-[10px] font-medium">{timing.display}</span>

@@ -58,6 +58,7 @@ import SpacesPage from "./components/SpacesPage";
 import SimpleUserBookings from "./components/SimpleUserBookings";
 import SimpleUserProfile from "./components/SimpleUserProfile";
 import MyWishlist from "./components/MyWishlist";
+import UserSiteVisits from "./components/UserSiteVisits";
 
 function App() {
   return (
@@ -73,6 +74,7 @@ function App() {
         <Route path="/mywishlist" element={<MyWishlist />} />
         <Route path="/spaceforusers" element={<SpacesPage />} />
         <Route path="/userbooking" element={<SimpleUserBookings />} />
+        <Route path="/usersitevisits" element={<UserSiteVisits />} />
         <Route path="/userprofile" element={<SimpleUserProfile />} />
         <Route path="/allchambers" element={<AllChambers />} />
         <Route path="/mychambers" element={<MyChamber />} />

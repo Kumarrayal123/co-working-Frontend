@@ -1,4 +1,4 @@
-// DoctorWallet.jsx - Complete with Fixed View Popup Overflow
+// DoctorWallet.jsx - Complete with Fixed Duplicate Transactions
 import axios from "axios";
 import {
   Wallet as WalletIcon,
@@ -83,6 +83,16 @@ const DoctorWallet = () => {
     return { headers: { Authorization: `Bearer ${token}` } };
   };
 
+  // Format date to dd/mm/yyyy
+  const formatDateDMY = (dateStr) => {
+    if (!dateStr) return "N/A";
+    const d = new Date(dateStr);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
   // ======================
   // GET WALLET
   // ======================
@@ -103,8 +113,19 @@ const DoctorWallet = () => {
 
       if (res.data.success) {
         setWallet(res.data.wallet);
-        setTransactions(res.data.transactions || []);
-        setFilteredTransactions(res.data.transactions || []);
+        
+        // ✅ FIX: Remove duplicates by using a Map with _id as key
+        const transactionMap = new Map();
+        (res.data.transactions || []).forEach(t => {
+          const key = t._id || t.transactionId || t.createdAt;
+          if (!transactionMap.has(key)) {
+            transactionMap.set(key, t);
+          }
+        });
+        const uniqueTransactions = Array.from(transactionMap.values());
+        
+        setTransactions(uniqueTransactions);
+        setFilteredTransactions(uniqueTransactions);
       }
     } catch (err) {
       console.error("Error fetching wallet:", err);
@@ -128,7 +149,17 @@ const DoctorWallet = () => {
       );
 
       if (res.data.success) {
-        setWithdrawals(res.data.withdrawals || []);
+        // Remove duplicates from withdrawals
+        const withdrawalMap = new Map();
+        (res.data.withdrawals || []).forEach(w => {
+          const key = w._id || w.createdAt;
+          if (!withdrawalMap.has(key)) {
+            withdrawalMap.set(key, w);
+          }
+        });
+        const uniqueWithdrawals = Array.from(withdrawalMap.values());
+        
+        setWithdrawals(uniqueWithdrawals);
         setWithdrawStats(res.data.stats || { total: 0, pending: 0, completed: 0, failed: 0 });
       }
     } catch (err) {
@@ -178,12 +209,7 @@ const DoctorWallet = () => {
 
   const formatDate = (dateStr) => {
     if (!dateStr) return "N/A";
-    const d = new Date(dateStr);
-    return d.toLocaleDateString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    });
+    return formatDateDMY(dateStr);
   };
 
   const formatDateTime = (dateStr) => {
@@ -256,7 +282,7 @@ const DoctorWallet = () => {
 
       const exportData = filteredTransactions.map((t, index) => ({
         'S.No': index + 1,
-        'Chamber Name': t.cabinName || 'Unknown',
+        'Cabin Name': t.cabinName || 'Unknown',
         'Customer Name': t.customerName || 'Unknown',
         'Customer Mobile': t.customerMobile || 'N/A',
         'Amount': t.amount || 0,
@@ -264,9 +290,9 @@ const DoctorWallet = () => {
         'Description': t.description || '',
         'Payment Mode': getPaymentModeLabel(t.paymentMode),
         'Transaction ID': t.transactionId || 'N/A',
-        'Start Date': t.startDate || 'N/A',
-        'End Date': t.endDate || 'N/A',
-        'Transaction Date': t.createdAt ? formatDate(t.createdAt) : 'N/A'
+        'Start Date': t.startDate ? formatDateDMY(t.startDate) : 'N/A',
+        'End Date': t.endDate ? formatDateDMY(t.endDate) : 'N/A',
+        'Transaction Date': t.createdAt ? formatDateTime(t.createdAt) : 'N/A'
       }));
 
       const ws = XLSX.utils.json_to_sheet(exportData);
@@ -382,90 +408,86 @@ const DoctorWallet = () => {
         {/* Header */}
         <div className="admin-dash__header">
           <div>
-            <h1 className="admin-dash__greeting">
+            <h1 className="admin-dash__greeting" style={{ fontSize: '1.25rem' }}>
               Doctor <span>Wallet</span>
             </h1>
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="admin-dash__stats grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="admin-dash__stat">
-            <div className="admin-dash__stat-top">
-              <span className="admin-dash__stat-label">Available Balance</span>
-              <div className="admin-dash__stat-icon bg-emerald-100 text-emerald-600">
-                <WalletIcon size={18} />
+        {/* Stats Cards - Small and Clean */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+          <div className="bg-white rounded-xl border border-gray-100 p-3 shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Balance</span>
+              <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
+                <WalletIcon size={14} />
               </div>
             </div>
-            <div className="admin-dash__stat-value">{formatCurrency(wallet.balance)}</div>
-            <div className="admin-dash__stat-meta">Earned: {formatCurrency(wallet.totalEarned)}</div>
+            <div className="text-xl font-bold text-emerald-600 mt-1">{formatCurrency(wallet.balance)}</div>
+            <div className="text-[9px] text-gray-400">Earned: {formatCurrency(wallet.totalEarned)}</div>
           </div>
 
-          <div className="admin-dash__stat">
-            <div className="admin-dash__stat-top">
-              <span className="admin-dash__stat-label">Total Earned</span>
-              <div className="admin-dash__stat-icon bg-indigo-100 text-indigo-600">
-                <TrendingUp size={18} />
+          <div className="bg-white rounded-xl border border-gray-100 p-3 shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Earned</span>
+              <div className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                <TrendingUp size={14} />
               </div>
             </div>
-            <div className="admin-dash__stat-value">{formatCurrency(wallet.totalEarned)}</div>
-            <div className="admin-dash__stat-meta">{wallet.totalTransactions} transactions</div>
+            <div className="text-xl font-bold text-indigo-600 mt-1">{formatCurrency(wallet.totalEarned)}</div>
+            <div className="text-[9px] text-gray-400">{transactions.length} transactions</div>
           </div>
 
-          <div className="admin-dash__stat">
-            <div className="admin-dash__stat-top">
-              <span className="admin-dash__stat-label">Total Withdrawn</span>
-              <div className="admin-dash__stat-icon bg-purple-100 text-purple-600">
-                <History size={18} />
+          <div className="bg-white rounded-xl border border-gray-100 p-3 shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Withdrawn</span>
+              <div className="w-7 h-7 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600">
+                <History size={14} />
               </div>
             </div>
-            <div className="admin-dash__stat-value">{formatCurrency(totalWithdrawn)}</div>
-            <div className="admin-dash__stat-meta">{withdrawals.length} withdrawal requests</div>
+            <div className="text-xl font-bold text-purple-600 mt-1">{formatCurrency(totalWithdrawn)}</div>
+            <div className="text-[9px] text-gray-400">{withdrawals.length} requests</div>
           </div>
 
-          <div className="admin-dash__stat">
-            <div className="admin-dash__stat-top">
-              <span className="admin-dash__stat-label">Pending Requests</span>
-              <div className="admin-dash__stat-icon bg-amber-100 text-amber-600">
-                <Clock size={18} />
+          <div className="bg-white rounded-xl border border-gray-100 p-3 shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Pending</span>
+              <div className="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600">
+                <Clock size={14} />
               </div>
             </div>
-            <div className="admin-dash__stat-value">{withdrawStats.pending}</div>
-            <div className="admin-dash__stat-meta">{withdrawStats.completed} completed</div>
+            <div className="text-xl font-bold text-amber-600 mt-1">{withdrawStats.pending}</div>
+            <div className="text-[9px] text-gray-400">{withdrawStats.completed} completed</div>
           </div>
         </div>
 
         <div className="space-y-6">
           {/* Wallet Transactions Table Section */}
-          <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
-            <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
-              <div className="flex items-center gap-3">
-                <h3 className="admin-dash__card-title">Transaction History</h3>
-                <span className="px-2.5 py-0.5 text-xs font-bold text-indigo-700 bg-indigo-100 rounded-full">
+          <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden' }}>
+            <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-2 p-3" style={{ backgroundColor: '#fafafa', borderBottom: '1px solid #e5e7eb' }}>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-gray-700">Transaction History</h3>
+                <span className="px-2 py-0.5 text-[10px] font-bold text-indigo-700 bg-indigo-100 rounded-full">
                   {filteredTransactions.length}
                 </span>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-1.5">
                 {/* Search Bar */}
-                <div className="relative w-full sm:w-48">
-                  <Search
-                    size={15}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                  />
+                <div className="relative">
+                  <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input
                     type="text"
                     placeholder="Search..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    className="text-xs bg-white border border-gray-200 rounded-lg pl-8 pr-2.5 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 w-28 sm:w-36"
                   />
                 </div>
 
-                {/* Filters - Always Visible */}
                 <select
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value)}
-                  className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700"
+                  className="text-xs bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20"
                 >
                   <option value="all">All Types</option>
                   <option value="credit">Credit</option>
@@ -476,61 +498,48 @@ const DoctorWallet = () => {
                   type="date"
                   value={filterDate}
                   onChange={(e) => setFilterDate(e.target.value)}
-                  className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700"
+                  className="text-xs bg-white border border-gray-200 rounded-lg px-2 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 w-28"
                 />
 
-                {/* Clear Filters */}
                 {(searchTerm || filterType !== 'all' || filterDate) && (
                   <button
                     onClick={clearFilters}
-                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    className="flex items-center gap-0.5 px-2 py-1.5 text-[10px] font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                   >
-                    <XCircleIcon size={14} />
-                    Clear
+                    <XCircleIcon size={12} /> Clear
                   </button>
                 )}
 
                 {wallet.balance > 0 && (
                   <button
                     onClick={() => setShowWithdrawModal(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors"
+                    className="flex items-center gap-1 px-2.5 py-1.5 bg-indigo-600 text-white rounded-lg text-[10px] font-medium hover:bg-indigo-700 transition-colors"
                   >
-                    <Banknote size={14} />
-                    <span className="hidden xs:inline">Withdraw</span>
-                    <span className="xs:hidden">Withdraw</span>
+                    <Banknote size={13} />
+                    <span>Withdraw</span>
                   </button>
                 )}
 
                 {withdrawals.length > 0 && (
                   <button
                     onClick={toggleWithdrawals}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-medium transition-colors ${
                       showWithdrawals ? 'bg-purple-600 text-white' : 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200'
                     }`}
                   >
-                    <History size={14} />
-                    <span className="hidden xs:inline">{showWithdrawals ? 'Hide' : 'Show'} Withdrawals</span>
-                    <span className="xs:hidden">{showWithdrawals ? 'Hide' : 'Show'}</span>
+                    <History size={13} />
+                    <span>{showWithdrawals ? 'Hide' : 'Show'}</span>
                   </button>
                 )}
 
                 {filteredTransactions.length > 0 && (
                   <button
                     onClick={exportToExcel}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200"
+                    className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-[10px] font-medium hover:bg-emerald-100 transition-colors border border-emerald-200"
                   >
-                    <Download size={14} />
-                    <span className="hidden xs:inline">Export</span>
+                    <Download size={13} /> Export
                   </button>
                 )}
-
-                <button
-                  onClick={() => navigate("/my-cabins")}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
-                >
-                  <Building2 size={14} className="text-indigo-600" />
-                  <span className="hidden xs:inline">Chambers</span>
-                </button>
               </div>
             </div>
 
@@ -539,9 +548,9 @@ const DoctorWallet = () => {
             {/* ============================================= */}
             {showWithdrawals && (
               <div className="border-b border-gray-100">
-                <div className="px-4 py-2 bg-purple-50/50 flex justify-between items-center">
-                  <h4 className="text-xs font-bold text-purple-700 uppercase tracking-wider">Withdrawal History</h4>
-                  <div className="flex items-center gap-2 text-[10px] text-purple-600">
+                <div className="px-3 py-2 bg-purple-50/50 flex justify-between items-center">
+                  <h4 className="text-[10px] font-bold text-purple-700 uppercase tracking-wider">Withdrawal History</h4>
+                  <div className="flex items-center gap-2 text-[9px] text-purple-600">
                     <span>Total: {withdrawStats.total}</span>
                     <span className="w-px h-3 bg-purple-200"></span>
                     <span className="text-yellow-600">Pending: {withdrawStats.pending}</span>
@@ -550,55 +559,52 @@ const DoctorWallet = () => {
                   </div>
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[700px]">
+                  <table className="w-full min-w-[650px]">
                     <thead>
                       <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
-                        <th className="p-3 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
-                        <th className="p-3 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Amount</th>
-                        <th className="p-3 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Bank</th>
-                        <th className="p-3 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Account</th>
-                        <th className="p-3 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
-                        <th className="p-3 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Date</th>
-                        <th className="p-3 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Action</th>
+                        <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">#</th>
+                        <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Amount</th>
+                        <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Bank</th>
+                        <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Status</th>
+                        <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Date</th>
+                        <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase text-center">Action</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                       {withdrawals.length === 0 ? (
                         <tr>
-                          <td colSpan={7} className="p-8 text-center text-gray-400">
-                            <History size={32} className="mx-auto mb-2 opacity-20" />
-                            <p className="text-sm font-medium">No withdrawals yet</p>
+                          <td colSpan={6} className="px-3 py-8 text-center text-gray-400">
+                            <History size={28} className="mx-auto mb-1 opacity-20" />
+                            <p className="text-xs font-medium">No withdrawals yet</p>
                           </td>
                         </tr>
                       ) : (
                         withdrawals.slice().reverse().map((w, idx) => {
                           const status = getWithdrawStatusBadge(w.status);
                           return (
-                            <tr key={idx} className="transition-colors hover:bg-gray-50/80">
-                              <td className="p-3">
-                                <span className="text-sm font-semibold text-gray-400">#{idx + 1}</span>
+                            <tr key={w._id || idx} className="transition-colors hover:bg-gray-50/80">
+                              <td className="px-3 py-2">
+                                <span className="text-[10px] font-semibold text-gray-400">#{idx + 1}</span>
                               </td>
-                              <td className="p-3">
-                                <span className="text-sm font-bold text-red-600">{formatCurrency(w.amount)}</span>
+                              <td className="px-3 py-2">
+                                <span className="text-xs font-bold text-red-600">{formatCurrency(w.amount)}</span>
                               </td>
-                              <td className="p-3">
-                                <span className="text-sm text-gray-700">{w.bankName || 'N/A'}</span>
+                              <td className="px-3 py-2">
+                                <span className="text-xs text-gray-700">{w.bankName || 'N/A'}</span>
                               </td>
-                              <td className="p-3">
-                                <span className="text-sm text-gray-600 font-mono">••••{w.accountNumber?.slice(-4) || 'N/A'}</span>
+                              <td className="px-3 py-2">
+                                <span className={`px-2 py-0.5 text-[9px] font-bold rounded-full ${status.color}`}>{status.label}</span>
                               </td>
-                              <td className="p-3">
-                                <span className={`px-3 py-1 text-xs font-bold rounded-full ${status.color}`}>{status.label}</span>
+                              <td className="px-3 py-2">
+                                <span className="text-xs text-gray-500">{formatDate(w.createdAt)}</span>
                               </td>
-                              <td className="p-3">
-                                <span className="text-sm text-gray-500">{formatDate(w.createdAt)}</span>
-                              </td>
-                              <td className="p-3">
+                              <td className="px-3 py-2 text-center">
                                 <button
                                   onClick={() => handleViewWithdrawalDetails(w)}
-                                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors whitespace-nowrap"
+                                  className="p-1 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors"
+                                  title="View Details"
                                 >
-                                  <Eye size={13} /> View
+                                  <Eye size={13} />
                                 </button>
                               </td>
                             </tr>
@@ -616,65 +622,66 @@ const DoctorWallet = () => {
             {/* ============================================= */}
             <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
               {filteredTransactions.length === 0 ? (
-                <div className="flex flex-col items-center justify-center gap-3 py-20 text-gray-400">
-                  <WalletIcon size={48} className="opacity-20" />
-                  <p className="text-lg font-medium">No transactions found</p>
-                  <p className="text-sm">Try adjusting your filters.</p>
+                <div className="flex flex-col items-center justify-center gap-2 py-16 text-gray-400">
+                  <WalletIcon size={40} className="opacity-20" />
+                  <p className="text-base font-medium">No transactions found</p>
+                  <p className="text-xs">Try adjusting your filters.</p>
                 </div>
               ) : (
-                <table className="w-full min-w-[1000px] text-left">
+                <table className="w-full min-w-[900px] text-left text-sm">
                   <thead>
                     <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
-                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
-                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Chamber</th>
-                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Customer</th>
-                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Date</th>
-                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Amount</th>
-                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Payment</th>
-                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Action</th>
+                      <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">#</th>
+                      <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Cabin</th>
+                      <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Customer</th>
+                      <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Date</th>
+                      <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Amount</th>
+                      <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Payment</th>
+                      <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase text-center">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {filteredTransactions.map((transaction, index) => {
                       const paymentBadge = getPaymentModeBadge(transaction.paymentMode);
                       return (
-                        <tr key={index} className="transition-colors hover:bg-gray-50/80">
-                          <td className="p-4">
-                            <span className="text-sm font-semibold text-gray-400">#{index + 1}</span>
+                        <tr key={transaction._id || transaction.transactionId || index} className="transition-colors hover:bg-gray-50/80">
+                          <td className="px-3 py-2.5">
+                            <span className="text-[10px] font-semibold text-gray-400">#{index + 1}</span>
                           </td>
-                          <td className="p-4">
+                          <td className="px-3 py-2.5">
                             <div>
-                              <p className="font-semibold text-gray-900 text-sm">
-                                {transaction.cabinName || "Unknown Chamber"}
+                              <p className="font-semibold text-gray-900 text-xs">
+                                {transaction.cabinName || "Unknown Cabin"}
                               </p>
-                              <p className="text-[10px] text-gray-400">
+                              <p className="text-[9px] text-gray-400">
                                 Booking #{transaction.bookingId?._id?.slice(-6) || transaction.bookingId?.slice?.(-6) || "N/A"}
                               </p>
                             </div>
                           </td>
-                          <td className="p-4">
-                            <p className="font-medium text-gray-800 text-sm">{transaction.customerName || "Unknown"}</p>
-                            <p className="text-xs text-gray-400">{transaction.customerMobile || "N/A"}</p>
+                          <td className="px-3 py-2.5">
+                            <p className="font-medium text-gray-800 text-xs">{transaction.customerName || "Unknown"}</p>
+                            <p className="text-[9px] text-gray-400">{transaction.customerMobile || "N/A"}</p>
                           </td>
-                          <td className="p-4">
-                            <p className="text-sm text-gray-700">{formatDate(transaction.startDate)}</p>
-                            <p className="text-xs text-gray-400">{transaction.startDate} - {transaction.endDate}</p>
+                          <td className="px-3 py-2.5">
+                            <p className="text-xs text-gray-700">{formatDate(transaction.startDate)}</p>
+                            <p className="text-[9px] text-gray-400">{formatDate(transaction.endDate)}</p>
                           </td>
-                          <td className="p-4">
-                            <span className="text-sm font-bold text-emerald-600">+{formatCurrency(transaction.amount)}</span>
+                          <td className="px-3 py-2.5">
+                            <span className="text-xs font-bold text-emerald-600">+{formatCurrency(transaction.amount)}</span>
                           </td>
-                          <td className="p-4">
-                            <span className={`px-3 py-1 text-xs font-bold rounded-full inline-flex items-center gap-1.5 ${paymentBadge.color}`}>
+                          <td className="px-3 py-2.5">
+                            <span className={`px-2 py-0.5 text-[9px] font-bold rounded-full inline-flex items-center gap-1 ${paymentBadge.color}`}>
                               {getPaymentModeIcon(transaction.paymentMode)}
                               {paymentBadge.label}
                             </span>
                           </td>
-                          <td className="p-4">
+                          <td className="px-3 py-2.5 text-center">
                             <button
                               onClick={() => handleViewDetails(transaction)}
-                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors whitespace-nowrap"
+                              className="p-1 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors"
+                              title="View Details"
                             >
-                              <Eye size={13} /> View
+                              <Eye size={13} />
                             </button>
                           </td>
                         </tr>
@@ -687,17 +694,17 @@ const DoctorWallet = () => {
 
             {/* Footer with stats */}
             {!loading && filteredTransactions.length > 0 && (
-              <div className="px-4 py-3 border-t border-gray-100 rounded-b-2xl flex flex-wrap items-center justify-between gap-2" style={{ backgroundColor: '#fafafa' }}>
-                <span className="text-xs text-gray-500">
+              <div className="px-3 py-2 border-t border-gray-100 flex flex-wrap items-center justify-between gap-1" style={{ backgroundColor: '#fafafa' }}>
+                <span className="text-[9px] text-gray-500">
                   Showing <strong>{filteredTransactions.length}</strong> of <strong>{transactions.length}</strong> transactions
                 </span>
-                <div className="flex items-center gap-3 text-xs text-gray-500">
-                  <span className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                <div className="flex items-center gap-2 text-[9px] text-gray-500">
+                  <span className="flex items-center gap-0.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                     Credits: {transactions.filter(t => t.type === 'credit').length}
                   </span>
-                  <span className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
+                  <span className="flex items-center gap-0.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
                     Balance: {formatCurrency(wallet.balance)}
                   </span>
                 </div>
@@ -866,12 +873,12 @@ const DoctorWallet = () => {
                 </span>
               </div>
 
-              {/* Chamber & Customer */}
+              {/* Cabin & Customer */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-4 bg-gray-50 rounded-xl">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
                     <Building2 size={12} />
-                    Chamber
+                    Cabin
                   </p>
                   <p className="mt-1 font-semibold text-gray-800 text-sm break-words">{selectedTransaction.cabinName || "Unknown"}</p>
                 </div>

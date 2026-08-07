@@ -321,12 +321,14 @@ const BookCabin = () => {
         const userData = JSON.parse(userStr);
         if (userData && userData._id) {
           const isCoworking = userData.role === "coworking" || userData.isCoworking === true;
+          const isCabinOwner = userData.role === "cabinOwner";
           const isDoctor = userData.isDoctor === true || userData.role === "doctor";
           const isAdmin = userData.role === "admin";
           
           let role = "user";
           if (isAdmin) role = "admin";
           else if (isDoctor) role = "doctor";
+          else if (isCabinOwner) role = "cabinOwner";
           else if (isCoworking) role = "coworking";
           else role = "user";
           
@@ -368,15 +370,18 @@ const BookCabin = () => {
   const isAdmin = userRole === "admin";
   const isDoctor = userRole === "doctor";
   const isCoworking = userRole === "coworking";
+  const isCabinOwner = userRole === "cabinOwner";
 
   const renderNavbar = () => {
     if (isAdmin) {
       return <AdminNavbar />;
     } else if (isDoctor) {
       return <DoctorNavbar />;
-    } else if (isCoworking) {
+    } else if (isCoworking || isCabinOwner) {
+      // Show UsersNavbar for both coworking and cabinOwner
       return <UsersNavbar />;
     } else {
+      // Only show SimpleUserNavbar for regular 'user' role
       return <SimpleUserNavbar />;
     }
   };
@@ -973,7 +978,7 @@ const BookCabin = () => {
           navigate("/adminbookings");
         } else if (userRole === "doctor") {
           navigate("/doctorbookings");
-        } else if (userRole === "coworking") {
+        } else if (userRole === "coworking" || userRole === "cabinOwner") {
           navigate("/coworkingbookings");
         } else {
           // Regular user goes to userbooking

@@ -513,7 +513,8 @@ import {
   ChevronRight,
   CreditCard,
   History,
-  Banknote
+  Banknote,
+  BarChart3
 } from "lucide-react";
 import logo from "../assets/logo.png";
 
@@ -521,10 +522,10 @@ const DoctorNavbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [chambersOpen, setChambersOpen] = useState(false);
+  const [cabinsOpen, setCabinsOpen] = useState(false);
   const [bookingsOpen, setBookingsOpen] = useState(false);
   const profileRef = useRef(null);
-  const chambersRef = useRef(null);
+  const cabinsRef = useRef(null);
   const bookingsRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -540,8 +541,8 @@ const DoctorNavbar = () => {
       if (profileRef.current && !profileRef.current.contains(event.target)) {
         setProfileOpen(false);
       }
-      if (chambersRef.current && !chambersRef.current.contains(event.target)) {
-        setChambersOpen(false);
+      if (cabinsRef.current && !cabinsRef.current.contains(event.target)) {
+        setCabinsOpen(false);
       }
       if (bookingsRef.current && !bookingsRef.current.contains(event.target)) {
         setBookingsOpen(false);
@@ -579,17 +580,18 @@ const DoctorNavbar = () => {
   const doctorUser = doctorString ? JSON.parse(doctorString) : { name: "Doctor" };
   const initials = doctorUser.name?.substring(0, 2).toUpperCase() || "DR";
 
-  const chambersLinks = [
-    { name: "All Chambers", path: "/allchambers", icon: Building2 },
-    { name: "My Chambers", path: "/mychambers", icon: Home },
+  const cabinsLinks = [
+    { name: "All Cabins", path: "/allchambers", icon: Building2 },
+    { name: "Own Cabins", path: "/mychambers", icon: Home },
   ];
 
+  // ✅ "Own Cabin Bookings" with smaller text to prevent wrapping
   const bookingsLinks = [
     { name: "My Bookings", path: "/doctorbookings", icon: Calendar },
-    { name: "Chamber Bookings", path: "/chamberbookings", icon: Building2 },
+    { name: "Own Cabin Bookings", path: "/chamberbookings", icon: Building2 },
   ];
 
-  const chambersActive = isParentActive(chambersLinks.map(l => l.path));
+  const cabinsActive = isParentActive(cabinsLinks.map(l => l.path));
   const bookingsActive = isParentActive(bookingsLinks.map(l => l.path));
 
   return (
@@ -607,7 +609,7 @@ const DoctorNavbar = () => {
               <span className="text-sm font-bold tracking-tight text-slate-800">
                 IRYAX SPACE
               </span>
-              <span className="block text-[9px] font-medium text-indigo-600 tracking-widest uppercase">Doctor's Chamber</span>
+              <span className="block text-[9px] font-medium text-indigo-600 tracking-widest uppercase">Doctor's Cabin</span>
             </div>
           </button>
 
@@ -626,27 +628,27 @@ const DoctorNavbar = () => {
               <span>Dashboard</span>
             </button>
 
-            {/* Chambers Dropdown */}
-            <div className="relative" ref={chambersRef}>
+            {/* Cabins Dropdown */}
+            <div className="relative" ref={cabinsRef}>
               <button
-                onClick={() => setChambersOpen(!chambersOpen)}
+                onClick={() => setCabinsOpen(!cabinsOpen)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  chambersActive
+                  cabinsActive
                     ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
                     : 'text-slate-700 hover:bg-slate-100'
                 }`}
               >
                 <Building2 size={16} />
-                <span>Chambers</span>
-                <ChevronDown size={14} className={`transition-transform duration-200 ${chambersOpen ? 'rotate-180' : ''}`} />
+                <span>Cabins</span>
+                <ChevronDown size={14} className={`transition-transform duration-200 ${cabinsOpen ? 'rotate-180' : ''}`} />
               </button>
 
-              {chambersOpen && (
+              {cabinsOpen && (
                 <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden animate-in slide-in-from-top-2 duration-200">
-                  {chambersLinks.map((link) => (
+                  {cabinsLinks.map((link) => (
                     <button
                       key={link.path}
-                      onClick={() => { navigate(link.path); setChambersOpen(false); }}
+                      onClick={() => { navigate(link.path); setCabinsOpen(false); }}
                       className={`flex items-center gap-3 w-full px-4 py-2.5 text-sm transition-colors ${
                         isActive(link.path)
                           ? 'bg-indigo-50 text-indigo-700'
@@ -678,7 +680,7 @@ const DoctorNavbar = () => {
               </button>
 
               {bookingsOpen && (
-                <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden animate-in slide-in-from-top-2 duration-200">
+                <div className="absolute top-full left-0 mt-1 w-52 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden animate-in slide-in-from-top-2 duration-200">
                   {bookingsLinks.map((link) => (
                     <button
                       key={link.path}
@@ -690,7 +692,7 @@ const DoctorNavbar = () => {
                       }`}
                     >
                       <link.icon size={16} className={isActive(link.path) ? 'text-indigo-500' : 'text-slate-400'} />
-                      {link.name}
+                      <span className="text-xs whitespace-nowrap">{link.name}</span>
                       {isActive(link.path) && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-500" />}
                     </button>
                   ))}
@@ -708,7 +710,20 @@ const DoctorNavbar = () => {
               }`}
             >
               <CreditCard size={16} />
-              <span>Payments</span>
+              <span>Billings</span>
+            </button>
+
+            {/* Revenue - Direct Link */}
+            <button
+              onClick={() => navigate('/myrevenue')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                isActive('/myrevenue')
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
+                  : 'text-slate-700 hover:bg-slate-100'
+              }`}
+            >
+              <BarChart3 size={16} />
+              <span>Revenue</span>
             </button>
 
             {/* Wallet - Direct Link */}
@@ -824,9 +839,9 @@ const DoctorNavbar = () => {
               {isActive('/doctordashbaord') && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-500" />}
             </button>
 
-            {/* Chambers Section */}
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-3 pt-3 pb-1">Chambers</p>
-            {chambersLinks.map((link) => (
+            {/* Cabins Section */}
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-3 pt-3 pb-1">Cabins</p>
+            {cabinsLinks.map((link) => (
               <button
                 key={link.path}
                 onClick={() => { navigate(link.path); setMobileOpen(false); }}
@@ -855,7 +870,7 @@ const DoctorNavbar = () => {
                 }`}
               >
                 <link.icon size={18} className={isActive(link.path) ? 'text-indigo-500' : 'text-slate-400'} />
-                {link.name}
+                <span className="text-xs whitespace-nowrap">{link.name}</span>
                 {isActive(link.path) && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-500" />}
               </button>
             ))}
@@ -871,8 +886,23 @@ const DoctorNavbar = () => {
               }`}
             >
               <CreditCard size={18} className={isActive('/mychamberpayments') ? 'text-indigo-500' : 'text-slate-400'} />
-              Chamber Payments
+              Cabin Payments
               {isActive('/mychamberpayments') && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-500" />}
+            </button>
+
+            {/* Revenue Section */}
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-3 pt-3 pb-1">Revenue</p>
+            <button
+              onClick={() => { navigate('/myrevenue'); setMobileOpen(false); }}
+              className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                isActive('/myrevenue')
+                  ? 'bg-indigo-50 text-indigo-700'
+                  : 'text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              <BarChart3 size={18} className={isActive('/myrevenue') ? 'text-indigo-500' : 'text-slate-400'} />
+              My Revenue
+              {isActive('/myrevenue') && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-500" />}
             </button>
 
             {/* Wallet Section */}

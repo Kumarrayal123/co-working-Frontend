@@ -1,4 +1,6 @@
-// MyProfile.jsx - PAN Card Status Fixed
+// MyProfile.jsx - Complete with Quick Actions Below Percentage (Same as DoctorProfile)
+// PAN Card Status Fixed, Quick Actions added below completion card
+
 import axios from "axios";
 import {
   User,
@@ -37,7 +39,9 @@ import {
   Eye as EyeIcon,
   Download,
   FileImage,
-  File
+  File,
+  BarChart3,
+  Ticket
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -602,25 +606,13 @@ const MyProfile = () => {
             <h1 className="admin-dash__greeting">
               My <span>Profile</span>
             </h1>
-            <p className="admin-dash__subtitle">
-              View and manage your profile information.
-            </p>
+          
           </div>
-          <div className="admin-dash__date-pill">
-            <Calendar size={16} />
-            <span>
-              {new Date().toLocaleDateString("en-US", {
-                weekday: "short",
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-              })}
-            </span>
-          </div>
+        
         </div>
 
         {/* Profile Completion Card */}
-        <div className="bg-gradient-to-r from-amber-50 via-yellow-50 to-orange-50 rounded-2xl border border-amber-200 shadow-sm p-4 sm:p-5 mb-6">
+        <div className="bg-gradient-to-r from-amber-50 via-yellow-50 to-orange-50 rounded-2xl border border-amber-200 shadow-sm p-4 sm:p-5 mb-4">
           <div className="flex flex-col sm:flex-row sm:items-center gap-5">
             <div className="flex-shrink-0 flex justify-center">
               <CircularProgress 
@@ -684,6 +676,60 @@ const MyProfile = () => {
                   )}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+
+        {/* ✅ QUICK ACTION BUTTONS - ALAG DIV MEIN, PERCENTAGE KE NICHE (SAME AS DOCTORPROFILE) */}
+        <div className="mb-5">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
+                <ArrowRight size={16} className="text-amber-600" />
+              </div>
+              <h3 className="text-sm font-semibold text-gray-700">Quick Actions</h3>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+              <button
+                onClick={() => navigate("/mybookings")}
+                className="flex items-center justify-center gap-2 px-3 py-3 bg-indigo-50 text-indigo-700 rounded-xl text-sm font-medium hover:bg-indigo-100 transition-colors border border-indigo-200 hover:shadow-md"
+              >
+                <Ticket size={18} className="text-indigo-500" />
+                <span className="hidden sm:inline">My Bookings</span>
+                <span className="sm:hidden">Bookings</span>
+              </button>
+              <button
+                onClick={() => navigate("/mycabin")}
+                className="flex items-center justify-center gap-2 px-3 py-3 bg-emerald-50 text-emerald-700 rounded-xl text-sm font-medium hover:bg-emerald-100 transition-colors border border-emerald-200 hover:shadow-md"
+              >
+                <Home size={18} className="text-emerald-500" />
+                <span className="hidden sm:inline">My Cabins</span>
+                <span className="sm:hidden">Cabins</span>
+              </button>
+              <button
+                onClick={() => navigate("/my-wallet")}
+                className="flex items-center justify-center gap-2 px-3 py-3 bg-amber-50 text-amber-700 rounded-xl text-sm font-medium hover:bg-amber-100 transition-colors border border-amber-200 hover:shadow-md"
+              >
+                <Wallet size={18} className="text-amber-500" />
+                <span className="hidden sm:inline">Wallet</span>
+                <span className="sm:hidden">Wallet</span>
+              </button>
+              <button
+                onClick={() => navigate("/my-cabin-payments")}
+                className="flex items-center justify-center gap-2 px-3 py-3 bg-purple-50 text-purple-700 rounded-xl text-sm font-medium hover:bg-purple-100 transition-colors border border-purple-200 hover:shadow-md"
+              >
+                <CreditCard size={18} className="text-purple-500" />
+                <span className="hidden sm:inline">Payments</span>
+                <span className="sm:hidden">Payments</span>
+              </button>
+              <button
+                onClick={() => navigate("/spacerevenue")}
+                className="flex items-center justify-center gap-2 px-3 py-3 bg-cyan-50 text-cyan-700 rounded-xl text-sm font-medium hover:bg-cyan-100 transition-colors border border-cyan-200 hover:shadow-md"
+              >
+                <BarChart3 size={18} className="text-cyan-500" />
+                <span className="hidden sm:inline">Revenue</span>
+                <span className="sm:hidden">Revenue</span>
+              </button>
             </div>
           </div>
         </div>
@@ -938,40 +984,6 @@ const MyProfile = () => {
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <button
-                  onClick={() => navigate("/mybookings")}
-                  className="flex items-center justify-center gap-2 px-4 py-3 bg-indigo-50 text-indigo-700 rounded-xl text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200"
-                >
-                  <Calendar size={14} />
-                  My Bookings
-                </button>
-                <button
-                  onClick={() => navigate("/mycabin")}
-                  className="flex items-center justify-center gap-2 px-4 py-3 bg-emerald-50 text-emerald-700 rounded-xl text-xs font-medium hover:bg-emerald-100 transition-colors border border-emerald-200"
-                >
-                  <Home size={14} />
-                  My Cabins
-                </button>
-                <button
-                  onClick={() => navigate("/userwallet")}
-                  className="flex items-center justify-center gap-2 px-4 py-3 bg-amber-50 text-amber-700 rounded-xl text-xs font-medium hover:bg-amber-100 transition-colors border border-amber-200"
-                >
-                  <Wallet size={14} />
-                  My Wallet
-                </button>
-                <button
-                  onClick={() => navigate("/my-cabin-payments")}
-                  className="flex items-center justify-center gap-2 px-4 py-3 bg-purple-50 text-purple-700 rounded-xl text-xs font-medium hover:bg-purple-100 transition-colors border border-purple-200"
-                >
-                  <CreditCard size={14} />
-                  Payments
-                </button>
               </div>
             </div>
           </div>

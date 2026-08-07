@@ -967,7 +967,9 @@
 
 
 
-// MyCabinPayments.jsx - Complete with All Data and Professional Invoice (Redesigned)
+// MyCabinPayments.jsx - Complete with same UI as MyChamberPayments
+// Professional Black & Gray Invoice, Multi-Filters, Stats Cards, etc.
+
 import axios from "axios";
 import {
   CreditCard,
@@ -1005,6 +1007,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import UsersNavbar from "./UsersNavbar";
+import AdminNavbar from "./AdminNavbar";
 import "./Dashboard.css";
 
 const API_URL = "https://spaceapi.iryax.com";
@@ -1026,9 +1029,14 @@ const MyCabinPayments = () => {
   const [renewOrder, setRenewOrder] = useState(null);
   const [renewing, setRenewing] = useState(false);
   const [countdowns, setCountdowns] = useState({});
-  const [searchTerm, setSearchTerm] = useState("");
+
+  // ✅ MULTI-FILTERS
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterCabinName, setFilterCabinName] = useState("");
+  const [filterDateFrom, setFilterDateFrom] = useState("");
+  const [filterDateTo, setFilterDateTo] = useState("");
+
+  const isAdmin = localStorage.getItem("admin") !== null;
   const navigate = useNavigate();
 
   const getAuthHeader = () => {
@@ -1053,7 +1061,7 @@ const MyCabinPayments = () => {
 
       setOrders(res.data.orders || []);
       setStats(res.data.stats || { total: 0, active: 0, expired: 0, totalAmount: 0 });
-      
+
       const initialCountdowns = {};
       (res.data.orders || []).forEach(order => {
         if (order.status === 'active') {
@@ -1064,7 +1072,7 @@ const MyCabinPayments = () => {
         }
       });
       setCountdowns(initialCountdowns);
-      
+
     } catch (err) {
       console.error("Error fetching payments:", err);
       toast.error("Failed to fetch payment history");
@@ -1096,20 +1104,51 @@ const MyCabinPayments = () => {
     fetchPayments();
   }, []);
 
-  // Filter orders
+  // Format date to dd/mm/yyyy
+  const formatDateDMY = (dateStr) => {
+    if (!dateStr) return "N/A";
+    const d = new Date(dateStr);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  // ✅ FILTER LOGIC WITH ALL FILTERS
   const filteredOrders = orders.filter(order => {
-    const matchSearch = order.cabin?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        order.cabin?.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        order.transactionId?.toLowerCase().includes(searchTerm.toLowerCase());
+    // Status filter
     const matchStatus = filterStatus === 'all' || order.status === filterStatus;
-    const matchCabinName = filterCabinName === "" || order.cabin?.name?.toLowerCase().includes(filterCabinName.toLowerCase());
-    return matchSearch && matchStatus && matchCabinName;
+
+    // Cabin name filter
+    const matchCabinName = filterCabinName === "" || 
+      order.cabin?.name?.toLowerCase().includes(filterCabinName.toLowerCase());
+
+    // Date range filter
+    let matchDate = true;
+    if (filterDateFrom) {
+      const fromDate = new Date(filterDateFrom);
+      const orderDate = new Date(order.createdAt);
+      if (orderDate < fromDate) matchDate = false;
+    }
+    if (filterDateTo && matchDate) {
+      const toDate = new Date(filterDateTo);
+      toDate.setHours(23, 59, 59, 999);
+      const orderDate = new Date(order.createdAt);
+      if (orderDate > toDate) matchDate = false;
+    }
+
+    return matchStatus && matchCabinName && matchDate;
   });
+
+  // ✅ SORT BY DATE (Latest first)
+  const sortedOrders = [...filteredOrders].sort((a, b) => 
+    new Date(b.createdAt) - new Date(a.createdAt)
+  );
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentOrders = filteredOrders.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+  const currentOrders = sortedOrders.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(sortedOrders.length / itemsPerPage);
 
   const getStatusBadge = (status, expiryDate) => {
     if (status === 'active') {
@@ -1142,7 +1181,7 @@ const MyCabinPayments = () => {
     const hours = Math.floor((seconds % 86400) / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
-    
+
     if (days > 0) {
       return `${days}d ${hours}h ${minutes}m ${secs}s`;
     }
@@ -1166,11 +1205,7 @@ const MyCabinPayments = () => {
 
   const formatDate = (date) => {
     if (!date) return 'N/A';
-    return new Date(date).toLocaleDateString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    });
+    return formatDateDMY(date);
   };
 
   const formatDateTime = (date) => {
@@ -1198,11 +1233,11 @@ const MyCabinPayments = () => {
   // ======================
   const handleRenewPayment = async () => {
     if (!renewOrder) return;
-    
+
     setRenewing(true);
     try {
       const token = localStorage.getItem("token");
-      
+
       const res = await axios.post(
         `${API_URL}/api/cabins/renew-payment`,
         { orderId: renewOrder._id },
@@ -1212,9 +1247,9 @@ const MyCabinPayments = () => {
       toast.success(`Cabin renewed successfully! Amount: ₹${res.data.amount}`);
       setShowRenewModal(false);
       setRenewOrder(null);
-      
+
       await fetchPayments();
-      
+
     } catch (err) {
       console.error("Renew payment error:", err);
       toast.error(err.response?.data?.error || "Failed to renew cabin");
@@ -1228,12 +1263,14 @@ const MyCabinPayments = () => {
   // ======================
   const exportToExcel = () => {
     try {
-      if (filteredOrders.length === 0) {
+      if (sortedOrders.length === 0) {
         toast.warning("No data to export");
         return;
       }
 
-      const exportData = filteredOrders.map((order, index) => ({
+      const XLSX = require('xlsx');
+
+      const exportData = sortedOrders.map((order, index) => ({
         'S.No': index + 1,
         'Cabin Name': getCabinName(order),
         'Address': getCabinAddress(order),
@@ -1251,15 +1288,36 @@ const MyCabinPayments = () => {
       const ws = XLSX.utils.json_to_sheet(exportData);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Cabin_Payments');
-      
+
       const date = new Date().toISOString().split('T')[0];
       XLSX.writeFile(wb, `cabin_payments_${date}.xlsx`);
-      
-      toast.success(`Exported ${filteredOrders.length} payments to Excel!`);
+
+      toast.success(`Exported ${sortedOrders.length} payments to Excel!`);
     } catch (error) {
       console.error("Export error:", error);
       toast.error("Failed to export payments");
     }
+  };
+
+  // ======================
+  // CLEAR ALL FILTERS
+  // ======================
+  const clearFilters = () => {
+    setFilterStatus("all");
+    setFilterCabinName("");
+    setFilterDateFrom("");
+    setFilterDateTo("");
+    setCurrentPage(1);
+  };
+
+  // ======================
+  // CHECK IF ANY FILTER ACTIVE
+  // ======================
+  const hasActiveFilters = () => {
+    return filterStatus !== 'all' || 
+           filterCabinName !== "" || 
+           filterDateFrom !== "" || 
+           filterDateTo !== "";
   };
 
   // ======================
@@ -1270,7 +1328,7 @@ const MyCabinPayments = () => {
       const cabin = order.cabin || {};
       const cabinName = cabin.name || 'Cabin Deleted';
       const cabinAddress = cabin.address || 'N/A';
-      
+
       const amount = order.amount || 0;
       const baseAmount = order.baseAmount || amount;
       const gstAmount = order.gstAmount || 0;
@@ -1287,7 +1345,7 @@ const MyCabinPayments = () => {
         month: 'short',
         year: 'numeric'
       });
-      
+
       const win = window.open('', '_blank', 'width=900,height=700');
       if (win) {
         win.document.write(`
@@ -1367,204 +1425,190 @@ const MyCabinPayments = () => {
     }
   };
 
-  const clearFilters = () => {
-    setSearchTerm("");
-    setFilterStatus("all");
-    setFilterCabinName("");
-    setCurrentPage(1);
-  };
-
   return (
     <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
-      <UsersNavbar />
+      {isAdmin ? <AdminNavbar /> : <UsersNavbar />}
 
       <div className="pt-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
         {/* Header */}
-        <div className="admin-dash__header">
+        <div className="admin-dash__header" style={{ marginBottom: '8px' }}>
           <div>
-            <h1 className="admin-dash__greeting">
-              My <span>Payments</span>
+            <h1 className="admin-dash__greeting" style={{ fontSize: '1.25rem' }}>
+              My <span>Cabin Billings</span>
             </h1>
+            <p className="admin-dash__subtitle" style={{ fontSize: '11px' }}>
+              Track all your cabin payment history and invoices
+            </p>
           </div>
-         
+          <div className="flex items-center gap-2">
+            {sortedOrders.length > 0 && (
+              <button
+                onClick={exportToExcel}
+                className="flex items-center gap-1.5 px-3 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition border border-indigo-200"
+              >
+                <Download size={14} />
+                Export
+              </button>
+            )}
+            <button
+              onClick={fetchPayments}
+              className="flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition"
+            >
+              <RefreshCw size={14} className="text-indigo-600" />
+              Refresh
+            </button>
+            <button
+              onClick={() => navigate("/mycabin")}
+              className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition shadow-sm shadow-indigo-200"
+            >
+              <Building2 size={14} />
+              My Cabins
+            </button>
+          </div>
         </div>
 
-        {/* Stats Cards - Exact MyBookings / AdminDashboard style */}
-        <div className="admin-dash__stats" style={{ marginBottom: '16px' }}>
-          {[
-            {
-              label: "Total Orders",
-              value: stats.total,
-              meta: "all cabin payment orders",
-              icon: Receipt,
-              color: "indigo",
-              onClick: () => clearFilters()
-            },
-            {
-              label: "Active",
-              value: stats.active,
-              meta: "active subscriptions",
-              icon: CheckCircle,
-              color: "emerald",
-              onClick: () => setFilterStatus("active")
-            },
-            {
-              label: "Expired",
-              value: stats.expired,
-              meta: "expired subscriptions",
-              icon: XCircle,
-              color: "rose",
-              onClick: () => setFilterStatus("expired")
-            },
-            {
-              label: "Total Spent",
-              value: formatCurrency(stats.totalAmount),
-              meta: "total registration payments",
-              icon: IndianRupee,
-              color: "purple"
-            },
-            {
-              label: "Renewals",
-              value: orders.filter(o => !o.isFirstCabin).length,
-              meta: `${orders.filter(o => o.isFirstCabin).length} first registrations`,
-              icon: RefreshCw,
-              color: "cyan"
-            }
-          ].map((stat, index) => (
-            <div
-              key={index}
-              className="admin-dash__stat"
-              onClick={stat.onClick}
-              style={{ 
-                cursor: stat.onClick ? 'pointer' : 'default',
-                padding: '12px 14px',
-                minHeight: '80px'
-              }}
-            >
-              <div className="admin-dash__stat-top">
-                <span className="admin-dash__stat-label" style={{ fontSize: '11px' }}>{stat.label}</span>
-                <div className={`admin-dash__stat-icon admin-dash__stat-icon--${stat.color}`} style={{ width: '28px', height: '28px' }}>
-                  <stat.icon size={14} />
-                </div>
+        {/* Stats Cards - Small and Clean */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+          <div className="bg-white rounded-xl border border-gray-100 p-3 shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Payments</span>
+              <div className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                <Receipt size={14} />
               </div>
-              <div className="admin-dash__stat-value" style={{ fontSize: '18px', fontWeight: '700' }}>{stat.value}</div>
-              <div className="admin-dash__stat-meta" style={{ fontSize: '9px' }}>{stat.meta}</div>
             </div>
-          ))}
+            <div className="text-xl font-bold text-gray-800 mt-1">{stats.total}</div>
+            <div className="text-[9px] text-gray-400">All transaction records</div>
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-100 p-3 shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Active</span>
+              <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
+                <CheckCircle size={14} />
+              </div>
+            </div>
+            <div className="text-xl font-bold text-emerald-600 mt-1">{stats.active}</div>
+            <div className="text-[9px] text-gray-400">Currently active cabins</div>
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-100 p-3 shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Expired</span>
+              <div className="w-7 h-7 rounded-lg bg-rose-50 flex items-center justify-center text-rose-600">
+                <XCircle size={14} />
+              </div>
+            </div>
+            <div className="text-xl font-bold text-rose-600 mt-1">{stats.expired}</div>
+            <div className="text-[9px] text-gray-400">Expired / Pending renewal</div>
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-100 p-3 shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Spent</span>
+              <div className="w-7 h-7 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600">
+                <IndianRupee size={14} />
+              </div>
+            </div>
+            <div className="text-xl font-bold text-purple-600 mt-1">{formatCurrency(stats.totalAmount)}</div>
+            <div className="text-[9px] text-gray-400">Lifetime cabin payments</div>
+          </div>
         </div>
 
         {/* Table Section */}
-        <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
-          <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
-            <div className="flex items-center gap-3">
-              <h3 className="admin-dash__card-title">Payment History</h3>
-              <span className="px-2.5 py-0.5 text-xs font-bold text-indigo-700 bg-indigo-100 rounded-full">
-                {filteredOrders.length}
+        <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden' }}>
+          <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-2 p-3" style={{ backgroundColor: '#fafafa', borderBottom: '1px solid #e5e7eb' }}>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-bold text-gray-700">Payment History</h3>
+              <span className="px-2 py-0.5 text-[10px] font-bold text-indigo-700 bg-indigo-100 rounded-full">
+                {sortedOrders.length}
               </span>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              {/* Search Bar */}
-              <div className="relative w-full sm:w-48">
-                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search payments..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                />
-              </div>
-
+            <div className="flex flex-wrap items-center gap-1.5">
               {/* Cabin Name Filter */}
-              <div className="min-w-[140px]">
+              <div className="relative">
+                <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Filter by cabin..."
+                  placeholder="Filter cabin..."
                   value={filterCabinName}
                   onChange={(e) => setFilterCabinName(e.target.value)}
-                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  className="text-xs bg-white border border-gray-200 rounded-lg pl-8 pr-2.5 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 w-28 sm:w-36"
                 />
               </div>
 
               {/* Status Filter */}
-              <div className="min-w-[130px]">
-                <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
-                >
-                  <option value="all">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="expired">Expired</option>
-                  <option value="pending">Pending</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="text-xs bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20"
+              >
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="expired">Expired</option>
+                <option value="pending">Pending</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+
+              {/* Date From */}
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] text-gray-400 font-medium">From</span>
+                <input
+                  type="date"
+                  value={filterDateFrom}
+                  onChange={(e) => setFilterDateFrom(e.target.value)}
+                  className="text-xs bg-white border border-gray-200 rounded-lg px-2 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 w-28"
+                />
               </div>
 
-              {/* Clear Filters Button */}
-              {(filterStatus !== 'all' || filterCabinName || searchTerm) && (
+              {/* Date To */}
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] text-gray-400 font-medium">To</span>
+                <input
+                  type="date"
+                  value={filterDateTo}
+                  onChange={(e) => setFilterDateTo(e.target.value)}
+                  className="text-xs bg-white border border-gray-200 rounded-lg px-2 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 w-28"
+                />
+              </div>
+
+              {/* Clear Filters */}
+              {hasActiveFilters() && (
                 <button
                   onClick={clearFilters}
-                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                  className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                 >
-                  <X size={14} /> Clear
+                  <X size={12} /> Clear
                 </button>
               )}
-
-              {/* Export Button */}
-              {filteredOrders.length > 0 && (
-                <button
-                  onClick={exportToExcel}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-medium hover:bg-emerald-100 transition-colors border border-emerald-200"
-                >
-                  <Download size={14} />
-                  <span>Export</span>
-                </button>
-              )}
-
-              <button
-                onClick={fetchPayments}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200"
-              >
-                <RefreshCw size={14} />
-                <span className="hidden xs:inline">Refresh</span>
-              </button>
-
-              <button
-                onClick={() => navigate("/mycabin")}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
-              >
-                <Building2 size={14} className="text-indigo-600" />
-                <span className="hidden xs:inline">Cabins</span>
-              </button>
             </div>
           </div>
 
           {/* Table Container */}
           <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
             {loading ? (
-              <div className="flex flex-col items-center justify-center gap-3 py-20">
-                <div className="w-12 h-12 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin" />
-                <p className="text-gray-500">Loading payments...</p>
+              <div className="flex flex-col items-center justify-center gap-3 py-16">
+                <div className="w-10 h-10 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin" />
+                <p className="text-sm text-gray-500">Loading payments...</p>
               </div>
-            ) : filteredOrders.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-3 py-20 text-gray-400">
-                <CreditCard size={48} className="opacity-20" />
-                <p className="text-lg font-medium">No payments found</p>
-                <p className="text-sm">Add a cabin to start your payment history.</p>
+            ) : sortedOrders.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-2 py-16 text-gray-400">
+                <CreditCard size={40} className="opacity-20" />
+                <p className="text-base font-medium">No payments found</p>
+                <p className="text-xs">Add a cabin to start your payment history.</p>
               </div>
             ) : (
-              <table className="w-full min-w-[1000px] text-left">
+              <table className="w-full min-w-[900px] text-left text-sm">
                 <thead>
                   <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">S.No</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Amount</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">TXN ID</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Payments</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Expiry</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Actions</th>
+                    <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">#</th>
+                    <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Cabin</th>
+                    <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Amount</th>
+                    <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">TXN ID</th>
+                    <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Payments</th>
+                    <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Status</th>
+                    <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Expiry</th>
+                    <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Created</th>
+                    <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -1573,91 +1617,96 @@ const MyCabinPayments = () => {
                     const countdown = countdowns[order._id] || 0;
                     const isExpired = order.status === 'expired' || (order.status === 'active' && new Date(order.expiryDate) < new Date());
                     const isExpiringSoon = countdown > 0 && countdown < 86400;
-                    
+
                     return (
                       <tr key={order._id} className="transition-colors group hover:bg-gray-50/80">
-                        <td className="p-4">
-                          <span className="text-sm font-semibold text-gray-400">{indexOfFirstItem + idx + 1}</span>
+                        <td className="px-3 py-2.5">
+                          <span className="text-[10px] font-semibold text-gray-400">#{indexOfFirstItem + idx + 1}</span>
                         </td>
-                        <td className="p-4">
+                        <td className="px-3 py-2.5">
                           <div>
-                            <p className="font-semibold text-gray-900 text-sm flex items-center gap-1">
+                            <p className="font-semibold text-gray-900 text-xs flex items-center gap-1">
                               {getCabinName(order)}
                               {order.isFirstCabin && (
-                                <span className="text-[10px] text-indigo-600 font-bold">⭐</span>
+                                <span className="text-[9px] text-indigo-600 font-bold">⭐</span>
                               )}
                             </p>
-                            <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
-                              <MapPin size={12} className="text-gray-400" />
+                            <p className="text-[9px] text-gray-500 flex items-center gap-0.5 mt-0.5">
+                              <MapPin size={10} className="text-gray-400" />
                               {getCabinAddress(order)}
                             </p>
                             {order.cabin === null && (
-                              <span className="text-[10px] text-red-500 font-medium">⚠️ Cabin Deleted</span>
+                              <span className="text-[8px] text-red-500 font-medium">⚠️ Cabin Deleted</span>
                             )}
                           </div>
                         </td>
-                        <td className="p-4">
-                          <span className="text-sm font-bold text-indigo-600">{formatCurrency(order.amount)}</span>
+                        <td className="px-3 py-2.5">
+                          <span className="text-xs font-bold text-indigo-600">{formatCurrency(order.amount)}</span>
                         </td>
-                        <td className="p-4">
+                        <td className="px-3 py-2.5">
                           {order.transactionId ? (
-                            <span className="text-xs font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                            <span className="text-[9px] font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">
                               {order.transactionId.slice(0, 8)}...
                             </span>
                           ) : (
-                            <span className="text-xs text-gray-400">N/A</span>
+                            <span className="text-[9px] text-gray-400">N/A</span>
                           )}
                         </td>
-                        <td className="p-4">
-                          <div className="flex items-center gap-1">
-                            <History size={14} className="text-indigo-400" />
-                            <span className="text-sm font-semibold text-gray-700">{order.paymentCount || 1}</span>
+                        <td className="px-3 py-2.5">
+                          <div className="flex items-center gap-0.5">
+                            <History size={12} className="text-indigo-400" />
+                            <span className="text-xs font-semibold text-gray-700">{order.paymentCount || 1}</span>
                           </div>
                         </td>
-                        <td className="p-4">
-                          <div className="flex flex-col gap-1">
-                            <span className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-bold rounded-full border ${status.color}`}>
+                        <td className="px-3 py-2.5">
+                          <div className="flex flex-col gap-0.5">
+                            <span className={`inline-flex items-center gap-0.5 px-2 py-0.5 text-[9px] font-bold rounded-full border ${status.color}`}>
                               {status.icon} {status.label}
                             </span>
                             {order.status === 'active' && countdown > 0 && (
-                              <span className={`text-xs font-mono font-medium flex items-center gap-1 ${getCountdownColor(countdown)}`}>
-                                <Timer size={12} />
+                              <span className={`text-[9px] font-mono font-medium flex items-center gap-0.5 ${getCountdownColor(countdown)}`}>
+                                <Timer size={10} />
                                 {formatCountdown(countdown)}
                               </span>
                             )}
                             {isExpired && (
-                              <span className="text-[10px] text-red-500 font-medium">🔴 Expired - Renew now!</span>
+                              <span className="text-[8px] text-red-500 font-medium">🔴 Expired - Renew!</span>
                             )}
                             {isExpiringSoon && order.status === 'active' && (
-                              <span className="text-[10px] text-orange-500 font-medium animate-pulse">⚠️ Expiring soon!</span>
+                              <span className="text-[8px] text-orange-500 font-medium animate-pulse">⚠️ Expiring soon!</span>
                             )}
                           </div>
                         </td>
-                        <td className="p-4">
-                          <span className="text-sm text-gray-600">{formatDate(order.expiryDate)}</span>
+                        <td className="px-3 py-2.5">
+                          <span className="text-xs text-gray-600">{formatDate(order.expiryDate)}</span>
                         </td>
-                        <td className="p-4">
-                          <div className="flex items-center gap-1.5 flex-wrap">
+                        <td className="px-3 py-2.5">
+                          <span className="text-[9px] text-gray-500">{formatDate(order.createdAt)}</span>
+                        </td>
+                        <td className="px-3 py-2.5">
+                          <div className="flex items-center justify-center gap-1">
                             <button
                               onClick={() => handleViewDetails(order)}
-                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors whitespace-nowrap"
+                              className="p-1 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors"
                               title="View Details"
                             >
-                              <Eye size={13} /> View
+                              <Eye size={13} />
                             </button>
+
                             <button
                               onClick={() => downloadInvoice(order)}
-                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors whitespace-nowrap"
+                              className="p-1 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
                               title="Download Invoice"
                             >
-                              <FileDown size={13} /> Invoice
+                              <FileDown size={13} />
                             </button>
+
                             <button
                               onClick={() => { setRenewOrder(order); setShowRenewModal(true); }}
-                              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${isExpired ? 'bg-red-50 text-red-700 hover:bg-red-100' : 'bg-orange-50 text-orange-700 hover:bg-orange-100'}`}
+                              className={`p-1 rounded-lg transition-colors ${isExpired ? 'bg-red-50 text-red-700 hover:bg-red-100' : 'bg-orange-50 text-orange-700 hover:bg-orange-100'}`}
                               title={isExpired ? "Renew Expired Cabin" : "Extend Validity"}
                             >
-                              <RefreshCw size={13} /> Renew
+                              <RefreshCw size={13} />
                             </button>
                           </div>
                         </td>
@@ -1670,22 +1719,22 @@ const MyCabinPayments = () => {
           </div>
 
           {/* Footer with stats */}
-          {!loading && filteredOrders.length > 0 && (
-            <div className="px-4 py-3 border-t border-gray-100 rounded-b-2xl flex flex-wrap items-center justify-between gap-2" style={{ backgroundColor: '#fafafa' }}>
-              <span className="text-xs text-gray-500">
-                Showing <strong>{filteredOrders.length}</strong> of <strong>{orders.length}</strong> payments
+          {!loading && sortedOrders.length > 0 && (
+            <div className="px-3 py-2 border-t border-gray-100 flex flex-wrap items-center justify-between gap-1" style={{ backgroundColor: '#fafafa' }}>
+              <span className="text-[9px] text-gray-500">
+                Showing <strong>{sortedOrders.length}</strong> of <strong>{orders.length}</strong> payments
               </span>
-              <div className="flex items-center gap-3 text-xs text-gray-500">
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <div className="flex items-center gap-2 text-[9px] text-gray-500">
+                <span className="flex items-center gap-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                   Active: {stats.active}
                 </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                <span className="flex items-center gap-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
                   Expired: {stats.expired}
                 </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
+                <span className="flex items-center gap-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
                   Total: {stats.total}
                 </span>
               </div>
@@ -1693,26 +1742,26 @@ const MyCabinPayments = () => {
           )}
 
           {/* Pagination */}
-          {!loading && filteredOrders.length > 0 && totalPages > 1 && (
-            <div className="px-4 py-3 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#fafafa' }}>
-              <p className="text-xs text-gray-500">
-                Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredOrders.length)} of {filteredOrders.length} entries
+          {!loading && sortedOrders.length > 0 && totalPages > 1 && (
+            <div className="px-3 py-2 border-t border-gray-100 flex flex-wrap items-center justify-between gap-2" style={{ backgroundColor: '#fafafa' }}>
+              <p className="text-[9px] text-gray-500">
+                Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, sortedOrders.length)} of {sortedOrders.length} entries
               </p>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1">
                 <button
                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'}`}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-medium transition-colors ${currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'}`}
                 >
                   Previous
                 </button>
-                <span className="text-xs font-medium text-gray-600 px-2">
-                  Page {currentPage} of {totalPages}
+                <span className="text-[10px] font-medium text-gray-600 px-1.5">
+                  {currentPage} / {totalPages}
                 </span>
                 <button
                   onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${currentPage === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'}`}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-medium transition-colors ${currentPage === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'}`}
                 >
                   Next
                 </button>
@@ -1728,44 +1777,44 @@ const MyCabinPayments = () => {
       {showDetailModal && selectedOrder && (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setShowDetailModal(false); }}>
           <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="sticky top-0 bg-gradient-to-br from-indigo-600 to-purple-600 text-white p-6 rounded-t-3xl flex justify-between items-center">
+            <div className="sticky top-0 bg-gradient-to-br from-indigo-600 to-purple-600 text-white p-5 rounded-t-3xl flex justify-between items-center">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                  <CreditCard size={20} className="text-white" />
+                <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
+                  <CreditCard size={18} className="text-white" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold">Order Details</h3>
+                  <h3 className="text-xl font-bold">Order Details</h3>
                   <p className="text-sm text-indigo-200">#{selectedOrder._id.slice(-6).toUpperCase()}</p>
                 </div>
               </div>
-              <button onClick={() => setShowDetailModal(false)} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors">
-                <X size={20} />
+              <button onClick={() => setShowDetailModal(false)} className="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors">
+                <X size={18} />
               </button>
             </div>
-            <div className="p-6 space-y-4">
-              <div className="bg-gray-50 rounded-xl p-4">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Cabin Details</p>
-                <p className="mt-1 font-semibold text-gray-800">{getCabinName(selectedOrder)}</p>
-                <p className="text-sm text-gray-600 flex items-center gap-1 mt-0.5">
-                  <MapPin size={14} /> {getCabinAddress(selectedOrder)}
+            <div className="p-5 space-y-3">
+              <div className="bg-gray-50 rounded-xl p-3">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Cabin Details</p>
+                <p className="mt-1 font-semibold text-gray-800 text-sm">{getCabinName(selectedOrder)}</p>
+                <p className="text-xs text-gray-600 flex items-center gap-0.5 mt-0.5">
+                  <MapPin size={12} /> {getCabinAddress(selectedOrder)}
                 </p>
                 {selectedOrder.isFirstCabin && (
-                  <span className="text-xs text-indigo-600 font-medium mt-1 inline-block">⭐ First Cabin</span>
+                  <span className="text-[10px] text-indigo-600 font-medium mt-0.5 inline-block">⭐ First Cabin</span>
                 )}
               </div>
 
-              <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-100">
-                <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider">Amount Breakdown</p>
-                <div className="mt-2 space-y-1.5">
-                  <div className="flex justify-between text-sm">
+              <div className="bg-indigo-50 rounded-xl p-3 border border-indigo-100">
+                <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">Amount Breakdown</p>
+                <div className="mt-1.5 space-y-1 text-sm">
+                  <div className="flex justify-between text-xs">
                     <span className="text-gray-600">Base Amount</span>
                     <span className="font-semibold">₹{selectedOrder.baseAmount?.toFixed(2) || selectedOrder.amount}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
+                  <div className="flex justify-between text-xs">
                     <span className="text-gray-600">GST ({(selectedOrder.gstRate * 100).toFixed(0)}%)</span>
                     <span className="font-semibold">₹{selectedOrder.gstAmount?.toFixed(2) || '0.00'}</span>
                   </div>
-                  <div className="border-t border-indigo-200 pt-1.5 flex justify-between text-sm font-bold">
+                  <div className="border-t border-indigo-200 pt-1 flex justify-between text-xs font-bold">
                     <span>Total</span>
                     <span className="text-indigo-600">₹{selectedOrder.amount.toFixed(2)}</span>
                   </div>
@@ -1773,82 +1822,87 @@ const MyCabinPayments = () => {
               </div>
 
               {selectedOrder.transactionId && (
-                <div className="bg-gray-50 rounded-xl p-4">
+                <div className="bg-gray-50 rounded-xl p-3">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Hash size={18} className="text-indigo-600" />
-                      <span className="text-sm font-medium text-gray-700">Transaction ID</span>
+                    <div className="flex items-center gap-1.5">
+                      <Hash size={15} className="text-indigo-600" />
+                      <span className="text-xs font-medium text-gray-700">Transaction ID</span>
                     </div>
-                    <span className="text-sm font-mono font-bold text-indigo-600">{selectedOrder.transactionId}</span>
+                    <span className="text-xs font-mono font-bold text-indigo-600">{selectedOrder.transactionId}</span>
                   </div>
                 </div>
               )}
 
-              <div className="bg-purple-50 rounded-xl p-4 border border-purple-100">
+              <div className="bg-purple-50 rounded-xl p-3 border border-purple-100">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <History size={18} className="text-purple-600" />
-                    <span className="text-sm font-medium text-gray-700">Payment Count</span>
+                  <div className="flex items-center gap-1.5">
+                    <History size={15} className="text-purple-600" />
+                    <span className="text-xs font-medium text-gray-700">Payment Count</span>
                   </div>
-                  <span className="text-xl font-bold text-purple-600">{selectedOrder.paymentCount || 1}</span>
+                  <span className="text-lg font-bold text-purple-600">{selectedOrder.paymentCount || 1}</span>
                 </div>
               </div>
 
               {selectedOrder.status === 'active' && countdowns[selectedOrder._id] > 0 && (
-                <div className={`rounded-xl p-4 border ${countdowns[selectedOrder._id] < 86400 ? 'bg-orange-50 border-orange-200' : 'bg-emerald-50 border-emerald-200'}`}>
+                <div className={`rounded-xl p-3 border ${countdowns[selectedOrder._id] < 86400 ? 'bg-orange-50 border-orange-200' : 'bg-emerald-50 border-emerald-200'}`}>
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Timer size={18} className={countdowns[selectedOrder._id] < 86400 ? 'text-orange-500' : 'text-emerald-500'} />
-                      <span className="text-sm font-medium text-gray-700">Time Remaining</span>
+                    <div className="flex items-center gap-1.5">
+                      <Timer size={15} className={countdowns[selectedOrder._id] < 86400 ? 'text-orange-500' : 'text-emerald-500'} />
+                      <span className="text-xs font-medium text-gray-700">Time Remaining</span>
                     </div>
-                    <span className={`text-xl font-bold font-mono ${countdowns[selectedOrder._id] < 86400 ? 'text-orange-600' : 'text-emerald-600'}`}>
+                    <span className={`text-sm font-bold font-mono ${countdowns[selectedOrder._id] < 86400 ? 'text-orange-600' : 'text-emerald-600'}`}>
                       {formatCountdown(countdowns[selectedOrder._id])}
                     </span>
                   </div>
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Amount</p>
-                  <p className="text-xl font-bold text-indigo-600 mt-1">{formatCurrency(selectedOrder.amount)}</p>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-gray-50 rounded-xl p-3">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Amount</p>
+                  <p className="text-lg font-bold text-indigo-600 mt-0.5">{formatCurrency(selectedOrder.amount)}</p>
                 </div>
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Status</p>
-                  <span className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-bold rounded-full border mt-1 ${getStatusBadge(selectedOrder.status, selectedOrder.expiryDate).color}`}>
+                <div className="bg-gray-50 rounded-xl p-3">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Status</p>
+                  <span className={`inline-flex items-center gap-0.5 px-2 py-0.5 text-[10px] font-bold rounded-full border mt-0.5 ${getStatusBadge(selectedOrder.status, selectedOrder.expiryDate).color}`}>
                     {getStatusBadge(selectedOrder.status, selectedOrder.expiryDate).icon}
                     {getStatusBadge(selectedOrder.status, selectedOrder.expiryDate).label}
                   </span>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Start Date</p>
-                  <p className="text-sm font-medium text-gray-700 mt-1">{formatDate(selectedOrder.startDate)}</p>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-gray-50 rounded-xl p-3">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Start Date</p>
+                  <p className="text-xs font-medium text-gray-700 mt-0.5">{formatDate(selectedOrder.startDate)}</p>
                 </div>
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Expiry Date</p>
-                  <p className="text-sm font-medium text-gray-700 mt-1">{formatDate(selectedOrder.expiryDate)}</p>
+                <div className="bg-gray-50 rounded-xl p-3">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Expiry Date</p>
+                  <p className="text-xs font-medium text-gray-700 mt-0.5">{formatDate(selectedOrder.expiryDate)}</p>
                 </div>
               </div>
 
-              <div className="flex flex-col gap-3">
+              <div className="bg-gray-50 rounded-xl p-3">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Created At</p>
+                <p className="text-xs font-medium text-gray-700 mt-0.5">{formatDateTime(selectedOrder.createdAt)}</p>
+              </div>
+
+              <div className="flex flex-col gap-2 pt-1">
                 <button
                   onClick={() => { setShowDetailModal(false); downloadInvoice(selectedOrder); }}
-                  className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-sm active:scale-[0.98] flex items-center justify-center gap-2"
+                  className="w-full py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition shadow-sm active:scale-[0.98] flex items-center justify-center gap-2"
                 >
-                  <FileDown size={16} /> Download Invoice
+                  <FileDown size={15} /> Download Invoice
                 </button>
                 <button
                   onClick={() => { setShowDetailModal(false); setRenewOrder(selectedOrder); setShowRenewModal(true); }}
-                  className={`w-full py-3 rounded-xl font-bold transition shadow-sm active:scale-[0.98] flex items-center justify-center gap-2 ${
+                  className={`w-full py-2.5 rounded-xl text-sm font-bold transition shadow-sm active:scale-[0.98] flex items-center justify-center gap-2 ${
                     selectedOrder.status === 'expired' || new Date(selectedOrder.expiryDate) < new Date()
                       ? 'bg-red-600 text-white hover:bg-red-700'
                       : 'bg-orange-500 text-white hover:bg-orange-600'
                   }`}
                 >
-                  <RefreshCw size={16} />
+                  <RefreshCw size={15} />
                   {selectedOrder.status === 'expired' || new Date(selectedOrder.expiryDate) < new Date()
                     ? `Renew (${formatCurrency(selectedOrder.amount)})`
                     : `Extend (${formatCurrency(selectedOrder.amount)})`
@@ -1856,7 +1910,7 @@ const MyCabinPayments = () => {
                 </button>
                 <button
                   onClick={() => setShowDetailModal(false)}
-                  className="w-full py-3 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition"
+                  className="w-full py-2.5 border border-gray-200 rounded-xl text-gray-600 text-sm font-medium hover:bg-gray-50 transition"
                 >
                   Close
                 </button>
@@ -1872,55 +1926,55 @@ const MyCabinPayments = () => {
       {showRenewModal && renewOrder && (
         <div className="fixed inset-0 z-[1300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) { setShowRenewModal(false); setRenewOrder(null); } }}>
           <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
-            <div className={`p-6 text-center text-white ${renewOrder.status === 'expired' || new Date(renewOrder.expiryDate) < new Date() ? 'bg-gradient-to-br from-red-500 to-red-600' : 'bg-gradient-to-br from-orange-500 to-orange-600'}`}>
-              <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-3">
-                <RefreshCw size={32} className="text-white" />
+            <div className={`p-5 text-center text-white ${renewOrder.status === 'expired' || new Date(renewOrder.expiryDate) < new Date() ? 'bg-gradient-to-br from-red-500 to-red-600' : 'bg-gradient-to-br from-orange-500 to-orange-600'}`}>
+              <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-2">
+                <RefreshCw size={28} className="text-white" />
               </div>
-              <h3 className="text-xl font-bold">
+              <h3 className="text-lg font-bold">
                 {renewOrder.status === 'expired' || new Date(renewOrder.expiryDate) < new Date()
                   ? 'Renew Expired Cabin'
                   : 'Extend Cabin Validity'
                 }
               </h3>
-              <p className="text-sm opacity-80 mt-1">
+              <p className="text-xs opacity-80 mt-0.5">
                 {renewOrder.status === 'expired' || new Date(renewOrder.expiryDate) < new Date()
                   ? 'Your cabin has expired. Renew to activate for 30 more days.'
                   : 'Extend your cabin validity for 30 more days.'
                 }
               </p>
             </div>
-            <div className="p-5 space-y-4">
-              <div className="bg-gray-50 rounded-xl p-4 space-y-3 text-sm">
-                <div className="flex justify-between">
+            <div className="p-5 space-y-3">
+              <div className="bg-gray-50 rounded-xl p-3 space-y-2 text-sm">
+                <div className="flex justify-between text-xs">
                   <span className="text-gray-500">Cabin</span>
                   <span className="font-semibold text-gray-800">{getCabinName(renewOrder)}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between text-xs">
                   <span className="text-gray-500">Current Status</span>
                   <span className={`font-medium ${renewOrder.status === 'expired' || new Date(renewOrder.expiryDate) < new Date() ? 'text-red-600' : 'text-emerald-600'}`}>
                     {renewOrder.status === 'expired' || new Date(renewOrder.expiryDate) < new Date() ? 'Expired' : 'Active'}
                   </span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between text-xs">
                   <span className="text-gray-500">Expiry Date</span>
                   <span className="font-medium">{formatDate(renewOrder.expiryDate)}</span>
                 </div>
-                <div className="flex justify-between border-t border-gray-200 pt-2">
+                <div className="flex justify-between border-t border-gray-200 pt-1.5 text-xs">
                   <span className="text-gray-500 font-bold">Renewal Fee</span>
-                  <span className="text-xl font-bold text-indigo-600">{formatCurrency(renewOrder.amount)}</span>
+                  <span className="text-lg font-bold text-indigo-600">{formatCurrency(renewOrder.amount)}</span>
                 </div>
               </div>
 
-              <div className="bg-amber-50 rounded-xl p-3 text-xs text-amber-700 flex items-start gap-2 border border-amber-200">
-                <AlertCircle size={16} className="shrink-0 mt-0.5" />
+              <div className="bg-amber-50 rounded-xl p-2.5 text-[10px] text-amber-700 flex items-start gap-1.5 border border-amber-200">
+                <AlertCircle size={14} className="shrink-0 mt-0.5" />
                 <span>Your cabin will be active for 30 more days after successful renewal.</span>
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 <button
                   onClick={handleRenewPayment}
                   disabled={renewing}
-                  className={`flex-1 py-3 rounded-xl text-white font-bold transition flex items-center justify-center gap-2 ${
+                  className={`flex-1 py-2.5 rounded-xl text-white text-sm font-bold transition flex items-center justify-center gap-2 ${
                     renewing ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:shadow-lg'
                   }`}
                 >
@@ -1928,7 +1982,7 @@ const MyCabinPayments = () => {
                 </button>
                 <button
                   onClick={() => { setShowRenewModal(false); setRenewOrder(null); }}
-                  className="px-5 py-3 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition"
+                  className="px-4 py-2.5 border border-gray-200 rounded-xl text-gray-600 text-sm font-medium hover:bg-gray-50 transition"
                 >
                   Cancel
                 </button>

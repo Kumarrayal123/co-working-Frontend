@@ -1,4 +1,4 @@
-// DoctorProfile.jsx - With View & Download
+// DoctorProfile.jsx - With View & Download (Chamber -> Cabin) - With Revenue Quick Action
 import axios from "axios";
 import {
   User,
@@ -41,7 +41,8 @@ import {
   Trash2,
   Eye as EyeIcon,
   FileImage,
-  Download
+  Download,
+  BarChart3
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -709,6 +710,60 @@ const DoctorProfile = () => {
           </div>
         </div>
 
+        {/* QUICK ACTION BUTTONS - ALAG DIV MEIN, PERCENTAGE KE NICHE */}
+        <div className="mb-6">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
+                <ArrowRight size={16} className="text-indigo-600" />
+              </div>
+              <h3 className="text-sm font-semibold text-gray-700">Quick Actions</h3>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+              <button
+                onClick={() => navigate("/chamberbookings")}
+                className="flex items-center justify-center gap-2 px-3 py-3 bg-indigo-50 text-indigo-700 rounded-xl text-sm font-medium hover:bg-indigo-100 transition-colors border border-indigo-200 hover:shadow-md"
+              >
+                <Calendar size={18} className="text-indigo-500" />
+                <span className="hidden sm:inline">Own Cabin Bookings</span>
+                <span className="sm:hidden">Bookings</span>
+              </button>
+              <button
+                onClick={() => navigate("/mychambers")}
+                className="flex items-center justify-center gap-2 px-3 py-3 bg-emerald-50 text-emerald-700 rounded-xl text-sm font-medium hover:bg-emerald-100 transition-colors border border-emerald-200 hover:shadow-md"
+              >
+                <Home size={18} className="text-emerald-500" />
+                <span className="hidden sm:inline">Own Cabins</span>
+                <span className="sm:hidden">Cabins</span>
+              </button>
+              <button
+                onClick={() => navigate("/myrevenue")}
+                className="flex items-center justify-center gap-2 px-3 py-3 bg-cyan-50 text-cyan-700 rounded-xl text-sm font-medium hover:bg-cyan-100 transition-colors border border-cyan-200 hover:shadow-md"
+              >
+                <BarChart3 size={18} className="text-cyan-500" />
+                <span className="hidden sm:inline">Revenue</span>
+                <span className="sm:hidden">Revenue</span>
+              </button>
+              <button
+                onClick={() => navigate("/doctorwallet")}
+                className="flex items-center justify-center gap-2 px-3 py-3 bg-amber-50 text-amber-700 rounded-xl text-sm font-medium hover:bg-amber-100 transition-colors border border-amber-200 hover:shadow-md"
+              >
+                <Wallet size={18} className="text-amber-500" />
+                <span className="hidden sm:inline">Wallet</span>
+                <span className="sm:hidden">Wallet</span>
+              </button>
+              <button
+                onClick={() => navigate("/mychamberpayments")}
+                className="flex items-center justify-center gap-2 px-3 py-3 bg-purple-50 text-purple-700 rounded-xl text-sm font-medium hover:bg-purple-100 transition-colors border border-purple-200 hover:shadow-md"
+              >
+                <CreditCard size={18} className="text-purple-500" />
+                <span className="hidden sm:inline">Cabin Billings</span>
+                <span className="sm:hidden">Payments</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Profile Card */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="h-32 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 relative">
@@ -942,40 +997,6 @@ const DoctorProfile = () => {
                 </div>
               </div>
             )}
-
-            {/* Quick Actions */}
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <button
-                  onClick={() => navigate("/doctorbookings")}
-                  className="flex items-center justify-center gap-2 px-4 py-3 bg-indigo-50 text-indigo-700 rounded-xl text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200"
-                >
-                  <Calendar size={14} />
-                  My Bookings
-                </button>
-                <button
-                  onClick={() => navigate("/mychambers")}
-                  className="flex items-center justify-center gap-2 px-4 py-3 bg-emerald-50 text-emerald-700 rounded-xl text-xs font-medium hover:bg-emerald-100 transition-colors border border-emerald-200"
-                >
-                  <Home size={14} />
-                  My Chambers
-                </button>
-                <button
-                  onClick={() => navigate("/doctorwallet")}
-                  className="flex items-center justify-center gap-2 px-4 py-3 bg-amber-50 text-amber-700 rounded-xl text-xs font-medium hover:bg-amber-100 transition-colors border border-amber-200"
-                >
-                  <Wallet size={14} />
-                  My Wallet
-                </button>
-                <button
-                  onClick={() => navigate("/mychamberpayments")}
-                  className="flex items-center justify-center gap-2 px-4 py-3 bg-purple-50 text-purple-700 rounded-xl text-xs font-medium hover:bg-purple-100 transition-colors border border-purple-200"
-                >
-                  <CreditCard size={14} />
-                  Payments
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       </div>

@@ -59,6 +59,8 @@ import SimpleUserBookings from "./components/SimpleUserBookings";
 import SimpleUserProfile from "./components/SimpleUserProfile";
 import MyWishlist from "./components/MyWishlist";
 import UserSiteVisits from "./components/UserSiteVisits";
+import DoctorCabinRevenue from "./components/DoctorCabinRevenue";
+import MyRevenue from "./components/MyRevenue";
 
 function App() {
   return (
@@ -78,6 +80,7 @@ function App() {
         <Route path="/userprofile" element={<SimpleUserProfile />} />
         <Route path="/allchambers" element={<AllChambers />} />
         <Route path="/mychambers" element={<MyChamber />} />
+        <Route path="/myrevenue" element={<DoctorCabinRevenue />} />
         <Route path="/doctorbookings" element={<BookingDoctor />} />
         <Route path="/doctorprofile" element={<DoctorProfile />} />
         <Route path="/chamberbookings" element={<ChamberBookings />} />
@@ -106,6 +109,7 @@ function App() {
         <Route path="/mybookings" element={<UserRoute><MyBookings /></UserRoute>}></Route>
         <Route path="/my-wallet" element={<UserRoute><MyWallet /></UserRoute>}></Route>
         <Route path="/myprofile" element={<UserRoute><MyProfile /></UserRoute>}></Route>
+        <Route path="/spacerevenue" element={<UserRoute><MyRevenue /></UserRoute>}></Route>
         {/* <Route path="/admincabin" element={<AdminRoute><AdminCabins /></AdminRoute>}></Route> */}
         <Route path="/adminbookings" element={<AdminRoute><AdminBookings /></AdminRoute>}></Route>
         {/* <Route path="/doctorbookings" element={<UserRoute><CabinBookings /></UserRoute>}></Route> */}

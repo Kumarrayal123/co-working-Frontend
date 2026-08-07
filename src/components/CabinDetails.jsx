@@ -257,7 +257,7 @@ export default function CabinDetails() {
 
   // Get button text based on isChamber
   const getBookButtonText = () => {
-    return cabin.isChamber ? "Book Chamber" : "Book Space";
+    return cabin.isChamber ? "Book Cabin" : "Book Space";
   };
 
   return (

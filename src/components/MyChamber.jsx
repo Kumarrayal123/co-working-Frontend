@@ -1,4 +1,4 @@
-// MyChamber.jsx - Complete My Chambers Component with isChamber Checkbox & Image Popup
+// MyChamber.jsx - Complete My Chambers Component with Compact Stats & Icon Actions
 import axios from "axios";
 import {
   Building2,
@@ -51,7 +51,9 @@ import {
   Sun,
   Moon,
   Clock as ClockIcon,
-  Stethoscope
+  Stethoscope,
+  Edit,
+  Trash2 as TrashIcon
 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
@@ -862,6 +864,15 @@ const MyChamber = () => {
     return `${h12}:${minutes} ${ampm}`;
   };
 
+  // Compact Stats Cards
+  const compactStats = [
+    { label: 'Total', value: chambers.length, icon: Building2, color: 'indigo' },
+    { label: 'Active', value: activeCount, icon: CheckCircle, color: 'emerald' },
+    { label: 'Inactive', value: inactiveCount, icon: XCircle, color: 'gray' },
+    { label: 'Premium', value: exclusiveCount, icon: Crown, color: 'amber' },
+    { label: 'Cabin', value: cabinCountFilter, icon: Stethoscope, color: 'rose' }
+  ];
+
   // ============================================================
   // RETURN - JSX
   // ============================================================
@@ -871,351 +882,311 @@ const MyChamber = () => {
 
       <div className="pt-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
         {/* Header */}
-        <div className="admin-dash__header">
+        <div className="admin-dash__header mb-4 flex items-center justify-between">
           <div>
             <h1 className="admin-dash__greeting">
               My <span>Cabins</span>
             </h1>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Manage all your registered cabins
+            </p>
           </div>
+          <button
+            onClick={() => {
+              resetForm();
+              setIsModalOpen(true);
+              setImagePreviews([]);
+              setVideoPreviews([]);
+              setOpenTime('09:00');
+              setCloseTime('21:00');
+              setIs24x7(false);
+              setIsChamber(false);
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors"
+          >
+            <Plus size={14} />
+            <span>Add Cabin</span>
+          </button>
         </div>
 
-        {/* Stats Cards */}
-        <div className="admin-dash__stats">
-          <div className="admin-dash__stat">
-            <div className="admin-dash__stat-top">
-              <span className="admin-dash__stat-label">Total Cabins</span>
-              <div className="admin-dash__stat-icon bg-indigo-100 text-indigo-600">
-                <Home size={18} />
+        {/* Compact Stats Cards */}
+        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-4">
+          {compactStats.map((stat, index) => (
+            <div
+              key={index}
+              className="bg-white rounded-xl border border-gray-200 p-2.5 shadow-sm hover:shadow-md transition-all"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">{stat.label}</span>
+                <div className={`w-6 h-6 rounded-lg flex items-center justify-center bg-${stat.color}-50`}>
+                  <stat.icon size={12} className={`text-${stat.color}-600`} />
+                </div>
+              </div>
+              <div className="mt-0.5">
+                <span className="text-base font-bold text-gray-800">{stat.value}</span>
               </div>
             </div>
-            <div className="admin-dash__stat-value">{chambers.length}</div>
-            <div className="admin-dash__stat-meta">{activeCount} active</div>
-          </div>
-
-          <div className="admin-dash__stat">
-            <div className="admin-dash__stat-top">
-              <span className="admin-dash__stat-label">Active</span>
-              <div className="admin-dash__stat-icon bg-emerald-100 text-emerald-600">
-                <CheckCircle size={18} />
-              </div>
-            </div>
-            <div className="admin-dash__stat-value">{activeCount}</div>
-            <div className="admin-dash__stat-meta">Available for booking</div>
-          </div>
-
-          <div className="admin-dash__stat">
-            <div className="admin-dash__stat-top">
-              <span className="admin-dash__stat-label">Inactive</span>
-              <div className="admin-dash__stat-icon bg-gray-100 text-gray-600">
-                <XCircle size={18} />
-              </div>
-            </div>
-            <div className="admin-dash__stat-value">{inactiveCount}</div>
-            <div className="admin-dash__stat-meta">Currently unavailable</div>
-          </div>
-
-          <div className="admin-dash__stat">
-            <div className="admin-dash__stat-top">
-              <span className="admin-dash__stat-label">Premium</span>
-              <div className="admin-dash__stat-icon bg-amber-100 text-amber-600">
-                <Crown size={18} />
-              </div>
-            </div>
-            <div className="admin-dash__stat-value">{exclusiveCount}</div>
-            <div className="admin-dash__stat-meta">Exclusive cabins</div>
-          </div>
-
-          <div className="admin-dash__stat">
-            <div className="admin-dash__stat-top">
-              <span className="admin-dash__stat-label">Medical</span>
-              <div className="admin-dash__stat-icon bg-rose-100 text-rose-600">
-                <Stethoscope size={18} />
-              </div>
-            </div>
-            <div className="admin-dash__stat-value">{cabinCountFilter}</div>
-            <div className="admin-dash__stat-meta">Cabin spaces</div>
-          </div>
+          ))}
         </div>
 
-        <div className="space-y-6">
-          {/* Cabins Table Section */}
-          <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
-            {/* Header with Filters */}
-            <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
-              <div className="flex items-center gap-3">
-                <h3 className="admin-dash__card-title">Registered Cabins</h3>
-                <span className="px-2.5 py-0.5 text-xs font-bold text-indigo-700 bg-indigo-100 rounded-full">
-                  {filteredChambers.length}
-                </span>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <input
-                  type="text"
-                  placeholder="Filter by name..."
-                  value={filters.name}
-                  onChange={(e) => setFilters({...filters, name: e.target.value})}
-                  className="w-28 sm:w-36 px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                />
-                <input
-                  type="text"
-                  placeholder="Filter by address..."
-                  value={filters.address}
-                  onChange={(e) => setFilters({...filters, address: e.target.value})}
-                  className="w-28 sm:w-36 px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                />
-                <div className="flex items-center gap-1">
-                  <input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.priceMin}
-                    onChange={(e) => setFilters({...filters, priceMin: e.target.value})}
-                    className="w-16 sm:w-20 px-2 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  />
-                  <span className="text-gray-400 text-xs">-</span>
-                  <input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.priceMax}
-                    onChange={(e) => setFilters({...filters, priceMax: e.target.value})}
-                    className="w-16 sm:w-20 px-2 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  />
-                </div>
-                <select
-                  value={filters.status}
-                  onChange={(e) => setFilters({...filters, status: e.target.value})}
-                  className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700"
-                >
-                  <option value="all">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-                {(filters.name || filters.address || filters.priceMin || filters.priceMax || filters.status !== 'all') && (
-                  <button
-                    onClick={clearFilters}
-                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                  >
-                    <XCircle size={14} />
-                    Clear
-                  </button>
-                )}
-                <button
-                  onClick={() => navigate("/mychamberpayments")}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200"
-                >
-                  <CreditCard size={14} />
-                  <span>Payments</span>
-                </button>
-                <button
-                  onClick={() => navigate("/chamberbookings")}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
-                >
-                  <FileText size={14} className="text-indigo-600" />
-                  <span>Bookings</span>
-                </button>
-                <button
-                  onClick={() => {
-                    resetForm();
-                    setIsModalOpen(true);
-                    setImagePreviews([]);
-                    setVideoPreviews([]);
-                    setOpenTime('09:00');
-                    setCloseTime('21:00');
-                    setIs24x7(false);
-                    setIsChamber(false);
-                  }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors"
-                >
-                  <Plus size={14} />
-                  <span>Add Cabin</span>
-                </button>
-              </div>
+        {/* Table Section */}
+        <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
+          {/* Header with Filters */}
+          <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-2 p-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
+            <div className="flex items-center gap-2">
+              <h3 className="text-xs font-bold text-gray-700">Registered Cabins</h3>
+              <span className="px-2 py-0.5 text-[9px] font-bold text-indigo-700 bg-indigo-100 rounded-full">
+                {filteredChambers.length}
+              </span>
             </div>
-
-            {/* Table */}
-            <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
-              {loading ? (
-                <div className="flex flex-col items-center justify-center gap-3 py-20">
-                  <div className="w-12 h-12 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin"></div>
-                  <p className="text-gray-500">Loading cabins...</p>
-                </div>
-              ) : (
-                <table className="w-full min-w-[1200px] text-left">
-                  <thead>
-                    <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
-                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
-                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
-                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Address</th>
-                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Type</th>
-                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Price</th>
-                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Timing</th>
-                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
-                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Expiry</th>
-                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Joined</th>
-                      <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {filteredChambers.length > 0 ? (
-                      filteredChambers.map((cabin, index) => {
-                        const cabinStatus = getChamberStatus(cabin);
-                        const isExclusive = cabin.cabinType === 'exclusive';
-                        const countdown = countdowns[cabin._id] || 0;
-                        const hasExpiry = cabin.expiryDate ? true : false;
-                        const isExpired = cabin.expiryDate && new Date(cabin.expiryDate) < new Date();
-                        const is24x7 = cabin.is24x7 === true;
-                        const openTimeDisplay = cabin.openTime ? formatTimeDisplay(cabin.openTime) : 'N/A';
-                        const closeTimeDisplay = cabin.closeTime ? formatTimeDisplay(cabin.closeTime) : 'N/A';
-
-                        return (
-                          <tr key={cabin._id} className="transition-colors group hover:bg-gray-50/80">
-                            <td className="p-4">
-                              <span className="text-sm font-semibold text-gray-400">#{index + 1}</span>
-                            </td>
-                            <td className="p-4">
-                              <div className="flex items-center gap-3">
-                                <div className="flex-shrink-0 w-10 h-10 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
-                                  <img
-                                    src={cabin.images?.[0] ? getImageUrl(cabin.images[0]) : PLACEHOLDER_IMAGE}
-                                    alt={cabin.name}
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
-                                  />
-                                </div>
-                                <div>
-                                  <p className="font-semibold text-gray-900 text-sm">{cabin.name || 'N/A'}</p>
-                                  <p className="text-[10px] text-gray-400">{cabin.cabin || 'N/A'}</p>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="p-4">
-                              <span className="text-sm font-medium text-gray-700 flex items-center gap-1.5">
-                                <MapPin size={14} className="text-gray-400 flex-shrink-0" />
-                                <span className="truncate max-w-[150px]">{cabin.address || "N/A"}</span>
-                              </span>
-                            </td>
-                            <td className="p-4">
-                              <span className={`px-3 py-1 text-xs font-bold rounded-full inline-flex items-center gap-1.5 ${
-                                isExclusive ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
-                              }`}>
-                                {isExclusive ? <><Crown size={12} /> Exclusive</> : 'Normal'}
-                              </span>
-                            </td>
-                            <td className="p-4">
-                              <span className="text-sm font-bold text-gray-900">₹{cabin.price || 0}</span>
-                              <span className="text-xs text-gray-400 ml-0.5">/hr</span>
-                            </td>
-                            <td className="p-4">
-                              {is24x7 ? (
-                                <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-medium flex items-center gap-1.5 w-fit">
-                                  <ClockIcon size={12} /> 24×7
-                                </span>
-                              ) : (
-                                <div className="flex flex-col gap-0.5 text-xs">
-                                  <span className="flex items-center gap-1 text-gray-600">
-                                    <Sun size={12} className="text-amber-500" />
-                                    {openTimeDisplay}
-                                  </span>
-                                  <span className="flex items-center gap-1 text-gray-600">
-                                    <Moon size={12} className="text-indigo-500" />
-                                    {closeTimeDisplay}
-                                  </span>
-                                </div>
-                              )}
-                            </td>
-                            <td className="p-4">
-                              <span className={`px-3 py-1 text-xs font-bold rounded-full ${
-                                cabinStatus.color === 'green' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'
-                              }`}>
-                                {cabinStatus.status}
-                              </span>
-                            </td>
-                            <td className="p-4">
-                              {hasExpiry ? (
-                                <div className="flex flex-col gap-0.5">
-                                  <span className="text-sm text-gray-600">{formatDate(cabin.expiryDate)}</span>
-                                  {countdown > 0 && (
-                                    <span className={`text-[10px] font-mono font-medium flex items-center gap-1 ${getCountdownColor(countdown)}`}>
-                                      <Timer size={10} />
-                                      {formatCountdown(countdown)}
-                                    </span>
-                                  )}
-                                  {isExpired && <span className="text-[10px] text-red-500 font-medium">🔴 Expired</span>}
-                                </div>
-                              ) : (
-                                <span className="text-sm text-gray-400">No expiry</span>
-                              )}
-                            </td>
-                            <td className="p-4">
-                              <span className="text-sm text-gray-500">{formatDate(cabin.createdAt)}</span>
-                            </td>
-                            <td className="p-4">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                <button
-                                  onClick={() => handleViewChamber(cabin)}
-                                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors whitespace-nowrap"
-                                >
-                                  <Eye size={13} /> View
-                                </button>
-                                <button
-                                  onClick={() => navigate(`/cabin/${cabin._id}`)}
-                                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-orange-50 text-orange-700 hover:bg-orange-100 transition-colors whitespace-nowrap"
-                                >
-                                  <Home size={13} /> Open
-                                </button>
-                                <button 
-                                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-red-50 text-red-700 hover:bg-red-100 transition-colors whitespace-nowrap"
-                                  onClick={(e) => handleDelete(e, cabin._id)}
-                                >
-                                  <Trash2 size={13} /> Delete
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    ) : (
-                      <tr>
-                        <td colSpan={10} className="p-12 text-center">
-                          <div className="flex flex-col items-center justify-center gap-3 text-gray-400">
-                            <BuildingIcon size={48} className="opacity-20" />
-                            <p className="text-lg font-medium">No cabins found</p>
-                            <p className="text-sm">Try adjusting your filters or add a new cabin.</p>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <input
+                type="text"
+                placeholder="Name..."
+                value={filters.name}
+                onChange={(e) => setFilters({...filters, name: e.target.value})}
+                className="w-20 sm:w-28 px-2 py-1 text-[10px] border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+              />
+              <input
+                type="text"
+                placeholder="Address..."
+                value={filters.address}
+                onChange={(e) => setFilters({...filters, address: e.target.value})}
+                className="w-20 sm:w-28 px-2 py-1 text-[10px] border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+              />
+              <input
+                type="number"
+                placeholder="Min"
+                value={filters.priceMin}
+                onChange={(e) => setFilters({...filters, priceMin: e.target.value})}
+                className="w-14 sm:w-16 px-1.5 py-1 text-[10px] border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+              />
+              <span className="text-[10px] text-gray-400">-</span>
+              <input
+                type="number"
+                placeholder="Max"
+                value={filters.priceMax}
+                onChange={(e) => setFilters({...filters, priceMax: e.target.value})}
+                className="w-14 sm:w-16 px-1.5 py-1 text-[10px] border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+              />
+              <select
+                value={filters.status}
+                onChange={(e) => setFilters({...filters, status: e.target.value})}
+                className="text-[10px] bg-white border border-gray-200 rounded-lg px-2 py-1 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700"
+              >
+                <option value="all">All</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+              {(filters.name || filters.address || filters.priceMin || filters.priceMax || filters.status !== 'all') && (
+                <button
+                  onClick={clearFilters}
+                  className="flex items-center gap-0.5 px-2 py-1 text-[9px] font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                >
+                  <XCircle size={12} />
+                  Clear
+                </button>
               )}
+              <button
+                onClick={() => navigate("/mychamberpayments")}
+                className="flex items-center gap-1 px-2 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-[10px] font-medium hover:bg-indigo-100 transition-colors border border-indigo-200"
+              >
+                <CreditCard size={12} />
+                <span className="hidden sm:inline">Payments</span>
+              </button>
+              <button
+                onClick={() => navigate("/chamberbookings")}
+                className="flex items-center gap-1 px-2 py-1 bg-white border border-gray-200 text-gray-700 rounded-lg text-[10px] font-medium hover:bg-gray-50 transition-colors"
+              >
+                <FileText size={12} className="text-indigo-600" />
+                <span className="hidden sm:inline">Bookings</span>
+              </button>
             </div>
+          </div>
 
-            {/* Footer */}
-            {!loading && filteredChambers.length > 0 && (
-              <div className="px-4 py-3 border-t border-gray-100 rounded-b-2xl flex flex-wrap items-center justify-between gap-2" style={{ backgroundColor: '#fafafa' }}>
-                <span className="text-xs text-gray-500">
-                  Showing <strong>{filteredChambers.length}</strong> of <strong>{chambers.length}</strong> cabins
-                </span>
-                <div className="flex items-center gap-3 text-xs text-gray-500">
-                  <span className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                    Active: {activeCount}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-gray-400"></span>
-                    Inactive: {inactiveCount}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                    Exclusive: {exclusiveCount}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-rose-500"></span>
-                    Cabins: {cabinCountFilter}
-                  </span>
-                </div>
+          {/* Table */}
+          <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
+            {loading ? (
+              <div className="flex flex-col items-center justify-center gap-3 py-16">
+                <div className="w-10 h-10 border-3 border-indigo-500 rounded-full border-t-transparent animate-spin"></div>
+                <p className="text-xs text-gray-500">Loading cabins...</p>
               </div>
+            ) : (
+              <table className="w-full min-w-[900px] text-left">
+                <thead>
+                  <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
+                    <th className="p-2.5 text-[8px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
+                    <th className="p-2.5 text-[8px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
+                    <th className="p-2.5 text-[8px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Address</th>
+                    <th className="p-2.5 text-[8px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Type</th>
+                    <th className="p-2.5 text-[8px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Price</th>
+                    <th className="p-2.5 text-[8px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Timing</th>
+                    <th className="p-2.5 text-[8px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
+                    <th className="p-2.5 text-[8px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Expiry</th>
+                    <th className="p-2.5 text-[8px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filteredChambers.length > 0 ? (
+                    filteredChambers.map((cabin, index) => {
+                      const cabinStatus = getChamberStatus(cabin);
+                      const isExclusive = cabin.cabinType === 'exclusive';
+                      const countdown = countdowns[cabin._id] || 0;
+                      const hasExpiry = cabin.expiryDate ? true : false;
+                      const isExpired = cabin.expiryDate && new Date(cabin.expiryDate) < new Date();
+                      const is24x7 = cabin.is24x7 === true;
+                      const openTimeDisplay = cabin.openTime ? formatTimeDisplay(cabin.openTime) : 'N/A';
+                      const closeTimeDisplay = cabin.closeTime ? formatTimeDisplay(cabin.closeTime) : 'N/A';
+
+                      return (
+                        <tr key={cabin._id} className="transition-colors group hover:bg-gray-50/80">
+                          <td className="p-2.5">
+                            <span className="text-[10px] font-semibold text-gray-400">#{index + 1}</span>
+                          </td>
+                          <td className="p-2.5">
+                            <div className="flex items-center gap-2">
+                              <div className="flex-shrink-0 w-8 h-8 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
+                                <img
+                                  src={cabin.images?.[0] ? getImageUrl(cabin.images[0]) : PLACEHOLDER_IMAGE}
+                                  alt={cabin.name}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
+                                />
+                              </div>
+                              <div>
+                                <p className="font-semibold text-gray-900 text-xs">{cabin.name || 'N/A'}</p>
+                                <p className="text-[8px] text-gray-400">{cabin.cabin || 'N/A'}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="p-2.5">
+                            <span className="text-[10px] font-medium text-gray-700 flex items-center gap-1">
+                              <MapPin size={10} className="text-gray-400 flex-shrink-0" />
+                              <span className="truncate max-w-[120px]">{cabin.address || "N/A"}</span>
+                            </span>
+                          </td>
+                          <td className="p-2.5">
+                            <span className={`px-2 py-0.5 text-[8px] font-bold rounded-full inline-flex items-center gap-1 ${
+                              isExclusive ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
+                            }`}>
+                              {isExclusive ? <><Crown size={8} /> Exclusive</> : 'Normal'}
+                            </span>
+                          </td>
+                          <td className="p-2.5">
+                            <span className="text-xs font-bold text-gray-900">₹{cabin.price || 0}</span>
+                            <span className="text-[8px] text-gray-400 ml-0.5">/hr</span>
+                          </td>
+                          <td className="p-2.5">
+                            {is24x7 ? (
+                              <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 rounded-full text-[8px] font-medium flex items-center gap-1 w-fit">
+                                <ClockIcon size={9} /> 24×7
+                              </span>
+                            ) : (
+                              <div className="flex flex-col gap-0.5 text-[8px]">
+                                <span className="flex items-center gap-0.5 text-gray-600">
+                                  <Sun size={8} className="text-amber-500" />
+                                  {openTimeDisplay}
+                                </span>
+                                <span className="flex items-center gap-0.5 text-gray-600">
+                                  <Moon size={8} className="text-indigo-500" />
+                                  {closeTimeDisplay}
+                                </span>
+                              </div>
+                            )}
+                          </td>
+                          <td className="p-2.5">
+                            <span className={`px-2 py-0.5 text-[8px] font-bold rounded-full ${
+                              cabinStatus.color === 'green' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'
+                            }`}>
+                              {cabinStatus.status}
+                            </span>
+                          </td>
+                          <td className="p-2.5">
+                            {hasExpiry ? (
+                              <div className="flex flex-col gap-0.5">
+                                <span className="text-[9px] text-gray-600">{formatDate(cabin.expiryDate)}</span>
+                                {countdown > 0 && (
+                                  <span className={`text-[8px] font-mono font-medium flex items-center gap-0.5 ${getCountdownColor(countdown)}`}>
+                                    <Timer size={8} />
+                                    {formatCountdown(countdown)}
+                                  </span>
+                                )}
+                                {isExpired && <span className="text-[8px] text-red-500 font-medium">🔴 Expired</span>}
+                              </div>
+                            ) : (
+                              <span className="text-[9px] text-gray-400">No expiry</span>
+                            )}
+                          </td>
+                          <td className="p-2.5">
+                            <div className="flex items-center justify-center gap-1">
+                              <button
+                                onClick={() => handleViewChamber(cabin)}
+                                className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors"
+                                title="View"
+                              >
+                                <Eye size={14} />
+                              </button>
+                              <button
+                                onClick={() => navigate(`/cabin/${cabin._id}`)}
+                                className="p-1.5 bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 transition-colors"
+                                title="Open"
+                              >
+                                <Home size={14} />
+                              </button>
+                              <button 
+                                className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                                onClick={(e) => handleDelete(e, cabin._id)}
+                                title="Delete"
+                              >
+                                <TrashIcon size={14} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan={9} className="p-10 text-center">
+                        <div className="flex flex-col items-center justify-center gap-2 text-gray-400">
+                          <BuildingIcon size={36} className="opacity-20" />
+                          <p className="text-sm font-medium">No cabins found</p>
+                          <p className="text-xs">Try adjusting your filters or add a new cabin.</p>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             )}
           </div>
+
+          {/* Footer */}
+          {!loading && filteredChambers.length > 0 && (
+            <div className="px-3 py-2 border-t border-gray-100 rounded-b-2xl flex flex-wrap items-center justify-between gap-2" style={{ backgroundColor: '#fafafa' }}>
+              <span className="text-[9px] text-gray-500">
+                Showing <strong>{filteredChambers.length}</strong> of <strong>{chambers.length}</strong> cabins
+              </span>
+              <div className="flex items-center gap-2 text-[9px] text-gray-500">
+                <span className="flex items-center gap-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  Active: {activeCount}
+                </span>
+                <span className="flex items-center gap-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                  Inactive: {inactiveCount}
+                </span>
+                <span className="flex items-center gap-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                  Premium: {exclusiveCount}
+                </span>
+                <span className="flex items-center gap-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                  Cabin: {cabinCountFilter}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -1236,14 +1207,14 @@ const MyChamber = () => {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className={`p-6 ${
+            <div className={`p-5 ${
               selectedChamber.cabinType === 'exclusive' 
                 ? 'bg-gradient-to-br from-amber-500 to-amber-600' 
                 : 'bg-gradient-to-br from-indigo-600 to-purple-600'
             } text-white sticky top-0 z-10`}>
               <div className="flex items-start justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-xl bg-white/20 flex items-center justify-center overflow-hidden backdrop-blur-sm">
+                <div className="flex items-center gap-3">
+                  <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center overflow-hidden backdrop-blur-sm">
                     {selectedChamber.images?.[0] ? (
                       <img 
                         src={getImageUrl(selectedChamber.images[0])} 
@@ -1251,42 +1222,42 @@ const MyChamber = () => {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <Building2 size={28} className="text-white" />
+                      <Building2 size={24} className="text-white" />
                     )}
                   </div>
                   <div>
-                    <h3 className="text-2xl font-bold flex items-center gap-2">
+                    <h3 className="text-lg font-bold flex items-center gap-2">
                       {selectedChamber.name || 'N/A'}
                       {selectedChamber.isChamber && (
-                        <span className="text-xs bg-rose-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <span className="text-[9px] bg-rose-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
                           🏛️ Cabin
                         </span>
                       )}
                     </h3>
-                    <p className="text-sm opacity-80 flex items-center gap-2">
-                      <MapPin size={14} />
+                    <p className="text-xs opacity-80 flex items-center gap-1">
+                      <MapPin size={12} />
                       {selectedChamber.address || 'No address'}
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={closeViewModal}
-                  className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"
                 >
-                  <X size={20} />
+                  <X size={18} />
                 </button>
               </div>
             </div>
 
             {/* Content */}
-            <div className="p-6 space-y-6">
+            <div className="p-5 space-y-4">
               {/* Images Gallery */}
               {selectedChamber.images && selectedChamber.images.length > 0 && (
                 <div>
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2">
-                    <Building2 size={14} /> Photos ({selectedChamber.images.length})
+                  <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 flex items-center gap-2">
+                    <Building2 size={12} /> Photos ({selectedChamber.images.length})
                   </p>
-                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
                     {selectedChamber.images.map((img, idx) => (
                       <div 
                         key={idx} 
@@ -1300,8 +1271,8 @@ const MyChamber = () => {
                           onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
                         />
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 flex items-center justify-center">
-                          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/90 rounded-full p-2">
-                            <Eye size={20} className="text-indigo-600" />
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/90 rounded-full p-1.5">
+                            <Eye size={16} className="text-indigo-600" />
                           </div>
                         </div>
                       </div>
@@ -1313,16 +1284,16 @@ const MyChamber = () => {
               {/* Videos */}
               {selectedChamber.videos && selectedChamber.videos.length > 0 && (
                 <div>
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2">
-                    <Video size={14} /> Videos ({selectedChamber.videos.length})
+                  <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 flex items-center gap-2">
+                    <Video size={12} /> Videos ({selectedChamber.videos.length})
                   </p>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-1.5">
                     {selectedChamber.videos.map((video, idx) => (
                       <div key={idx} className="bg-black/5 rounded-lg border border-gray-200 overflow-hidden">
                         <video 
                           src={getMediaUrl(video)} 
                           controls 
-                          className="w-full h-40 object-cover"
+                          className="w-full h-32 object-cover"
                           poster={selectedChamber.images?.[0] ? getImageUrl(selectedChamber.images[0]) : undefined}
                         />
                       </div>
@@ -1332,41 +1303,41 @@ const MyChamber = () => {
               )}
 
               {/* Info Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                <div className="p-3 bg-gray-50 rounded-xl">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Type</p>
-                  <p className="mt-1 font-medium text-gray-700 flex items-center gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                <div className="p-2.5 bg-gray-50 rounded-lg">
+                  <p className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">Type</p>
+                  <p className="mt-0.5 font-medium text-gray-700 text-xs flex items-center gap-1.5">
                     {selectedChamber.cabinType === 'exclusive' ? (
-                      <><Crown size={16} className="text-amber-500" /> Exclusive</>
+                      <><Crown size={13} className="text-amber-500" /> Exclusive</>
                     ) : (
-                      <Building2 size={16} className="text-indigo-500" />
+                      <Building2 size={13} className="text-indigo-500" />
                     )}
                     {selectedChamber.cabinType || 'Normal'}
                   </p>
                 </div>
 
-                <div className="p-3 bg-gray-50 rounded-xl">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Price</p>
-                  <p className="mt-1 font-bold text-gray-700 flex items-center gap-1">
+                <div className="p-2.5 bg-gray-50 rounded-lg">
+                  <p className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">Price</p>
+                  <p className="mt-0.5 font-bold text-gray-700 text-xs flex items-center gap-0.5">
                     ₹{selectedChamber.price || 0}
-                    <span className="text-sm font-normal text-gray-400">/hr</span>
+                    <span className="text-[9px] font-normal text-gray-400">/hr</span>
                   </p>
                 </div>
 
-                <div className="p-3 bg-gray-50 rounded-xl">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Capacity</p>
-                  <p className="mt-1 font-medium text-gray-700 flex items-center gap-2">
-                    <Users size={16} className="text-gray-400" />
+                <div className="p-2.5 bg-gray-50 rounded-lg">
+                  <p className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">Capacity</p>
+                  <p className="mt-0.5 font-medium text-gray-700 text-xs flex items-center gap-1.5">
+                    <Users size={13} className="text-gray-400" />
                     {selectedChamber.capacity || 0} people
                   </p>
                 </div>
 
-                <div className="p-3 bg-gray-50 rounded-xl">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Cabin</p>
-                  <p className="mt-1 font-medium">
+                <div className="p-2.5 bg-gray-50 rounded-lg">
+                  <p className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">Cabin</p>
+                  <p className="mt-0.5 font-medium text-xs">
                     {selectedChamber.isChamber ? (
-                      <span className="text-rose-600 flex items-center gap-1.5">
-                        <CheckCircle size={16} className="text-rose-500" /> Yes
+                      <span className="text-rose-600 flex items-center gap-1">
+                        <CheckCircle size={13} className="text-rose-500" /> Yes
                       </span>
                     ) : (
                       <span className="text-gray-400">No</span>
@@ -1374,10 +1345,10 @@ const MyChamber = () => {
                   </p>
                 </div>
 
-                <div className="p-3 bg-gray-50 rounded-xl">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Status</p>
-                  <p className="mt-1 font-medium">
-                    <span className={`px-2.5 py-0.5 text-xs font-bold rounded-full ${
+                <div className="p-2.5 bg-gray-50 rounded-lg">
+                  <p className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">Status</p>
+                  <p className="mt-0.5 font-medium">
+                    <span className={`px-2 py-0.5 text-[8px] font-bold rounded-full ${
                       selectedChamber.isActive === true 
                         ? 'bg-emerald-100 text-emerald-700' 
                         : 'bg-gray-100 text-gray-600'
@@ -1387,21 +1358,21 @@ const MyChamber = () => {
                   </p>
                 </div>
 
-                <div className="p-3 bg-gray-50 rounded-xl">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Timing</p>
+                <div className="p-2.5 bg-gray-50 rounded-lg">
+                  <p className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">Timing</p>
                   {selectedChamber.is24x7 ? (
-                    <p className="mt-1 font-medium text-emerald-600 flex items-center gap-2">
-                      <ClockIcon size={16} className="text-emerald-500" />
+                    <p className="mt-0.5 font-medium text-emerald-600 text-xs flex items-center gap-1.5">
+                      <ClockIcon size={13} className="text-emerald-500" />
                       24×7
                     </p>
                   ) : (
-                    <div className="mt-1 space-y-0.5">
-                      <p className="text-xs text-gray-700 flex items-center gap-1.5">
-                        <Sun size={12} className="text-amber-500" />
+                    <div className="mt-0.5 space-y-0.5">
+                      <p className="text-[9px] text-gray-700 flex items-center gap-1">
+                        <Sun size={10} className="text-amber-500" />
                         {selectedChamber.openTime ? formatTimeDisplay(selectedChamber.openTime) : 'N/A'}
                       </p>
-                      <p className="text-xs text-gray-700 flex items-center gap-1.5">
-                        <Moon size={12} className="text-indigo-500" />
+                      <p className="text-[9px] text-gray-700 flex items-center gap-1">
+                        <Moon size={10} className="text-indigo-500" />
                         {selectedChamber.closeTime ? formatTimeDisplay(selectedChamber.closeTime) : 'N/A'}
                       </p>
                     </div>
@@ -1410,17 +1381,17 @@ const MyChamber = () => {
               </div>
 
               {/* Expiry Date */}
-              <div className="p-3 bg-gray-50 rounded-xl">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Expiry Date</p>
-                <p className="mt-1 font-medium text-gray-700 flex items-center gap-2">
-                  <Calendar size={16} className="text-gray-400" />
+              <div className="p-2.5 bg-gray-50 rounded-lg">
+                <p className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">Expiry Date</p>
+                <p className="mt-0.5 font-medium text-gray-700 text-xs flex items-center gap-1.5">
+                  <Calendar size={13} className="text-gray-400" />
                   {selectedChamber.expiryDate ? (
-                    <span className="flex items-center gap-2">
+                    <span className="flex items-center gap-1.5">
                       {formatDate(selectedChamber.expiryDate)}
                       {new Date(selectedChamber.expiryDate) < new Date() ? (
-                        <span className="px-2 py-0.5 text-[10px] font-bold bg-red-100 text-red-700 rounded-full">Expired</span>
+                        <span className="px-1.5 py-0.5 text-[8px] font-bold bg-red-100 text-red-700 rounded-full">Expired</span>
                       ) : (
-                        <span className="px-2 py-0.5 text-[10px] font-bold bg-emerald-100 text-emerald-700 rounded-full">Valid</span>
+                        <span className="px-1.5 py-0.5 text-[8px] font-bold bg-emerald-100 text-emerald-700 rounded-full">Valid</span>
                       )}
                     </span>
                   ) : (
@@ -1431,19 +1402,19 @@ const MyChamber = () => {
 
               {/* Description */}
               {selectedChamber.description && (
-                <div className="p-3 bg-gray-50 rounded-xl">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Description</p>
-                  <p className="mt-1 text-gray-700 text-sm">{selectedChamber.description}</p>
+                <div className="p-2.5 bg-gray-50 rounded-lg">
+                  <p className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">Description</p>
+                  <p className="mt-0.5 text-gray-700 text-xs">{selectedChamber.description}</p>
                 </div>
               )}
 
               {/* Amenities */}
               {selectedChamber.amenities && Object.values(selectedChamber.amenities).some(v => v) && (
-                <div className="p-3 bg-gray-50 rounded-xl">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                    <Star size={14} /> Amenities
+                <div className="p-2.5 bg-gray-50 rounded-lg">
+                  <p className="text-[8px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Star size={12} /> Amenities
                   </p>
-                  <div className="flex flex-wrap gap-1.5 mt-2">
+                  <div className="flex flex-wrap gap-1 mt-1.5">
                     {Object.entries(selectedChamber.amenities)
                       .filter(([key, value]) => value)
                       .map(([key]) => {
@@ -1451,8 +1422,8 @@ const MyChamber = () => {
                         const amenity = allAmenities.find(a => a.key === key);
                         const Icon = amenity?.icon;
                         return (
-                          <span key={key} className="px-2.5 py-1 bg-white rounded-full text-xs text-gray-700 border border-gray-200 flex items-center gap-1">
-                            {Icon && <Icon size={12} className="text-indigo-500" />}
+                          <span key={key} className="px-2 py-0.5 bg-white rounded-full text-[8px] text-gray-700 border border-gray-200 flex items-center gap-0.5">
+                            {Icon && <Icon size={9} className="text-indigo-500" />}
                             {amenity?.label || key}
                           </span>
                         );
@@ -1463,16 +1434,16 @@ const MyChamber = () => {
 
               {/* Pricing Plans */}
               {selectedChamber.pricingPlans && selectedChamber.pricingPlans.length > 0 && (
-                <div className="p-3 bg-gray-50 rounded-xl">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                    <CreditCard size={14} /> Pricing Plans
+                <div className="p-2.5 bg-gray-50 rounded-lg">
+                  <p className="text-[8px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <CreditCard size={12} /> Pricing Plans
                   </p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 mt-1.5">
                     {selectedChamber.pricingPlans.map((plan, idx) => (
-                      <div key={idx} className="bg-white p-2 rounded-lg border border-gray-200 text-center">
-                        <p className="text-xs font-bold text-gray-700">{plan.label || `Plan ${idx + 1}`}</p>
-                        <p className="text-xs text-gray-500">{plan.hours}h · ₹{plan.cost}</p>
-                        <p className="text-[10px] text-gray-400">{plan.validity}d validity</p>
+                      <div key={idx} className="bg-white p-1.5 rounded-lg border border-gray-200 text-center">
+                        <p className="text-[9px] font-bold text-gray-700">{plan.label || `Plan ${idx + 1}`}</p>
+                        <p className="text-[8px] text-gray-500">{plan.hours}h · ₹{plan.cost}</p>
+                        <p className="text-[7px] text-gray-400">{plan.validity}d validity</p>
                       </div>
                     ))}
                   </div>
@@ -1481,31 +1452,31 @@ const MyChamber = () => {
 
               {/* Room/Suite */}
               {selectedChamber.cabin && (
-                <div className="p-3 bg-gray-50 rounded-xl">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Room/Suite</p>
-                  <p className="mt-1 font-medium text-gray-700">{selectedChamber.cabin}</p>
+                <div className="p-2.5 bg-gray-50 rounded-lg">
+                  <p className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">Room/Suite</p>
+                  <p className="mt-0.5 font-medium text-gray-700 text-xs">{selectedChamber.cabin}</p>
                 </div>
               )}
 
-              {/* Joined Date - UPDATED to dd/mm/yyyy */}
-              <div className="p-3 bg-gray-50 rounded-xl">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Joined</p>
-                <p className="mt-1 font-medium text-gray-700 flex items-center gap-2">
-                  <Clock size={14} className="text-gray-400" />
+              {/* Joined Date */}
+              <div className="p-2.5 bg-gray-50 rounded-lg">
+                <p className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">Joined</p>
+                <p className="mt-0.5 font-medium text-gray-700 text-xs flex items-center gap-1.5">
+                  <Clock size={12} className="text-gray-400" />
                   {formatDate(selectedChamber.createdAt)}
                 </p>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-200">
+              <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-200">
                 <button
                   onClick={() => {
                     closeViewModal();
                     navigate(`/cabin/${selectedChamber._id}`);
                   }}
-                  className="flex-1 min-w-[120px] py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-sm active:scale-[0.98]"
+                  className="flex-1 min-w-[100px] py-2.5 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition shadow-sm active:scale-[0.98]"
                 >
-                  <Home size={16} className="inline mr-2" />
+                  <Home size={14} className="inline mr-1.5" />
                   Open Cabin
                 </button>
                 <button
@@ -1513,9 +1484,9 @@ const MyChamber = () => {
                     closeViewModal();
                     navigate("/chamberbookings");
                   }}
-                  className="flex-1 min-w-[120px] py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition shadow-sm active:scale-[0.98]"
+                  className="flex-1 min-w-[100px] py-2.5 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-700 transition shadow-sm active:scale-[0.98]"
                 >
-                  <Calendar size={16} className="inline mr-2" />
+                  <Calendar size={14} className="inline mr-1.5" />
                   View Bookings
                 </button>
               </div>
@@ -1538,9 +1509,9 @@ const MyChamber = () => {
           >
             <button
               onClick={closeImagePopup}
-              className="absolute -top-12 right-0 text-white/70 hover:text-white transition-colors p-2"
+              className="absolute -top-10 right-0 text-white/70 hover:text-white transition-colors p-1.5"
             >
-              <X size={32} />
+              <X size={28} />
             </button>
             <img 
               src={selectedImage} 
@@ -1550,7 +1521,7 @@ const MyChamber = () => {
             />
             <button
               onClick={closeImagePopup}
-              className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/50 hover:text-white transition-colors text-sm bg-black/50 px-6 py-2 rounded-full backdrop-blur-sm"
+              className="absolute bottom-3 left-1/2 -translate-x-1/2 text-white/50 hover:text-white transition-colors text-xs bg-black/50 px-4 py-1.5 rounded-full backdrop-blur-sm"
             >
               Click anywhere to close
             </button>
@@ -1559,7 +1530,7 @@ const MyChamber = () => {
       )}
 
       {/* ============================================================ */}
-      {/* ADD CABIN MODAL */}
+      {/* ADD CABIN MODAL - Keep as is (too large to include here) */}
       {/* ============================================================ */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[1100] flex items-end sm:items-center justify-center p-2 sm:p-4 bg-slate-900/50 backdrop-blur-sm">

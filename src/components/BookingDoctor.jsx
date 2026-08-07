@@ -3168,7 +3168,7 @@
 
 
 
-// DoctorBookings.jsx - Complete with ALL Fields (MATCHES SimpleUserBookings UI EXACTLY)
+// DoctorBookings.jsx - Complete with ALL Fields - ONLY MEDICAL BOOKINGS
 import axios from "axios";
 import {
   Calendar,
@@ -3268,24 +3268,13 @@ const formatTime12 = (timeStr) => {
   }
 };
 
-// ─── GET TYPE BADGE - Based ONLY on isChamber ───
-const getCabinTypeBadge = (cabin) => {
-  if (!cabin) return null;
-  // If isChamber is true -> Medical Chamber
-  if (cabin.isChamber === true) {
-    return { label: 'Medical Chamber', icon: Stethoscope, className: 'bg-rose-100 text-rose-700' };
-  }
-  // If isChamber is false -> Co-Working Space
-  return { label: 'Co-Working', icon: Briefcase, className: 'bg-blue-100 text-blue-700' };
-};
-
 const BookingDoctor = () => {
   const [bookings, setBookings] = useState([]);
   const [allChambers, setAllChambers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDate, setFilterDate] = useState("");
-  const [filterType, setFilterType] = useState("all"); // all, chamber, coworking
+  const [filterType, setFilterType] = useState("all");
   const [filters, setFilters] = useState({
     status: 'all',
     paymentStatus: 'all'
@@ -3321,7 +3310,6 @@ const BookingDoctor = () => {
     return { headers: { Authorization: `Bearer ${token}` } };
   };
 
-  // ─── UPDATED: Use dd/mm/yyyy format for datetime ───
   const formatDateTime = (dateStr) => {
     return formatDateTimeToDDMMYYYY(dateStr);
   };
@@ -3336,7 +3324,6 @@ const BookingDoctor = () => {
     });
   };
 
-  // ─── UPDATED: Use dd/mm/yyyy format ───
   const formatDateIndian = (dateStr) => {
     return formatDateToDDMMYYYY(dateStr);
   };
@@ -3491,7 +3478,6 @@ const BookingDoctor = () => {
         'Booking ID': b._id?.slice(-8).toUpperCase() || 'N/A',
         'Type': b.bookingType || 'booking',
         'Chamber': b.cabin?.name || b.chamberName || 'Unknown',
-        'Cabin Type': b.cabin?.isChamber ? 'Medical Chamber' : 'Co-Working',
         'User': b.name || b.patientName || 'N/A',
         'Mobile': b.mobile || b.patientMobile || 'N/A',
         'Email': b.email || b.patientEmail || 'N/A',
@@ -3605,11 +3591,13 @@ const BookingDoctor = () => {
     }
   };
 
+  // ✅ PROFESSIONAL BLACK & GRAY INVOICE
   const downloadInvoice = (booking) => {
     try {
       const cabin = booking.cabin || {};
       const owner = cabin.owner || {};
-      const win = window.open('', '_blank', 'width=800,height=600');
+
+      const win = window.open('', '_blank', 'width=900,height=700');
       if (!win) {
         toast.error('Please allow popups');
         return;
@@ -3618,90 +3606,417 @@ const BookingDoctor = () => {
       let seatListHtml = '';
       if (booking.selectedSeats && booking.selectedSeats.length > 0) {
         seatListHtml = booking.selectedSeats.map(s => 
-          `<span style="display:inline-block;background:#f0fdf4;padding:2px 10px;border-radius:12px;margin:2px;font-size:11px;border:1px solid #86efac;">${s.name} (#${s.number})</span>`
+          `<span style="display:inline-block;background:#f5f5f5;padding:4px 12px;border-radius:2px;margin:3px;font-size:11px;border:1px solid #e0e0e0;color:#333;">${s.name} (#${s.number})</span>`
         ).join('');
       }
 
       let slotsHtml = '';
       if (booking.bookingSlots && booking.bookingSlots.length > 0) {
         slotsHtml = booking.bookingSlots.map(s => 
-          `<div style="display:inline-block;background:#eff6ff;padding:3px 12px;border-radius:8px;margin:3px;font-size:10px;border:1px solid #93c5fd;">
-            ${formatDateIndian(s.date)} ${s.startTime}-${s.endTime} (${s.hours}h)
-          </div>`
+          `<span style="display:inline-block;background:#f5f5f5;padding:2px 10px;border-radius:2px;margin:2px;font-size:10px;border:1px solid #e0e0e0;color:#333;">${formatDateIndian(s.date)} ${s.startTime}-${s.endTime} (${s.hours}h)</span>`
         ).join('');
       }
+
+      const status = getStatusBadge(booking.status);
+      const pmtMethod = getPaymentMethodBadge(booking.paymentMethod);
+      const pmtStatus = getPaymentStatusBadge(booking.paymentStatus);
+
+      const ownerName = owner.name || owner.organizationName || 'IRYAX SPACE';
+      const ownerAddress = owner.address || 'Premium Workspaces';
 
       win.document.write(`
         <html><head><title>Invoice</title>
         <style>
-          body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: auto; }
-          .header { border-bottom: 2px solid #000; padding-bottom: 20px; margin-bottom: 20px; display: flex; justify-content: space-between; }
-          h1 { color: #1a56db; margin: 0; font-size: 24px; }
-          .info { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0; }
-          table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-          th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
-          th { background: #f8fafc; font-weight: 700; }
-          .total { font-size: 20px; font-weight: 700; text-align: right; margin-top: 20px; border-top: 2px solid #000; padding-top: 15px; }
-          .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #000; color: #666; font-size: 12px; }
-          .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
-          .seat-section, .slot-section { margin: 10px 0; padding: 10px; background: #f8fafc; border-radius: 8px; }
-          .meta-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 10px 0; }
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { 
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif; 
+            padding: 40px; 
+            max-width: 900px; 
+            margin: auto; 
+            background: #f5f5f5; 
+          }
+          .invoice-wrapper { 
+            background: #ffffff; 
+            padding: 40px; 
+            box-shadow: 0 2px 20px rgba(0,0,0,0.08); 
+          }
+          .header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: flex-start; 
+            padding-bottom: 25px; 
+            border-bottom: 2px solid #333333; 
+            margin-bottom: 30px; 
+          }
+          .header-left h1 { 
+            color: #000000; 
+            font-size: 24px; 
+            font-weight: 700; 
+            margin: 0; 
+            letter-spacing: -0.5px;
+          }
+          .header-left .subtitle { 
+            color: #666666; 
+            font-size: 12px; 
+            margin-top: 4px; 
+            letter-spacing: 0.5px;
+          }
+          .header-right { 
+            text-align: right; 
+          }
+          .header-right .invoice-date { 
+            font-size: 12px; 
+            color: #666666; 
+            margin-top: 2px;
+          }
+          .badge { 
+            display: inline-block; 
+            padding: 2px 10px; 
+            border-radius: 2px; 
+            font-size: 10px; 
+            font-weight: 600; 
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+          }
+          .badge-pending { background: #f5f5f5; color: #666666; }
+          .badge-confirmed { background: #e8f5e9; color: #2e7d32; }
+          .badge-active { background: #e3f2fd; color: #1565c0; }
+          .badge-completed { background: #e8f5e9; color: #2e7d32; }
+          .badge-cancelled { background: #fce4ec; color: #c62828; }
+          .info-grid { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 20px; 
+            background: #fafafa; 
+            padding: 20px; 
+            margin-bottom: 25px; 
+            border: 1px solid #eeeeee;
+          }
+          .info-item .label { 
+            font-size: 9px; 
+            font-weight: 700; 
+            color: #999999; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px; 
+          }
+          .info-item .value { 
+            font-size: 14px; 
+            font-weight: 600; 
+            color: #000000; 
+            margin-top: 3px; 
+          }
+          .info-item .sub-value {
+            font-size: 12px;
+            color: #666666;
+            margin-top: 1px;
+          }
+          .section { 
+            margin-bottom: 25px; 
+          }
+          .section-title { 
+            font-size: 10px; 
+            font-weight: 700; 
+            color: #999999; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px; 
+            margin-bottom: 10px; 
+            border-bottom: 1px solid #eeeeee;
+            padding-bottom: 6px;
+          }
+          .slots-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 6px;
+            margin-top: 8px;
+          }
+          .slots-grid .slot-item {
+            background: #fafafa;
+            padding: 6px 10px;
+            border: 1px solid #eeeeee;
+            font-size: 11px;
+            color: #333333;
+          }
+          .slots-grid .slot-item .slot-date {
+            font-weight: 600;
+            color: #000000;
+          }
+          .seat-section { 
+            background: #fafafa; 
+            padding: 15px; 
+            margin-bottom: 20px; 
+            border: 1px solid #eeeeee; 
+          }
+          .seat-section .seat-title {
+            font-size: 10px;
+            font-weight: 700;
+            color: #999999;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+          .seat-section .seat-list {
+            margin-top: 8px;
+          }
+          .breakdown-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin: 15px 0; 
+          }
+          .breakdown-table th { 
+            text-align: left; 
+            padding: 8px 0; 
+            font-size: 9px; 
+            font-weight: 700; 
+            color: #999999; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #eeeeee; 
+          }
+          .breakdown-table td { 
+            padding: 8px 0; 
+            border-bottom: 1px solid #f5f5f5; 
+            font-size: 13px; 
+            color: #333333; 
+          }
+          .breakdown-table .amount { 
+            font-weight: 600; 
+            text-align: right; 
+          }
+          .breakdown-table .total-row td { 
+            font-weight: 700; 
+            font-size: 16px; 
+            border-top: 2px solid #333333; 
+            padding-top: 12px; 
+          }
+          .breakdown-table .total-row .amount { 
+            font-size: 18px; 
+            color: #000000; 
+          }
+          .payment-details { 
+            background: #fafafa; 
+            padding: 15px; 
+            margin: 15px 0; 
+            border: 1px solid #eeeeee; 
+          }
+          .payment-details .detail-row { 
+            display: flex; 
+            justify-content: space-between; 
+            padding: 3px 0; 
+            font-size: 12px; 
+            color: #333333; 
+          }
+          .payment-details .detail-row .label-text {
+            color: #999999;
+          }
+          .status-section { 
+            display: flex; 
+            gap: 20px; 
+            flex-wrap: wrap; 
+            margin: 20px 0; 
+            padding: 15px; 
+            background: #fafafa; 
+            border: 1px solid #eeeeee; 
+          }
+          .status-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 6px; 
+            font-size: 12px; 
+          }
+          .status-item .label-text { 
+            color: #999999; 
+            font-weight: 500; 
+          }
+          .footer { 
+            text-align: center; 
+            margin-top: 30px; 
+            padding-top: 20px; 
+            border-top: 1px solid #eeeeee; 
+            color: #999999; 
+            font-size: 10px; 
+            letter-spacing: 0.3px;
+          }
+          .footer .brand { 
+            font-weight: 700; 
+            color: #000000; 
+          }
+          .footer .powered {
+            font-weight: 700;
+            color: #000000;
+            letter-spacing: 1px;
+            font-size: 11px;
+          }
+          @media print { 
+            body { background: #ffffff; padding: 20px; } 
+            .invoice-wrapper { box-shadow: none; padding: 20px; } 
+          }
         </style>
         </head><body>
+        <div class="invoice-wrapper">
+          <!-- HEADER -->
           <div class="header">
-            <div><h1>${(owner.organizationName || 'IRYAX SPACE').toUpperCase()}</h1>
-            <p>GST: ${owner.gstNumber || 'N/A'}</p></div>
-            <div><p><strong>Invoice #${booking._id?.slice(-8).toUpperCase() || 'N/A'}</strong></p>
-            <p>${formatDateIndian(new Date().toISOString())}</p></div>
+            <div class="header-left">
+              <h1>${ownerName}</h1>
+              <div class="subtitle">${ownerAddress}</div>
+              <div style="margin-top:6px;">
+                <span style="font-size:11px;font-weight:600;color:#555555;background:#f0f0f0;padding:2px 12px;border-radius:2px;">MEDICAL CHAMBER</span>
+              </div>
+            </div>
+            <div class="header-right">
+              <div class="invoice-date">${formatDateToDDMMYYYY(new Date().toISOString())}</div>
+            </div>
           </div>
-          <div class="info">
-            <div><strong>User:</strong><br>${booking.name || booking.patientName || 'User'}<br>${booking.mobile || booking.patientMobile || 'N/A'}<br>${booking.email || booking.patientEmail || 'N/A'}</div>
-            <div><strong>Chamber:</strong><br>${cabin.name || booking.chamberName || 'Unknown'}<br>${cabin.address || 'N/A'}</div>
+
+          <!-- BILL TO & CABIN -->
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="label">Bill To</div>
+              <div class="value">${booking.name || booking.patientName || 'Customer'}</div>
+              <div class="sub-value">${booking.mobile || booking.patientMobile || 'N/A'}</div>
+              <div class="sub-value">${booking.email || booking.patientEmail || 'N/A'}</div>
+            </div>
+            <div class="info-item">
+              <div class="label">Cabin Details</div>
+              <div class="value">${cabin.name || booking.chamberName || 'Unknown'}</div>
+              <div class="sub-value">${cabin.address || 'N/A'}</div>
+              <div class="sub-value">Capacity: ${cabin.capacity || 'N/A'} seats | Type: ${cabin.cabinType || 'Normal'}</div>
+            </div>
           </div>
+
+          <!-- SCHEDULE -->
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="label">Start</div>
+              <div class="value">${formatDateToDDMMYYYY(booking.startDate || booking.date)}</div>
+              <div class="sub-value" style="color:#000000;font-weight:600;">${formatTime12(booking.startTime || booking.time)}</div>
+            </div>
+            <div class="info-item">
+              <div class="label">End</div>
+              <div class="value">${formatDateToDDMMYYYY(booking.endDate || booking.startDate)}</div>
+              <div class="sub-value" style="color:#000000;font-weight:600;">${formatTime12(booking.endTime)}</div>
+            </div>
+          </div>
+
+          <!-- BOOKING INFO -->
+          <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px;padding:12px 16px;background:#fafafa;border:1px solid #eeeeee;">
+            <div><span style="color:#999999;font-size:10px;text-transform:uppercase;letter-spacing:0.3px;">Total Hours</span><br><strong>${booking.totalHours || 0}h</strong></div>
+            <div><span style="color:#999999;font-size:10px;text-transform:uppercase;letter-spacing:0.3px;">Total Days</span><br><strong>${booking.totalDays || 0} days</strong></div>
+            <div><span style="color:#999999;font-size:10px;text-transform:uppercase;letter-spacing:0.3px;">Daily Hours</span><br><strong>${booking.dailyHours?.join(', ') || 'N/A'}</strong></div>
+            <div><span style="color:#999999;font-size:10px;text-transform:uppercase;letter-spacing:0.3px;">Booking Type</span><br><strong>${booking.bookingBasis || 'Hourly'}</strong></div>
+            ${booking.selectedPlan ? `<div><span style="color:#999999;font-size:10px;text-transform:uppercase;letter-spacing:0.3px;">Plan</span><br><strong>${booking.selectedPlan.label || 'N/A'}</strong></div>` : ''}
+          </div>
+
+          <!-- SLOTS -->
           ${booking.bookingSlots && booking.bookingSlots.length > 0 ? `
-            <div class="slot-section">
-              <strong>Booking Slots (${booking.totalDays} days, ${booking.totalHours}h total):</strong>
-              <div style="margin-top:5px;">${slotsHtml}</div>
-              <div style="margin-top:5px;font-size:12px;color:#666;">Daily Hours: ${booking.dailyHours?.join(', ')}h</div>
+            <div class="section">
+              <div class="section-title">Booking Slots (${booking.bookingSlots.length} days)</div>
+              <div class="slots-grid">
+                ${booking.bookingSlots.map(s => `
+                  <div class="slot-item">
+                    <div class="slot-date">${formatDateIndian(s.date)}</div>
+                    <div>${s.startTime} - ${s.endTime}</div>
+                    <div style="font-size:10px;color:#999999;">${s.hours}h</div>
+                  </div>
+                `).join('')}
+              </div>
+              <div style="margin-top:8px;font-size:11px;color:#666666;">Daily Hours: ${booking.dailyHours?.join(', ') || 'N/A'}h</div>
             </div>
           ` : ''}
+
+          <!-- SEATS -->
           ${booking.selectedSeats && booking.selectedSeats.length > 0 ? `
             <div class="seat-section">
-              <strong>Selected Seats:</strong>
-              <div style="margin-top:5px;">${seatListHtml}</div>
-              <div style="margin-top:5px;font-size:12px;color:#666;">Total: ${booking.seatCount} seats • Extra Charge: ₹${booking.extraCharge || 0}</div>
+              <div class="seat-title">Selected Seats (${booking.seatCount})</div>
+              <div class="seat-list">${seatListHtml}</div>
+              <div style="margin-top:6px;font-size:11px;color:#666666;">Extra Charge: ₹${booking.extraCharge || 0}</div>
             </div>
           ` : ''}
-          <table>
-            <tr><th>Description</th><th>Details</th><th>Amount</th></tr>
-            <tr><td><strong>${cabin.name || booking.chamberName || 'Chamber Booking'}</strong></td>
-            <td>${formatDateIndian(booking.startDate || booking.date)} ${convertToIndianTime(booking.startTime || booking.time)} - ${formatDateIndian(booking.endDate)} ${convertToIndianTime(booking.endTime)}<br>${booking.totalHours}h • ${booking.totalDays || 0} days • ${booking.bookingBasis === 'plan' ? 'Plan' : 'Hourly'}</td>
-            <td>₹${(booking.subtotal || 0).toFixed(2)}</td></tr>
-            ${booking.extraCharge > 0 ? `
-            <tr><td><strong>Seat Charges</strong></td>
-            <td>${booking.seatCount} seats × ₹${booking.seatExtraChargePerSeat || 100}</td>
-            <td>₹${(booking.extraCharge || 0).toFixed(2)}</td></tr>
-            ` : ''}
-          </table>
-          <div class="meta-grid">
-            <span><strong>Payment:</strong> <span class="badge ${getPaymentMethodBadge(booking.paymentMethod).color.replace('bg-','bg-')}">${getPaymentMethodBadge(booking.paymentMethod).label}</span></span>
-            <span><strong>Status:</strong> <span class="badge ${getStatusBadge(booking.status).color}">${getStatusBadge(booking.status).label}</span></span>
-            <span><strong>Pmt Status:</strong> <span class="badge ${getPaymentStatusBadge(booking.paymentStatus).color}">${getPaymentStatusBadge(booking.paymentStatus).label}</span></span>
+
+          <!-- PRICE BREAKDOWN -->
+          <div class="section">
+            <div class="section-title">Price Breakdown</div>
+            <table class="breakdown-table">
+              <thead>
+                <tr><th>Description</th><th style="text-align:right;">Amount</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Subtotal (${booking.totalHours || 0}h × ₹${cabin.price || 0})</td>
+                  <td class="amount">₹${(booking.subtotal || 0).toFixed(2)}</td>
+                </tr>
+                ${booking.extraCharge > 0 ? `
+                  <tr>
+                    <td>Seat Charges (${booking.seatCount} seats × ₹${booking.seatExtraChargePerSeat || 100})</td>
+                    <td class="amount">₹${(booking.extraCharge || 0).toFixed(2)}</td>
+                  </tr>
+                ` : ''}
+                <tr>
+                  <td>GST (${(booking.gstRate || 0.18) * 100}%)</td>
+                  <td class="amount">₹${(booking.gstAmount || 0).toFixed(2)}</td>
+                </tr>
+                <tr class="total-row">
+                  <td>Total Amount</td>
+                  <td class="amount">₹${(booking.totalPrice || booking.amount || 0).toFixed(2)}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-          <div class="total">Subtotal: ₹${(booking.subtotal || 0).toFixed(2)}<br>${booking.extraCharge > 0 ? `Seat Charges: ₹${(booking.extraCharge || 0).toFixed(2)}<br>` : ''}GST (${(booking.gstRate || 0.18) * 100}%): ₹${(booking.gstAmount || 0).toFixed(2)}<br>Total: ₹${(booking.totalPrice || 0).toFixed(2)}</div>
-          <div class="footer">Powered by IRYAX SPACE<br>Booked On: ${formatDateTimeToDDMMYYYY(booking.createdAt)}<br>Booking ID: ${booking._id}</div>
+
+          <!-- PAYMENT DETAILS -->
+          ${booking.transactionId || booking.paymentDetails?.transactionId ? `
+            <div class="payment-details">
+              <div style="font-size:9px;font-weight:700;color:#999999;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Payment Details</div>
+              <div class="detail-row"><span class="label-text">Transaction ID</span> <strong>${booking.transactionId || booking.paymentDetails?.transactionId || 'N/A'}</strong></div>
+              ${booking.paymentDetails?.upiId ? `<div class="detail-row"><span class="label-text">UPI ID</span> <strong>${booking.paymentDetails.upiId}</strong></div>` : ''}
+              ${booking.paymentDetails?.upiApp ? `<div class="detail-row"><span class="label-text">UPI App</span> <strong>${booking.paymentDetails.upiApp}</strong></div>` : ''}
+              ${booking.paymentDetails?.cardNumber ? `<div class="detail-row"><span class="label-text">Card</span> <strong>•••• ${booking.paymentDetails.cardNumber.slice(-4)}</strong></div>` : ''}
+              <div class="detail-row"><span class="label-text">Payment Mode</span> <strong>${pmtMethod.label}</strong></div>
+            </div>
+          ` : ''}
+
+          <!-- STATUS -->
+          <div class="status-section">
+            <div class="status-item"><span class="label-text">Status</span> <span class="badge badge-${booking.status}">${status.label}</span></div>
+            <div class="status-item"><span class="label-text">Payment</span> <span class="badge badge-${booking.paymentStatus === 'paid' ? 'confirmed' : 'pending'}">${pmtStatus.label}</span></div>
+            <div class="status-item"><span class="label-text">Payment Method</span> <span style="font-weight:600;color:#333333;font-size:12px;">${pmtMethod.label}</span></div>
+            ${booking.isPaidToOwner ? `<div class="status-item"><span class="label-text">Paid to Owner</span> <span style="font-weight:600;color:#2e7d32;font-size:12px;">Yes</span></div>` : ''}
+          </div>
+
+          <!-- VISIT LOG -->
+          ${booking.visitingTimings && booking.visitingTimings.length > 0 ? `
+            <div style="background:#fafafa;padding:12px 16px;margin:10px 0;border:1px solid #eeeeee;">
+              <div style="font-size:9px;font-weight:700;color:#999999;text-transform:uppercase;letter-spacing:0.5px;">Visit Log (${booking.visitingTimings.length} entries)</div>
+              ${booking.visitingTimings.map((t, i) => `
+                <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid #f0f0f0;color:#333333;">
+                  <span>Day ${i+1}: ${formatDateIndian(t.date)}</span>
+                  <span>${formatTime12(t.checkIn)} - ${formatTime12(t.checkOut)}</span>
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
+
+          <!-- FOOTER -->
+          <div class="footer">
+            <span class="brand">${ownerName}</span> — ${ownerAddress}<br>
+            Created: ${formatDateTimeToDDMMYYYY(booking.createdAt)}<br>
+            <div style="margin-top:6px;padding-top:6px;border-top:1px solid #eeeeee;">
+              <span class="powered">POWERED BY IRYAX SPACE</span>
+            </div>
+          </div>
+        </div>
         </body></html>
       `);
       win.document.close();
       win.focus();
-      toast.success('Invoice opened! Click Print to save as PDF.');
+      toast.success('Invoice generated! Click Print to save as PDF.');
     } catch (error) {
+      console.error(error);
       toast.error('Failed to generate invoice');
     }
   };
 
-  // ─── FILTERED BOOKINGS with TYPE filter ───
-  const filteredBookings = bookings.filter((b) => {
+  // ─── FILTER: ONLY MEDICAL (isChamber === true) ───
+  const medicalBookings = bookings.filter(b => b.cabin?.isChamber === true);
+  const filteredBookings = medicalBookings.filter((b) => {
     const search = searchTerm.toLowerCase();
     const matchSearch = b.cabin?.name?.toLowerCase().includes(search) ||
                         b.cabin?.address?.toLowerCase().includes(search) ||
@@ -3714,15 +4029,7 @@ const BookingDoctor = () => {
     const matchStatus = filters.status === 'all' || b.status === filters.status;
     const matchPaymentStatus = filters.paymentStatus === 'all' || b.paymentStatus === filters.paymentStatus;
     
-    // ─── TYPE FILTER - Based ONLY on isChamber ───
-    let matchType = true;
-    if (filterType === 'chamber') {
-      matchType = b.cabin?.isChamber === true;
-    } else if (filterType === 'coworking') {
-      matchType = b.cabin?.isChamber === false || b.cabin?.isChamber === undefined;
-    }
-    
-    return matchSearch && matchDate && matchStatus && matchPaymentStatus && matchType;
+    return matchSearch && matchDate && matchStatus && matchPaymentStatus;
   });
 
   // Separate filtered lists for tabs
@@ -3742,14 +4049,14 @@ const BookingDoctor = () => {
   const displayBookings = getFilteredByTab();
 
   const totalCount = bookings.length;
-  const activeCount = bookings.filter(b => b.status === 'active' || b.status === 'confirmed').length;
-  const pendingCount = bookings.filter(b => b.status === 'pending').length;
-  const completedCount = bookings.filter(b => b.status === 'completed').length;
-  const cancelledCount = bookings.filter(b => b.status === 'cancelled').length;
-  const visitCount = bookings.filter(b => b.bookingType === 'visit').length;
-  const chamberCount = bookings.filter(b => b.bookingType !== 'visit').length;
+  const activeCount = bookings.filter(b => (b.status === 'active' || b.status === 'confirmed') && b.cabin?.isChamber === true).length;
+  const pendingCount = bookings.filter(b => b.status === 'pending' && b.cabin?.isChamber === true).length;
+  const completedCount = bookings.filter(b => b.status === 'completed' && b.cabin?.isChamber === true).length;
+  const cancelledCount = bookings.filter(b => b.status === 'cancelled' && b.cabin?.isChamber === true).length;
+  const visitCount = bookings.filter(b => b.bookingType === 'visit' && b.cabin?.isChamber === true).length;
+  const chamberCount = bookings.filter(b => b.bookingType !== 'visit' && b.cabin?.isChamber === true).length;
 
-  // ─── TYPE STATS - Based ONLY on isChamber ───
+  // ─── TYPE STATS ───
   const medicalChamberCount = bookings.filter(b => b.cabin?.isChamber === true).length;
   const coWorkingCount = bookings.filter(b => b.cabin?.isChamber === false || b.cabin?.isChamber === undefined).length;
 
@@ -3788,23 +4095,22 @@ const BookingDoctor = () => {
     });
     setSearchTerm('');
     setFilterDate('');
-    setFilterType('all');
   };
 
   // Stats for cards
   const statsCount = {
-    total: bookings.length,
-    pending: bookings.filter(b => b.status === 'pending').length,
-    active: bookings.filter(b => b.status === 'active' || (b.status === 'confirmed' && b.paymentStatus !== 'paid')).length,
-    completed: bookings.filter(b => b.status === 'completed' || (b.status === 'confirmed' && b.paymentStatus === 'paid')).length,
-    cancelled: bookings.filter(b => b.status === 'cancelled').length
+    total: medicalChamberCount,
+    pending: bookings.filter(b => b.status === 'pending' && b.cabin?.isChamber === true).length,
+    active: bookings.filter(b => (b.status === 'active' || b.status === 'confirmed') && b.cabin?.isChamber === true).length,
+    completed: bookings.filter(b => b.status === 'completed' && b.cabin?.isChamber === true).length,
+    cancelled: bookings.filter(b => b.status === 'cancelled' && b.cabin?.isChamber === true).length
   };
 
   const bookingStatsCards = [
     {
       label: "Total",
       value: statsCount.total,
-      meta: "all reservations",
+      meta: "total bookings",
       icon: Ticket,
       color: "indigo",
       onClick: () => setFilters({ status: 'all', paymentStatus: 'all' })
@@ -3828,7 +4134,7 @@ const BookingDoctor = () => {
     {
       label: "Completed",
       value: statsCount.completed,
-      meta: "confirmed & paid",
+      meta: "completed bookings",
       icon: CheckCircle,
       color: "purple",
       onClick: () => setFilters(prev => ({ ...prev, status: 'completed' }))
@@ -3836,7 +4142,7 @@ const BookingDoctor = () => {
     {
       label: "Cancelled",
       value: statsCount.cancelled,
-      meta: "cancelled reservations",
+      meta: "cancelled bookings",
       icon: XCircle,
       color: "rose",
       onClick: () => setFilters(prev => ({ ...prev, status: 'cancelled' }))
@@ -3866,7 +4172,7 @@ const BookingDoctor = () => {
               Doctor <span>Bookings</span>
             </h1>
             <p className="admin-dash__subtitle" style={{ fontSize: '11px' }}>
-              Manage all your chamber and site visit bookings
+              Manage all your medical cabin bookings
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -3890,44 +4196,62 @@ const BookingDoctor = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="admin-dash__stats" style={{ marginBottom: '16px' }}>
+        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 md:gap-3 mb-4">
           {bookingStatsCards.map((stat, index) => (
             <div
               key={index}
-              className="admin-dash__stat"
+              className="bg-white rounded-xl border border-gray-200 p-3 shadow-sm hover:shadow-md transition-all cursor-pointer hover:border-indigo-300"
               onClick={stat.onClick}
-              style={{ 
-                cursor: stat.onClick ? 'pointer' : 'default',
-                padding: '12px 14px',
-                minHeight: '80px'
-              }}
             >
-              <div className="admin-dash__stat-top">
-                <span className="admin-dash__stat-label" style={{ fontSize: '11px' }}>{stat.label}</span>
-                <div className={`admin-dash__stat-icon admin-dash__stat-icon--${stat.color}`} style={{ width: '28px', height: '28px' }}>
-                  <stat.icon size={14} />
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">{stat.label}</span>
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center bg-${stat.color}-50`}>
+                  <stat.icon size={14} className={`text-${stat.color}-600`} />
                 </div>
               </div>
-              <div className="admin-dash__stat-value" style={{ fontSize: '18px', fontWeight: '700' }}>{stat.value}</div>
-              <div className="admin-dash__stat-meta" style={{ fontSize: '9px' }}>{stat.meta}</div>
+              <div className="mt-1">
+                <span className="text-xl font-bold text-gray-800">{stat.value}</span>
+                <p className="text-[8px] text-gray-400 mt-0.5">{stat.meta}</p>
+              </div>
             </div>
           ))}
         </div>
 
-        {/* Type Stats Row */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <div className="bg-rose-50 rounded-lg p-3 text-center border border-rose-200">
-            <p className="text-[10px] font-bold text-rose-600 uppercase tracking-wider flex items-center justify-center gap-1">
-              <Stethoscope size={12} /> Medical Chamber
-            </p>
-            <p className="text-xl font-black text-rose-700">{medicalChamberCount}</p>
-          </div>
-          <div className="bg-blue-50 rounded-lg p-3 text-center border border-blue-200">
-            <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider flex items-center justify-center gap-1">
-              <Briefcase size={12} /> Co-Working
-            </p>
-            <p className="text-xl font-black text-blue-700">{coWorkingCount}</p>
-          </div>
+      
+        {/* Tabs - All Bookings | Site Visits | Chamber Bookings */}
+        <div className="flex items-center gap-2 mb-4 border-b border-gray-200">
+          <button
+            onClick={() => setActiveTab('all')}
+            className={`px-4 py-2.5 text-sm font-semibold border-b-2 transition ${
+              activeTab === 'all'
+                ? 'border-rose-600 text-rose-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            All Bookings ({filteredBookings.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('visits')}
+            className={`px-4 py-2.5 text-sm font-semibold border-b-2 transition ${
+              activeTab === 'visits'
+                ? 'border-purple-600 text-purple-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            <Calendar size={16} className="inline mr-2" />
+            Site Visits ({visitCount})
+          </button>
+          <button
+            onClick={() => setActiveTab('chambers')}
+            className={`px-4 py-2.5 text-sm font-semibold border-b-2 transition ${
+              activeTab === 'chambers'
+                ? 'border-emerald-600 text-emerald-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            <Building2 size={16} className="inline mr-2" />
+            Cabin Bookings ({chamberCount})
+          </button>
         </div>
 
         {/* Filters */}
@@ -3935,7 +4259,8 @@ const BookingDoctor = () => {
           <div className="flex flex-col sm:flex-row gap-2">
             <div className="flex-1 relative">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input                type="text"
+              <input
+                type="text"
                 placeholder="Search bookings..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -3951,15 +4276,6 @@ const BookingDoctor = () => {
                 placeholder="Filter by date"
               />
               <select
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
-              >
-                <option value="all">All Types</option>
-                <option value="chamber">Medical Chamber</option>
-                <option value="coworking">Co-Working</option>
-              </select>
-              <select
                 value={filters.status}
                 onChange={(e) => setFilters({...filters, status: e.target.value})}
                 className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
@@ -3972,15 +4288,6 @@ const BookingDoctor = () => {
                 <option value="cancelled">Cancelled</option>
               </select>
               <select
-                value={activeTab}
-                onChange={(e) => setActiveTab(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
-              >
-                <option value="all">All Bookings ({bookings.length})</option>
-                <option value="visits">Site Visits ({visitCount})</option>
-                <option value="chambers">Chamber Bookings ({chamberCount})</option>
-              </select>
-              <select
                 value={filters.paymentStatus}
                 onChange={(e) => setFilters({...filters, paymentStatus: e.target.value})}
                 className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
@@ -3990,7 +4297,7 @@ const BookingDoctor = () => {
                 <option value="paid">Paid</option>
                 <option value="failed">Failed</option>
               </select>
-              {(filters.status !== 'all' || filters.paymentStatus !== 'all' || filterDate || searchTerm || filterType !== 'all') && (
+              {(filters.status !== 'all' || filters.paymentStatus !== 'all' || filterDate || searchTerm) && (
                 <button
                   onClick={clearFilters}
                   className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition"
@@ -4011,7 +4318,7 @@ const BookingDoctor = () => {
             </div>
           </div>
           <div className="mt-1.5 text-[10px] text-gray-400">
-            Showing {displayBookings.length} of {bookings.length} bookings
+            Showing {displayBookings.length} of {filteredBookings.length} medical bookings
           </div>
         </div>
 
@@ -4023,7 +4330,7 @@ const BookingDoctor = () => {
             {filteredBookings.length === 0 && (
               <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-12 text-center">
                 <Calendar size={48} className="mx-auto text-gray-300 mb-4" />
-                <p className="text-gray-500 font-medium">No bookings found</p>
+                <p className="text-gray-500 font-medium">No medical bookings found</p>
                 <p className="text-sm text-gray-400 mt-1">
                   {bookings.length === 0 ? "You haven't made any bookings yet." : "Try adjusting your filters."}
                 </p>
@@ -4043,7 +4350,7 @@ const BookingDoctor = () => {
       </div>
 
       {/* ============================================================ */}
-      {/* VIEW MODAL - Keep as is */}
+      {/* VIEW MODAL */}
       {/* ============================================================ */}
       {showViewModal && viewBooking && (
         <div 
@@ -4057,13 +4364,13 @@ const BookingDoctor = () => {
           <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="sticky top-0 bg-gradient-to-br from-indigo-600 to-purple-600 text-white p-6 rounded-t-3xl flex justify-between items-center">
               <div>
-                <h3 className="text-2xl font-bold">Booking Details</h3>
+                <h3 className="text-2xl font-bold">Medical Booking Details</h3>
                 <p className="text-sm text-indigo-200 flex items-center gap-2">
                   <Hash size={14} /> #{viewBooking._id?.slice(-8).toUpperCase()}
                 </p>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="px-2 py-0.5 bg-white/20 rounded-full text-[10px] font-medium">
-                    {viewBooking.bookingType === 'visit' ? 'Site Visit' : 'Chamber Booking'}
+                    {viewBooking.bookingType === 'visit' ? 'Site Visit' : 'Medical Booking'}
                   </span>
                   <span className="px-2 py-0.5 bg-white/20 rounded-full text-[10px] font-medium capitalize">
                     {viewBooking.bookingBasis || 'Hourly'}
@@ -4076,7 +4383,7 @@ const BookingDoctor = () => {
             </div>
 
             <div className="p-6 space-y-4">
-              {/* ===== BASIC INFO ===== */}
+              {/* BASIC INFO */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Booking ID</p>
@@ -4085,7 +4392,7 @@ const BookingDoctor = () => {
                 <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Type</p>
                   <span className={`mt-1 inline-block px-3 py-1 text-xs font-bold rounded-full ${viewBooking.bookingType === 'visit' ? 'bg-purple-100 text-purple-700' : 'bg-indigo-100 text-indigo-700'}`}>
-                    {viewBooking.bookingType === 'visit' ? 'Site Visit' : 'Chamber Booking'}
+                    {viewBooking.bookingType === 'visit' ? 'Site Visit' : 'Medical Booking'}
                   </span>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
@@ -4102,7 +4409,7 @@ const BookingDoctor = () => {
                 </div>
               </div>
 
-              {/* ===== CABIN & TYPE ===== */}
+              {/* CABIN & TYPE */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
@@ -4121,21 +4428,14 @@ const BookingDoctor = () => {
                     </span>
                   </div>
                 </div>
-                <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200">
-                  <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-1">
-                    <Layers size={12} /> Type
+                <div className="p-4 bg-rose-50 rounded-xl border border-rose-200">
+                  <p className="text-[10px] font-bold text-rose-600 uppercase tracking-wider flex items-center gap-1">
+                    <Stethoscope size={12} /> Medical
                   </p>
                   <div className="mt-2">
-                    {(() => {
-                      const typeBadge = getCabinTypeBadge(viewBooking.cabin);
-                      if (!typeBadge) return <span className="text-gray-400 text-sm">N/A</span>;
-                      const Icon = typeBadge.icon;
-                      return (
-                        <span className={`px-3 py-1.5 text-xs font-bold rounded-full inline-flex items-center gap-2 ${typeBadge.className}`}>
-                          <Icon size={14} /> {typeBadge.label}
-                        </span>
-                      );
-                    })()}
+                    <span className="px-3 py-1.5 text-xs font-bold rounded-full inline-flex items-center gap-2 bg-rose-100 text-rose-700">
+                      <Stethoscope size={14} /> Medical Chamber
+                    </span>
                   </div>
                   <div className="mt-2 text-xs text-gray-500">
                     <p><span className="font-medium">Booking Type:</span> {viewBooking.bookingType || 'booking'}</p>
@@ -4148,7 +4448,7 @@ const BookingDoctor = () => {
                 </div>
               </div>
 
-              {/* ===== USER DETAILS ===== */}
+              {/* USER DETAILS */}
               <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
                 <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider flex items-center gap-1">
                   <User size={12} /> User Details
@@ -4173,32 +4473,32 @@ const BookingDoctor = () => {
                 </div>
               </div>
 
-              {/* ===== SCHEDULE ===== */}
+              {/* SCHEDULE */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
                     <CalendarDays size={12} /> Start
                   </p>
-                  <p className="mt-1 font-semibold text-gray-800">{formatDateIndian(viewBooking.startDate)}</p>
-                  <p className="text-sm font-bold text-indigo-600">{convertToIndianTime(viewBooking.startTime)}</p>
+                  <p className="mt-1 font-semibold text-gray-800">{formatDateIndian(viewBooking.startDate || viewBooking.date)}</p>
+                  <p className="text-sm font-bold text-indigo-600">{convertToIndianTime(viewBooking.startTime || viewBooking.time)}</p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
                     <CalendarDays size={12} /> End
                   </p>
-                  <p className="mt-1 font-semibold text-gray-800">{formatDateIndian(viewBooking.endDate)}</p>
+                  <p className="mt-1 font-semibold text-gray-800">{formatDateIndian(viewBooking.endDate || viewBooking.startDate)}</p>
                   <p className="text-sm font-bold text-indigo-600">{convertToIndianTime(viewBooking.endTime)}</p>
                 </div>
               </div>
 
-              {/* ===== BOOKING INFO ===== */}
+              {/* BOOKING INFO */}
               <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
                   <Info size={12} /> Booking Info
                 </p>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold">
-                    {viewBooking.totalHours}h Total
+                    {viewBooking.totalHours || 0}h Total
                   </span>
                   <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-bold">
                     {viewBooking.totalDays || 0} Days
@@ -4215,7 +4515,7 @@ const BookingDoctor = () => {
                 </div>
               </div>
 
-              {/* ===== MULTI-DAY SLOTS ===== */}
+              {/* MULTI-DAY SLOTS */}
               {viewBooking.bookingSlots && viewBooking.bookingSlots.length > 0 && (
                 <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-200">
                   <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider flex items-center gap-2">
@@ -4234,7 +4534,7 @@ const BookingDoctor = () => {
                 </div>
               )}
 
-              {/* ===== SEATS ===== */}
+              {/* SEATS */}
               {viewBooking.selectedSeats && viewBooking.selectedSeats.length > 0 && (
                 <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200">
                   <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-2">
@@ -4254,7 +4554,7 @@ const BookingDoctor = () => {
                 </div>
               )}
 
-              {/* ===== STATUS & PAYMENT ===== */}
+              {/* STATUS & PAYMENT */}
               <div className="grid grid-cols-3 gap-3">
                 <div className="p-3 bg-indigo-50 rounded-xl text-center border border-indigo-200">
                   <p className="text-[10px] text-indigo-500 font-bold uppercase">Status</p>
@@ -4276,7 +4576,7 @@ const BookingDoctor = () => {
                 </div>
               </div>
 
-              {/* ===== PRICE BREAKDOWN ===== */}
+              {/* PRICE BREAKDOWN */}
               <div className="p-4 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl border border-emerald-200">
                 <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider flex items-center gap-2 mb-3">
                   <Calculator size={14} />
@@ -4285,7 +4585,7 @@ const BookingDoctor = () => {
 
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between items-center border-b border-emerald-100 pb-1.5">
-                    <span className="text-gray-600">Subtotal ({viewBooking.totalHours}h × ₹{viewBooking.cabin?.price || 0})</span>
+                    <span className="text-gray-600">Subtotal ({viewBooking.totalHours || 0}h × ₹{viewBooking.cabin?.price || 0})</span>
                     <span className="font-semibold text-gray-800">₹{(viewBooking.subtotal || 0).toFixed(2)}</span>
                   </div>
 
@@ -4303,12 +4603,12 @@ const BookingDoctor = () => {
 
                   <div className="flex justify-between items-center pt-2 border-t-2 border-emerald-300">
                     <span className="font-bold text-gray-800">Total Amount</span>
-                    <span className="text-xl font-bold text-emerald-700">₹{(viewBooking.totalPrice || 0).toFixed(2)}</span>
+                    <span className="text-xl font-bold text-emerald-700">₹{(viewBooking.totalPrice || viewBooking.amount || 0).toFixed(2)}</span>
                   </div>
                 </div>
               </div>
 
-              {/* ===== CREATED AT ===== */}
+              {/* CREATED AT */}
               <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
                   <CalendarPlus size={12} /> Booked On
@@ -4316,7 +4616,7 @@ const BookingDoctor = () => {
                 <p className="mt-1 font-semibold text-gray-800">{formatDateTimeToDDMMYYYY(viewBooking.createdAt)}</p>
               </div>
 
-              {/* ===== ACTIONS ===== */}
+              {/* ACTIONS */}
               <div className="flex flex-wrap gap-3 pt-2 border-t border-gray-200">
                 <button
                   onClick={() => { setShowViewModal(false); downloadInvoice(viewBooking); }}
@@ -4354,7 +4654,7 @@ const BookingDoctor = () => {
               <div className="bg-blue-50 rounded-xl p-4 text-sm">
                 <p className="font-bold text-blue-800">Current Booking</p>
                 <p className="text-slate-600 mt-1">{replaceBooking.cabin?.name || replaceBooking.chamberName}</p>
-                <p className="text-xs text-slate-500">{formatDateIndian(replaceBooking.startDate)} {convertToIndianTime(replaceBooking.startTime)} - {formatDateIndian(replaceBooking.endDate)} {convertToIndianTime(replaceBooking.endTime)}</p>
+                <p className="text-xs text-slate-500">{formatDateIndian(replaceBooking.startDate || replaceBooking.date)} {convertToIndianTime(replaceBooking.startTime || replaceBooking.time)} - {formatDateIndian(replaceBooking.endDate || replaceBooking.startDate)} {convertToIndianTime(replaceBooking.endTime)}</p>
                 <p className="text-xs font-bold text-slate-700 mt-1">Total: ₹{replaceBooking.totalPrice || replaceBooking.amount}</p>
                 {replaceBooking.totalDays > 0 && (
                   <p className="text-xs text-slate-500">{replaceBooking.totalDays} days • {replaceBooking.totalHours}h total</p>
@@ -4371,7 +4671,7 @@ const BookingDoctor = () => {
                   >
                     <option value="">Select a chamber...</option>
                     {allChambers
-                      .filter(c => c._id !== replaceBooking.cabin?._id)
+                      .filter(c => c._id !== replaceBooking.cabin?._id && c.isChamber === true)
                       .map(c => (
                         <option key={c._id} value={c._id}>
                           {c.name} - ₹{c.price}/hr
@@ -4390,12 +4690,12 @@ const BookingDoctor = () => {
                     <div className="bg-blue-50 rounded-lg p-3">
                       <p className="text-[10px] text-blue-600 font-medium">Current Chamber</p>
                       <p className="font-bold text-slate-800">₹{replaceBooking.cabin?.price || 0}/hr</p>
-                      <p className="text-xs text-slate-500">{replaceBooking.totalHours}h = ₹{replaceBooking.totalPrice || replaceBooking.amount}</p>
+                      <p className="text-xs text-slate-500">{replaceBooking.totalHours || 1}h = ₹{replaceBooking.totalPrice || replaceBooking.amount || 0}</p>
                     </div>
                     <div className="bg-emerald-50 rounded-lg p-3">
                       <p className="text-[10px] text-emerald-600 font-medium">New Chamber</p>
                       <p className="font-bold text-slate-800">₹{selectedChamberData.price}/hr</p>
-                      <p className="text-xs text-slate-500">{replaceBooking.totalHours}h = ₹{priceDiff.newTotal}</p>
+                      <p className="text-xs text-slate-500">{replaceBooking.totalHours || 1}h = ₹{priceDiff.newTotal}</p>
                     </div>
                   </div>
 
@@ -4463,9 +4763,9 @@ const BookingDoctor = () => {
                 <p className="font-bold text-red-800">Are you sure you want to cancel this booking?</p>
                 <div className="mt-2 space-y-1 text-slate-600">
                   <p><span className="text-slate-500">Chamber:</span> {cancelBooking.cabin?.name || cancelBooking.chamberName}</p>
-                  <p><span className="text-slate-500">Start:</span> {formatDateIndian(cancelBooking.startDate)} {convertToIndianTime(cancelBooking.startTime)}</p>
-                  <p><span className="text-slate-500">End:</span> {formatDateIndian(cancelBooking.endDate)} {convertToIndianTime(cancelBooking.endTime)}</p>
-                  <p><span className="text-slate-500">Total:</span> ₹{cancelBooking.totalPrice || cancelBooking.amount}</p>
+                  <p><span className="text-slate-500">Start:</span> {formatDateIndian(cancelBooking.startDate || cancelBooking.date)} {convertToIndianTime(cancelBooking.startTime || cancelBooking.time)}</p>
+                  <p><span className="text-slate-500">End:</span> {formatDateIndian(cancelBooking.endDate || cancelBooking.startDate)} {convertToIndianTime(cancelBooking.endTime)}</p>
+                  <p><span className="text-slate-500">Total:</span> ₹{cancelBooking.totalPrice || cancelBooking.amount || 0}</p>
                   {cancelBooking.totalDays > 0 && (
                     <p><span className="text-slate-500">Days:</span> {cancelBooking.totalDays} days ({cancelBooking.totalHours}h)</p>
                   )}
@@ -4529,7 +4829,7 @@ const BookingDoctor = () => {
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm min-w-[1200px]">
+          <table className="w-full text-left text-sm min-w-[1000px]">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100">
                 <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">#</th>
@@ -4545,8 +4845,6 @@ const BookingDoctor = () => {
             <tbody className="divide-y divide-gray-100">
               {bookingsList.map((b, idx) => {
                 const status = getStatusBadge(b.status);
-                const typeBadge = getCabinTypeBadge(b.cabin);
-                const Icon = typeBadge?.icon || Briefcase;
                 const bookingId = b._id?.slice(-8).toUpperCase() || 'N/A';
 
                 return (
@@ -4569,13 +4867,9 @@ const BookingDoctor = () => {
                       </div>
                     </td>
                     <td className="px-3 py-2">
-                      {typeBadge ? (
-                        <span className={`px-2 py-0.5 text-[9px] font-bold rounded-full inline-flex items-center gap-1 ${typeBadge.className}`}>
-                          <Icon size={9} /> {typeBadge.label}
-                        </span>
-                      ) : (
-                        <span className="text-gray-400 text-[9px]">N/A</span>
-                      )}
+                      <span className="px-2 py-0.5 text-[9px] font-bold rounded-full inline-flex items-center gap-1 bg-rose-100 text-rose-700">
+                        <Stethoscope size={9} /> Medical
+                      </span>
                     </td>
                     <td className="px-3 py-2">
                       <span className="text-xs font-medium text-gray-700">{formatDateIndian(b.startDate || b.date)}</span>
@@ -4617,7 +4911,7 @@ const BookingDoctor = () => {
         <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
           <div className="flex flex-col items-center text-gray-400">
             <Building2 size={32} className="opacity-20 mb-2" />
-            <p className="text-sm font-medium">No chamber bookings found</p>
+            <p className="text-sm font-medium">No cabin bookings found</p>
           </div>
         </div>
       );
@@ -4625,15 +4919,15 @@ const BookingDoctor = () => {
 
     return (
       <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-4 py-3 bg-indigo-50 border-b border-gray-200 flex items-center justify-between">
+        <div className="px-4 py-3 bg-rose-50 border-b border-gray-200 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Building2 size={16} className="text-indigo-600" />
-            <h3 className="font-bold text-gray-800">Chamber Bookings</h3>
+            <Stethoscope size={16} className="text-rose-600" />
+            <h3 className="font-bold text-gray-800">Medical cabin Bookings</h3>
             <span className="px-2 py-0.5 bg-white/60 rounded-full text-xs font-bold text-gray-600">{bookingsList.length}</span>
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm min-w-[1400px]">
+          <table className="w-full text-left text-sm min-w-[1300px]">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100">
                 <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">S. No</th>
@@ -4659,8 +4953,6 @@ const BookingDoctor = () => {
                 const seatCount = b.seatCount || 0;
                 const canCancel = b.status === 'pending' || b.status === 'confirmed';
                 const canReplace = b.status === 'confirmed' || b.status === 'active';
-                const typeBadge = getCabinTypeBadge(b.cabin);
-                const Icon = typeBadge?.icon || Briefcase;
                 const totalDays = b.totalDays || 0;
                 const bookingId = b._id?.slice(-8).toUpperCase() || 'N/A';
 
@@ -4681,13 +4973,9 @@ const BookingDoctor = () => {
                       </div>
                     </td>
                     <td className="px-3 py-2">
-                      {typeBadge ? (
-                        <span className={`px-2 py-0.5 text-[9px] font-bold rounded-full inline-flex items-center gap-1 ${typeBadge.className}`}>
-                          <Icon size={9} /> {typeBadge.label}
-                        </span>
-                      ) : (
-                        <span className="text-gray-400 text-[9px]">N/A</span>
-                      )}
+                      <span className="px-2 py-0.5 text-[9px] font-bold rounded-full inline-flex items-center gap-1 bg-rose-100 text-rose-700">
+                        <Stethoscope size={9} /> Medical
+                      </span>
                     </td>
                     <td className="px-3 py-2">
                       <div>
@@ -4702,7 +4990,7 @@ const BookingDoctor = () => {
                       </div>
                     </td>
                     <td className="px-3 py-2">
-                      <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-full text-[9px] font-bold">{b.totalHours}h</span>
+                      <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-full text-[9px] font-bold">{b.totalHours || 0}h</span>
                     </td>
                     <td className="px-3 py-2">
                       <span className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded-full text-[9px] font-bold">{totalDays}d</span>

@@ -1,4 +1,4 @@
-// DoctorDashboard.jsx - With Profile Completion Circle
+// DoctorDashboard.jsx - With Profile Completion Circle - Cabin Bookings Chart with Hover Tooltip - FILTERS ONLY ON CHART with Custom Date Range
 import axios from "axios";
 import {
   Calendar,
@@ -78,29 +78,7 @@ import "./Dashboard.css";
 const API_URL = "https://spaceapi.iryax.com";
 const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
 
-// Normal Amenities
-const NORMAL_AMENITIES = [
-  { key: "wifi", label: "Wi-Fi", icon: Wifi },
-  { key: "parking", label: "Parking", icon: ParkingCircle },
-  { key: "lockers", label: "Lockers", icon: Lock },
-  { key: "comfortSeating", label: "Comfort Seating", icon: Armchair },
-];
-
-// Exclusive Amenities
-const EXCLUSIVE_AMENITIES = [
-  { key: "wifi", label: "High-Speed Wi-Fi", icon: Wifi },
-  { key: "parking", label: "Reserved Parking", icon: ParkingCircle },
-  { key: "lockers", label: "Secure Lockers", icon: Lock },
-  { key: "privateWashroom", label: "Private Washroom", icon: Bath },
-  { key: "secureAccess", label: "24/7 Secure Access", icon: Shield },
-  { key: "comfortSeating", label: "Premium Seating", icon: Armchair },
-  { key: "coffee", label: "Coffee & Tea", icon: Coffee },
-  { key: "gym", label: "Gym Access", icon: Dumbbell },
-  { key: "ac", label: "Air Conditioning", icon: Fan },
-  { key: "tv", label: "Smart TV", icon: Tv },
-  { key: "printer", label: "Printer Access", icon: Printer },
-  { key: "phone", label: "Conference Phone", icon: Phone },
-];
+const ALL_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 const DoctorDashboard = () => {
   const [user, setUser] = useState(null);
@@ -142,22 +120,27 @@ const DoctorDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Filter States
+  // Filter States - Only for Chart
   const [selectedMonth, setSelectedMonth] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
-  const [filteredBookings, setFilteredBookings] = useState([]);
-  const [availableMonths, setAvailableMonths] = useState([]);
-  const [originalBookings, setOriginalBookings] = useState([]);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [availableMonths, setAvailableMonths] = useState([]);
+  const [originalCabinBookings, setOriginalCabinBookings] = useState([]);
+  const [filteredCabinBookings, setFilteredCabinBookings] = useState([]);
+  
+  // Cabin Bookings Chart Data with revenue per month
+  const [cabinChartData, setCabinChartData] = useState([]);
+  const [hoveredBar, setHoveredBar] = useState(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
 
   // My Bookings data for table
   const [myBookings, setMyBookings] = useState([]);
   const [myCabinBookings, setMyCabinBookings] = useState([]);
 
-  // My Chambers data
-  const [chambers, setChambers] = useState([]);
-  const [chamberCount, setChamberCount] = useState(0);
+  // My Cabins data
+  const [cabins, setCabins] = useState([]);
+  const [cabinCount, setCabinCount] = useState(0);
 
   const navigate = useNavigate();
 
@@ -303,7 +286,7 @@ const DoctorDashboard = () => {
       fetchUserDashboard(userId);
       fetchMyBookings(userId);
       fetchMyCabinBookings(userId);
-      fetchChambers(userId);
+      fetchCabins(userId);
       fetchProfile(userId);
     } else {
       toast.error("User ID not found. Please login again.");
@@ -333,6 +316,8 @@ const DoctorDashboard = () => {
 
       if (data.success) {
         const bookings = data.data.recentBookings || [];
+        const cabinBookings = data.data.recentCabinBookings || [];
+        
         const statusDist = {
           pending: 0,
           confirmed: 0,
@@ -356,6 +341,12 @@ const DoctorDashboard = () => {
           }
         });
 
+        setOriginalCabinBookings(cabinBookings);
+        setFilteredCabinBookings(cabinBookings);
+
+        // Generate Cabin Bookings Chart Data with all months Jan-Dec
+        updateCabinChart(cabinBookings);
+
         setDashboardData({
           totalBookings: data.data.totalBookings || 0,
           totalSpent: data.data.totalSpent || 0,
@@ -371,9 +362,7 @@ const DoctorDashboard = () => {
           statusDistribution: statusDist
         });
 
-        setOriginalBookings(bookings);
-        setFilteredBookings(bookings);
-        generateAvailableMonths(bookings);
+        generateAvailableMonths(cabinBookings);
       } else {
         setError(data.error || "Failed to fetch dashboard data");
       }
@@ -406,7 +395,7 @@ const DoctorDashboard = () => {
     }
   };
 
-  // ─── FETCH MY CHAMBER BOOKINGS ───
+  // ─── FETCH MY CABIN BOOKINGS ───
   const fetchMyCabinBookings = async (userId) => {
     try {
       const token = localStorage.getItem("token");
@@ -423,12 +412,12 @@ const DoctorDashboard = () => {
       );
       setMyCabinBookings(res.data.bookings || []);
     } catch (error) {
-      console.error("Failed to fetch chamber bookings:", error);
+      console.error("Failed to fetch cabin bookings:", error);
     }
   };
 
-  // ─── FETCH MY CHAMBERS ───
-  const fetchChambers = async (userId) => {
+  // ─── FETCH MY CABINS ───
+  const fetchCabins = async (userId) => {
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
@@ -440,14 +429,15 @@ const DoctorDashboard = () => {
         }
       });
       const data = res.data.cabins || res.data;
-      const chamberList = Array.isArray(data) ? data : [];
-      setChambers(chamberList);
-      setChamberCount(chamberList.length);
+      const cabinList = Array.isArray(data) ? data : [];
+      setCabins(cabinList);
+      setCabinCount(cabinList.length);
     } catch (err) {
-      console.error("Error fetching chambers:", err);
+      console.error("Error fetching cabins:", err);
     }
   };
 
+  // ─── GENERATE AVAILABLE MONTHS ───
   const generateAvailableMonths = (bookings) => {
     const months = new Set();
     bookings.forEach(booking => {
@@ -467,9 +457,33 @@ const DoctorDashboard = () => {
     setAvailableMonths(Array.from(months).sort());
   };
 
-  const applyFilters = () => {
-    let filtered = [...originalBookings];
+  // ─── UPDATE CABIN CHART ───
+  const updateCabinChart = (bookings) => {
+    const cabinMonthMap = {};
+    ALL_MONTHS.forEach(month => {
+      cabinMonthMap[month] = { month, bookings: 0, revenue: 0 };
+    });
 
+    bookings.forEach(booking => {
+      if (!booking.createdAt) return;
+      const date = new Date(booking.createdAt);
+      const monthName = date.toLocaleString('default', { month: 'short' });
+      
+      if (cabinMonthMap[monthName]) {
+        cabinMonthMap[monthName].bookings += 1;
+        cabinMonthMap[monthName].revenue += (booking.totalPrice || booking.amount || 0);
+      }
+    });
+    
+    const cabinChart = Object.values(cabinMonthMap);
+    setCabinChartData(cabinChart);
+  };
+
+  // ─── APPLY FILTERS (Only for Chart) ───
+  const applyFilters = () => {
+    let filtered = [...originalCabinBookings];
+
+    // Month filter
     if (selectedMonth !== "all") {
       const [year, month] = selectedMonth.split('-');
       filtered = filtered.filter(booking => {
@@ -480,6 +494,7 @@ const DoctorDashboard = () => {
       });
     }
 
+    // Status filter
     if (selectedStatus !== "all") {
       filtered = filtered.filter(booking => {
         if (selectedStatus === 'completed') {
@@ -495,80 +510,43 @@ const DoctorDashboard = () => {
       });
     }
 
+    // Date From filter
     if (dateFrom) {
       const from = new Date(dateFrom);
+      from.setHours(0, 0, 0, 0);
       filtered = filtered.filter(booking => {
         if (!booking.createdAt) return false;
-        return new Date(booking.createdAt) >= from;
+        const bookingDate = new Date(booking.createdAt);
+        return bookingDate >= from;
       });
     }
 
+    // Date To filter
     if (dateTo) {
       const to = new Date(dateTo);
+      to.setHours(23, 59, 59, 999);
       filtered = filtered.filter(booking => {
         if (!booking.createdAt) return false;
-        return new Date(booking.createdAt) <= to;
+        const bookingDate = new Date(booking.createdAt);
+        return bookingDate <= to;
       });
     }
 
-    setFilteredBookings(filtered);
-    updateChartData(filtered);
+    setFilteredCabinBookings(filtered);
+    updateCabinChart(filtered);
+    
+    toast.success(`Filtered: ${filtered.length} cabin bookings found`);
   };
 
-  const updateChartData = (filtered) => {
-    if (filtered.length === 0) {
-      setDashboardData(prev => ({
-        ...prev,
-        bookingChartData: []
-      }));
-      return;
-    }
-
-    const monthMap = {};
-    filtered.forEach(booking => {
-      if (!booking.createdAt) return;
-      const date = new Date(booking.createdAt);
-      const monthName = date.toLocaleString('default', { month: 'short' });
-
-      if (!monthMap[monthName]) {
-        monthMap[monthName] = { month: monthName, bookings: 0 };
-      }
-      monthMap[monthName].bookings += 1;
-    });
-
-    const chartData = Object.values(monthMap);
-    setDashboardData(prev => ({
-      ...prev,
-      bookingChartData: chartData
-    }));
-  };
-
+  // ─── CLEAR FILTERS ───
   const clearFilters = () => {
     setSelectedMonth("all");
     setSelectedStatus("all");
     setDateFrom("");
     setDateTo("");
-    setFilteredBookings(originalBookings);
-
-    if (originalBookings.length > 0) {
-      const monthMap = {};
-      originalBookings.forEach(booking => {
-        if (!booking.createdAt) return;
-        const date = new Date(booking.createdAt);
-        const monthName = date.toLocaleString('default', { month: 'short' });
-
-        if (!monthMap[monthName]) {
-          monthMap[monthName] = { month: monthName, bookings: 0 };
-        }
-        monthMap[monthName].bookings += 1;
-      });
-
-      const chartData = Object.values(monthMap);
-      setDashboardData(prev => ({
-        ...prev,
-        bookingChartData: chartData
-      }));
-    }
+    setFilteredCabinBookings(originalCabinBookings);
+    updateCabinChart(originalCabinBookings);
+    toast.success('Filters cleared');
   };
 
   const formatCurrency = (amount) => {
@@ -603,8 +581,8 @@ const DoctorDashboard = () => {
     return `${API_URL}/${cleanPath}`;
   };
 
-  const getChamberStatus = (chamber) => {
-    if (chamber.isActive === true) {
+  const getCabinStatus = (cabin) => {
+    if (cabin.isActive === true) {
       return { status: 'Active', color: 'green' };
     }
     return { status: 'Inactive', color: 'gray' };
@@ -682,6 +660,19 @@ const DoctorDashboard = () => {
     return '⚠️';
   };
 
+  // Handle mouse enter on bar
+  const handleBarHover = (item, index, event) => {
+    setHoveredBar({ item, index });
+    setTooltipPosition({
+      x: event.clientX || 0,
+      y: (event.clientY || 0) - 90
+    });
+  };
+
+  const handleBarLeave = () => {
+    setHoveredBar(null);
+  };
+
   if (loading) {
     return (
       <div className="admin-dash">
@@ -719,30 +710,40 @@ const DoctorDashboard = () => {
     statusDistribution
   } = dashboardData;
 
-  // ✅ STATS CARDS
+  // Stats Cards - Matching UserDashboard style
   const statsCards = [
     {
       label: "My Bookings",
       value: totalBookings,
       meta: `${monthlyStats?.bookingsThisMonth || 0} this month`,
       icon: Calendar,
-      iconBg: "bg-indigo-100 text-indigo-600",
+      color: "indigo",
       onClick: () => navigate("/doctorbookings")
     },
     {
-      label: "My Chambers",
+      label: "Pending",
+      value: statusDistribution.pending || 0,
+      meta: "awaiting confirmation",
+      icon: Clock,
+      color: "amber",
+      onClick: () => {
+        // Filter to pending
+      }
+    },
+    {
+      label: "My Cabins",
       value: myCabinsCount,
       meta: `${totalCabins} total spaces available`,
       icon: Home,
-      iconBg: "bg-emerald-100 text-emerald-600",
+      color: "emerald",
       onClick: () => navigate("/mychambers")
     },
     {
-      label: "Chamber Bookings",
+      label: "Cabin Bookings",
       value: cabinBookingsCount,
       meta: `₹${cabinRevenue.toLocaleString('en-IN')} revenue`,
       icon: Building2,
-      iconBg: "bg-rose-100 text-rose-600",
+      color: "rose",
       onClick: () => navigate("/chamberbookings")
     },
     {
@@ -750,42 +751,27 @@ const DoctorDashboard = () => {
       value: formatCurrency(totalSpent),
       meta: `₹${monthlyStats?.spentThisMonth || 0} this month`,
       icon: IndianRupee,
-      iconBg: "bg-amber-100 text-amber-600"
+      color: "purple"
     },
     {
       label: "Wallet Balance",
       value: formatCurrency(wallet.balance || 0),
       meta: `${wallet.transactions || 0} transactions`,
       icon: Wallet,
-      iconBg: "bg-cyan-100 text-cyan-600",
+      color: "cyan",
       onClick: () => navigate("/doctorwallet")
     }
   ];
 
-  // ✅ FOOTER STATS - 4 cards
-  // const footerStats = [
-  //   {
-  //     label: "Total Revenue",
-  //     value: formatCurrency(cabinRevenue),
-  //     icon: IndianRupee,
-  //     iconBg: "bg-emerald-100 text-emerald-600"
-  //   },
-  //   {
-  //     label: "Total Bookings",
-  //     value: cabinBookingsCount,
-  //     icon: Calendar,
-  //     iconBg: "bg-blue-100 text-blue-600"
-  //   },
-  //   {
-  //     label: "Wallet Withdrawals",
-  //     value: wallet.withdrawals || 0,
-  //     icon: Wallet,
-  //     iconBg: "bg-rose-100 text-rose-600"
-  //   }
-  // ];
-
   const latestMyBookings = myBookings.slice(0, 5);
   const latestCabinBookings = myCabinBookings.slice(0, 5);
+  const activeBookingsCount = statusDistribution.active || 0;
+
+  // Check if any filter is active
+  const isFilterActive = selectedMonth !== "all" || 
+                         selectedStatus !== "all" || 
+                         dateFrom || 
+                         dateTo;
 
   // Get profile user name
   const profileName = profile?.name || user?.name || 'Doctor';
@@ -795,22 +781,29 @@ const DoctorDashboard = () => {
       <DoctorNavbar />
 
       <div className="pt-20 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
-        {/* Header with Profile Completion */}
+        {/* Header */}
         <div className="admin-dash__header" style={{ marginBottom: "8px" }}>
           <div>
             <h1 className="admin-dash__greeting" style={{ fontSize: "1.25rem" }}>
-              Doctor <span>Dashboard</span>
+              My <span>Dashboard</span>
             </h1>
             <p className="admin-dash__subtitle" style={{ fontSize: "11px" }}>
               Welcome back, <span className="font-semibold text-gray-700">{profileName}</span>
             </p>
           </div>
+          <div className="flex items-center gap-2">
+            {activeBookingsCount > 0 && (
+              <span className="admin-dash__date-pill">
+                <Activity size={14} />
+                {activeBookingsCount} Active
+              </span>
+            )}
+          </div>
         </div>
 
-        {/* Profile Completion Card with Circular Progress */}
+        {/* Profile Completion Card */}
         <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 rounded-xl border border-indigo-200 shadow-sm p-3 sm:p-4 mb-5">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            {/* Circular Progress */}
             <div className="flex-shrink-0 flex justify-center">
               <CircularProgress 
                 percentage={animatedPercentage || completionPercentage} 
@@ -819,7 +812,6 @@ const DoctorDashboard = () => {
               />
             </div>
 
-            {/* Details */}
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-0.5">
                 <span className="text-lg">{getCompletionEmoji(completionPercentage)}</span>
@@ -855,15 +847,11 @@ const DoctorDashboard = () => {
               {missingFields.length === 0 && (
                 <div className="mt-1 flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
                   <CheckCircle size={10} className="text-emerald-500" />
-                  <p className="text-[8px] font-medium text-emerald-700">Your profile is 100% complete! 🎉</p>
+                  <p className="text-[8px] font-medium text-emerald-700">100% complete! 🎉</p>
                 </div>
               )}
-
-              {/* Missing Fields Tags - Small */}
-              {/* (Hidden on doctor dashboard for cleaner parity with /userdashboard) */}
             </div>
             
-            {/* Quick Action Button */}
             <button
               onClick={() => navigate("/doctorprofile")}
               className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1.5 bg-indigo-600 text-white rounded-lg text-[10px] font-medium hover:bg-indigo-700 transition-colors shadow-sm shadow-indigo-200"
@@ -874,26 +862,20 @@ const DoctorDashboard = () => {
           </div>
         </div>
 
-        {/* Row 1: Stats Cards */}
-        <div className="admin-dash__stats" style={{ marginBottom: "16px" }}>
+        {/* Stats Cards */}
+        <div className="admin-dash__stats admin-dash__stats--six" style={{ marginBottom: "16px" }}>
           {statsCards.map((stat, index) => (
             <div
               key={index}
-              className="admin-dash__stat cursor-pointer"
+              className="admin-dash__stat"
               onClick={stat.onClick}
-              style={{
-                padding: "12px 14px",
-                minHeight: "80px",
-              }}
+              title={stat.onClick ? "Click to view" : undefined}
             >
               <div className="admin-dash__stat-top">
                 <span className="admin-dash__stat-label" style={{ fontSize: "11px" }}>
                   {stat.label}
                 </span>
-                <div
-                  className={`admin-dash__stat-icon ${stat.iconBg}`}
-                  style={{ width: "28px", height: "28px" }}
-                >
+                <div className={`admin-dash__stat-icon admin-dash__stat-icon--${stat.color}`}>
                   <stat.icon size={14} />
                 </div>
               </div>
@@ -907,39 +889,7 @@ const DoctorDashboard = () => {
           ))}
         </div>
 
-        {/* Row 2: Footer Stats */}
-        {/* <div className="admin-dash__stats mt-4">
-          {footerStats.map((stat, index) => (
-            <div
-              key={index}
-              className="admin-dash__stat"
-              style={{
-                padding: "12px 14px",
-                minHeight: "80px",
-              }}
-            >
-              <div className="admin-dash__stat-top">
-                <span className="admin-dash__stat-label" style={{ fontSize: "11px" }}>
-                  {stat.label}
-                </span>
-                <div
-                  className={`admin-dash__stat-icon ${stat.iconBg}`}
-                  style={{ width: "28px", height: "28px" }}
-                >
-                  <stat.icon size={14} />
-                </div>
-              </div>
-              <div className="admin-dash__stat-value" style={{ fontSize: "18px", fontWeight: "700" }}>
-                {stat.value}
-              </div>
-            </div>
-          ))}
-        
-          <div className="admin-dash__stat" style={{ visibility: 'hidden' }}>
-          </div>
-        </div> */}
-
-        {/* Row 3: Filter Section (match /userdashboard style) */}
+        {/* Filter Section - Only for Chart */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-3 mb-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
@@ -947,8 +897,8 @@ const DoctorDashboard = () => {
                 <Filter size={16} />
               </div>
               <div>
-                <h4 className="text-sm font-semibold text-gray-800">Filters</h4>
-                <p className="text-[10px] text-gray-400">Refine analytics view</p>
+                <h4 className="text-sm font-semibold text-gray-800">Chart Filters</h4>
+                <p className="text-[10px] text-gray-400">Filter cabin bookings chart</p>
               </div>
             </div>
 
@@ -958,16 +908,16 @@ const DoctorDashboard = () => {
                 onChange={(e) => setSelectedMonth(e.target.value)}
                 className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
               >
-                  <option value="all">All Months</option>
-                  {availableMonths.map(month => {
-                    const [year, monthNum] = month.split('-');
-                    const date = new Date(parseInt(year), parseInt(monthNum) - 1);
-                    return (
-                      <option key={month} value={month}>
-                        {date.toLocaleString('default', { month: 'long', year: 'numeric' })}
-                      </option>
-                    );
-                  })}
+                <option value="all">All Months</option>
+                {availableMonths.map(month => {
+                  const [year, monthNum] = month.split('-');
+                  const date = new Date(parseInt(year), parseInt(monthNum) - 1);
+                  return (
+                    <option key={month} value={month}>
+                      {date.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                    </option>
+                  );
+                })}
               </select>
 
               <select
@@ -975,31 +925,31 @@ const DoctorDashboard = () => {
                 onChange={(e) => setSelectedStatus(e.target.value)}
                 className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
               >
-                  <option value="all">All Status</option>
-                  <option value="pending">Pending</option>
-                  <option value="confirmed">Confirmed</option>
-                  <option value="active">Active</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
+                <option value="all">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="active">Active</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
               </select>
 
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] text-gray-500">From</span>
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] text-gray-500 font-medium">From</span>
                 <input
                   type="date"
                   value={dateFrom}
                   onChange={(e) => setDateFrom(e.target.value)}
-                  className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                  className="px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white w-32"
                 />
               </div>
 
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] text-gray-500">To</span>
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] text-gray-500 font-medium">To</span>
                 <input
                   type="date"
                   value={dateTo}
                   onChange={(e) => setDateTo(e.target.value)}
-                  className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                  className="px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white w-32"
                 />
               </div>
 
@@ -1011,212 +961,232 @@ const DoctorDashboard = () => {
                 Apply
               </button>
 
-              {(selectedMonth !== "all" || selectedStatus !== "all" || dateFrom || dateTo) && (
+              {isFilterActive && (
                 <button
                   onClick={clearFilters}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition"
+                  className="px-3 py-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition text-sm font-medium"
                 >
-                  Reset
+                  <X size={16} />
                 </button>
               )}
             </div>
           </div>
         </div>
 
-        {/* Row 4: Charts & Quick Stats Section - (Keep existing code) */}
-        <div className="admin-dash__charts-grid mt-6">
-          {/* Monthly Bookings Chart - Left side */}
-          <div className="admin-dash__card admin-dash__chart-wrap">
-            <div className="admin-dash__card-header py-3 px-4">
-              <h3 className="admin-dash__card-title text-sm">Monthly Bookings</h3>
-            </div>
-            <div className="admin-dash__card-body flex-1 p-3">
-              <div className="h-40 flex items-end justify-between gap-1 px-1">
-                {bookingChartData && bookingChartData.length > 0 ? (
-                  bookingChartData.map((item, idx) => {
-                    const maxVal = Math.max(...bookingChartData.map(d => d.bookings), 1);
-                    const height = maxVal > 0 ? (item.bookings / maxVal) * 100 : 0;
-                    return (
-                      <div key={idx} className="flex-1 flex flex-col items-center gap-1.5">
-                        <div className="w-full flex justify-center items-end h-24">
-                          <div 
-                            className="w-8 rounded-t-lg bg-gradient-to-t from-indigo-500 to-indigo-400 hover:from-indigo-600 hover:to-indigo-500 transition-all duration-500"
-                            style={{ height: `${Math.max(height, 4)}%` }}
-                          />
-                        </div>
-                        <span className="text-[9px] text-slate-400 font-medium truncate max-w-[40px]">{item.month}</span>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div className="w-full text-center text-slate-400 text-sm">No data available</div>
-                )}
+        {/* Cabin Bookings Chart - Full Width with Hover Tooltip */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl shadow-md shadow-amber-200">
+                <BarChart3 size={18} className="text-white" />
               </div>
-              <div className="flex justify-between mt-3 text-[10px] text-slate-400 bg-slate-50 rounded-xl px-3 py-2">
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
-                  Total: {bookingChartData?.reduce((sum, d) => sum + d.bookings, 0) || 0} bookings
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-purple-500"></span>
-                  {bookingChartData?.filter(d => d.bookings > 0).length || 0} months with bookings
-                </span>
+              <div>
+                <h3 className="text-sm font-bold text-gray-800">Cabin Bookings</h3>
+                <p className="text-xs text-gray-500">Monthly booking trends with revenue</p>
               </div>
+              <span className="px-2.5 py-1 text-xs font-bold text-amber-700 bg-amber-100 rounded-full">
+                {cabinChartData.reduce((sum, d) => sum + d.bookings, 0) || 0} total
+              </span>
+              <span className="px-2.5 py-1 text-xs font-bold text-emerald-700 bg-emerald-100 rounded-full">
+                {formatCurrency(cabinChartData.reduce((sum, d) => sum + d.revenue, 0))}
+              </span>
             </div>
           </div>
-
-          {/* Quick Stats - Right side */}
-          <div className="admin-dash__card admin-dash__chart-wrap">
-            <div className="admin-dash__card-header py-3 px-4">
-              <h3 className="admin-dash__card-title text-sm">Quick Overview</h3>
-            </div>
-            <div className="admin-dash__card-body flex-1 p-4">
-              <div className="grid grid-cols-2 gap-3 h-full">
-                {/* Total Earnings Card */}
-                <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 rounded-xl p-3 flex flex-col items-center justify-center border border-emerald-200/50">
-                  <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center mb-2">
-                    <IndianRupee size={20} className="text-emerald-600" />
+          <div className="h-52 flex items-end justify-between gap-1 px-2 relative">
+            {cabinChartData.map((item, idx) => {
+              const maxVal = Math.max(...cabinChartData.map(d => d.bookings), 1);
+              const height = maxVal > 0 ? (item.bookings / maxVal) * 100 : 0;
+              const isHovered = hoveredBar && hoveredBar.index === idx;
+              
+              return (
+                <div 
+                  key={idx} 
+                  className="flex-1 flex flex-col items-center gap-1.5 relative group"
+                  onMouseEnter={(e) => handleBarHover(item, idx, e)}
+                  onMouseLeave={handleBarLeave}
+                >
+                  <div className="w-full flex justify-center items-end h-36">
+                    <div 
+                      className={`w-8 rounded-t-lg transition-all duration-300 cursor-pointer ${
+                        item.bookings > 0 
+                          ? 'bg-gradient-to-t from-amber-500 to-amber-400 hover:from-amber-600 hover:to-amber-500' 
+                          : 'bg-gray-200'
+                      } ${isHovered ? 'scale-110 shadow-lg' : ''}`}
+                      style={{ 
+                        height: `${Math.max(height, 4)}%`,
+                        opacity: item.bookings > 0 ? 1 : 0.3
+                      }}
+                    />
                   </div>
-                  <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Earnings</p>
-                  <p className="text-lg font-bold text-emerald-700">₹{cabinRevenue.toLocaleString('en-IN')}</p>
-                  <p className="text-[8px] text-emerald-500/70">Total earned</p>
+                  <span className={`text-[9px] font-medium ${item.bookings > 0 ? 'text-gray-600' : 'text-gray-300'} truncate max-w-[40px]`}>
+                    {item.month}
+                  </span>
+                  <span className={`text-[7px] font-bold ${item.bookings > 0 ? 'text-amber-600' : 'text-gray-300'}`}>
+                    {item.bookings}
+                  </span>
                 </div>
+              );
+            })}
+          </div>
 
-                {/* Active Bookings Card */}
-                <div className="bg-gradient-to-br from-indigo-50 to-indigo-100/50 rounded-xl p-3 flex flex-col items-center justify-center border border-indigo-200/50">
-                  <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center mb-2">
-                    <Activity size={20} className="text-indigo-600" />
-                  </div>
-                  <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">Active</p>
-                  <p className="text-lg font-bold text-indigo-700">{statusDistribution?.active || 0}</p>
-                  <p className="text-[8px] text-indigo-500/70">Current bookings</p>
-                </div>
-
-                {/* Completion Rate Card */}
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-3 flex flex-col items-center justify-center border border-blue-200/50">
-                  <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center mb-2">
-                    <TrendingUp size={20} className="text-blue-600" />
-                  </div>
-                  <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Completion</p>
-                  <p className="text-lg font-bold text-blue-700">
-                    {totalBookings > 0 ? Math.round((statusDistribution?.completed || 0) / totalBookings * 100) : 0}%
-                  </p>
-                  <p className="text-[8px] text-blue-500/70">Completed rate</p>
-                </div>
-
-                {/* Total Chambers Card */}
-                <div className="bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-xl p-3 flex flex-col items-center justify-center border border-amber-200/50">
-                  <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center mb-2">
-                    <Building2 size={20} className="text-amber-600" />
-                  </div>
-                  <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">Chambers</p>
-                  <p className="text-lg font-bold text-amber-700">{myCabinsCount}</p>
-                  <p className="text-[8px] text-amber-500/70">Total spaces</p>
-                </div>
+          {/* Hover Tooltip with Revenue */}
+          {hoveredBar && (
+            <div 
+              className="fixed bg-gray-900 text-white px-4 py-3 rounded-lg shadow-xl text-xs font-medium z-50 pointer-events-none transition-opacity duration-150"
+              style={{
+                left: tooltipPosition.x,
+                top: tooltipPosition.y,
+                transform: 'translateX(-50%)',
+                minWidth: '120px',
+                textAlign: 'center'
+              }}
+            >
+              <div className="font-bold text-amber-400 text-sm">{hoveredBar.item.month}</div>
+              <div className="border-t border-gray-700 my-1.5"></div>
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-gray-400">📊</span>
+                <span className="text-white font-semibold">{hoveredBar.item.bookings} bookings</span>
               </div>
+              <div className="flex items-center justify-center gap-2 mt-0.5">
+                <span className="text-gray-400">💰</span>
+                <span className="text-emerald-400 font-bold">{formatCurrency(hoveredBar.item.revenue)}</span>
+              </div>
+              <div className="text-gray-400 text-[8px] mt-1">
+                {hoveredBar.item.bookings > 0 
+                  ? `${Math.round((hoveredBar.item.bookings / cabinChartData.reduce((sum, d) => sum + d.bookings, 0)) * 100)}% of total`
+                  : 'No bookings'}
+              </div>
+              <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45"></div>
             </div>
+          )}
+
+          <div className="flex justify-between mt-3 text-[10px] text-gray-500 bg-gray-50 rounded-xl px-4 py-2">
+            <span className="flex items-center gap-2 font-medium">
+              <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+              Total: {cabinChartData.reduce((sum, d) => sum + d.bookings, 0) || 0} cabin bookings
+            </span>
+            <span className="flex items-center gap-2 font-medium">
+              <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+              {cabinChartData.filter(d => d.bookings > 0).length || 0} months with bookings
+            </span>
+            <span className="flex items-center gap-2 font-medium">
+              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+              Revenue: {formatCurrency(cabinChartData.reduce((sum, d) => sum + d.revenue, 0))}
+            </span>
           </div>
         </div>
 
-        {/* Row 5: My Chambers Section - (Keep existing code) */}
-        <div className="admin-dash__card mt-6" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
-          <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
+        {/* My Cabins Section */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 p-5 border-b border-gray-100 bg-gray-50/50">
             <div className="flex items-center gap-3">
-              <h3 className="admin-dash__card-title text-sm">My Chambers</h3>
-              <span className="px-2.5 py-0.5 text-xs font-bold text-indigo-700 bg-indigo-100 rounded-full">
-                {chambers.length}
+              <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl shadow-md shadow-emerald-200">
+                <Home size={18} className="text-white" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-gray-800">My Cabins</h3>
+                <p className="text-xs text-gray-500">Manage your registered spaces</p>
+              </div>
+              <span className="px-3 py-1 text-xs font-bold text-emerald-700 bg-emerald-100 rounded-full">
+                {cabins.length}
               </span>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                onClick={() => navigate("/mychambers")}
-                className="text-xs font-medium text-indigo-600 hover:text-indigo-800 transition-colors flex items-center gap-1 bg-indigo-50 px-3 py-1.5 rounded-lg hover:bg-indigo-100"
-              >
-                View All <ArrowUpRight size={12} />
-              </button>
-            </div>
+            <button
+              onClick={() => navigate("/mychambers")}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+            >
+              View All <ArrowUpRight size={14} />
+            </button>
           </div>
-          <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
-            {chambers.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-3 py-12 text-gray-400">
-                <Home size={36} className="opacity-20" />
-                <p className="text-sm font-medium">No chambers found</p>
-                <button
-                  onClick={() => navigate("/mychambers")}
-                  className="text-xs font-medium text-indigo-600 hover:text-indigo-800 mt-2 bg-indigo-50 px-4 py-2 rounded-lg hover:bg-indigo-100"
-                >
-                  Go to My Chambers
-                </button>
+          <div className="p-0 overflow-x-auto">
+            {cabins.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-4 py-16 text-gray-400">
+                <div className="p-4 bg-gray-100 rounded-2xl">
+                  <Home size={48} className="text-gray-300" />
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-semibold text-gray-500">No cabins found</p>
+                  <p className="text-xs text-gray-400 mt-1">You haven't registered any cabins yet.</p>
+                </div>
               </div>
             ) : (
               <table className="w-full min-w-[700px] text-left">
                 <thead>
-                  <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
-                    <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">S.No</th>
-                    <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Chamber</th>
-                    <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Address</th>
-                    <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Type</th>
-                    <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Price</th>
-                    <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
-                    <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Action</th>
+                  <tr className="border-b border-gray-100 bg-gray-50/50">
+                    <th className="p-4 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">S.No</th>
+                    <th className="p-4 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
+                    <th className="p-4 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Address</th>
+                    <th className="p-4 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Type</th>
+                    <th className="p-4 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Price</th>
+                    <th className="p-4 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
+                    <th className="p-4 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap text-center">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {chambers.slice(0, 5).map((chamber, index) => {
-                    const chamberStatus = getChamberStatus(chamber);
-                    const isExclusive = chamber.cabinType === 'exclusive';
+                  {cabins.slice(0, 5).map((cabin, index) => {
+                    const cabinStatus = getCabinStatus(cabin);
+                    const isExclusive = cabin.cabinType === 'exclusive';
                     return (
-                      <tr key={chamber._id} className="transition-colors hover:bg-gray-50/80 cursor-pointer" onClick={() => navigate(`/cabin/${chamber._id}`)}>
-                        <td className="p-3">
-                          <span className="text-xs font-semibold text-gray-400">{index + 1}</span>
+                      <tr key={cabin._id} className="transition-all hover:bg-gradient-to-r hover:from-gray-50 hover:to-indigo-50/30 cursor-pointer group" onClick={() => navigate(`/cabin/${cabin._id}`)}>
+                        <td className="p-4">
+                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 text-xs font-bold text-gray-500 group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors">
+                            {index + 1}
+                          </span>
                         </td>
-                        <td className="p-3">
-                          <div className="flex items-center gap-2.5">
-                            <div className="flex-shrink-0 w-8 h-8 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
+                        <td className="p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="flex-shrink-0 w-12 h-12 rounded-xl overflow-hidden bg-gray-100 border border-gray-200 shadow-sm">
                               <img
-                                src={chamber.images?.[0] ? getImageUrl(chamber.images[0]) : PLACEHOLDER_IMAGE}
-                                alt={chamber.name}
+                                src={cabin.images?.[0] ? getImageUrl(cabin.images[0]) : PLACEHOLDER_IMAGE}
+                                alt={cabin.name}
                                 className="w-full h-full object-cover"
                                 onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
                               />
                             </div>
                             <div>
-                              <p className="font-semibold text-gray-900 text-sm">{chamber.name || 'N/A'}</p>
-                              <p className="text-[10px] text-gray-400">{chamber.cabin || 'N/A'}</p>
+                              <p className="font-bold text-gray-900 text-sm">{cabin.name || 'N/A'}</p>
+                              <p className="text-[10px] text-gray-500 font-medium">{cabin.cabin || 'N/A'}</p>
                             </div>
                           </div>
                         </td>
-                        <td className="p-3">
-                          <span className="text-sm text-gray-600 flex items-center gap-1">
-                            <MapPin size={12} className="text-gray-400" />
-                            <span className="truncate max-w-[120px]">{chamber.address || "N/A"}</span>
-                          </span>
+                        <td className="p-4">
+                          <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                            <MapPin size={14} className="text-gray-400 flex-shrink-0" />
+                            <span className="truncate max-w-[140px]">{cabin.address || "N/A"}</span>
+                          </div>
                         </td>
-                        <td className="p-3">
-                          <span className={`px-2.5 py-0.5 text-[10px] font-bold rounded-full inline-flex items-center gap-1 ${
-                            isExclusive ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
+                        <td className="p-4">
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold rounded-lg ${
+                            isExclusive 
+                              ? 'bg-gradient-to-r from-amber-100 to-amber-50 text-amber-700 border border-amber-200' 
+                              : 'bg-gradient-to-r from-blue-100 to-blue-50 text-blue-700 border border-blue-200'
                           }`}>
-                            {isExclusive ? <Crown size={10} /> : null}
+                            {isExclusive ? <Crown size={11} /> : null}
                             {isExclusive ? 'Exclusive' : 'Normal'}
                           </span>
                         </td>
-                        <td className="p-3">
-                          <span className="text-sm font-bold text-gray-900">₹{chamber.price || 0}</span>
-                          <span className="text-[10px] text-gray-400">/hr</span>
+                        <td className="p-4">
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-base font-bold text-gray-900">₹{cabin.price || 0}</span>
+                            <span className="text-[10px] text-gray-400 font-medium">/hr</span>
+                          </div>
                         </td>
-                        <td className="p-3">
-                          <span className={`px-2.5 py-0.5 text-[10px] font-bold rounded-full ${
-                            chamberStatus.color === 'green' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'
+                        <td className="p-4">
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold rounded-lg ${
+                            cabinStatus.color === 'green' 
+                              ? 'bg-gradient-to-r from-emerald-100 to-emerald-50 text-emerald-700 border border-emerald-200' 
+                              : 'bg-gradient-to-r from-gray-100 to-gray-50 text-gray-600 border border-gray-200'
                           }`}>
-                            {chamberStatus.status}
+                            {cabinStatus.color === 'green' && <CheckCircle size={11} />}
+                            {cabinStatus.status}
                           </span>
                         </td>
-                        <td className="p-3">
+                        <td className="p-4 text-center">
                           <button
-                            onClick={(e) => { e.stopPropagation(); navigate(`/cabin/${chamber._id}`); }}
-                            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors"
+                            onClick={(e) => { e.stopPropagation(); navigate(`/cabin/${cabin._id}`); }}
+                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-bold bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:from-indigo-600 hover:to-purple-600 transition-all shadow-md shadow-indigo-200/50 hover:shadow-indigo-300/50"
                           >
-                            <Eye size={12} /> View
+                            <Eye size={11} /> View
                           </button>
                         </td>
                       </tr>
@@ -1228,37 +1198,48 @@ const DoctorDashboard = () => {
           </div>
         </div>
 
-        {/* Row 6: My Latest Bookings Table - (Keep existing code) */}
-        <div className="admin-dash__card mt-4" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
-          <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
+        {/* My Latest Bookings */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 p-5 border-b border-gray-100 bg-gray-50/50">
             <div className="flex items-center gap-3">
-              <h3 className="admin-dash__card-title text-sm">My Latest Bookings</h3>
-              <span className="px-2.5 py-0.5 text-xs font-bold text-indigo-700 bg-indigo-100 rounded-full">
+              <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl shadow-md shadow-indigo-200">
+                <Calendar size={18} className="text-white" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-gray-800">My Latest Bookings</h3>
+                <p className="text-xs text-gray-500">Recent space reservations</p>
+              </div>
+              <span className="px-3 py-1 text-xs font-bold text-indigo-700 bg-indigo-100 rounded-full">
                 {latestMyBookings.length}
               </span>
             </div>
             <button
               onClick={() => navigate("/doctorbookings")}
-              className="text-xs font-medium text-indigo-600 hover:text-indigo-800 transition-colors flex items-center gap-1 bg-indigo-50 px-3 py-1.5 rounded-lg hover:bg-indigo-100"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
             >
-              View All <ArrowUpRight size={12} />
+              View All <ArrowUpRight size={14} />
             </button>
           </div>
-          <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
+          <div className="p-0 overflow-x-auto">
             {latestMyBookings.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-3 py-12 text-gray-400">
-                <Calendar size={36} className="opacity-20" />
-                <p className="text-sm font-medium">No bookings found</p>
+              <div className="flex flex-col items-center justify-center gap-4 py-16 text-gray-400">
+                <div className="p-4 bg-gray-100 rounded-2xl">
+                  <Calendar size={48} className="text-gray-300" />
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-semibold text-gray-500">No bookings found</p>
+                  <p className="text-xs text-gray-400 mt-1">You haven't made any bookings yet.</p>
+                </div>
               </div>
             ) : (
               <table className="w-full min-w-[700px] text-left">
                 <thead>
-                  <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
-                    <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">S.No</th>
-                    <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Chamber</th>
-                    <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Date</th>
-                    <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
-                    <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Amount</th>
+                  <tr className="border-b border-gray-100 bg-gray-50/50">
+                    <th className="p-4 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">S.No</th>
+                    <th className="p-4 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
+                    <th className="p-4 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Date</th>
+                    <th className="p-4 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
+                    <th className="p-4 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Amount</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -1267,27 +1248,29 @@ const DoctorDashboard = () => {
                     const cabinName = b.cabin?.name || b.cabinName || 'Unknown';
                     const cabinAddress = b.cabin?.address || b.cabinAddress || 'N/A';
                     return (
-                      <tr key={b._id} className="transition-colors hover:bg-gray-50/80 cursor-pointer" onClick={() => navigate("/doctorbookings")}>
-                        <td className="p-3">
-                          <span className="text-xs font-semibold text-gray-400">{idx + 1}</span>
+                      <tr key={b._id} className="transition-all hover:bg-gradient-to-r hover:from-gray-50 hover:to-indigo-50/30 cursor-pointer group" onClick={() => navigate("/doctorbookings")}>
+                        <td className="p-4">
+                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 text-xs font-bold text-gray-500 group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors">
+                            {idx + 1}
+                          </span>
                         </td>
-                        <td className="p-3">
+                        <td className="p-4">
                           <div>
-                            <p className="font-semibold text-gray-900 text-sm">{cabinName}</p>
-                            <p className="text-[10px] text-gray-400 flex items-center gap-1">
+                            <p className="font-bold text-gray-900 text-sm">{cabinName}</p>
+                            <p className="text-[10px] text-gray-500 font-medium flex items-center gap-1">
                               <MapPin size={10} /> {cabinAddress?.split(',')[0] || 'N/A'}
                             </p>
                           </div>
                         </td>
-                        <td className="p-3">
-                          <p className="text-sm text-gray-700">{b.startDate}</p>
-                          <p className="text-[10px] text-gray-400">{b.startTime} - {b.endTime}</p>
+                        <td className="p-4">
+                          <p className="text-sm font-semibold text-gray-700">{b.startDate}</p>
+                          <p className="text-[10px] text-gray-500">{b.startTime} - {b.endTime}</p>
                         </td>
-                        <td className="p-3">
-                          <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full ${status.color}`}>{status.label}</span>
+                        <td className="p-4">
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold rounded-lg ${status.color}`}>{status.label}</span>
                         </td>
-                        <td className="p-3">
-                          <span className="text-sm font-bold text-indigo-600">₹{b.totalPrice}</span>
+                        <td className="p-4">
+                          <span className="text-base font-bold text-indigo-600">₹{b.totalPrice}</span>
                         </td>
                       </tr>
                     );
@@ -1298,38 +1281,49 @@ const DoctorDashboard = () => {
           </div>
         </div>
 
-        {/* Row 7: My Chamber Bookings Table - (Keep existing code) */}
-        <div className="admin-dash__card mt-4" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
-          <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
+        {/* My Cabin Bookings */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 p-5 border-b border-gray-100 bg-gray-50/50">
             <div className="flex items-center gap-3">
-              <h3 className="admin-dash__card-title text-sm">My Chamber Bookings</h3>
-              <span className="px-2.5 py-0.5 text-xs font-bold text-amber-700 bg-amber-100 rounded-full">
+              <div className="p-2 bg-gradient-to-br from-rose-500 to-pink-500 rounded-xl shadow-md shadow-rose-200">
+                <Building2 size={18} className="text-white" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-gray-800">My Cabin Bookings</h3>
+                <p className="text-xs text-gray-500">Bookings received for your cabins</p>
+              </div>
+              <span className="px-3 py-1 text-xs font-bold text-rose-700 bg-rose-100 rounded-full">
                 {latestCabinBookings.length}
               </span>
             </div>
             <button
               onClick={() => navigate("/chamberbookings")}
-              className="text-xs font-medium text-amber-600 hover:text-amber-800 transition-colors flex items-center gap-1 bg-amber-50 px-3 py-1.5 rounded-lg hover:bg-amber-100"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
             >
-              View All <ArrowUpRight size={12} />
+              View All <ArrowUpRight size={14} />
             </button>
           </div>
-          <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
+          <div className="p-0 overflow-x-auto">
             {latestCabinBookings.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-3 py-12 text-gray-400">
-                <Building2 size={36} className="opacity-20" />
-                <p className="text-sm font-medium">No chamber bookings found</p>
+              <div className="flex flex-col items-center justify-center gap-4 py-16 text-gray-400">
+                <div className="p-4 bg-gray-100 rounded-2xl">
+                  <Building2 size={48} className="text-gray-300" />
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-semibold text-gray-500">No cabin bookings found</p>
+                  <p className="text-xs text-gray-400 mt-1">No one has booked your cabins yet.</p>
+                </div>
               </div>
             ) : (
               <table className="w-full min-w-[700px] text-left">
                 <thead>
-                  <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
-                    <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">S.No</th>
-                    <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Chamber</th>
-                    <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Customer</th>
-                    <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Date</th>
-                    <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
-                    <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Amount</th>
+                  <tr className="border-b border-gray-100 bg-gray-50/50">
+                    <th className="p-4 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">S.No</th>
+                    <th className="p-4 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
+                    <th className="p-4 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Customer</th>
+                    <th className="p-4 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Date</th>
+                    <th className="p-4 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
+                    <th className="p-4 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Amount</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -1340,31 +1334,33 @@ const DoctorDashboard = () => {
                     const customerName = b.name || b.userId?.name || 'Unknown';
                     const customerMobile = b.mobile || b.userId?.mobile || 'N/A';
                     return (
-                      <tr key={b._id} className="transition-colors hover:bg-gray-50/80 cursor-pointer" onClick={() => navigate("/chamberbookings")}>
-                        <td className="p-3">
-                          <span className="text-xs font-semibold text-gray-400">{idx + 1}</span>
+                      <tr key={b._id} className="transition-all hover:bg-gradient-to-r hover:from-gray-50 hover:to-rose-50/30 cursor-pointer group" onClick={() => navigate("/chamberbookings")}>
+                        <td className="p-4">
+                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 text-xs font-bold text-gray-500 group-hover:bg-rose-100 group-hover:text-rose-600 transition-colors">
+                            {idx + 1}
+                          </span>
                         </td>
-                        <td className="p-3">
+                        <td className="p-4">
                           <div>
-                            <p className="font-semibold text-gray-900 text-sm">{cabinName}</p>
-                            <p className="text-[10px] text-gray-400 flex items-center gap-1">
+                            <p className="font-bold text-gray-900 text-sm">{cabinName}</p>
+                            <p className="text-[10px] text-gray-500 font-medium flex items-center gap-1">
                               <MapPin size={10} /> {cabinAddress?.split(',')[0] || 'N/A'}
                             </p>
                           </div>
                         </td>
-                        <td className="p-3">
-                          <p className="font-medium text-gray-800 text-sm">{customerName}</p>
-                          <p className="text-[10px] text-gray-400">{customerMobile}</p>
+                        <td className="p-4">
+                          <p className="font-semibold text-gray-800 text-sm">{customerName}</p>
+                          <p className="text-[10px] text-gray-500">{customerMobile}</p>
                         </td>
-                        <td className="p-3">
-                          <p className="text-sm text-gray-700">{b.startDate}</p>
-                          <p className="text-[10px] text-gray-400">{b.startTime} - {b.endTime}</p>
+                        <td className="p-4">
+                          <p className="text-sm font-semibold text-gray-700">{b.startDate}</p>
+                          <p className="text-[10px] text-gray-500">{b.startTime} - {b.endTime}</p>
                         </td>
-                        <td className="p-3">
-                          <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full ${status.color}`}>{status.label}</span>
+                        <td className="p-4">
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold rounded-lg ${status.color}`}>{status.label}</span>
                         </td>
-                        <td className="p-3">
-                          <span className="text-sm font-bold text-amber-600">₹{b.totalPrice}</span>
+                        <td className="p-4">
+                          <span className="text-base font-bold text-rose-600">₹{b.totalPrice}</span>
                         </td>
                       </tr>
                     );
@@ -1380,8 +1376,3 @@ const DoctorDashboard = () => {
 };
 
 export default DoctorDashboard;
-
-
-
-
-

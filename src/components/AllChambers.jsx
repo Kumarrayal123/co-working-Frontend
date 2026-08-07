@@ -1,4 +1,4 @@
-// AllChambers.jsx - Complete All Chambers Component with DoctorNavbar (Only isChamber: true)
+// AllCabins.jsx - Complete All Cabins Component with DoctorNavbar (Only isChamber: true)
 import axios from "axios";
 import { 
   ArrowRight, 
@@ -42,7 +42,7 @@ import "./Dashboard.css";
 const API_URL = "https://spaceapi.iryax.com";
 const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
 
-const AllChambers = () => {
+const AllCabins = () => {
   const [cabins, setCabins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -69,7 +69,7 @@ const AllChambers = () => {
       });
   }, []);
 
-  // ✅ Only active chambers (isChamber: true already filtered)
+  // ✅ Only active cabins (isChamber: true already filtered)
   const activeCabins = cabins.filter(c => c.isActive === true);
 
   const newlyAdded = activeCabins
@@ -139,7 +139,7 @@ const AllChambers = () => {
     return `${API_URL}/${cleanPath}`;
   };
 
-  // ─── CABIN CARD ───
+  // ─── CABIN CARD ─── (Compact)
   const CabinCard = ({ cabin, showBadge = true }) => {
     const isActive = cabin.isActive === true;
     const isExclusive = cabin.cabinType === 'exclusive';
@@ -147,14 +147,14 @@ const AllChambers = () => {
     return (
       <div
         onClick={() => handleCabinClick(cabin)}
-        className={`group cursor-pointer flex flex-col h-full rounded-xl overflow-hidden transition-all duration-300 ${
+        className={`group cursor-pointer flex flex-col rounded-lg overflow-hidden transition-all duration-300 ${
           isActive 
-            ? 'hover:shadow-xl hover:scale-[1.02] hover:border-indigo-500/30' 
+            ? 'hover:shadow-lg hover:scale-[1.02] hover:border-indigo-500/30' 
             : 'opacity-60 hover:opacity-80'
         } bg-white border border-slate-200/80`}
       >
-        {/* Image */}
-        <div className="relative overflow-hidden h-44 sm:h-48 md:h-52">
+        {/* Image - Smaller */}
+        <div className="relative overflow-hidden h-32 sm:h-36 md:h-40">
           <img
             src={cabin.images?.[0] ? getImageUrl(cabin.images[0]) : PLACEHOLDER_IMAGE}
             alt={cabin.name}
@@ -165,19 +165,18 @@ const AllChambers = () => {
               e.target.src = PLACEHOLDER_IMAGE;
             }}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
 
-          {/* Badges */}
-          <div className="absolute top-2 right-2 flex flex-col gap-1">
+          {/* Badges - Smaller */}
+          <div className="absolute top-1.5 right-1.5 flex flex-col gap-0.5">
             {isExclusive && isActive && (
-              <span className="bg-gradient-to-r from-amber-500 to-yellow-500 text-white px-2 py-0.5 rounded-full text-[8px] font-bold flex items-center gap-0.5 shadow-lg">
-                <Crown size={10} />
+              <span className="bg-gradient-to-r from-amber-500 to-yellow-500 text-white px-1.5 py-0.5 rounded-full text-[7px] font-bold flex items-center gap-0.5 shadow-lg">
+                <Crown size={8} />
                 Premium
               </span>
             )}
-            {/* ✅ Chamber Badge */}
             {cabin.isChamber && isActive && (
-              <span className="bg-gradient-to-r from-rose-500 to-pink-500 text-white px-2 py-0.5 rounded-full text-[8px] font-bold flex items-center gap-0.5 shadow-lg">
+              <span className="bg-gradient-to-r from-rose-500 to-pink-500 text-white px-1.5 py-0.5 rounded-full text-[7px] font-bold flex items-center gap-0.5 shadow-lg">
                 🏛️ Chamber
               </span>
             )}
@@ -185,49 +184,48 @@ const AllChambers = () => {
               isActive 
                 ? 'bg-emerald-500 text-white' 
                 : 'bg-red-500 text-white'
-            } px-2 py-0.5 rounded-full text-[8px] font-bold shadow-lg flex items-center gap-0.5`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-white animate-pulse' : 'bg-white/70'}`}></span>
-              {isActive ? 'Available' : 'Inactive'}
+            } px-1.5 py-0.5 rounded-full text-[7px] font-bold shadow-lg flex items-center gap-0.5`}>
+              <span className={`w-1 h-1 rounded-full ${isActive ? 'bg-white animate-pulse' : 'bg-white/70'}`}></span>
+              {isActive ? 'Active' : 'Inactive'}
             </span>
           </div>
 
-          {/* New Badge */}
+          {/* New Badge - Smaller */}
           {showBadge && isActive && new Date(cabin.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) && (
-            <div className="absolute top-2 left-2">
-              <span className="bg-blue-500 text-white px-2 py-0.5 rounded-full text-[7px] font-bold shadow-lg flex items-center gap-0.5">
-                <Clock size={9} />
+            <div className="absolute top-1.5 left-1.5">
+              <span className="bg-blue-500 text-white px-1.5 py-0.5 rounded-full text-[6px] font-bold shadow-lg flex items-center gap-0.5">
+                <Clock size={7} />
                 New
               </span>
             </div>
           )}
 
-          {/* Price & Capacity on Image */}
-          <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between">
-            <span className="text-white font-bold text-sm">
+          {/* Price & Capacity - Smaller */}
+          <div className="absolute bottom-1.5 left-1.5 right-1.5 flex items-center justify-between">
+            <span className="text-white font-bold text-xs">
               ₹{cabin.price || '0'}
-              <span className="text-white/70 text-[9px] ml-0.5">/hr</span>
+              <span className="text-white/70 text-[7px] ml-0.5">/hr</span>
             </span>
-            <span className="bg-black/50 backdrop-blur-sm text-white text-[9px] px-2 py-0.5 rounded-full flex items-center gap-0.5">
-              <Users size={10} />
+            <span className="bg-black/50 backdrop-blur-sm text-white text-[7px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+              <Users size={8} />
               {cabin.capacity || 'N/A'}
             </span>
           </div>
         </div>
 
-        {/* Content */}
-        <div className="p-3 sm:p-4 space-y-1.5 sm:space-y-2 flex-1 flex flex-col">
-          <h3 className={`text-sm font-semibold truncate ${isActive ? 'text-slate-800 group-hover:text-indigo-600' : 'text-slate-400'} transition-colors duration-300`}>
+        {/* Content - Compact */}
+        <div className="p-2 sm:p-2.5 space-y-0.5">
+          <h3 className={`text-xs font-semibold truncate ${isActive ? 'text-slate-800 group-hover:text-indigo-600' : 'text-slate-400'} transition-colors duration-300`}>
             {cabin.name}
           </h3>
 
-          <div className="flex items-center gap-0.5 text-[10px] text-slate-400 truncate">
-            <MapPin size={12} className="text-indigo-400 flex-shrink-0" />
+          <div className="flex items-center gap-0.5 text-[8px] text-slate-400 truncate">
+            <MapPin size={9} className="text-indigo-400 flex-shrink-0" />
             <span className="truncate">{cabin.address?.split(',')[0] || 'Location'}</span>
           </div>
 
-          {/* Timing */}
-          <div className="flex items-center gap-1 text-[9px] text-slate-400">
-            <Clock size={10} className="text-indigo-400 flex-shrink-0" />
+          <div className="flex items-center gap-1 text-[7px] text-slate-400">
+            <Clock size={8} className="text-indigo-400 flex-shrink-0" />
             {cabin.is24x7 ? (
               <span className="text-emerald-600 font-medium">24×7</span>
             ) : (
@@ -237,23 +235,23 @@ const AllChambers = () => {
             )}
           </div>
 
-          <div className="overflow-hidden max-h-0 group-hover:max-h-16 transition-all duration-500 ease-in-out">
-            <p className="text-[10px] text-slate-500 font-light line-clamp-2 leading-relaxed">
-              {cabin.description || "Premium chamber with modern amenities."}
+          <div className="overflow-hidden max-h-0 group-hover:max-h-10 transition-all duration-500 ease-in-out">
+            <p className="text-[8px] text-slate-500 font-light line-clamp-2 leading-relaxed">
+              {cabin.description || "Premium cabin with modern amenities."}
             </p>
           </div>
 
-          <div className="overflow-hidden max-h-0 group-hover:max-h-8 transition-all duration-500 ease-in-out pt-0 group-hover:pt-1 mt-auto">
-            <span className={`text-[10px] font-medium flex items-center gap-0.5 ${
+          <div className="overflow-hidden max-h-0 group-hover:max-h-6 transition-all duration-500 ease-in-out pt-0 group-hover:pt-0.5">
+            <span className={`text-[8px] font-medium flex items-center gap-0.5 ${
               isActive ? 'text-indigo-600' : 'text-slate-400'
             }`}>
               View Details
-              <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
+              <ArrowRight size={9} className="group-hover:translate-x-0.5 transition-transform" />
             </span>
           </div>
         </div>
 
-        <div className="absolute inset-0 rounded-xl border-2 border-transparent group-hover:border-indigo-400/50 transition-all duration-500 pointer-events-none" />
+        <div className="absolute inset-0 rounded-lg border-2 border-transparent group-hover:border-indigo-400/50 transition-all duration-500 pointer-events-none" />
       </div>
     );
   };
@@ -277,96 +275,42 @@ const AllChambers = () => {
         <div className="admin-dash__header mb-4 flex items-center justify-between">
           <div>
             <h1 className="admin-dash__greeting">
-              All <span>Chambers</span>
+              All <span>Cabins</span>
             </h1>
-            <p className="text-sm text-gray-500 mt-0.5">
-              Browse and discover available chambers across all locations
+            <p className="text-xs text-gray-500 mt-0.5">
+              Browse and discover available cabins across all locations
             </p>
           </div>
           <button
             onClick={() => navigate("/mychambers")}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors shadow-sm shadow-indigo-200"
+            className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors shadow-sm shadow-indigo-200"
           >
             <Plus size={14} />
-            <span>Add Chamber</span>
+            <span>Add Cabin</span>
           </button>
         </div>
 
-        {/* Stats Cards */}
-        <div className="admin-dash__stats">
-          <div className="admin-dash__stat cursor-pointer" onClick={() => navigate("/mychambers")}>
-            <div className="admin-dash__stat-top">
-              <span className="admin-dash__stat-label">Total Chambers</span>
-              <div className="admin-dash__stat-icon bg-indigo-100 text-indigo-600">
-                <Home size={18} />
-              </div>
-            </div>
-            <div className="admin-dash__stat-value">{cabins.length}</div>
-            <div className="admin-dash__stat-meta">{activeCabins.length} active</div>
-          </div>
-          <div className="admin-dash__stat">
-            <div className="admin-dash__stat-top">
-              <span className="admin-dash__stat-label">Active</span>
-              <div className="admin-dash__stat-icon bg-emerald-100 text-emerald-600">
-                <CheckCircle size={18} />
-              </div>
-            </div>
-            <div className="admin-dash__stat-value">{activeCabins.length}</div>
-            <div className="admin-dash__stat-meta">Available for booking</div>
-          </div>
-          <div className="admin-dash__stat">
-            <div className="admin-dash__stat-top">
-              <span className="admin-dash__stat-label">Inactive</span>
-              <div className="admin-dash__stat-icon bg-gray-100 text-gray-600">
-                <XCircle size={18} />
-              </div>
-            </div>
-            <div className="admin-dash__stat-value">{cabins.length - activeCabins.length}</div>
-            <div className="admin-dash__stat-meta">Currently unavailable</div>
-          </div>
-          <div className="admin-dash__stat">
-            <div className="admin-dash__stat-top">
-              <span className="admin-dash__stat-label">Premium</span>
-              <div className="admin-dash__stat-icon bg-amber-100 text-amber-600">
-                <Crown size={18} />
-              </div>
-            </div>
-            <div className="admin-dash__stat-value">{cabins.filter(c => c.cabinType === 'exclusive').length}</div>
-            <div className="admin-dash__stat-meta">Exclusive chambers</div>
-          </div>
-          <div className="admin-dash__stat">
-            <div className="admin-dash__stat-top">
-              <span className="admin-dash__stat-label">Medical</span>
-              <div className="admin-dash__stat-icon bg-rose-100 text-rose-600">
-                <Stethoscope size={18} />
-              </div>
-            </div>
-            <div className="admin-dash__stat-value">{cabins.filter(c => c.isChamber === true).length}</div>
-            <div className="admin-dash__stat-meta">Chamber spaces</div>
-          </div>
-        </div>
-
-        {/* Filter Section */}
-        <div className="admin-dash__card mt-6">
-          <div className="admin-dash__card-body py-3 px-4">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center text-indigo-600">
-                  <Filter size={16} />
+        {/* Filter Section - Compact */}
+        <div className="admin-dash__card mt-1">
+          <div className="admin-dash__card-body py-2 px-3">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-indigo-50 rounded-lg flex items-center justify-center text-indigo-600">
+                  <Filter size={12} />
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-gray-800">Filter Chambers</h4>
-                  <p className="text-[8px] text-gray-400 font-bold uppercase tracking-widest">Find your perfect chamber</p>
+                  <h4 className="text-[10px] font-bold text-gray-800">Filter Cabins</h4>
+                  <p className="text-[7px] text-gray-400 font-bold uppercase tracking-widest">Find your perfect cabin</p>
                 </div>
               </div>
-              <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+              <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
                 {/* Search */}
                 <div className="relative flex-1 md:flex-none">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" size={12} />
                   <input
                     type="text"
-                    placeholder="Search chambers..."
-                    className="pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 w-full md:w-44 shadow-sm"
+                    placeholder="Search cabins..."
+                    className="pl-7 pr-2.5 py-1 text-xs border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 w-full md:w-36 shadow-sm"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
@@ -376,7 +320,7 @@ const AllChambers = () => {
                 <select
                   value={locationFilter}
                   onChange={(e) => setLocationFilter(e.target.value)}
-                  className="text-xs bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold text-gray-700 shadow-sm"
+                  className="text-[10px] bg-white border border-gray-200 rounded-lg px-2.5 py-1 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700 shadow-sm"
                 >
                   <option value="">All Locations</option>
                   {locations.map((loc, idx) => (
@@ -388,7 +332,7 @@ const AllChambers = () => {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="text-xs bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold text-gray-700 shadow-sm"
+                  className="text-[10px] bg-white border border-gray-200 rounded-lg px-2.5 py-1 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700 shadow-sm"
                 >
                   <option value="latest">Latest</option>
                   <option value="popular">Popular</option>
@@ -404,7 +348,7 @@ const AllChambers = () => {
                       setLocationFilter("");
                       setSortBy("latest");
                     }}
-                    className="px-3 py-1.5 text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                    className="px-2.5 py-1 text-[10px] font-bold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                   >
                     Reset
                   </button>
@@ -416,50 +360,50 @@ const AllChambers = () => {
 
         {/* Results Count */}
         {(searchTerm || locationFilter || sortBy !== 'latest') && (
-          <div className="flex items-center justify-between mt-4 px-1">
-            <p className="text-xs text-gray-500">
+          <div className="flex items-center justify-between mt-3 px-1">
+            <p className="text-[10px] text-gray-500">
               Showing <strong className="text-gray-900">{sortedCabins.length}</strong> results
             </p>
-            <span className="text-[10px] text-gray-400">
-              {sortedCabins.length} of {activeCabins.length} active chambers
+            <span className="text-[8px] text-gray-400">
+              {sortedCabins.length} of {activeCabins.length} active cabins
             </span>
           </div>
         )}
 
         {/* Main Content */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <div className="w-12 h-12 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin" />
-            <p className="text-sm text-gray-500 mt-4">Loading chambers...</p>
+          <div className="flex flex-col items-center justify-center py-16">
+            <div className="w-10 h-10 border-3 border-indigo-500 rounded-full border-t-transparent animate-spin" />
+            <p className="text-xs text-gray-500 mt-3">Loading cabins...</p>
           </div>
         ) : activeCabins.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-4 py-20 text-gray-400">
-            <Building2 size={48} className="opacity-20" />
-            <p className="text-lg font-medium">No active chambers available</p>
-            <p className="text-sm">Check back later for available chambers.</p>
+          <div className="flex flex-col items-center justify-center gap-3 py-16 text-gray-400">
+            <Building2 size={40} className="opacity-20" />
+            <p className="text-base font-medium">No active cabins available</p>
+            <p className="text-xs">Check back later for available cabins.</p>
           </div>
         ) : (
           <>
             {searchTerm || locationFilter || sortBy !== 'latest' ? (
               // Search Results - 4 columns
-              <div className="mt-6">
+              <div className="mt-4">
                 {sortedCabins.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center gap-3 py-20 text-gray-400">
-                    <Search size={48} className="opacity-20" />
-                    <p className="text-lg font-medium">No chambers match your filters</p>
+                  <div className="flex flex-col items-center justify-center gap-2 py-16 text-gray-400">
+                    <Search size={40} className="opacity-20" />
+                    <p className="text-base font-medium">No cabins match your filters</p>
                     <button
                       onClick={() => {
                         setSearchTerm("");
                         setLocationFilter("");
                         setSortBy("latest");
                       }}
-                      className="text-xs font-medium text-indigo-600 hover:text-indigo-800"
+                      className="text-[10px] font-medium text-indigo-600 hover:text-indigo-800"
                     >
                       Clear all filters
                     </button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3">
                     {sortedCabins.map((cabin) => (
                       <CabinCard key={cabin._id} cabin={cabin} showBadge={true} />
                     ))}
@@ -468,19 +412,19 @@ const AllChambers = () => {
               </div>
             ) : (
               // Sections - 4 columns
-              <div className="space-y-8 mt-6">
+              <div className="space-y-6 mt-4">
                 {/* Newly Added */}
                 {newlyAdded.length > 0 && (
                   <div>
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center justify-between mb-2">
                       <div>
-                        <h3 className="text-sm font-bold text-gray-900">
+                        <h3 className="text-xs font-bold text-gray-900">
                           <span className="text-indigo-600">Newly</span> Added
                         </h3>
-                        <p className="text-[10px] text-gray-400">Recently listed chambers</p>
+                        <p className="text-[8px] text-gray-400">Recently listed cabins</p>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3">
                       {newlyAdded.slice(0, 4).map((cabin) => (
                         <CabinCard key={cabin._id} cabin={cabin} showBadge={false} />
                       ))}
@@ -491,15 +435,15 @@ const AllChambers = () => {
                 {/* Most Popular */}
                 {mostPopular.length > 0 && (
                   <div>
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center justify-between mb-2">
                       <div>
-                        <h3 className="text-sm font-bold text-gray-900">
+                        <h3 className="text-xs font-bold text-gray-900">
                           <span className="text-indigo-600">Most</span> Popular
                         </h3>
-                        <p className="text-[10px] text-gray-400">Top rated and most booked chambers</p>
+                        <p className="text-[8px] text-gray-400">Top rated and most booked cabins</p>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3">
                       {mostPopular.slice(0, 4).map((cabin) => (
                         <CabinCard key={cabin._id} cabin={cabin} showBadge={false} />
                       ))}
@@ -510,15 +454,15 @@ const AllChambers = () => {
                 {/* Trending */}
                 {trending.length > 0 && (
                   <div>
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center justify-between mb-2">
                       <div>
-                        <h3 className="text-sm font-bold text-gray-900">
+                        <h3 className="text-xs font-bold text-gray-900">
                           <span className="text-indigo-600">Trending</span> Now
                         </h3>
-                        <p className="text-[10px] text-gray-400">Currently in high demand</p>
+                        <p className="text-[8px] text-gray-400">Currently in high demand</p>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3">
                       {trending.slice(0, 4).map((cabin) => (
                         <CabinCard key={cabin._id} cabin={cabin} showBadge={false} />
                       ))}
@@ -529,15 +473,15 @@ const AllChambers = () => {
                 {/* Featured Premium */}
                 {featured.length > 0 && (
                   <div>
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center justify-between mb-2">
                       <div>
-                        <h3 className="text-sm font-bold text-gray-900">
+                        <h3 className="text-xs font-bold text-gray-900">
                           <span className="text-amber-600">Featured</span> Premium
                         </h3>
-                        <p className="text-[10px] text-gray-400">Exclusive premium chambers</p>
+                        <p className="text-[8px] text-gray-400">Exclusive premium cabins</p>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3">
                       {featured.slice(0, 4).map((cabin) => (
                         <CabinCard key={cabin._id} cabin={cabin} showBadge={false} />
                       ))}
@@ -545,18 +489,18 @@ const AllChambers = () => {
                   </div>
                 )}
 
-                {/* All Chambers */}
+                {/* All Cabins */}
                 <div>
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center justify-between mb-2">
                     <div>
-                      <h3 className="text-sm font-bold text-gray-900">
-                        <span className="text-indigo-600">All</span> Chambers
+                      <h3 className="text-xs font-bold text-gray-900">
+                        <span className="text-indigo-600">All</span> Cabins
                       </h3>
-                      <p className="text-[10px] text-gray-400">Complete list of available chambers</p>
+                      <p className="text-[8px] text-gray-400">Complete list of available cabins</p>
                     </div>
-                    <span className="text-[10px] text-gray-400">{activeCabins.length} chambers</span>
+                    <span className="text-[8px] text-gray-400">{activeCabins.length} cabins</span>
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3">
                     {activeCabins.map((cabin) => (
                       <CabinCard key={cabin._id} cabin={cabin} showBadge={true} />
                     ))}
@@ -581,14 +525,14 @@ const AllChambers = () => {
               <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-3">
                 <XCircle size={32} className="text-white" />
               </div>
-              <h3 className="text-xl font-bold">Chamber Not Available</h3>
-              <p className="text-sm text-red-100 mt-1">This chamber is currently inactive</p>
+              <h3 className="text-xl font-bold">Cabin Not Available</h3>
+              <p className="text-sm text-red-100 mt-1">This cabin is currently inactive</p>
             </div>
 
             <div className="p-5 space-y-4">
               <div className="bg-gray-50 rounded-xl p-4 space-y-3 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Chamber Name</span>
+                  <span className="text-gray-500">Cabin Name</span>
                   <span className="font-semibold text-gray-800">{selectedCabin.name}</span>
                 </div>
                 <div className="flex justify-between">
@@ -620,7 +564,7 @@ const AllChambers = () => {
 
               <div className="bg-red-50 rounded-xl p-3 text-xs text-red-700 flex items-start gap-2 border border-red-200">
                 <AlertCircle size={16} className="shrink-0 mt-0.5" />
-                <span>This chamber is not available for booking at the moment. Please check back later or explore other active chambers.</span>
+                <span>This cabin is not available for booking at the moment. Please check back later or explore other active cabins.</span>
               </div>
 
               <div className="flex flex-col gap-2">
@@ -641,7 +585,7 @@ const AllChambers = () => {
                   }}
                   className="w-full py-3 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition"
                 >
-                  Explore Active Chambers
+                  Explore Active Cabins
                 </button>
               </div>
             </div>
@@ -652,4 +596,4 @@ const AllChambers = () => {
   );
 };
 
-export default AllChambers;
+export default AllCabins;

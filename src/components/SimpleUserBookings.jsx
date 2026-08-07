@@ -425,435 +425,442 @@ const SimpleUserBookings = () => {
 
   const priceDiff = getPriceDifference();
 
-  // ✅ PROFESSIONAL BLACK & GRAY INVOICE - OWNER NAME AT TOP LEFT & BOTTOM
-  const downloadInvoice = (booking) => {
-    try {
-      const cabin = booking.cabin || {};
-      const owner = cabin.owner || {};
-      const paymentDetails = booking.paymentDetails || {};
+ // ✅ PROFESSIONAL BLACK & GRAY INVOICE - OWNER NAME AT TOP LEFT & BOTTOM with POWERED BY
+const downloadInvoice = (booking) => {
+  try {
+    const cabin = booking.cabin || {};
+    const owner = cabin.owner || {};
+    const paymentDetails = booking.paymentDetails || {};
 
-      const win = window.open('', '_blank', 'width=900,height=700');
-      if (!win) {
-        toast.error('Please allow popups');
-        return;
-      }
+    const win = window.open('', '_blank', 'width=900,height=700');
+    if (!win) {
+      toast.error('Please allow popups');
+      return;
+    }
 
-      let seatListHtml = '';
-      if (booking.selectedSeats && booking.selectedSeats.length > 0) {
-        seatListHtml = booking.selectedSeats.map(s => 
-          `<span style="display:inline-block;background:#f5f5f5;padding:4px 12px;border-radius:2px;margin:3px;font-size:11px;border:1px solid #e0e0e0;color:#333;">${s.name} (#${s.number})</span>`
-        ).join('');
-      }
+    let seatListHtml = '';
+    if (booking.selectedSeats && booking.selectedSeats.length > 0) {
+      seatListHtml = booking.selectedSeats.map(s => 
+        `<span style="display:inline-block;background:#f5f5f5;padding:4px 12px;border-radius:2px;margin:3px;font-size:11px;border:1px solid #e0e0e0;color:#333;">${s.name} (#${s.number})</span>`
+      ).join('');
+    }
 
-      let slotsHtml = '';
-      if (booking.bookingSlots && booking.bookingSlots.length > 0) {
-        slotsHtml = booking.bookingSlots.map(s => 
-          `<span style="display:inline-block;background:#f5f5f5;padding:2px 10px;border-radius:2px;margin:2px;font-size:10px;border:1px solid #e0e0e0;color:#333;">${formatDateIndian(s.date)} ${s.startTime}-${s.endTime} (${s.hours}h)</span>`
-        ).join('');
-      }
+    let slotsHtml = '';
+    if (booking.bookingSlots && booking.bookingSlots.length > 0) {
+      slotsHtml = booking.bookingSlots.map(s => 
+        `<span style="display:inline-block;background:#f5f5f5;padding:2px 10px;border-radius:2px;margin:2px;font-size:10px;border:1px solid #e0e0e0;color:#333;">${formatDateIndian(s.date)} ${s.startTime}-${s.endTime} (${s.hours}h)</span>`
+      ).join('');
+    }
 
-      const status = getStatusBadge(booking.status);
-      const pmtMethod = getPaymentMethodBadge(booking.paymentMethod);
-      const pmtStatus = getPaymentStatusBadge(booking.paymentStatus);
-      const isChamber = cabin.isChamber || false;
-      const spaceTypeLabel = isChamber ? 'MEDICAL CHAMBER' : 'CO-WORKING SPACE';
+    const status = getStatusBadge(booking.status);
+    const pmtMethod = getPaymentMethodBadge(booking.paymentMethod);
+    const pmtStatus = getPaymentStatusBadge(booking.paymentStatus);
+    const isChamber = cabin.isChamber || false;
+    const spaceTypeLabel = isChamber ? 'MEDICAL CHAMBER' : 'CO-WORKING SPACE';
 
-      // ✅ Get owner name from owner object
-      const ownerName = owner.name || owner.organizationName || 'IRYAX SPACE';
-      const ownerAddress = owner.address || 'Premium Workspaces';
+    // ✅ Get owner name from owner object
+    const ownerName = owner.name || owner.organizationName || 'IRYAX SPACE';
+    const ownerAddress = owner.address || 'Premium Workspaces';
 
-      win.document.write(`
-        <html><head><title>Invoice</title>
-        <style>
-          * { margin: 0; padding: 0; box-sizing: border-box; }
-          body { 
-            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif; 
-            padding: 40px; 
-            max-width: 900px; 
-            margin: auto; 
-            background: #f5f5f5; 
-          }
-          .invoice-wrapper { 
-            background: #ffffff; 
-            padding: 40px; 
-            box-shadow: 0 2px 20px rgba(0,0,0,0.08); 
-          }
-          .header { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: flex-start; 
-            padding-bottom: 25px; 
-            border-bottom: 2px solid #333333; 
-            margin-bottom: 30px; 
-          }
-          .header-left h1 { 
-            color: #000000; 
-            font-size: 24px; 
-            font-weight: 700; 
-            margin: 0; 
-            letter-spacing: -0.5px;
-          }
-          .header-left .subtitle { 
-            color: #666666; 
-            font-size: 12px; 
-            margin-top: 4px; 
-            letter-spacing: 0.5px;
-          }
-          .header-right { 
-            text-align: right; 
-          }
-          .header-right .invoice-date { 
-            font-size: 12px; 
-            color: #666666; 
-            margin-top: 2px;
-          }
-          .header-right .space-type {
-            font-size: 11px;
-            font-weight: 600;
-            color: #555555;
-            margin-top: 4px;
-            padding: 2px 12px;
-            background: #f0f0f0;
-            display: inline-block;
-            border-radius: 2px;
-          }
-          .badge { 
-            display: inline-block; 
-            padding: 2px 10px; 
-            border-radius: 2px; 
-            font-size: 10px; 
-            font-weight: 600; 
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-          }
-          .badge-pending { background: #f5f5f5; color: #666666; }
-          .badge-confirmed { background: #e8f5e9; color: #2e7d32; }
-          .badge-active { background: #e3f2fd; color: #1565c0; }
-          .badge-completed { background: #e8f5e9; color: #2e7d32; }
-          .badge-cancelled { background: #fce4ec; color: #c62828; }
-          .info-grid { 
-            display: grid; 
-            grid-template-columns: 1fr 1fr; 
-            gap: 20px; 
-            background: #fafafa; 
-            padding: 20px; 
-            margin-bottom: 25px; 
-            border: 1px solid #eeeeee;
-          }
-          .info-item .label { 
-            font-size: 9px; 
-            font-weight: 700; 
-            color: #999999; 
-            text-transform: uppercase; 
-            letter-spacing: 0.5px; 
-          }
-          .info-item .value { 
-            font-size: 14px; 
-            font-weight: 600; 
-            color: #000000; 
-            margin-top: 3px; 
-          }
-          .info-item .sub-value {
-            font-size: 12px;
-            color: #666666;
-            margin-top: 1px;
-          }
-          .section { 
-            margin-bottom: 25px; 
-          }
-          .section-title { 
-            font-size: 10px; 
-            font-weight: 700; 
-            color: #999999; 
-            text-transform: uppercase; 
-            letter-spacing: 0.5px; 
-            margin-bottom: 10px; 
-            border-bottom: 1px solid #eeeeee;
-            padding-bottom: 6px;
-          }
-          .slots-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            gap: 6px;
-            margin-top: 8px;
-          }
-          .slots-grid .slot-item {
-            background: #fafafa;
-            padding: 6px 10px;
-            border: 1px solid #eeeeee;
-            font-size: 11px;
-            color: #333333;
-          }
-          .slots-grid .slot-item .slot-date {
-            font-weight: 600;
-            color: #000000;
-          }
-          .seat-section { 
-            background: #fafafa; 
-            padding: 15px; 
-            margin-bottom: 20px; 
-            border: 1px solid #eeeeee; 
-          }
-          .seat-section .seat-title {
-            font-size: 10px;
-            font-weight: 700;
-            color: #999999;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-          }
-          .seat-section .seat-list {
-            margin-top: 8px;
-          }
-          .breakdown-table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            margin: 15px 0; 
-          }
-          .breakdown-table th { 
-            text-align: left; 
-            padding: 8px 0; 
-            font-size: 9px; 
-            font-weight: 700; 
-            color: #999999; 
-            text-transform: uppercase; 
-            letter-spacing: 0.5px;
-            border-bottom: 1px solid #eeeeee; 
-          }
-          .breakdown-table td { 
-            padding: 8px 0; 
-            border-bottom: 1px solid #f5f5f5; 
-            font-size: 13px; 
-            color: #333333; 
-          }
-          .breakdown-table .amount { 
-            font-weight: 600; 
-            text-align: right; 
-          }
-          .breakdown-table .total-row td { 
-            font-weight: 700; 
-            font-size: 16px; 
-            border-top: 2px solid #333333; 
-            padding-top: 12px; 
-          }
-          .breakdown-table .total-row .amount { 
-            font-size: 18px; 
-            color: #000000; 
-          }
-          .payment-details { 
-            background: #fafafa; 
-            padding: 15px; 
-            margin: 15px 0; 
-            border: 1px solid #eeeeee; 
-          }
-          .payment-details .detail-row { 
-            display: flex; 
-            justify-content: space-between; 
-            padding: 3px 0; 
-            font-size: 12px; 
-            color: #333333; 
-          }
-          .payment-details .detail-row .label-text {
-            color: #999999;
-          }
-          .status-section { 
-            display: flex; 
-            gap: 20px; 
-            flex-wrap: wrap; 
-            margin: 20px 0; 
-            padding: 15px; 
-            background: #fafafa; 
-            border: 1px solid #eeeeee; 
-          }
-          .status-item { 
-            display: flex; 
-            align-items: center; 
-            gap: 6px; 
-            font-size: 12px; 
-          }
-          .status-item .label-text { 
-            color: #999999; 
-            font-weight: 500; 
-          }
-          .footer { 
-            text-align: center; 
-            margin-top: 30px; 
-            padding-top: 20px; 
-            border-top: 1px solid #eeeeee; 
-            color: #999999; 
-            font-size: 10px; 
-            letter-spacing: 0.3px;
-          }
-          .footer .brand { 
-            font-weight: 700; 
-            color: #000000; 
-          }
-          @media print { 
-            body { background: #ffffff; padding: 20px; } 
-            .invoice-wrapper { box-shadow: none; padding: 20px; } 
-          }
-        </style>
-        </head><body>
-        <div class="invoice-wrapper">
-          <!-- HEADER -->
-          <div class="header">
-            <div class="header-left">
-              <h1>${ownerName}</h1>
-              <div class="subtitle">${ownerAddress}</div>
-              <div style="margin-top:6px;">
-                <span style="font-size:11px;font-weight:600;color:#555555;background:#f0f0f0;padding:2px 12px;border-radius:2px;">${spaceTypeLabel}</span>
-              </div>
-            </div>
-            <div class="header-right">
-              <div class="invoice-date">${formatDateDDMMYYYY(new Date())}</div>
-            </div>
-          </div>
-
-          <!-- BILL TO & CABIN -->
-          <div class="info-grid">
-            <div class="info-item">
-              <div class="label">Bill To</div>
-              <div class="value">${booking.name || 'Customer'}</div>
-              <div class="sub-value">${booking.mobile || 'N/A'}</div>
-              <div class="sub-value">${booking.email || 'N/A'}</div>
-            </div>
-            <div class="info-item">
-              <div class="label">Cabin Details</div>
-              <div class="value">${cabin.name || 'Unknown'}</div>
-              <div class="sub-value">${cabin.address || 'N/A'}</div>
-              <div class="sub-value">Capacity: ${cabin.capacity || 'N/A'} seats | Type: ${cabin.cabinType || 'Normal'}</div>
+    win.document.write(`
+      <html><head><title>Invoice</title>
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+          font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif; 
+          padding: 40px; 
+          max-width: 900px; 
+          margin: auto; 
+          background: #f5f5f5; 
+        }
+        .invoice-wrapper { 
+          background: #ffffff; 
+          padding: 40px; 
+          box-shadow: 0 2px 20px rgba(0,0,0,0.08); 
+        }
+        .header { 
+          display: flex; 
+          justify-content: space-between; 
+          align-items: flex-start; 
+          padding-bottom: 25px; 
+          border-bottom: 2px solid #333333; 
+          margin-bottom: 30px; 
+        }
+        .header-left h1 { 
+          color: #000000; 
+          font-size: 24px; 
+          font-weight: 700; 
+          margin: 0; 
+          letter-spacing: -0.5px;
+        }
+        .header-left .subtitle { 
+          color: #666666; 
+          font-size: 12px; 
+          margin-top: 4px; 
+          letter-spacing: 0.5px;
+        }
+        .header-right { 
+          text-align: right; 
+        }
+        .header-right .invoice-date { 
+          font-size: 12px; 
+          color: #666666; 
+          margin-top: 2px;
+        }
+        .header-right .space-type {
+          font-size: 11px;
+          font-weight: 600;
+          color: #555555;
+          margin-top: 4px;
+          padding: 2px 12px;
+          background: #f0f0f0;
+          display: inline-block;
+          border-radius: 2px;
+        }
+        .badge { 
+          display: inline-block; 
+          padding: 2px 10px; 
+          border-radius: 2px; 
+          font-size: 10px; 
+          font-weight: 600; 
+          text-transform: uppercase;
+          letter-spacing: 0.3px;
+        }
+        .badge-pending { background: #f5f5f5; color: #666666; }
+        .badge-confirmed { background: #e8f5e9; color: #2e7d32; }
+        .badge-active { background: #e3f2fd; color: #1565c0; }
+        .badge-completed { background: #e8f5e9; color: #2e7d32; }
+        .badge-cancelled { background: #fce4ec; color: #c62828; }
+        .info-grid { 
+          display: grid; 
+          grid-template-columns: 1fr 1fr; 
+          gap: 20px; 
+          background: #fafafa; 
+          padding: 20px; 
+          margin-bottom: 25px; 
+          border: 1px solid #eeeeee;
+        }
+        .info-item .label { 
+          font-size: 9px; 
+          font-weight: 700; 
+          color: #999999; 
+          text-transform: uppercase; 
+          letter-spacing: 0.5px; 
+        }
+        .info-item .value { 
+          font-size: 14px; 
+          font-weight: 600; 
+          color: #000000; 
+          margin-top: 3px; 
+        }
+        .info-item .sub-value {
+          font-size: 12px;
+          color: #666666;
+          margin-top: 1px;
+        }
+        .section { 
+          margin-bottom: 25px; 
+        }
+        .section-title { 
+          font-size: 10px; 
+          font-weight: 700; 
+          color: #999999; 
+          text-transform: uppercase; 
+          letter-spacing: 0.5px; 
+          margin-bottom: 10px; 
+          border-bottom: 1px solid #eeeeee;
+          padding-bottom: 6px;
+        }
+        .slots-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+          gap: 6px;
+          margin-top: 8px;
+        }
+        .slots-grid .slot-item {
+          background: #fafafa;
+          padding: 6px 10px;
+          border: 1px solid #eeeeee;
+          font-size: 11px;
+          color: #333333;
+        }
+        .slots-grid .slot-item .slot-date {
+          font-weight: 600;
+          color: #000000;
+        }
+        .seat-section { 
+          background: #fafafa; 
+          padding: 15px; 
+          margin-bottom: 20px; 
+          border: 1px solid #eeeeee; 
+        }
+        .seat-section .seat-title {
+          font-size: 10px;
+          font-weight: 700;
+          color: #999999;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        .seat-section .seat-list {
+          margin-top: 8px;
+        }
+        .breakdown-table { 
+          width: 100%; 
+          border-collapse: collapse; 
+          margin: 15px 0; 
+        }
+        .breakdown-table th { 
+          text-align: left; 
+          padding: 8px 0; 
+          font-size: 9px; 
+          font-weight: 700; 
+          color: #999999; 
+          text-transform: uppercase; 
+          letter-spacing: 0.5px;
+          border-bottom: 1px solid #eeeeee; 
+        }
+        .breakdown-table td { 
+          padding: 8px 0; 
+          border-bottom: 1px solid #f5f5f5; 
+          font-size: 13px; 
+          color: #333333; 
+        }
+        .breakdown-table .amount { 
+          font-weight: 600; 
+          text-align: right; 
+        }
+        .breakdown-table .total-row td { 
+          font-weight: 700; 
+          font-size: 16px; 
+          border-top: 2px solid #333333; 
+          padding-top: 12px; 
+        }
+        .breakdown-table .total-row .amount { 
+          font-size: 18px; 
+          color: #000000; 
+        }
+        .payment-details { 
+          background: #fafafa; 
+          padding: 15px; 
+          margin: 15px 0; 
+          border: 1px solid #eeeeee; 
+        }
+        .payment-details .detail-row { 
+          display: flex; 
+          justify-content: space-between; 
+          padding: 3px 0; 
+          font-size: 12px; 
+          color: #333333; 
+        }
+        .payment-details .detail-row .label-text {
+          color: #999999;
+        }
+        .status-section { 
+          display: flex; 
+          gap: 20px; 
+          flex-wrap: wrap; 
+          margin: 20px 0; 
+          padding: 15px; 
+          background: #fafafa; 
+          border: 1px solid #eeeeee; 
+        }
+        .status-item { 
+          display: flex; 
+          align-items: center; 
+          gap: 6px; 
+          font-size: 12px; 
+        }
+        .status-item .label-text { 
+          color: #999999; 
+          font-weight: 500; 
+        }
+        .footer { 
+          text-align: center; 
+          margin-top: 30px; 
+          padding-top: 20px; 
+          border-top: 1px solid #eeeeee; 
+          color: #999999; 
+          font-size: 10px; 
+          letter-spacing: 0.3px;
+        }
+        .footer .brand { 
+          font-weight: 700; 
+          color: #000000; 
+        }
+        .footer .powered {
+          font-weight: 700;
+          color: #000000;
+          letter-spacing: 1px;
+          font-size: 11px;
+        }
+        @media print { 
+          body { background: #ffffff; padding: 20px; } 
+          .invoice-wrapper { box-shadow: none; padding: 20px; } 
+        }
+      </style>
+      </head><body>
+      <div class="invoice-wrapper">
+        <!-- HEADER -->
+        <div class="header">
+          <div class="header-left">
+            <h1>${ownerName}</h1>
+            <div class="subtitle">${ownerAddress}</div>
+            <div style="margin-top:6px;">
+              <span style="font-size:11px;font-weight:600;color:#555555;background:#f0f0f0;padding:2px 12px;border-radius:2px;">${spaceTypeLabel}</span>
             </div>
           </div>
-
-          <!-- SCHEDULE -->
-          <div class="info-grid">
-            <div class="info-item">
-              <div class="label">Start</div>
-              <div class="value">${formatDateDDMMYYYY(booking.startDate)}</div>
-              <div class="sub-value" style="color:#000000;font-weight:600;">${formatTime12(booking.startTime)}</div>
-            </div>
-            <div class="info-item">
-              <div class="label">End</div>
-              <div class="value">${formatDateDDMMYYYY(booking.endDate)}</div>
-              <div class="sub-value" style="color:#000000;font-weight:600;">${formatTime12(booking.endTime)}</div>
-            </div>
+          <div class="header-right">
+            <div class="invoice-date">${formatDateDDMMYYYY(new Date())}</div>
           </div>
+        </div>
 
-          <!-- BOOKING INFO -->
-          <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px;padding:12px 16px;background:#fafafa;border:1px solid #eeeeee;">
-            <div><span style="color:#999999;font-size:10px;text-transform:uppercase;letter-spacing:0.3px;">Total Hours</span><br><strong>${booking.totalHours}h</strong></div>
-            <div><span style="color:#999999;font-size:10px;text-transform:uppercase;letter-spacing:0.3px;">Total Days</span><br><strong>${booking.totalDays || 0} days</strong></div>
-            <div><span style="color:#999999;font-size:10px;text-transform:uppercase;letter-spacing:0.3px;">Daily Hours</span><br><strong>${booking.dailyHours?.join(', ') || 'N/A'}</strong></div>
-            <div><span style="color:#999999;font-size:10px;text-transform:uppercase;letter-spacing:0.3px;">Booking Type</span><br><strong>${booking.bookingBasis || 'Hourly'}</strong></div>
-            ${booking.selectedPlan ? `<div><span style="color:#999999;font-size:10px;text-transform:uppercase;letter-spacing:0.3px;">Plan</span><br><strong>${booking.selectedPlan.label || 'N/A'}</strong></div>` : ''}
+        <!-- BILL TO & CABIN -->
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="label">Bill To</div>
+            <div class="value">${booking.name || 'Customer'}</div>
+            <div class="sub-value">${booking.mobile || 'N/A'}</div>
+            <div class="sub-value">${booking.email || 'N/A'}</div>
           </div>
+          <div class="info-item">
+            <div class="label">Cabin Details</div>
+            <div class="value">${cabin.name || 'Unknown'}</div>
+            <div class="sub-value">${cabin.address || 'N/A'}</div>
+            <div class="sub-value">Capacity: ${cabin.capacity || 'N/A'} seats | Type: ${cabin.cabinType || 'Normal'}</div>
+          </div>
+        </div>
 
-          <!-- SLOTS -->
-          ${booking.bookingSlots && booking.bookingSlots.length > 0 ? `
-            <div class="section">
-              <div class="section-title">Booking Slots (${booking.bookingSlots.length} days)</div>
-              <div class="slots-grid">
-                ${booking.bookingSlots.map(s => `
-                  <div class="slot-item">
-                    <div class="slot-date">${formatDateIndian(s.date)}</div>
-                    <div>${s.startTime} - ${s.endTime}</div>
-                    <div style="font-size:10px;color:#999999;">${s.hours}h</div>
-                  </div>
-                `).join('')}
-              </div>
-              <div style="margin-top:8px;font-size:11px;color:#666666;">Daily Hours: ${booking.dailyHours?.join(', ') || 'N/A'}h</div>
-            </div>
-          ` : ''}
+        <!-- SCHEDULE -->
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="label">Start</div>
+            <div class="value">${formatDateDDMMYYYY(booking.startDate)}</div>
+            <div class="sub-value" style="color:#000000;font-weight:600;">${formatTime12(booking.startTime)}</div>
+          </div>
+          <div class="info-item">
+            <div class="label">End</div>
+            <div class="value">${formatDateDDMMYYYY(booking.endDate)}</div>
+            <div class="sub-value" style="color:#000000;font-weight:600;">${formatTime12(booking.endTime)}</div>
+          </div>
+        </div>
 
-          <!-- SEATS -->
-          ${booking.selectedSeats && booking.selectedSeats.length > 0 ? `
-            <div class="seat-section">
-              <div class="seat-title">Selected Seats (${booking.seatCount})</div>
-              <div class="seat-list">${seatListHtml}</div>
-              <div style="margin-top:6px;font-size:11px;color:#666666;">Extra Charge: ₹${booking.extraCharge || 0}</div>
-            </div>
-          ` : ''}
+        <!-- BOOKING INFO -->
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px;padding:12px 16px;background:#fafafa;border:1px solid #eeeeee;">
+          <div><span style="color:#999999;font-size:10px;text-transform:uppercase;letter-spacing:0.3px;">Total Hours</span><br><strong>${booking.totalHours}h</strong></div>
+          <div><span style="color:#999999;font-size:10px;text-transform:uppercase;letter-spacing:0.3px;">Total Days</span><br><strong>${booking.totalDays || 0} days</strong></div>
+          <div><span style="color:#999999;font-size:10px;text-transform:uppercase;letter-spacing:0.3px;">Daily Hours</span><br><strong>${booking.dailyHours?.join(', ') || 'N/A'}</strong></div>
+          <div><span style="color:#999999;font-size:10px;text-transform:uppercase;letter-spacing:0.3px;">Booking Type</span><br><strong>${booking.bookingBasis || 'Hourly'}</strong></div>
+          ${booking.selectedPlan ? `<div><span style="color:#999999;font-size:10px;text-transform:uppercase;letter-spacing:0.3px;">Plan</span><br><strong>${booking.selectedPlan.label || 'N/A'}</strong></div>` : ''}
+        </div>
 
-          <!-- PRICE BREAKDOWN -->
+        <!-- SLOTS -->
+        ${booking.bookingSlots && booking.bookingSlots.length > 0 ? `
           <div class="section">
-            <div class="section-title">Price Breakdown</div>
-            <table class="breakdown-table">
-              <thead>
-                <tr><th>Description</th><th style="text-align:right;">Amount</th></tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Subtotal (${booking.totalHours}h × ₹${cabin.price || 0})</td>
-                  <td class="amount">₹${(booking.subtotal || 0).toFixed(2)}</td>
-                </tr>
-                ${booking.extraCharge > 0 ? `
-                  <tr>
-                    <td>Seat Charges (${booking.seatCount} seats × ₹${booking.seatExtraChargePerSeat || 100})</td>
-                    <td class="amount">₹${(booking.extraCharge || 0).toFixed(2)}</td>
-                  </tr>
-                ` : ''}
-                <tr>
-                  <td>GST (${(booking.gstRate || 0.18) * 100}%)</td>
-                  <td class="amount">₹${(booking.gstAmount || 0).toFixed(2)}</td>
-                </tr>
-                <tr class="total-row">
-                  <td>Total Amount</td>
-                  <td class="amount">₹${(booking.totalPrice || 0).toFixed(2)}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <!-- PAYMENT DETAILS -->
-          ${booking.transactionId || booking.paymentDetails?.transactionId ? `
-            <div class="payment-details">
-              <div style="font-size:9px;font-weight:700;color:#999999;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Payment Details</div>
-              <div class="detail-row"><span class="label-text">Transaction ID</span> <strong>${booking.transactionId || booking.paymentDetails?.transactionId || 'N/A'}</strong></div>
-              ${booking.paymentDetails?.upiId ? `<div class="detail-row"><span class="label-text">UPI ID</span> <strong>${booking.paymentDetails.upiId}</strong></div>` : ''}
-              ${booking.paymentDetails?.upiApp ? `<div class="detail-row"><span class="label-text">UPI App</span> <strong>${booking.paymentDetails.upiApp}</strong></div>` : ''}
-              ${booking.paymentDetails?.cardNumber ? `<div class="detail-row"><span class="label-text">Card</span> <strong>•••• ${booking.paymentDetails.cardNumber.slice(-4)}</strong></div>` : ''}
-              <div class="detail-row"><span class="label-text">Payment Mode</span> <strong>${pmtMethod.label}</strong></div>
-            </div>
-          ` : ''}
-
-          <!-- STATUS -->
-          <div class="status-section">
-            <div class="status-item"><span class="label-text">Status</span> <span class="badge badge-${booking.status}">${status.label}</span></div>
-            <div class="status-item"><span class="label-text">Payment</span> <span class="badge badge-${booking.paymentStatus === 'paid' ? 'confirmed' : 'pending'}">${pmtStatus.label}</span></div>
-            <div class="status-item"><span class="label-text">Payment Method</span> <span style="font-weight:600;color:#333333;font-size:12px;">${pmtMethod.label}</span></div>
-            ${booking.isPaidToOwner ? `<div class="status-item"><span class="label-text">Paid to Owner</span> <span style="font-weight:600;color:#2e7d32;font-size:12px;">Yes</span></div>` : ''}
-          </div>
-
-          <!-- VISIT LOG -->
-          ${booking.visitingTimings && booking.visitingTimings.length > 0 ? `
-            <div style="background:#fafafa;padding:12px 16px;margin:10px 0;border:1px solid #eeeeee;">
-              <div style="font-size:9px;font-weight:700;color:#999999;text-transform:uppercase;letter-spacing:0.5px;">Visit Log (${booking.visitingTimings.length} entries)</div>
-              ${booking.visitingTimings.map((t, i) => `
-                <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid #f0f0f0;color:#333333;">
-                  <span>Day ${i+1}: ${formatDateIndian(t.date)}</span>
-                  <span>${formatTime12(t.checkIn)} - ${formatTime12(t.checkOut)}</span>
+            <div class="section-title">Booking Slots (${booking.bookingSlots.length} days)</div>
+            <div class="slots-grid">
+              ${booking.bookingSlots.map(s => `
+                <div class="slot-item">
+                  <div class="slot-date">${formatDateIndian(s.date)}</div>
+                  <div>${s.startTime} - ${s.endTime}</div>
+                  <div style="font-size:10px;color:#999999;">${s.hours}h</div>
                 </div>
               `).join('')}
             </div>
-          ` : ''}
+            <div style="margin-top:8px;font-size:11px;color:#666666;">Daily Hours: ${booking.dailyHours?.join(', ') || 'N/A'}h</div>
+          </div>
+        ` : ''}
 
-          <!-- FOOTER -->
-          <div class="footer">
-            <span class="brand">${ownerName}</span> — ${ownerAddress}<br>
-            Created: ${formatDateTimeDDMMYYYY(booking.createdAt)}<br>
-            This is a system generated invoice. Terms & Conditions apply.
+        <!-- SEATS -->
+        ${booking.selectedSeats && booking.selectedSeats.length > 0 ? `
+          <div class="seat-section">
+            <div class="seat-title">Selected Seats (${booking.seatCount})</div>
+            <div class="seat-list">${seatListHtml}</div>
+            <div style="margin-top:6px;font-size:11px;color:#666666;">Extra Charge: ₹${booking.extraCharge || 0}</div>
+          </div>
+        ` : ''}
+
+        <!-- PRICE BREAKDOWN -->
+        <div class="section">
+          <div class="section-title">Price Breakdown</div>
+          <table class="breakdown-table">
+            <thead>
+              <tr><th>Description</th><th style="text-align:right;">Amount</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Subtotal (${booking.totalHours}h × ₹${cabin.price || 0})</td>
+                <td class="amount">₹${(booking.subtotal || 0).toFixed(2)}</td>
+              </tr>
+              ${booking.extraCharge > 0 ? `
+                <tr>
+                  <td>Seat Charges (${booking.seatCount} seats × ₹${booking.seatExtraChargePerSeat || 100})</td>
+                  <td class="amount">₹${(booking.extraCharge || 0).toFixed(2)}</td>
+                </tr>
+              ` : ''}
+              <tr>
+                <td>GST (${(booking.gstRate || 0.18) * 100}%)</td>
+                <td class="amount">₹${(booking.gstAmount || 0).toFixed(2)}</td>
+              </tr>
+              <tr class="total-row">
+                <td>Total Amount</td>
+                <td class="amount">₹${(booking.totalPrice || 0).toFixed(2)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- PAYMENT DETAILS -->
+        ${booking.transactionId || booking.paymentDetails?.transactionId ? `
+          <div class="payment-details">
+            <div style="font-size:9px;font-weight:700;color:#999999;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Payment Details</div>
+            <div class="detail-row"><span class="label-text">Transaction ID</span> <strong>${booking.transactionId || booking.paymentDetails?.transactionId || 'N/A'}</strong></div>
+            ${booking.paymentDetails?.upiId ? `<div class="detail-row"><span class="label-text">UPI ID</span> <strong>${booking.paymentDetails.upiId}</strong></div>` : ''}
+            ${booking.paymentDetails?.upiApp ? `<div class="detail-row"><span class="label-text">UPI App</span> <strong>${booking.paymentDetails.upiApp}</strong></div>` : ''}
+            ${booking.paymentDetails?.cardNumber ? `<div class="detail-row"><span class="label-text">Card</span> <strong>•••• ${booking.paymentDetails.cardNumber.slice(-4)}</strong></div>` : ''}
+            <div class="detail-row"><span class="label-text">Payment Mode</span> <strong>${pmtMethod.label}</strong></div>
+          </div>
+        ` : ''}
+
+        <!-- STATUS -->
+        <div class="status-section">
+          <div class="status-item"><span class="label-text">Status</span> <span class="badge badge-${booking.status}">${status.label}</span></div>
+          <div class="status-item"><span class="label-text">Payment</span> <span class="badge badge-${booking.paymentStatus === 'paid' ? 'confirmed' : 'pending'}">${pmtStatus.label}</span></div>
+          <div class="status-item"><span class="label-text">Payment Method</span> <span style="font-weight:600;color:#333333;font-size:12px;">${pmtMethod.label}</span></div>
+          ${booking.isPaidToOwner ? `<div class="status-item"><span class="label-text">Paid to Owner</span> <span style="font-weight:600;color:#2e7d32;font-size:12px;">Yes</span></div>` : ''}
+        </div>
+
+        <!-- VISIT LOG -->
+        ${booking.visitingTimings && booking.visitingTimings.length > 0 ? `
+          <div style="background:#fafafa;padding:12px 16px;margin:10px 0;border:1px solid #eeeeee;">
+            <div style="font-size:9px;font-weight:700;color:#999999;text-transform:uppercase;letter-spacing:0.5px;">Visit Log (${booking.visitingTimings.length} entries)</div>
+            ${booking.visitingTimings.map((t, i) => `
+              <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid #f0f0f0;color:#333333;">
+                <span>Day ${i+1}: ${formatDateIndian(t.date)}</span>
+                <span>${formatTime12(t.checkIn)} - ${formatTime12(t.checkOut)}</span>
+              </div>
+            `).join('')}
+          </div>
+        ` : ''}
+
+        <!-- FOOTER -->
+        <div class="footer">
+          <span class="brand">${ownerName}</span> — ${ownerAddress}<br>
+          Created: ${formatDateTimeDDMMYYYY(booking.createdAt)}<br>
+          <div style="margin-top:6px;padding-top:6px;border-top:1px solid #eeeeee;">
+            <span class="powered">POWERED BY IRYAX SPACE</span>
           </div>
         </div>
-        </body></html>
-      `);
-      win.document.close();
-      win.focus();
-      toast.success('Invoice generated! Click Print to save as PDF.');
-    } catch (error) {
-      console.error(error);
-      toast.error('Failed to generate invoice');
-    }
-  };
-
+      </div>
+      </body></html>
+    `);
+    win.document.close();
+    win.focus();
+    toast.success('Invoice generated! Click Print to save as PDF.');
+  } catch (error) {
+    console.error(error);
+    toast.error('Failed to generate invoice');
+  }
+};
   // ✅ FILTER: Space Type filter added
   const filteredBookings = bookings.filter((b) => {
     const search = searchTerm.toLowerCase();

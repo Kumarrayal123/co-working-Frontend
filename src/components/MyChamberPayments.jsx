@@ -461,7 +461,7 @@ const MyChamberPayments = () => {
         <div className="admin-dash__header">
           <div>
             <h1 className="admin-dash__greeting" style={{ fontSize: '1.25rem' }}>
-              My <span>Cabin Payments</span>
+              My <span>Cabin Billings</span>
             </h1>
           </div>
         </div>

@@ -5186,7 +5186,7 @@ const CategoryLedger = ({ leftLabel, rightLabel, leftCount, rightCount, onLeftCl
       <span className="ledger-icon"><Stethoscope size={19} /></span>
       <span style={{ textAlign: "left" }}>
         <h4>{rightLabel}</h4>
-        <p>{rightCount} chambers listed</p>
+        <p>{rightCount} Cabin listed</p>
       </span>
     </button>
   </div>
@@ -5235,7 +5235,7 @@ const ListingCard = ({ cabin, variant, onCardClick, onCtaClick, index = 0 }) => 
         <ImageSlider images={cabinImages} alt={cabin.name} />
         <div className="listing-badge-row">
           <span className={`listing-type-chip ${isMedical ? "med" : "co"}`}>
-            <TypeIcon size={11} /> {isMedical ? "Medical Chamber" : "Co-Working"}
+            <TypeIcon size={11} /> {isMedical ? "Medical Cabin" : "Co-Working"}
           </span>
           <span className="listing-avail-chip"><span className="avail-dot" /> Available</span>
         </div>
@@ -5334,7 +5334,7 @@ const SpaceDetailModal = ({ isOpen, onClose, space, onBookClick }) => {
                 )}
               </div>
               <span className="space-type-badge" style={{ background: isMedical ? "#8B4433" : "#23474B" }}>
-                {isMedical ? "Medical Chamber" : "Co-Working"}
+                {isMedical ? "Medical Cabin" : "Co-Working"}
               </span>
             </div>
 
@@ -5343,7 +5343,7 @@ const SpaceDetailModal = ({ isOpen, onClose, space, onBookClick }) => {
               <div className="space-location"><MapPin size={15} /><span>{space.address || "Location not specified"}</span></div>
               <p className="space-description">
                 {space.description || (isMedical
-                  ? "A fully-equipped medical consultation chamber designed for healthcare professionals."
+                  ? "A fully-equipped medical consultation cabin designed for healthcare professionals."
                   : "A fully-equipped modern workspace designed for professionals.")}
               </p>
 
@@ -5411,19 +5411,19 @@ const DoctorChamberPage = () => {
         <div className="doctor-hero-content">
           <div className="doctor-hero-text-box">
             <RevealSection>
-              <span className="ix-eyebrow"><span className="dot" style={{ background: "#8B4433" }} />Doctor&rsquo;s Chamber</span>
+              <span className="ix-eyebrow"><span className="dot" style={{ background: "#8B4433" }} />Doctor&rsquo;s Cabin</span>
             </RevealSection>
             <RevealSection delay={0.1}>
               <h1 className="doctor-hero-title">A consultation room<br /><em>ready before you arrive.</em></h1>
             </RevealSection>
             <RevealSection delay={0.2}>
               <p className="doctor-hero-desc">
-                Fully-equipped chambers with reception support, flexible hours, and complete admin handling — so you can walk in and see patients, nothing else to set up.
+                Fully-equipped cabins with reception support, flexible hours, and complete admin handling — so you can walk in and see patients, nothing else to set up.
               </p>
             </RevealSection>
             <RevealSection delay={0.3}>
               <div className="doctor-stats">
-                <div className="doctor-stat-item"><div className="number">50+</div><div className="label">Chambers</div></div>
+                <div className="doctor-stat-item"><div className="number">50+</div><div className="label">Cabins</div></div>
                 <div className="doctor-stat-item"><div className="number">24/7</div><div className="label">Access</div></div>
                 <div className="doctor-stat-item"><div className="number">100+</div><div className="label">Doctors</div></div>
               </div>
@@ -5431,7 +5431,7 @@ const DoctorChamberPage = () => {
             <RevealSection delay={0.4}>
               <div className="hero-buttons">
                 <button onClick={() => navigate("/login")} className="btn-primary" style={{ background: "#8B4433" }}>
-                  <Stethoscope size={16} /> Book your chamber <ArrowRight size={16} />
+                  <Stethoscope size={16} /> Book your cabin <ArrowRight size={16} />
                 </button>
                 <button onClick={() => navigate("/#contact")} className="btn-secondary">
                   <Phone size={16} /> Contact us
@@ -5454,7 +5454,7 @@ const DoctorChamberPage = () => {
               { icon: Stethoscope, title: "Medical equipment", desc: "Examination essentials and clinical tools on site." },
               { icon: UserCheck, title: "Admin support", desc: "Reception, billing, and patient scheduling handled for you." },
               { icon: Clock, title: "Flexible hours", desc: "Book by the hour, day, or a standing weekly slot." },
-              { icon: Award, title: "Prime locations", desc: "High-visibility chambers in established medical areas." }
+              { icon: Award, title: "Prime locations", desc: "High-visibility cabins in established medical areas." }
             ].map((feature, i) => (
               <RevealSection key={i} delay={i * 0.1}>
                 <div className="doctor-feature-card">
@@ -5473,7 +5473,7 @@ const DoctorChamberPage = () => {
           <RevealSection>
             <div className="doctor-cta-section">
               <h2>Start seeing patients this week</h2>
-              <p>Join 100+ healthcare professionals who moved their practice into a chamber that was ready on day one.</p>
+              <p>Join 100+ healthcare professionals who moved their practice into a cabin that was ready on day one.</p>
               <button onClick={() => navigate("/login")} className="doctor-cta-btn">Get started <ArrowRight size={18} /></button>
             </div>
           </RevealSection>
@@ -5483,7 +5483,7 @@ const DoctorChamberPage = () => {
       <footer className="site-footer py-12 px-8">
         <div className="max-w-6xl mx-auto text-center">
           <p className="text-sm">© IRYAX SPACE. All rights reserved.</p>
-          <p className="text-xs mt-2 tracking-wider uppercase" style={{ opacity: 0.5 }}>Doctor&rsquo;s Chamber — IRYAX SPACE</p>
+          <p className="text-xs mt-2 tracking-wider uppercase" style={{ opacity: 0.5 }}>Doctor&rsquo;s Cabin — IRYAX SPACE</p>
         </div>
       </footer>
     </div>
@@ -5702,7 +5702,7 @@ const PromotionalPage = () => {
             <div className="nav-links">
               <button onClick={() => scrollToSection("benefits")} className="navbar-link">Benefits</button>
               <button onClick={() => scrollToSection("coworking-section")} className="navbar-link">Co-working</button>
-              <button onClick={() => navigate("/doctor-chamber")} className="navbar-link">Doctor&rsquo;s Chamber</button>
+              <button onClick={() => navigate("/doctor-chamber")} className="navbar-link">Doctor&rsquo;s Cabin</button>
               <button onClick={() => scrollToSection("specialties")} className="navbar-link">Specialties</button>
               <button onClick={() => scrollToSection("mission-vision")} className="navbar-link">About</button>
               <button onClick={() => scrollToSection("faq")} className="navbar-link">FAQ</button>
@@ -5740,7 +5740,7 @@ const PromotionalPage = () => {
               </button>
             ))}
             <button onClick={() => { setMobileOpen(false); navigate("/doctor-chamber"); }} className="px-4 py-3.5 text-left rounded-xl font-medium" style={{ background: "#F1EDE3" }}>
-              Doctor&rsquo;s Chamber
+              Doctor&rsquo;s Cabin
             </button>
             <div className="h-px my-1" style={{ background: "#E3DDCE" }} />
             <button onClick={() => { navigate("/login"); setMobileOpen(false); }} className="px-4 py-3.5 text-center text-white rounded-xl font-semibold" style={{ background: "#12181F" }}>
@@ -5763,7 +5763,7 @@ const PromotionalPage = () => {
               </RevealSection>
               <RevealSection delay={0.2}>
                 <p className="hero-desc">
-                  Fully-equipped co-working desks and doctor&rsquo;s chambers, on flexible terms. No lease, no setup, no admin — just walk in and get to work.
+                  Fully-equipped co-working desks and doctor&rsquo;s cabins, on flexible terms. No lease, no setup, no admin — just walk in and get to work.
                 </p>
               </RevealSection>
               <RevealSection delay={0.3}>
@@ -5857,15 +5857,15 @@ const PromotionalPage = () => {
         <section id="medical-section" className="py-8 px-6" style={{ background: "#FBF6F4" }}>
           <div className="max-w-6xl mx-auto py-8">
             <div className="section-head mx-auto text-center">
-              <RevealSection><span className="ix-eyebrow"><span className="dot" style={{ background: "#8B4433" }} />Section 02 — Medical Chambers</span></RevealSection>
+              <RevealSection><span className="ix-eyebrow"><span className="dot" style={{ background: "#8B4433" }} />Section 02 — Medical Cabins</span></RevealSection>
               <RevealSection delay={0.1}><h2>Consultation rooms ready for patients</h2></RevealSection>
-              <RevealSection delay={0.2}><p className="mx-auto">Fully-equipped chambers for healthcare professionals to practice with confidence.</p></RevealSection>
+              <RevealSection delay={0.2}><p className="mx-auto">Fully-equipped cabins for healthcare professionals to practice with confidence.</p></RevealSection>
             </div>
 
             {medicalCabins.length > 0 && (
               <RevealSection delay={0.15}>
                 <div className="section-toolbar justify-center">
-                  <span className="toolbar-pill med"><Stethoscope size={14} /> {medicalCabins.length} chambers</span>
+                  <span className="toolbar-pill med"><Stethoscope size={14} /> {medicalCabins.length} cabins</span>
                   <span className="toolbar-pill med"><ShieldCheck size={14} /> Hygiene certified</span>
                   <span className="toolbar-pill med"><Clock size={14} /> 24/7 access</span>
                 </div>
@@ -5875,9 +5875,9 @@ const PromotionalPage = () => {
             {medicalCabins.length === 0 ? (
               <div className="text-center py-16">
                 <Stethoscope size={44} className="mx-auto mb-4" color="#D9C3BA" />
-                <p style={{ color: "#8A8F99" }}>No medical chambers available right now.</p>
+                <p style={{ color: "#8A8F99" }}>No medical cabins available right now.</p>
                 <button onClick={() => navigate("/doctor-chamber")} className="mt-5 px-6 py-3 text-sm font-semibold text-white rounded-xl inline-flex items-center gap-2" style={{ background: "#8B4433" }}>
-                  <Stethoscope size={16} /> Explore Doctor&rsquo;s Chamber
+                  <Stethoscope size={16} /> Explore Doctor&rsquo;s Cabin
                 </button>
               </div>
             ) : (
@@ -5893,7 +5893,7 @@ const PromotionalPage = () => {
             <div className="text-center mt-12">
               <RevealSection>
                 <button onClick={() => navigate("/doctor-chamber")} className="inline-flex items-center gap-2 px-6 py-3.5 text-white rounded-xl text-sm font-semibold" style={{ background: "#8B4433" }}>
-                  <Stethoscope size={17} /> Explore all medical chambers <ArrowRight size={15} />
+                  <Stethoscope size={17} /> Explore all medical cabins <ArrowRight size={15} />
                 </button>
               </RevealSection>
             </div>
@@ -6228,7 +6228,7 @@ const PromotionalPage = () => {
                   <div className="space-y-2.5">
                     <button onClick={() => scrollToSection("benefits")} className="block text-left">Benefits</button>
                     <button onClick={() => scrollToSection("coworking-section")} className="block text-left">Co-working Space</button>
-                    <button onClick={() => navigate("/doctor-chamber")} className="block text-left">Doctor&rsquo;s Chamber</button>
+                    <button onClick={() => navigate("/doctor-chamber")} className="block text-left">Doctor&rsquo;s Cabin</button>
                     <button onClick={() => scrollToSection("specialties")} className="block text-left">Specialties</button>
                     <button onClick={() => scrollToSection("mission-vision")} className="block text-left">About</button>
                     <button onClick={() => scrollToSection("faq")} className="block text-left">FAQ</button>

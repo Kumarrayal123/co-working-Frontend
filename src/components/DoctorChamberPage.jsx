@@ -1,7 +1,7 @@
 // DoctorChamber.jsx
 // IRYAX SPACE FOR MEDICAL — redesigned to match the calm "boutique directory"
 // look used on PromotionalPage.jsx. All original functionality preserved:
-// live chamber fetch (filtered by isChamber), image/video chamber popup,
+// live cabin fetch (filtered by isChamber), image/video cabin popup,
 // simulated booking flow, contact form -> /api/cabins/sendquery, FAQ, nav.
 
 import React, { useEffect, useState, useRef } from "react";
@@ -64,9 +64,9 @@ const MEDICAL_SPECIALTIES = [
 
 // ─── FAQ DATA ───
 const FAQ_DATA = [
-  { category: "Chambers", q: "What types of consultation rooms are available?", a: "Fully-equipped private consultation rooms, examination rooms, and collaborative medical spaces." },
+  { category: "Cabins", q: "What types of consultation rooms are available?", a: "Fully-equipped private consultation rooms, examination rooms, and collaborative medical spaces." },
   { category: "Flexibility", q: "Do I need to sign a long-term lease?", a: "No. Our model is fully flexible — book by the hour, day, or month." },
-  { category: "Facilities", q: "What medical facilities are included?", a: "Every chamber includes clinical equipment, high-speed WiFi, comfortable patient areas, and 24/7 security." },
+  { category: "Facilities", q: "What medical facilities are included?", a: "Every cabin includes clinical equipment, high-speed WiFi, comfortable patient areas, and 24/7 security." },
   { category: "Payment", q: "What payment methods are accepted?", a: "We accept credit and debit cards, UPI, net banking, and offer flexible payment plans." },
   { category: "Support", q: "What administrative support do you provide?", a: "Full administrative support, including reception, billing assistance, and patient management." }
 ];
@@ -76,7 +76,7 @@ const FAQ_DATA = [
 // Palette   — ink #12181F · paper #FBF9F5 · paper-dim #F1EDE3
 //             brass #B08947 (signature) · teal #23474B · brick #8B4433 (medical)
 // Type      — display: 'Fraunces' · body/UI: 'Inter'
-// Signature — chamber media card doubles as a compact clinical dossier:
+// Signature — cabin media card doubles as a compact clinical dossier:
 //             a status ribbon + spec row, echoing how a chart is read.
 // ═══════════════════════════════════════════════════════════════
 const styles = `
@@ -184,45 +184,45 @@ const styles = `
   .toolbar-pill { display: inline-flex; align-items: center; gap: 7px; padding: 7px 14px; border-radius: 999px; background: white; border: 1px solid var(--line); font-size: 0.76rem; font-weight: 600; color: var(--ink-soft); }
   .toolbar-pill.med svg { color: var(--brick); }
 
-  /* ─── CHAMBER CARD ─── */
-  .chamber-card { background: white; border: 1px solid var(--line); border-radius: 18px; overflow: hidden; cursor: pointer; display: flex; flex-direction: column; height: 100%; transition: transform 0.4s cubic-bezier(0.16,1,0.3,1), box-shadow 0.4s cubic-bezier(0.16,1,0.3,1), border-color 0.4s; }
-  .chamber-card:hover { transform: translateY(-6px); box-shadow: 0 26px 50px -22px rgba(18, 24, 31, 0.22); border-color: var(--ink); }
-  .chamber-media { position: relative; height: 208px; flex-shrink: 0; overflow: hidden; }
-  .chamber-media img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s; }
-  .chamber-card:hover .chamber-media img { transform: scale(1.045); }
+  /* ─── CABIN CARD ─── */
+  .cabin-card { background: white; border: 1px solid var(--line); border-radius: 18px; overflow: hidden; cursor: pointer; display: flex; flex-direction: column; height: 100%; transition: transform 0.4s cubic-bezier(0.16,1,0.3,1), box-shadow 0.4s cubic-bezier(0.16,1,0.3,1), border-color 0.4s; }
+  .cabin-card:hover { transform: translateY(-6px); box-shadow: 0 26px 50px -22px rgba(18, 24, 31, 0.22); border-color: var(--ink); }
+  .cabin-media { position: relative; height: 208px; flex-shrink: 0; overflow: hidden; }
+  .cabin-media img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s; }
+  .cabin-card:hover .cabin-media img { transform: scale(1.045); }
 
-  .chamber-badge-row { position: absolute; top: 12px; left: 12px; right: 12px; display: flex; align-items: flex-start; justify-content: space-between; z-index: 3; pointer-events: none; }
-  .chamber-type-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.03em; color: white; background: var(--brick); }
-  .chamber-avail-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--ink); background: rgba(251,249,245,0.94); }
-  .chamber-avail-chip.unavailable { color: var(--brick); }
+  .cabin-badge-row { position: absolute; top: 12px; left: 12px; right: 12px; display: flex; align-items: flex-start; justify-content: space-between; z-index: 3; pointer-events: none; }
+  .cabin-type-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.03em; color: white; background: var(--brick); }
+  .cabin-avail-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--ink); background: rgba(251,249,245,0.94); }
+  .cabin-avail-chip.unavailable { color: var(--brick); }
   .avail-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--brick); animation: ix-pulse-dot 1.8s infinite; }
 
-  .chamber-quickview { position: absolute; bottom: 12px; left: 12px; z-index: 3; width: 34px; height: 34px; border-radius: 50%; background: rgba(251,249,245,0.94); display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; opacity: 0; transform: translateY(6px); transition: all 0.3s; }
-  .chamber-card:hover .chamber-quickview { opacity: 1; transform: translateY(0); }
+  .cabin-quickview { position: absolute; bottom: 12px; left: 12px; z-index: 3; width: 34px; height: 34px; border-radius: 50%; background: rgba(251,249,245,0.94); display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; opacity: 0; transform: translateY(6px); transition: all 0.3s; }
+  .cabin-card:hover .cabin-quickview { opacity: 1; transform: translateY(0); }
 
-  .chamber-price-float { position: absolute; bottom: 12px; right: 12px; z-index: 3; background: rgba(18, 24, 31, 0.82); border-radius: 10px; padding: 7px 13px; text-align: right; }
-  .chamber-price-float .amt { color: white; font-size: 1rem; font-weight: 700; line-height: 1; }
-  .chamber-price-float .per { color: rgba(255,255,255,0.6); font-size: 9px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .cabin-price-float { position: absolute; bottom: 12px; right: 12px; z-index: 3; background: rgba(18, 24, 31, 0.82); border-radius: 10px; padding: 7px 13px; text-align: right; }
+  .cabin-price-float .amt { color: white; font-size: 1rem; font-weight: 700; line-height: 1; }
+  .cabin-price-float .per { color: rgba(255,255,255,0.6); font-size: 9px; text-transform: uppercase; letter-spacing: 0.05em; }
 
-  .chamber-body { padding: 20px 20px 18px; display: flex; flex-direction: column; flex: 1; }
-  .chamber-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
-  .chamber-body h3 { font-family: 'Fraunces', serif; font-size: 1.08rem; font-weight: 600; color: var(--ink); line-height: 1.28; }
-  .chamber-verified { flex-shrink: 0; display: inline-flex; align-items: center; gap: 3px; font-size: 0.7rem; font-weight: 700; color: var(--brick); background: var(--brick-tint); border-radius: 8px; padding: 3px 7px; }
+  .cabin-body { padding: 20px 20px 18px; display: flex; flex-direction: column; flex: 1; }
+  .cabin-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
+  .cabin-body h3 { font-family: 'Fraunces', serif; font-size: 1.08rem; font-weight: 600; color: var(--ink); line-height: 1.28; }
+  .cabin-verified { flex-shrink: 0; display: inline-flex; align-items: center; gap: 3px; font-size: 0.7rem; font-weight: 700; color: var(--brick); background: var(--brick-tint); border-radius: 8px; padding: 3px 7px; }
 
-  .chamber-loc { display: flex; align-items: center; gap: 5px; font-size: 0.8rem; color: var(--ink-faint); margin-bottom: 14px; }
+  .cabin-loc { display: flex; align-items: center; gap: 5px; font-size: 0.8rem; color: var(--ink-faint); margin-bottom: 14px; }
 
-  .chamber-specs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
-  .chamber-spec-chip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 9px; border-radius: 8px; background: var(--paper-dim); border: 1px solid var(--line); font-size: 0.7rem; font-weight: 600; color: var(--ink-soft); }
-  .chamber-spec-chip svg { color: var(--brick); }
+  .cabin-specs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+  .cabin-spec-chip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 9px; border-radius: 8px; background: var(--paper-dim); border: 1px solid var(--line); font-size: 0.7rem; font-weight: 600; color: var(--ink-soft); }
+  .cabin-spec-chip svg { color: var(--brick); }
 
-  .chamber-footer { margin-top: auto; display: flex; align-items: center; justify-content: space-between; padding-top: 15px; border-top: 1px dashed var(--line); }
-  .chamber-footer .amount { font-family: 'Fraunces', serif; font-size: 1.28rem; font-weight: 600; color: var(--ink); }
-  .chamber-footer .unit { font-size: 0.68rem; color: var(--ink-faint); font-weight: 600; }
+  .cabin-footer { margin-top: auto; display: flex; align-items: center; justify-content: space-between; padding-top: 15px; border-top: 1px dashed var(--line); }
+  .cabin-footer .amount { font-family: 'Fraunces', serif; font-size: 1.28rem; font-weight: 600; color: var(--ink); }
+  .cabin-footer .unit { font-size: 0.68rem; color: var(--ink-faint); font-weight: 600; }
 
-  .chamber-cta { display: inline-flex; align-items: center; gap: 6px; padding: 10px 15px; border-radius: 9px; border: none; font-size: 0.8rem; font-weight: 700; color: white; cursor: pointer; transition: all 0.3s; background: var(--brick); }
-  .chamber-cta:hover { transform: translateX(2px); filter: brightness(1.1); }
+  .cabin-cta { display: inline-flex; align-items: center; gap: 6px; padding: 10px 15px; border-radius: 9px; border: none; font-size: 0.8rem; font-weight: 700; color: white; cursor: pointer; transition: all 0.3s; background: var(--brick); }
+  .cabin-cta:hover { transform: translateX(2px); filter: brightness(1.1); }
 
-  @media (max-width: 640px) { .chamber-media { height: 176px; } .chamber-body { padding: 16px 16px 14px; } }
+  @media (max-width: 640px) { .cabin-media { height: 176px; } .cabin-body { padding: 16px 16px 14px; } }
 
   /* ─── CARD IMAGE SLIDER ─── */
   .card-image-slider { position: relative; height: 100%; width: 100%; overflow: hidden; }
@@ -285,7 +285,7 @@ const styles = `
   .contact-submit:hover:not(:disabled) { background: #723627; }
   .contact-submit:disabled { opacity: 0.6; cursor: not-allowed; }
 
-  /* ─── MODAL (thank-you + chamber detail) ─── */
+  /* ─── MODAL (thank-you + cabin detail) ─── */
   .modal-overlay { position: fixed; inset: 0; z-index: 9999; background: rgba(18, 24, 31, 0.55); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; padding: 20px; animation: ix-fade 0.25s ease; }
   .modal-content { background: var(--paper); border-radius: 24px; max-width: 940px; width: 100%; max-height: 90vh; overflow-y: auto; position: relative; animation: ix-scale-in 0.3s cubic-bezier(0.16,1,0.3,1); box-shadow: 0 40px 100px rgba(18,24,31,0.35); scrollbar-width: none; }
   .modal-content::-webkit-scrollbar { width: 0; }
@@ -293,40 +293,40 @@ const styles = `
   .modal-close { position: sticky; top: 12px; float: right; width: 34px; height: 34px; border-radius: 50%; background: white; border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 20; margin: 12px 12px 0 0; transition: all 0.3s; }
   .modal-close:hover { background: var(--paper-dim); }
 
-  .chamber-detail-modal { display: flex; flex-direction: column; }
-  .chamber-detail-modal .modal-body { display: grid; grid-template-columns: 1fr 1fr; gap: 0; min-height: 460px; }
-  .chamber-detail-modal .modal-image-section { position: relative; background: #0f1216; min-height: 380px; overflow: hidden; }
-  .chamber-detail-modal .media-slider { width: 100%; height: 100%; position: relative; display: flex; align-items: center; justify-content: center; }
-  .chamber-detail-modal .slider-image, .chamber-detail-modal .slider-video { width: 100%; height: 100%; object-fit: cover; min-height: 380px; }
-  .chamber-detail-modal .slider-video { object-fit: contain; background: #0f1216; }
-  .chamber-detail-modal .slider-btn { position: absolute; top: 50%; transform: translateY(-50%); width: 38px; height: 38px; border-radius: 50%; background: rgba(18,24,31,0.6); border: 1px solid rgba(255,255,255,0.2); color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 5; }
-  .chamber-detail-modal .slider-btn.prev { left: 12px; }
-  .chamber-detail-modal .slider-btn.next { right: 12px; }
-  .chamber-detail-modal .media-dots { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 5; }
-  .chamber-detail-modal .media-dots .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.4); border: none; cursor: pointer; padding: 0; }
-  .chamber-detail-modal .media-dots .dot.video { width: 14px; border-radius: 4px; }
-  .chamber-detail-modal .media-dots .dot.active { background: white; }
-  .chamber-detail-modal .media-type-badge { position: absolute; top: 16px; right: 16px; background: rgba(18,24,31,0.65); color: white; padding: 5px 12px; border-radius: 999px; font-size: 10.5px; font-weight: 700; z-index: 5; display: flex; align-items: center; gap: 5px; text-transform: uppercase; letter-spacing: 0.04em; }
-  .chamber-detail-modal .chamber-type-badge { position: absolute; top: 16px; left: 16px; padding: 6px 16px; border-radius: 999px; font-size: 11px; font-weight: 700; color: white; background: var(--brick); z-index: 5; }
+  .cabin-detail-modal { display: flex; flex-direction: column; }
+  .cabin-detail-modal .modal-body { display: grid; grid-template-columns: 1fr 1fr; gap: 0; min-height: 460px; }
+  .cabin-detail-modal .modal-image-section { position: relative; background: #0f1216; min-height: 380px; overflow: hidden; }
+  .cabin-detail-modal .media-slider { width: 100%; height: 100%; position: relative; display: flex; align-items: center; justify-content: center; }
+  .cabin-detail-modal .slider-image, .cabin-detail-modal .slider-video { width: 100%; height: 100%; object-fit: cover; min-height: 380px; }
+  .cabin-detail-modal .slider-video { object-fit: contain; background: #0f1216; }
+  .cabin-detail-modal .slider-btn { position: absolute; top: 50%; transform: translateY(-50%); width: 38px; height: 38px; border-radius: 50%; background: rgba(18,24,31,0.6); border: 1px solid rgba(255,255,255,0.2); color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 5; }
+  .cabin-detail-modal .slider-btn.prev { left: 12px; }
+  .cabin-detail-modal .slider-btn.next { right: 12px; }
+  .cabin-detail-modal .media-dots { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 5; }
+  .cabin-detail-modal .media-dots .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.4); border: none; cursor: pointer; padding: 0; }
+  .cabin-detail-modal .media-dots .dot.video { width: 14px; border-radius: 4px; }
+  .cabin-detail-modal .media-dots .dot.active { background: white; }
+  .cabin-detail-modal .media-type-badge { position: absolute; top: 16px; right: 16px; background: rgba(18,24,31,0.65); color: white; padding: 5px 12px; border-radius: 999px; font-size: 10.5px; font-weight: 700; z-index: 5; display: flex; align-items: center; gap: 5px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .cabin-detail-modal .cabin-type-badge { position: absolute; top: 16px; left: 16px; padding: 6px 16px; border-radius: 999px; font-size: 11px; font-weight: 700; color: white; background: var(--brick); z-index: 5; }
 
-  .chamber-detail-modal .modal-content-section { padding: 32px 28px; display: flex; flex-direction: column; overflow-y: auto; background: var(--paper); }
-  .chamber-detail-modal .chamber-title { font-family: 'Fraunces', serif; font-size: 1.5rem; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
-  .chamber-detail-modal .chamber-sub { font-size: 0.86rem; color: var(--ink-faint); margin-bottom: 16px; }
-  .chamber-detail-modal .chamber-desc { font-size: 0.9rem; color: var(--ink-soft); line-height: 1.7; margin-bottom: 16px; flex: 1; }
-  .chamber-detail-modal .chamber-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 16px; }
-  .chamber-detail-modal .detail-item { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--ink-soft); padding: 7px 10px; background: var(--paper-dim); border-radius: 8px; }
-  .chamber-detail-modal .detail-item svg { color: var(--brick); flex-shrink: 0; }
-  .chamber-detail-modal .chamber-price { display: flex; align-items: baseline; gap: 8px; padding-top: 16px; border-top: 1px solid var(--line); margin-bottom: 16px; }
-  .chamber-detail-modal .chamber-price .amount { font-family: 'Fraunces', serif; font-size: 1.7rem; font-weight: 600; color: var(--ink); }
-  .chamber-detail-modal .chamber-price .period { font-size: 0.86rem; color: var(--ink-faint); }
+  .cabin-detail-modal .modal-content-section { padding: 32px 28px; display: flex; flex-direction: column; overflow-y: auto; background: var(--paper); }
+  .cabin-detail-modal .cabin-title { font-family: 'Fraunces', serif; font-size: 1.5rem; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+  .cabin-detail-modal .cabin-sub { font-size: 0.86rem; color: var(--ink-faint); margin-bottom: 16px; }
+  .cabin-detail-modal .cabin-desc { font-size: 0.9rem; color: var(--ink-soft); line-height: 1.7; margin-bottom: 16px; flex: 1; }
+  .cabin-detail-modal .cabin-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 16px; }
+  .cabin-detail-modal .detail-item { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--ink-soft); padding: 7px 10px; background: var(--paper-dim); border-radius: 8px; }
+  .cabin-detail-modal .detail-item svg { color: var(--brick); flex-shrink: 0; }
+  .cabin-detail-modal .cabin-price { display: flex; align-items: baseline; gap: 8px; padding-top: 16px; border-top: 1px solid var(--line); margin-bottom: 16px; }
+  .cabin-detail-modal .cabin-price .amount { font-family: 'Fraunces', serif; font-size: 1.7rem; font-weight: 600; color: var(--ink); }
+  .cabin-detail-modal .cabin-price .period { font-size: 0.86rem; color: var(--ink-faint); }
   .btn-book-now-modal { width: 100%; padding: 15px; background: var(--brick); color: var(--paper); border: none; border-radius: 12px; font-size: 0.95rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: auto; transition: all 0.3s; }
   .btn-book-now-modal:hover:not(:disabled) { background: #723627; }
   .btn-book-now-modal:disabled { opacity: 0.55; cursor: not-allowed; }
 
   @media (max-width: 768px) {
-    .chamber-detail-modal .modal-body { grid-template-columns: 1fr; }
-    .chamber-detail-modal .modal-image-section, .chamber-detail-modal .slider-image, .chamber-detail-modal .slider-video { min-height: 260px; }
-    .chamber-detail-modal .modal-content-section { padding: 22px 18px; }
+    .cabin-detail-modal .modal-body { grid-template-columns: 1fr; }
+    .cabin-detail-modal .modal-image-section, .cabin-detail-modal .slider-image, .cabin-detail-modal .slider-video { min-height: 260px; }
+    .cabin-detail-modal .modal-content-section { padding: 22px 18px; }
   }
 
   /* ─── FOOTER ─── */
@@ -395,7 +395,7 @@ const Counter = ({ target, suffix = "", duration = 1400 }) => {
 // ─── CARD IMAGE SLIDER (thumbnail — images only) ───
 const CardImage = ({ src, alt }) => (
   <div className="card-image-slider">
-    <img src={src} alt={alt || "Chamber"} loading="lazy" onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }} />
+    <img src={src} alt={alt || "Cabin"} loading="lazy" onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }} />
   </div>
 );
 
@@ -417,42 +417,42 @@ const FAQItem = ({ faq, index, isOpen, onToggle }) => (
   </RevealSection>
 );
 
-// ─── CHAMBER CARD ───
-const ChamberCard = ({ chamber, index, onClick }) => (
-  <div className="chamber-card" onClick={() => onClick(chamber)}>
-    <div className="chamber-media">
-      <CardImage src={chamber.images[0]} alt={chamber.name} />
-      <div className="chamber-badge-row">
-        <span className="chamber-type-chip"><Stethoscope size={11} /> Medical Chamber</span>
-        <span className={`chamber-avail-chip ${chamber.available ? "" : "unavailable"}`}>
-          {chamber.available ? <><span className="avail-dot" /> Available</> : "Booked"}
+// ─── CABIN CARD ───
+const CabinCard = ({ cabin, index, onClick }) => (
+  <div className="cabin-card" onClick={() => onClick(cabin)}>
+    <div className="cabin-media">
+      <CardImage src={cabin.images[0]} alt={cabin.name} />
+      <div className="cabin-badge-row">
+        <span className="cabin-type-chip"><Stethoscope size={11} /> Medical Cabin</span>
+        <span className={`cabin-avail-chip ${cabin.available ? "" : "unavailable"}`}>
+          {cabin.available ? <><span className="avail-dot" /> Available</> : "Booked"}
         </span>
       </div>
-      <button className="chamber-quickview" onClick={(e) => { e.stopPropagation(); onClick(chamber); }} aria-label="Quick view">
+      <button className="cabin-quickview" onClick={(e) => { e.stopPropagation(); onClick(cabin); }} aria-label="Quick view">
         <Maximize2 size={14} color="#8B4433" />
       </button>
-      <div className="chamber-price-float">
-        <div className="amt">{chamber.price}</div>
+      <div className="cabin-price-float">
+        <div className="amt">{cabin.price}</div>
         <div className="per">per hour</div>
       </div>
     </div>
 
-    <div className="chamber-body">
-      <div className="chamber-title-row">
-        <h3 className="line-clamp-2">{chamber.name}</h3>
-        <span className="chamber-verified"><BadgeCheck size={11} /> Verified</span>
+    <div className="cabin-body">
+      <div className="cabin-title-row">
+        <h3 className="line-clamp-2">{cabin.name}</h3>
+        <span className="cabin-verified"><BadgeCheck size={11} /> Verified</span>
       </div>
-      <div className="chamber-loc"><MapPin size={13} /><span className="line-clamp-1">{chamber.floor}</span></div>
-      <div className="chamber-specs">
-        <span className="chamber-spec-chip"><Layout size={12} /> {chamber.size}</span>
-        <span className="chamber-spec-chip"><Stethoscope size={12} /> {chamber.equipment}</span>
+      <div className="cabin-loc"><MapPin size={13} /><span className="line-clamp-1">{cabin.floor}</span></div>
+      <div className="cabin-specs">
+        <span className="cabin-spec-chip"><Layout size={12} /> {cabin.size}</span>
+        <span className="cabin-spec-chip"><Stethoscope size={12} /> {cabin.equipment}</span>
       </div>
-      <div className="chamber-footer">
+      <div className="cabin-footer">
         <div>
-          <div className="amount">{chamber.price}</div>
+          <div className="amount">{cabin.price}</div>
           <div className="unit">per hour</div>
         </div>
-        <button className="chamber-cta" onClick={(e) => { e.stopPropagation(); onClick(chamber); }}>
+        <button className="cabin-cta" onClick={(e) => { e.stopPropagation(); onClick(cabin); }}>
           View details <ArrowRight size={14} />
         </button>
       </div>
@@ -473,12 +473,12 @@ const DoctorChamberPage = () => {
   const [showThankYouPopup, setShowThankYouPopup] = useState(false);
   const [thankYouText, setThankYouText] = useState({ title: "Message sent", body: "Thanks for reaching out. We'll get back to you shortly." });
 
-  const [chambers, setChambers] = useState([]);
+  const [cabins, setCabins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
 
-  const [selectedChamber, setSelectedChamber] = useState(null);
-  const [showChamberModal, setShowChamberModal] = useState(false);
+  const [selectedCabin, setSelectedCabin] = useState(null);
+  const [showCabinModal, setShowCabinModal] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [mediaItems, setMediaItems] = useState([]);
@@ -490,31 +490,31 @@ const DoctorChamberPage = () => {
     return `${API_URL}/${cleanPath}`;
   };
 
-  const getMediaItems = (chamber) => {
+  const getMediaItems = (cabin) => {
     const items = [];
-    if (chamber.images && chamber.images.length > 0) {
-      chamber.images.forEach((img) => items.push({ type: "image", url: img }));
+    if (cabin.images && cabin.images.length > 0) {
+      cabin.images.forEach((img) => items.push({ type: "image", url: img }));
     }
-    if (chamber.rawData && chamber.rawData.videos && chamber.rawData.videos.length > 0) {
-      chamber.rawData.videos.forEach((video) => items.push({ type: "video", url: getImageUrl(video) }));
+    if (cabin.rawData && cabin.rawData.videos && cabin.rawData.videos.length > 0) {
+      cabin.rawData.videos.forEach((video) => items.push({ type: "video", url: getImageUrl(video) }));
     }
     if (items.length === 0) items.push({ type: "image", url: PLACEHOLDER_IMAGE });
     return items;
   };
 
   useEffect(() => {
-    const fetchChambers = async () => {
+    const fetchCabins = async () => {
       setLoading(true);
       setFetchError(null);
       try {
         const res = await axios.get(`${API_URL}/api/cabins`);
         const data = res.data.cabins || res.data;
         const allCabins = Array.isArray(data) ? data : [];
-        const chamberCabins = allCabins.filter((c) => c.isChamber === true);
+        const cabinCabins = allCabins.filter((c) => c.isChamber === true);
 
-        const formatted = chamberCabins.map((cabin, index) => ({
+        const formatted = cabinCabins.map((cabin, index) => ({
           id: cabin._id,
-          name: cabin.name || `Chamber ${index + 1}`,
+          name: cabin.name || `Cabin ${index + 1}`,
           floor: cabin.address?.split(",")[0] || "Ground Floor",
           size: `${cabin.capacity || 1} Seats`,
           equipment: cabin.cabinType === "exclusive" ? "Premium Medical Setup" : "Basic Medical Setup",
@@ -525,15 +525,15 @@ const DoctorChamberPage = () => {
           rawData: cabin
         }));
 
-        setChambers(formatted);
+        setCabins(formatted);
       } catch (err) {
-        console.error("Error fetching chambers:", err);
-        setFetchError("Failed to load chambers. Please try again.");
+        console.error("Error fetching cabins:", err);
+        setFetchError("Failed to load cabins. Please try again.");
       } finally {
         setLoading(false);
       }
     };
-    fetchChambers();
+    fetchCabins();
   }, []);
 
   useEffect(() => {
@@ -549,23 +549,23 @@ const DoctorChamberPage = () => {
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
   const toggleFaq = (i) => setOpenFaq(openFaq === i ? null : i);
 
-  const handleChamberClick = (chamber) => {
-    setMediaItems(getMediaItems(chamber));
-    setSelectedChamber(chamber);
+  const handleCabinClick = (cabin) => {
+    setMediaItems(getMediaItems(cabin));
+    setSelectedCabin(cabin);
     setCurrentMediaIndex(0);
-    setShowChamberModal(true);
+    setShowCabinModal(true);
   };
-  const closeChamberModal = () => { setShowChamberModal(false); setSelectedChamber(null); setMediaItems([]); };
+  const closeCabinModal = () => { setShowCabinModal(false); setSelectedCabin(null); setMediaItems([]); };
 
   const handlePrevMedia = () => setCurrentMediaIndex((p) => (p === 0 ? mediaItems.length - 1 : p - 1));
   const handleNextMedia = () => setCurrentMediaIndex((p) => (p === mediaItems.length - 1 ? 0 : p + 1));
 
-  const handleBookChamber = () => {
+  const handleBookCabin = () => {
     setIsBooking(true);
     setTimeout(() => {
       setIsBooking(false);
-      closeChamberModal();
-      setThankYouText({ title: "Chamber booked", body: "We've reserved your slot. Our team will confirm the details shortly." });
+      closeCabinModal();
+      setThankYouText({ title: "Cabin booked", body: "We've reserved your slot. Our team will confirm the details shortly." });
       setShowThankYouPopup(true);
       setTimeout(() => setShowThankYouPopup(false), 5000);
     }, 1400);
@@ -616,14 +616,14 @@ const DoctorChamberPage = () => {
     { icon: Shield, title: "No long leases", desc: "Avoid multi-year commitments and heavy deposits." },
     { icon: Wallet, title: "Lower running costs", desc: "Pay for what you use — no hidden charges." },
     { icon: Users, title: "Admin, handled", desc: "We manage staff, billing, and patient scheduling." },
-    { icon: Sparkles, title: "Modern infrastructure", desc: "Fully-equipped chambers with clinical tools ready." }
+    { icon: Sparkles, title: "Modern infrastructure", desc: "Fully-equipped cabins with clinical tools ready." }
   ];
 
   const features = [
     { icon: Stethoscope, title: "Medical equipment", desc: "Examination essentials and clinical tools on site." },
     { icon: UserCheck, title: "Admin support", desc: "Reception, billing, and patient scheduling handled for you." },
     { icon: Clock, title: "Flexible hours", desc: "Book by the hour, day, or a standing weekly slot." },
-    { icon: Award, title: "Premium locations", desc: "High-visibility chambers in established medical areas." }
+    { icon: Award, title: "Premium locations", desc: "High-visibility cabins in established medical areas." }
   ];
 
   const aboutTiles = [
@@ -638,7 +638,7 @@ const DoctorChamberPage = () => {
   ];
 
   const stats = [
-    { label: "Chambers", value: chambers.length || 50, suffix: "+" },
+    { label: "Cabins", value: cabins.length || 50, suffix: "+" },
     { label: "Doctors", value: 100, suffix: "+" },
     { label: "Support", value: 24, suffix: "/7" },
     { label: "Satisfaction", value: 100, suffix: "%" }
@@ -650,7 +650,7 @@ const DoctorChamberPage = () => {
     if (item.type === "video") {
       return <video src={item.url} className="slider-video" controls playsInline controlsList="nodownload" />;
     }
-    return <img src={item.url} alt={selectedChamber?.name || "Chamber"} className="slider-image" onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }} />;
+    return <img src={item.url} alt={selectedCabin?.name || "Cabin"} className="slider-image" onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }} />;
   };
 
   if (loading) {
@@ -658,7 +658,7 @@ const DoctorChamberPage = () => {
       <div className="min-h-screen flex items-center justify-center" style={{ background: "#FBF9F5" }}>
         <div className="text-center">
           <div className="w-12 h-12 border-2 rounded-full mx-auto" style={{ borderColor: "#E3DDCE", borderTopColor: "#8B4433", animation: "ix-spin 0.8s linear infinite" }} />
-          <p className="mt-4" style={{ color: "#4A5160" }}>Loading chambers…</p>
+          <p className="mt-4" style={{ color: "#4A5160" }}>Loading medical cabins…</p>
         </div>
       </div>
     );
@@ -690,13 +690,13 @@ const DoctorChamberPage = () => {
           </div>
         )}
 
-        {/* Chamber detail modal */}
-        {showChamberModal && selectedChamber && (
-          <div className="modal-overlay" onClick={closeChamberModal}>
+        {/* Cabin detail modal */}
+        {showCabinModal && selectedCabin && (
+          <div className="modal-overlay" onClick={closeCabinModal}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <button className="modal-close" onClick={closeChamberModal}><X size={17} /></button>
+              <button className="modal-close" onClick={closeCabinModal}><X size={17} /></button>
 
-              <div className="chamber-detail-modal">
+              <div className="cabin-detail-modal">
                 <div className="modal-body">
                   <div className="modal-image-section">
                     <div className="media-slider">
@@ -716,31 +716,31 @@ const DoctorChamberPage = () => {
                         {mediaItems[currentMediaIndex]?.type === "video" ? <><VideoIcon size={11} /> Video</> : <><Layout size={11} /> Photo</>}
                       </span>
                     </div>
-                    <span className="chamber-type-badge">Medical Chamber</span>
+                    <span className="cabin-type-badge">Medical Cabin</span>
                   </div>
 
                   <div className="modal-content-section">
-                    <h3 className="chamber-title">{selectedChamber.name}</h3>
-                    <p className="chamber-sub">{selectedChamber.floor} · {selectedChamber.size}</p>
-                    <p className="chamber-desc">
-                      {selectedChamber.description || "A fully-equipped medical consultation chamber designed for healthcare professionals to practice with confidence."}
+                    <h3 className="cabin-title">{selectedCabin.name}</h3>
+                    <p className="cabin-sub">{selectedCabin.floor} · {selectedCabin.size}</p>
+                    <p className="cabin-desc">
+                      {selectedCabin.description || "A fully-equipped medical consultation cabin designed for healthcare professionals to practice with confidence."}
                     </p>
 
-                    <div className="chamber-detail-grid">
-                      <div className="detail-item"><Building2 size={15} /><span>{selectedChamber.floor}</span></div>
-                      <div className="detail-item"><Layout size={15} /><span>{selectedChamber.size}</span></div>
-                      <div className="detail-item"><Stethoscope size={15} /><span>{selectedChamber.equipment}</span></div>
+                    <div className="cabin-detail-grid">
+                      <div className="detail-item"><Building2 size={15} /><span>{selectedCabin.floor}</span></div>
+                      <div className="detail-item"><Layout size={15} /><span>{selectedCabin.size}</span></div>
+                      <div className="detail-item"><Stethoscope size={15} /><span>{selectedCabin.equipment}</span></div>
                       <div className="detail-item">
-                        {selectedChamber.available ? <><CheckCircle size={15} color="#23474B" /><span>Available now</span></> : <><X size={15} color="#8B4433" /><span>Currently booked</span></>}
+                        {selectedCabin.available ? <><CheckCircle size={15} color="#23474B" /><span>Available now</span></> : <><X size={15} color="#8B4433" /><span>Currently booked</span></>}
                       </div>
                     </div>
 
-                    <div className="chamber-price">
-                      <span className="amount">{selectedChamber.price}</span>
+                    <div className="cabin-price">
+                      <span className="amount">{selectedCabin.price}</span>
                       <span className="period">/ hour</span>
                     </div>
 
-                    <button className="btn-book-now-modal" onClick={handleBookChamber} disabled={!selectedChamber.available || isBooking}>
+                    <button className="btn-book-now-modal" onClick={handleBookCabin} disabled={!selectedCabin.available || isBooking}>
                       {isBooking ? (
                         <>
                           <svg className="h-4 w-4" style={{ animation: "ix-spin 0.8s linear infinite" }} viewBox="0 0 24 24" fill="none">
@@ -749,8 +749,8 @@ const DoctorChamberPage = () => {
                           </svg>
                           Booking…
                         </>
-                      ) : selectedChamber.available ? (
-                        <>Book this chamber <ArrowRight size={18} /></>
+                      ) : selectedCabin.available ? (
+                        <>Book this cabin <ArrowRight size={18} /></>
                       ) : (
                         "Not available"
                       )}
@@ -771,7 +771,7 @@ const DoctorChamberPage = () => {
             </button>
 
             <div className="nav-links">
-              <button onClick={() => scrollToSection("chambers")} className="navbar-link">Chambers</button>
+              <button onClick={() => scrollToSection("cabins")} className="navbar-link">Cabins</button>
               <button onClick={() => scrollToSection("benefits")} className="navbar-link">Benefits</button>
               <button onClick={() => scrollToSection("specialties")} className="navbar-link">Specialties</button>
               <button onClick={() => scrollToSection("about")} className="navbar-link">About</button>
@@ -781,7 +781,7 @@ const DoctorChamberPage = () => {
 
             <div className="flex items-center gap-2">
               <button onClick={() => navigate("/login")} className="navbar-signin hidden sm:block">Sign in</button>
-              <button onClick={() => navigate("/login")} className="navbar-btn"><Stethoscope size={14} /> Book chamber</button>
+              <button onClick={() => navigate("/login")} className="navbar-btn"><Stethoscope size={14} /> Book cabin</button>
               <button onClick={() => setMobileOpen(!mobileOpen)} className="navbar-menu-btn" aria-label="Toggle menu">
                 {mobileOpen ? <X size={20} /> : <Menu size={20} />}
               </button>
@@ -796,14 +796,14 @@ const DoctorChamberPage = () => {
         >
           <button onClick={() => setMobileOpen(false)} className="mobile-menu-close" aria-label="Close menu"><X size={20} /></button>
           <div className="flex flex-col gap-2 max-w-sm mx-auto mt-6">
-            {[["Chambers", "chambers"], ["Benefits", "benefits"], ["Specialties", "specialties"], ["About", "about"], ["FAQ", "faq"], ["Contact", "contact"]].map(([label, id]) => (
+            {[["Cabins", "cabins"], ["Benefits", "benefits"], ["Specialties", "specialties"], ["About", "about"], ["FAQ", "faq"], ["Contact", "contact"]].map(([label, id]) => (
               <button key={id} onClick={() => { setMobileOpen(false); scrollToSection(id); }} className="px-4 py-3.5 text-left rounded-xl font-medium" style={{ background: "#F1EDE3" }}>
                 {label}
               </button>
             ))}
             <div className="h-px my-1" style={{ background: "#E3DDCE" }} />
             <button onClick={() => { navigate("/login"); setMobileOpen(false); }} className="px-4 py-3.5 text-center text-white rounded-xl font-semibold" style={{ background: "#8B4433" }}>
-              Book chamber
+              Book cabin
             </button>
           </div>
         </div>
@@ -820,7 +820,7 @@ const DoctorChamberPage = () => {
               </RevealSection>
               <RevealSection delay={0.2}>
                 <p className="hero-desc">
-                  Fully-equipped chambers with reception support, flexible hours, and complete admin handling — so you can walk in and see patients, nothing else to set up.
+                  Fully-equipped cabins with reception support, flexible hours, and complete admin handling — so you can walk in and see patients, nothing else to set up.
                 </p>
               </RevealSection>
               <RevealSection delay={0.25}>
@@ -836,8 +836,8 @@ const DoctorChamberPage = () => {
                   <button onClick={() => navigate("/login")} className="btn-primary">
                     <Stethoscope size={16} /> Get your space now <ArrowRight size={16} />
                   </button>
-                  <button onClick={() => scrollToSection("chambers")} className="btn-secondary">
-                    <Eye size={16} /> View chambers
+                  <button onClick={() => scrollToSection("cabins")} className="btn-secondary">
+                    <Eye size={16} /> View cabins
                   </button>
                 </div>
               </RevealSection>
@@ -845,7 +845,7 @@ const DoctorChamberPage = () => {
 
             <RevealSection delay={0.15}>
               <div className="hero-figure">
-                <img src={doctorChamber} alt="IRYAX SPACE medical chamber" />
+                <img src={doctorChamber} alt="IRYAX SPACE medical cabin" />
                
               </div>
             </RevealSection>
@@ -859,7 +859,7 @@ const DoctorChamberPage = () => {
               <RevealSection key={i} delay={i * 0.06}>
                 <div className="text-center">
                   <div className="stat-num ix-serif">
-                    {stat.label === "Chambers" ? <>{chambers.length || 50}+</> : <Counter target={stat.value} suffix={stat.suffix} />}
+                    {stat.label === "Cabins" ? <>{cabins.length || 50}+</> : <Counter target={stat.value} suffix={stat.suffix} />}
                   </div>
                   <div className="stat-label">{stat.label}</div>
                 </div>
@@ -894,19 +894,19 @@ const DoctorChamberPage = () => {
           </div>
         </section>
 
-        {/* Chambers */}
-        <section id="chambers" className="py-8 px-6" style={{ background: "#FBF6F4" }}>
+        {/* Cabins */}
+        <section id="cabins" className="py-8 px-6" style={{ background: "#FBF6F4" }}>
           <div className="max-w-6xl mx-auto py-8">
             <div className="section-head mx-auto text-center">
-              <RevealSection><span className="ix-eyebrow med"><span className="dot" />Our chambers</span></RevealSection>
+              <RevealSection><span className="ix-eyebrow med"><span className="dot" />Our cabins</span></RevealSection>
               <RevealSection delay={0.1}><h2>Choose your consultation room</h2></RevealSection>
-              <RevealSection delay={0.2}><p className="mx-auto">Click on any chamber to view details, media, and book instantly.</p></RevealSection>
+              <RevealSection delay={0.2}><p className="mx-auto">Click on any cabin to view details, media, and book instantly.</p></RevealSection>
             </div>
 
-            {chambers.length > 0 && (
+            {cabins.length > 0 && (
               <RevealSection delay={0.15}>
                 <div className="section-toolbar justify-center">
-                  <span className="toolbar-pill med"><Stethoscope size={14} /> {chambers.length} chambers</span>
+                  <span className="toolbar-pill med"><Stethoscope size={14} /> {cabins.length} cabins</span>
                   <span className="toolbar-pill med"><ShieldCheck size={14} /> Hygiene certified</span>
                   <span className="toolbar-pill med"><Clock size={14} /> 24/7 access</span>
                 </div>
@@ -918,16 +918,16 @@ const DoctorChamberPage = () => {
                 <Stethoscope size={44} className="mx-auto mb-4" color="#D9C3BA" />
                 <p style={{ color: "#8A8F99" }}>{fetchError}</p>
               </div>
-            ) : chambers.length === 0 ? (
+            ) : cabins.length === 0 ? (
               <div className="text-center py-16">
                 <Building2 size={44} className="mx-auto mb-4" color="#D9C3BA" />
-                <p style={{ color: "#8A8F99" }}>No medical chambers available right now.</p>
+                <p style={{ color: "#8A8F99" }}>No medical cabins available right now.</p>
               </div>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mt-12">
-                {chambers.map((chamber, i) => (
-                  <RevealSection key={chamber.id || i} delay={i * 0.08}>
-                    <ChamberCard chamber={chamber} index={i} onClick={handleChamberClick} />
+                {cabins.map((cabin, i) => (
+                  <RevealSection key={cabin.id || i} delay={i * 0.08}>
+                    <CabinCard cabin={cabin} index={i} onClick={handleCabinClick} />
                   </RevealSection>
                 ))}
               </div>
@@ -1010,7 +1010,7 @@ const DoctorChamberPage = () => {
             <RevealSection>
               <div className="doctor-cta-section">
                 <h2>Start seeing patients this week</h2>
-                <p>Join 100+ healthcare professionals who moved their practice into a chamber that was ready on day one.</p>
+                <p>Join 100+ healthcare professionals who moved their practice into a cabin that was ready on day one.</p>
                 <button onClick={() => navigate("/login")} className="doctor-cta-btn">Get started <ArrowRight size={18} /></button>
               </div>
             </RevealSection>
@@ -1022,7 +1022,7 @@ const DoctorChamberPage = () => {
           <div className="max-w-3xl mx-auto">
             <div className="section-head mx-auto text-center">
               <RevealSection><span className="ix-eyebrow med"><span className="dot" />FAQ</span></RevealSection>
-              <RevealSection delay={0.1}><h2>Answers about the doctor&rsquo;s chamber</h2></RevealSection>
+              <RevealSection delay={0.1}><h2>Answers about the doctor&rsquo;s cabin</h2></RevealSection>
             </div>
 
             <div className="space-y-3 mt-12">
@@ -1039,7 +1039,7 @@ const DoctorChamberPage = () => {
             <div className="section-head mx-auto text-center">
               <RevealSection><span className="ix-eyebrow med"><span className="dot" />Get in touch</span></RevealSection>
               <RevealSection delay={0.1}><h2>Ready to start your practice?</h2></RevealSection>
-              <RevealSection delay={0.2}><p className="mx-auto">Connect with us and book your chamber today.</p></RevealSection>
+              <RevealSection delay={0.2}><p className="mx-auto">Connect with us and book your cabin today.</p></RevealSection>
             </div>
 
             <div className="grid md:grid-cols-5 gap-8 mt-12">
@@ -1115,7 +1115,7 @@ const DoctorChamberPage = () => {
                 <div>
                   <h4>Explore</h4>
                   <div className="space-y-2.5">
-                    <button onClick={() => scrollToSection("chambers")} className="block text-left">Chambers</button>
+                    <button onClick={() => scrollToSection("cabins")} className="block text-left">Cabins</button>
                     <button onClick={() => scrollToSection("benefits")} className="block text-left">Benefits</button>
                     <button onClick={() => scrollToSection("specialties")} className="block text-left">Specialties</button>
                     <button onClick={() => scrollToSection("about")} className="block text-left">About</button>

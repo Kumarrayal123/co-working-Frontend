@@ -87,6 +87,35 @@ const AllQueries = () => {
     fetchQueries();
   }, []);
 
+  // ✅ Format date to dd/mm/yyyy
+  const formatDateDDMMYYYY = (dateStr) => {
+    if (!dateStr) return "N/A";
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "N/A";
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  // ✅ Format datetime to dd/mm/yyyy HH:MM AM/PM
+  const formatDateTimeDDMMYYYY = (dateStr) => {
+    if (!dateStr) return "N/A";
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "N/A";
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    let hours = d.getHours();
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    return `${day}/${month}/${year} ${hours}:${minutes} ${ampm}`;
+  };
+
+  // Alias for backward compatibility
+  const formatDate = formatDateDDMMYYYY;
+
   const handleUpdateStatus = async () => {
     if (!selectedQuery || !newStatus) {
       toast.error("Please select a status");
@@ -164,16 +193,6 @@ const AllQueries = () => {
     return map[status?.toLowerCase()] || { label: status || 'Unknown', color: 'bg-gray-100 text-gray-700', icon: <AlertCircle size={12} className="text-gray-500" /> };
   };
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return "N/A";
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
   const clearFilters = () => {
     setFilterStatus("all");
     setFilterName("");
@@ -212,7 +231,6 @@ const AllQueries = () => {
               All <span>Support Tickets</span>
             </h1>
           </div>
-         
         </div>
 
         {/* Stats Cards */}
@@ -323,7 +341,7 @@ const AllQueries = () => {
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Message</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Date</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Actions</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -365,30 +383,30 @@ const AllQueries = () => {
                           </span>
                         </td>
                         <td className="p-4">
-                          <span className="text-sm text-gray-500">{formatDate(query.createdAt)}</span>
+                          <span className="text-sm text-gray-500">{formatDateDDMMYYYY(query.createdAt)}</span>
                         </td>
-                        <td className="p-4">
-                          <div className="flex items-center gap-1.5 flex-wrap">
+                        <td className="p-4 text-center">
+                          <div className="flex items-center justify-center gap-1.5 flex-wrap">
                             <button
                               onClick={() => openViewModal(query)}
-                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors whitespace-nowrap"
+                              className="p-2 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors"
                               title="View Details"
                             >
-                              <Eye size={13} /> View
+                              <Eye size={15} />
                             </button>
                             <button
                               onClick={() => openStatusModal(query)}
-                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors whitespace-nowrap"
+                              className="p-2 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors"
                               title="Update Status"
                             >
-                              <Edit size={13} /> Status
+                              <Edit size={15} />
                             </button>
                             <button
                               onClick={() => openDeleteModal(query)}
-                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-red-50 text-red-700 hover:bg-red-100 transition-colors whitespace-nowrap"
+                              className="p-2 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-colors"
                               title="Delete Query"
                             >
-                              <Trash2 size={13} /> Delete
+                              <Trash2 size={15} />
                             </button>
                           </div>
                         </td>
@@ -440,7 +458,7 @@ const AllQueries = () => {
                 <h3 className="text-2xl font-bold">Query Details</h3>
                 <p className="text-sm text-indigo-200">#{selectedQuery._id.slice(-6).toUpperCase()}</p>
               </div>
-              <button onClick={() => setShowViewModal(false)} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors">
+              <button onClick={() => setShowViewModal(false)} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors" title="Close">
                 <X size={20} />
               </button>
             </div>
@@ -480,7 +498,7 @@ const AllQueries = () => {
 
               <div className="p-4 bg-gray-50 rounded-xl">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Created At</p>
-                <p className="mt-1 font-semibold text-gray-800">{formatDate(selectedQuery.createdAt)}</p>
+                <p className="mt-1 font-semibold text-gray-800">{formatDateTimeDDMMYYYY(selectedQuery.createdAt)}</p>
               </div>
 
               <div className="flex gap-3 pt-2">
@@ -514,7 +532,9 @@ const AllQueries = () => {
                 <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center"><Edit size={20} className="text-white" /></div>
                 <div><h3 className="text-xl font-bold">Update Status</h3><p className="text-sm text-amber-200">{selectedQuery.name}</p></div>
               </div>
-              <button onClick={() => { setShowStatusModal(false); setSelectedQuery(null); setNewStatus(""); }} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"><X size={20} /></button>
+              <button onClick={() => { setShowStatusModal(false); setSelectedQuery(null); setNewStatus(""); }} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors" title="Close">
+                <X size={20} />
+              </button>
             </div>
             <div className="p-5 space-y-4">
               <div className="bg-gray-50 rounded-xl p-4 flex justify-between items-center">
@@ -579,7 +599,9 @@ const AllQueries = () => {
                 <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center"><Trash2 size={20} className="text-white" /></div>
                 <div><h3 className="text-xl font-bold">Delete Query</h3><p className="text-sm text-red-200">{deleteQuery.name}</p></div>
               </div>
-              <button onClick={() => { setShowDeleteModal(false); setDeleteQuery(null); }} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"><X size={20} /></button>
+              <button onClick={() => { setShowDeleteModal(false); setDeleteQuery(null); }} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors" title="Close">
+                <X size={20} />
+              </button>
             </div>
             <div className="p-5 space-y-4">
               <div className="bg-red-50 rounded-xl p-4 space-y-2 text-sm">

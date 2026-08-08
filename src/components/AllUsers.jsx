@@ -48,12 +48,34 @@ const STATUS_COLORS = {
 const getStatus = (s) => STATUS_COLORS[s] || STATUS_COLORS.pending;
 const getRole = (r) => ROLE_COLORS[r] || ROLE_COLORS.user;
 
-const formatDate = (dateStr) => {
+// ✅ Format date to dd/mm/yyyy
+const formatDateDDMMYYYY = (dateStr) => {
   if (!dateStr) return "N/A";
-  return new Date(dateStr).toLocaleDateString("en-US", {
-    year: "numeric", month: "short", day: "numeric"
-  });
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return "N/A";
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}/${month}/${year}`;
 };
+
+// ✅ Format date to dd/mm/yyyy with time
+const formatDateTimeDDMMYYYY = (dateStr) => {
+  if (!dateStr) return "N/A";
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return "N/A";
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  let hours = d.getHours();
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12 || 12;
+  return `${day}/${month}/${year} ${hours}:${minutes} ${ampm}`;
+};
+
+// Alias for backward compatibility
+const formatDate = formatDateDDMMYYYY;
 
 const formatCurrency = (amount) => {
   return `₹${amount?.toLocaleString('en-IN') || 0}`;
@@ -187,7 +209,7 @@ export default function AllUsers() {
         'Inactive Cabins': user.cabinStats?.inactive || 0,
         'Total Earnings': user.cabinStats?.totalEarnings || 0,
         'Active Orders': user.cabinStats?.activeOrders || 0,
-        'Joined': formatDate(user.createdAt)
+        'Joined': formatDateDDMMYYYY(user.createdAt)
       }));
 
       const ws = XLSX.utils.json_to_sheet(exportData);
@@ -233,14 +255,14 @@ export default function AllUsers() {
             <button
               onClick={fetchUsers}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200"
+              title="Refresh"
             >
               <RefreshCw size={14} />
-              <span className="hidden xs:inline">Refresh</span>
             </button>
           </div>
         </div>
 
-        {/* Stats Cards - Exact AdminDashboard style */}
+        {/* Stats Cards */}
         <div className="admin-dash__stats" style={{ marginBottom: '16px' }}>
           {[
             {
@@ -366,9 +388,9 @@ export default function AllUsers() {
                 <button
                   onClick={exportToExcel}
                   className="flex items-center gap-1 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition"
+                  title="Export to Excel"
                 >
                   <Download size={14} />
-                  <span className="hidden xs:inline">Export</span>
                 </button>
               )}
             </div>
@@ -411,7 +433,7 @@ export default function AllUsers() {
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabins</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Joined</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Actions</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -475,34 +497,34 @@ export default function AllUsers() {
                           </span>
                         </td>
                         <td className="p-4">
-                          <span className="text-sm text-gray-500">{formatDate(user.createdAt)}</span>
+                          <span className="text-sm text-gray-500">{formatDateDDMMYYYY(user.createdAt)}</span>
                         </td>
-                        <td className="p-4">
-                          <div className="flex items-center gap-1.5 flex-wrap">
+                        <td className="p-4 text-center">
+                          <div className="flex items-center justify-center gap-1.5 flex-wrap">
                             {user.status === "pending" && (
                               <>
                                 <button
                                   onClick={() => handleApprove(user._id)}
-                                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors whitespace-nowrap"
-                                  title="Approve"
+                                  className="p-2 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
+                                  title="Approve User"
                                 >
-                                  <UserCheck size={13} /> Approve
+                                  <UserCheck size={16} />
                                 </button>
                                 <button
                                   onClick={() => handleReject(user._id)}
-                                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-red-50 text-red-700 hover:bg-red-100 transition-colors whitespace-nowrap"
-                                  title="Reject"
+                                  className="p-2 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-colors"
+                                  title="Reject User"
                                 >
-                                  <UserX size={13} /> Reject
+                                  <UserX size={16} />
                                 </button>
                               </>
                             )}
                             <button
                               onClick={() => setViewUser(user)}
-                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors whitespace-nowrap"
+                              className="p-2 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors"
                               title="View Details"
                             >
-                              <Eye size={13} /> View
+                              <Eye size={16} />
                             </button>
                           </div>
                         </td>
@@ -573,6 +595,7 @@ export default function AllUsers() {
               <button
                 onClick={() => setViewUser(null)}
                 className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                title="Close"
               >
                 <X size={20} />
               </button>
@@ -674,7 +697,7 @@ export default function AllUsers() {
                       <div key={order._id} className="flex items-center justify-between bg-white rounded-lg p-3 border border-gray-200">
                         <div>
                           <p className="font-medium text-gray-800 text-sm">{formatCurrency(order.amount)}</p>
-                          <p className="text-xs text-gray-400">{formatDate(order.startDate)} — {formatDate(order.expiryDate)}</p>
+                          <p className="text-xs text-gray-400">{formatDateDDMMYYYY(order.startDate)} — {formatDateDDMMYYYY(order.expiryDate)}</p>
                         </div>
                         <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full ${
                           order.status === 'active' ? 'bg-emerald-100 text-emerald-700' :

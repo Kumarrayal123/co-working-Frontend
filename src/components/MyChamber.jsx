@@ -1,4 +1,4 @@
-// MyChamber.jsx - Complete My Chambers Component with Compact Stats & Icon Actions
+// MyChamber.jsx - Complete My Chambers Component with Same Stats Card Design as MyCabins
 import axios from "axios";
 import {
   Building2,
@@ -864,7 +864,7 @@ const MyChamber = () => {
     return `${h12}:${minutes} ${ampm}`;
   };
 
-  // Compact Stats Cards
+  // Compact Stats Cards - SAME DESIGN AS MYCABINS (Increased Height)
   const compactStats = [
     { label: 'Total', value: chambers.length, icon: Building2, color: 'indigo' },
     { label: 'Active', value: activeCount, icon: CheckCircle, color: 'emerald' },
@@ -909,21 +909,22 @@ const MyChamber = () => {
           </button>
         </div>
 
-        {/* Compact Stats Cards */}
+        {/* Compact Stats Cards - SAME DESIGN AS MYCABINS (Increased Height) */}
         <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-4">
           {compactStats.map((stat, index) => (
             <div
               key={index}
-              className="bg-white rounded-xl border border-gray-200 p-2.5 shadow-sm hover:shadow-md transition-all"
+              className="bg-white rounded-xl border border-gray-200 p-3.5 shadow-sm hover:shadow-md transition-all"
+              style={{ minHeight: '85px' }}
             >
               <div className="flex items-center justify-between">
                 <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">{stat.label}</span>
-                <div className={`w-6 h-6 rounded-lg flex items-center justify-center bg-${stat.color}-50`}>
-                  <stat.icon size={12} className={`text-${stat.color}-600`} />
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center bg-${stat.color}-50`}>
+                  <stat.icon size={16} className={`text-${stat.color}-600`} />
                 </div>
               </div>
-              <div className="mt-0.5">
-                <span className="text-base font-bold text-gray-800">{stat.value}</span>
+              <div className="mt-1.5">
+                <span className="text-2xl font-bold text-gray-800">{stat.value}</span>
               </div>
             </div>
           ))}
@@ -1530,7 +1531,7 @@ const MyChamber = () => {
       )}
 
       {/* ============================================================ */}
-      {/* ADD CABIN MODAL - Keep as is (too large to include here) */}
+      {/* ADD CABIN MODAL */}
       {/* ============================================================ */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[1100] flex items-end sm:items-center justify-center p-2 sm:p-4 bg-slate-900/50 backdrop-blur-sm">

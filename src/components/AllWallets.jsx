@@ -95,30 +95,38 @@ const AllWallets = () => {
     fetchWallets();
   }, []);
 
+  // ✅ Format date to dd/mm/yyyy
+  const formatDateDDMMYYYY = (dateStr) => {
+    if (!dateStr) return "N/A";
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "N/A";
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  // ✅ Format datetime to dd/mm/yyyy HH:MM AM/PM
+  const formatDateTimeDDMMYYYY = (dateStr) => {
+    if (!dateStr) return "N/A";
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "N/A";
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    let hours = d.getHours();
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    return `${day}/${month}/${year} ${hours}:${minutes} ${ampm}`;
+  };
+
+  // Alias for backward compatibility
+  const formatDate = formatDateDDMMYYYY;
+  const formatDateTime = formatDateTimeDDMMYYYY;
+
   const formatCurrency = (amount) => {
     return `₹${amount.toLocaleString('en-IN')}`;
-  };
-
-  const formatDate = (dateStr) => {
-    if (!dateStr) return "N/A";
-    const d = new Date(dateStr);
-    return d.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  const formatDateTime = (dateStr) => {
-    if (!dateStr) return "N/A";
-    const d = new Date(dateStr);
-    return d.toLocaleString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
   };
 
   const getTransactionTypeBadge = (type) => {
@@ -240,19 +248,11 @@ const AllWallets = () => {
       const ownerOrganization = wallet.ownerId?.organizationName || 'IRYAX Workspace';
       const ownerGst = wallet.ownerId?.gstNumber || 'N/A';
       const walletId = wallet._id.slice(-8).toUpperCase();
-      const today = new Date().toLocaleDateString('en-IN', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric'
-      });
+      const today = formatDateDDMMYYYY(new Date());
 
       const fmtDate = (d) => {
         if (!d) return 'N/A';
-        return new Date(d).toLocaleDateString('en-IN', {
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric'
-        });
+        return formatDateDDMMYYYY(d);
       };
 
       const fmtCurrency = (amount) => {
@@ -323,7 +323,7 @@ const AllWallets = () => {
               </div>
               <div class="info-grid">
                 <div><div class="title">Account Holder</div><div class="value">${ownerName}</div><div class="value-small">${ownerEmail}</div><div class="value-small">${ownerMobile}</div></div>
-                <div><div class="title">Wallet Details</div><div class="value">Wallet ID</div><div class="value-small" style="font-family:monospace;">${wallet._id}</div><div class="value-small" style="margin-top:4px;">Created: ${formatDateTime(wallet.createdAt)}</div></div>
+                <div><div class="title">Wallet Details</div><div class="value">Wallet ID</div><div class="value-small" style="font-family:monospace;">${wallet._id}</div><div class="value-small" style="margin-top:4px;">Created: ${formatDateTimeDDMMYYYY(wallet.createdAt)}</div></div>
               </div>
               <div class="summary-grid">
                 <div class="summary-card"><div class="label">Current Balance</div><div class="value green">${fmtCurrency(wallet.balance)}</div></div>
@@ -399,8 +399,7 @@ const AllWallets = () => {
         'Transactions': (wallet.transactions || []).length,
         'Withdrawals': (wallet.withdrawals || []).length,
         'Total Transactions': (wallet.transactions || []).length + (wallet.withdrawals || []).length,
-        'Wallet ID': wallet._id,
-        'Created': wallet.createdAt ? formatDate(wallet.createdAt) : 'N/A'
+        'Created': wallet.createdAt ? formatDateDDMMYYYY(wallet.createdAt) : 'N/A'
       }));
 
       const ws = XLSX.utils.json_to_sheet(exportData);
@@ -442,19 +441,14 @@ const AllWallets = () => {
           </div>
           <div className="flex items-center gap-2">
             {filteredWallets.length > 0 && (
-              <button onClick={exportToExcel} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200">
+              <button onClick={exportToExcel} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200" title="Export to Excel">
                 <Download size={14} />
-                <span className="hidden xs:inline">Export</span>
               </button>
             )}
-            <button onClick={fetchWallets} className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors">
-              <RefreshCw size={14} />
-              <span className="hidden xs:inline">Refresh</span>
-            </button>
           </div>
         </div>
 
-        {/* Stats Cards - Exact MyBookings / AdminDashboard style */}
+        {/* Stats Cards */}
         <div className="admin-dash__stats" style={{ marginBottom: '16px' }}>
           {[
             {
@@ -581,7 +575,7 @@ const AllWallets = () => {
                 <p className="text-sm">Try adjusting your filters.</p>
               </div>
             ) : (
-              <table className="w-full min-w-[1100px] text-left">
+              <table className="w-full min-w-[1000px] text-left">
                 <thead>
                   <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
@@ -590,8 +584,7 @@ const AllWallets = () => {
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Balance</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Earned</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Txns</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Wallet ID</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Actions</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -654,30 +647,28 @@ const AllWallets = () => {
                             {totalTransactions}
                           </span>
                         </td>
-                        <td className="p-4">
-                          <span className="text-xs font-mono text-gray-500 bg-gray-50 px-2 py-1 rounded border border-gray-100">
-                            {wallet._id.slice(-8)}
-                          </span>
-                        </td>
-                        <td className="p-4">
-                          <div className="flex items-center gap-1.5 flex-wrap">
+                        <td className="p-4 text-center">
+                          <div className="flex items-center justify-center gap-1.5 flex-wrap">
                             <button
                               onClick={() => handleViewDetails(wallet)}
-                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors whitespace-nowrap"
+                              className="p-2 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors"
+                              title="View Details"
                             >
-                              <Eye size={13} /> View
+                              <Eye size={15} />
                             </button>
                             <button
                               onClick={() => downloadWalletStatement(wallet)}
-                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors whitespace-nowrap"
+                              className="p-2 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
+                              title="Download Statement"
                             >
-                              <FileDown size={13} /> Invoice
+                              <FileDown size={15} />
                             </button>
                             <button
                               onClick={() => { setDeleteWallet(wallet); setShowDeleteModal(true); }}
-                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-red-50 text-red-700 hover:bg-red-100 transition-colors whitespace-nowrap"
+                              className="p-2 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-colors"
+                              title="Delete Wallet"
                             >
-                              <Trash2 size={13} /> Delete
+                              <Trash2 size={15} />
                             </button>
                           </div>
                         </td>
@@ -800,7 +791,7 @@ const AllWallets = () => {
                         </div>
                         <div className="text-right">
                           <span className="text-sm font-bold text-emerald-600">+{formatCurrency(t.amount)}</span>
-                          <p className="text-[10px] text-gray-400">{formatDate(t.createdAt)}</p>
+                          <p className="text-[10px] text-gray-400">{formatDateDDMMYYYY(t.createdAt)}</p>
                         </div>
                       </div>
                     ))}

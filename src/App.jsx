@@ -61,6 +61,7 @@ import MyWishlist from "./components/MyWishlist";
 import UserSiteVisits from "./components/UserSiteVisits";
 import DoctorCabinRevenue from "./components/DoctorCabinRevenue";
 import MyRevenue from "./components/MyRevenue";
+import AdminProfile from "./components/AdminProfile";
 
 function App() {
   return (
@@ -124,6 +125,7 @@ function App() {
         <Route path ="/booking-revenue" element={<AdminRoute><RevenueAnalytics /></AdminRoute>}></Route>
         <Route path ="/space-revenue" element={<AdminRoute><CabinRevenue /></AdminRoute>}></Route>
         <Route path ="/adminwallet" element={<AdminRoute><AdminWallet /></AdminRoute>}></Route>
+        <Route path ="/adminprofile" element={<AdminRoute><AdminProfile /></AdminRoute>}></Route>
       
 
       </Routes>

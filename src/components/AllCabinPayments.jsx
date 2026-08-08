@@ -101,30 +101,38 @@ const AllCabinPayments = () => {
     fetchPayments();
   }, []);
 
+  // ✅ Format date to dd/mm/yyyy
+  const formatDateDDMMYYYY = (dateStr) => {
+    if (!dateStr) return "N/A";
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "N/A";
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  // ✅ Format datetime to dd/mm/yyyy HH:MM AM/PM
+  const formatDateTimeDDMMYYYY = (dateStr) => {
+    if (!dateStr) return "N/A";
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "N/A";
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    let hours = d.getHours();
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    return `${day}/${month}/${year} ${hours}:${minutes} ${ampm}`;
+  };
+
+  // Alias for backward compatibility
+  const formatDate = formatDateDDMMYYYY;
+  const formatDateTime = formatDateTimeDDMMYYYY;
+
   const formatCurrency = (amount) => {
     return `₹${amount.toLocaleString('en-IN')}`;
-  };
-
-  const formatDate = (dateStr) => {
-    if (!dateStr) return "N/A";
-    const d = new Date(dateStr);
-    return d.toLocaleDateString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    });
-  };
-
-  const formatDateTime = (dateStr) => {
-    if (!dateStr) return "N/A";
-    const d = new Date(dateStr);
-    return d.toLocaleString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
   };
 
   const getStatusBadge = (status) => {
@@ -304,9 +312,9 @@ const AllCabinPayments = () => {
         'Order Status': order.status || 'unknown',
         'Transaction ID': order.transactionId || 'N/A',
         'Payment Count': order.paymentCount || 1,
-        'Start Date': order.startDate ? formatDate(order.startDate) : 'N/A',
-        'Expiry Date': order.expiryDate ? formatDate(order.expiryDate) : 'N/A',
-        'Order Date': order.createdAt ? formatDate(order.createdAt) : 'N/A',
+        'Start Date': order.startDate ? formatDateDDMMYYYY(order.startDate) : 'N/A',
+        'Expiry Date': order.expiryDate ? formatDateDDMMYYYY(order.expiryDate) : 'N/A',
+        'Order Date': order.createdAt ? formatDateDDMMYYYY(order.createdAt) : 'N/A',
         'First Cabin': order.isFirstCabin ? 'Yes' : 'No'
       }));
 
@@ -346,17 +354,13 @@ const AllCabinPayments = () => {
       const gstAmount = order.gstAmount || 0;
       const gstRate = order.gstRate || 0.18;
       const orderId = order._id.slice(-8).toUpperCase();
-      const startDate = order.startDate ? formatDate(order.startDate) : 'N/A';
-      const expiryDate = order.expiryDate ? formatDate(order.expiryDate) : 'N/A';
+      const startDate = order.startDate ? formatDateDDMMYYYY(order.startDate) : 'N/A';
+      const expiryDate = order.expiryDate ? formatDateDDMMYYYY(order.expiryDate) : 'N/A';
       const status = order.status?.charAt(0).toUpperCase() + order.status?.slice(1) || 'N/A';
       const paymentStatus = order.paymentStatus === 'completed' ? 'Paid' : 'Pending';
       const transactionId = order.transactionId || 'N/A';
       const paymentCount = order.paymentCount || 1;
-      const today = new Date().toLocaleDateString('en-IN', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric'
-      });
+      const today = formatDateDDMMYYYY(new Date());
       const isFirstCabin = order.isFirstCabin || false;
 
       const win = window.open('', '_blank', 'width=900,height=700');
@@ -458,12 +462,12 @@ const AllCabinPayments = () => {
         <div className="admin-dash__header">
           <div>
             <h1 className="admin-dash__greeting">
-              Cabin <span>Payments</span>
+              Cabin <span>Billings</span>
             </h1>
           </div>
         </div>
 
-        {/* Stats Cards - Exact AdminDashboard style */}
+        {/* Stats Cards */}
         <div className="admin-dash__stats" style={{ marginBottom: '16px' }}>
           {[
             {
@@ -579,9 +583,9 @@ const AllCabinPayments = () => {
                 <button
                   onClick={exportToExcel}
                   className="flex items-center gap-1 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition"
+                  title="Export to Excel"
                 >
                   <Download size={14} />
-                  <span className="hidden xs:inline">Export</span>
                 </button>
               )}
             </div>
@@ -590,11 +594,10 @@ const AllCabinPayments = () => {
             Showing {filteredOrders.length} of {orders.length} payments
           </div>
         </div>
+
         {/* Table Section */}
         <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
-          {/* Table Container */}
           <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
-
             {filteredOrders.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-3 py-20 text-gray-400">
                 <CreditCard size={48} className="opacity-20" />
@@ -614,7 +617,7 @@ const AllCabinPayments = () => {
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Order Date</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Expiry</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Actions</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -696,39 +699,43 @@ const AllCabinPayments = () => {
                         </td>
                         <td className="p-4">
                           <div className="text-sm text-gray-600">
-                            {formatDate(order.createdAt)}
+                            {formatDateDDMMYYYY(order.createdAt)}
                           </div>
                         </td>
                         <td className="p-4">
                           <div className="text-sm text-gray-600">
-                            {formatDate(order.expiryDate)}
+                            {formatDateDDMMYYYY(order.expiryDate)}
                           </div>
                         </td>
-                        <td className="p-4">
-                          <div className="flex items-center gap-1.5 flex-wrap">
+                        <td className="p-4 text-center">
+                          <div className="flex items-center justify-center gap-1.5 flex-wrap">
                             <button
                               onClick={() => handleViewDetails(order)}
-                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors whitespace-nowrap"
+                              className="p-2 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors"
+                              title="View Details"
                             >
-                              <Eye size={13} /> View
+                              <Eye size={15} />
                             </button>
                             <button
                               onClick={() => downloadInvoice(order)}
-                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors whitespace-nowrap"
+                              className="p-2 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
+                              title="Download Invoice"
                             >
-                              <FileDown size={13} /> Invoice
+                              <FileDown size={15} />
                             </button>
                             <button
                               onClick={() => { setEditOrder(order); setEditStatus(order.status || 'active'); setShowEditModal(true); }}
-                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-orange-50 text-orange-700 hover:bg-orange-100 transition-colors whitespace-nowrap"
+                              className="p-2 rounded-lg bg-orange-50 text-orange-700 hover:bg-orange-100 transition-colors"
+                              title="Update Status"
                             >
-                              <Edit size={13} /> Status
+                              <Edit size={15} />
                             </button>
                             <button
                               onClick={() => { setDeleteOrder(order); setShowDeleteModal(true); }}
-                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-red-50 text-red-700 hover:bg-red-100 transition-colors whitespace-nowrap"
+                              className="p-2 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-colors"
+                              title="Delete Order"
                             >
-                              <Trash2 size={13} /> Delete
+                              <Trash2 size={15} />
                             </button>
                           </div>
                         </td>
@@ -780,7 +787,7 @@ const AllCabinPayments = () => {
               {/* Order Date */}
               <div className="bg-gray-50 rounded-xl p-3">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Order Date</p>
-                <p className="mt-1 font-semibold text-gray-800">{formatDateTime(selectedOrder.createdAt)}</p>
+                <p className="mt-1 font-semibold text-gray-800">{formatDateTimeDDMMYYYY(selectedOrder.createdAt)}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -854,11 +861,11 @@ const AllCabinPayments = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-3 bg-gray-50 rounded-xl">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Start Date</p>
-                  <p className="mt-1 font-medium text-gray-800 text-sm">{formatDate(selectedOrder.startDate)}</p>
+                  <p className="mt-1 font-medium text-gray-800 text-sm">{formatDateDDMMYYYY(selectedOrder.startDate)}</p>
                 </div>
                 <div className="p-3 bg-gray-50 rounded-xl">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Expiry Date</p>
-                  <p className="mt-1 font-medium text-gray-800 text-sm">{formatDate(selectedOrder.expiryDate)}</p>
+                  <p className="mt-1 font-medium text-gray-800 text-sm">{formatDateDDMMYYYY(selectedOrder.expiryDate)}</p>
                 </div>
               </div>
 

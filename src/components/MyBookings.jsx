@@ -3520,6 +3520,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import UsersNavbar from "./UsersNavbar";
 import SimpleUserNavbar from "./SimpleUserNavbar";
+import AdminNavbar from "./AdminNavbar";
 import * as XLSX from 'xlsx';
 import "./Dashboard.css";
 
@@ -3589,8 +3590,13 @@ const MyBookings = () => {
   const [cancelBooking, setCancelBooking] = useState(null);
   const [cancelLoading, setCancelLoading] = useState(false);
 
+  // ✅ Determine user role for navbar
   const user = JSON.parse(localStorage.getItem("user") || "null");
-  const isRegularUser = user?.role === "user";
+  const admin = JSON.parse(localStorage.getItem("admin") || "null");
+  
+  // ✅ Check if user is admin or regular user
+  const isAdmin = admin !== null || user?.role === "admin";
+  const isRegularUser = user?.role === "user" && !isAdmin;
 
   const getAuthHeader = () => {
     const token = localStorage.getItem("token");
@@ -3696,7 +3702,7 @@ const MyBookings = () => {
       setBookings(coWorkingBookings);
 
       if (coWorkingBookings.length === 0) {
-        toast.info("You have no co-working bookings yet");
+        toast.info("You have no bookings yet");
       }
 
     } catch (error) {
@@ -3705,6 +3711,7 @@ const MyBookings = () => {
         toast.error("Session expired. Please login again.");
         localStorage.removeItem("token");
         localStorage.removeItem("user");
+        localStorage.removeItem("admin");
         navigate("/login");
       } else {
         toast.error("Failed to fetch bookings: " + (error.response?.data?.error || error.message));
@@ -4410,7 +4417,8 @@ const MyBookings = () => {
   if (loading) {
     return (
       <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
-        {isRegularUser ? <SimpleUserNavbar /> : <UsersNavbar />}
+        {/* ✅ Show navbar based on role */}
+        {isAdmin ? <AdminNavbar /> : isRegularUser ? <SimpleUserNavbar /> : <UsersNavbar />}
         <div className="flex justify-center items-center h-64">
           <div className="w-12 h-12 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin" />
         </div>
@@ -4420,17 +4428,18 @@ const MyBookings = () => {
 
   return (
     <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
-      {isRegularUser ? <SimpleUserNavbar /> : <UsersNavbar />}
+      {/* ✅ Show navbar based on role */}
+      {isAdmin ? <AdminNavbar /> : isRegularUser ? <SimpleUserNavbar /> : <UsersNavbar />}
 
       <div className="pt-20 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
         {/* Header */}
         <div className="admin-dash__header" style={{ marginBottom: '8px' }}>
           <div>
             <h1 className="admin-dash__greeting" style={{ fontSize: '1.25rem' }}>
-              My <span>Co-Working Bookings</span>
+              My <span>Bookings</span>
             </h1>
             <p className="admin-dash__subtitle" style={{ fontSize: '11px' }}>
-              Manage all your co-working space bookings
+              Manage all your space bookings
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -4467,8 +4476,6 @@ const MyBookings = () => {
             </div>
           ))}
         </div>
-
-      
 
         {/* Tabs - All Bookings | Site Visits | Space Bookings */}
         <div className="flex items-center gap-2 mb-4 border-b border-gray-200">
@@ -4513,7 +4520,7 @@ const MyBookings = () => {
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search co-working bookings..."
+                placeholder="Search bookings..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
@@ -4570,7 +4577,7 @@ const MyBookings = () => {
             </div>
           </div>
           <div className="mt-1.5 text-[10px] text-gray-400">
-            Showing {displayBookings.length} of {filteredBookings.length} co-working bookings
+            Showing {displayBookings.length} of {filteredBookings.length} bookings
           </div>
         </div>
 
@@ -4582,9 +4589,9 @@ const MyBookings = () => {
             {filteredBookings.length === 0 && (
               <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-12 text-center">
                 <Briefcase size={48} className="mx-auto text-gray-300 mb-4" />
-                <p className="text-gray-500 font-medium">No co-working bookings found</p>
+                <p className="text-gray-500 font-medium">No bookings found</p>
                 <p className="text-sm text-gray-400 mt-1">
-                  {bookings.length === 0 ? "You haven't made any co-working bookings yet." : "Try adjusting your filters."}
+                  {bookings.length === 0 ? "You haven't made any bookings yet." : "Try adjusting your filters."}
                 </p>
               </div>
             )}
@@ -5103,9 +5110,6 @@ const MyBookings = () => {
                   <tr key={b._id} className="hover:bg-gray-50/80 transition-colors">
                     <td className="px-3 py-2">
                       <span className="text-[10px] font-semibold text-gray-400">#{idx + 1}</span>
-                    </td>
-                    <td className="px-3 py-2">
-                      <span className="font-mono text-[10px] font-bold text-blue-600">{bookingId}</span>
                     </td>
                     <td className="px-3 py-2">
                       <div>

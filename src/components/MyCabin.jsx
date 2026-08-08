@@ -2012,7 +2012,7 @@
 
 
 
-// MyCabins.jsx - Complete My Cabins Component with Compact Stats & Icon Actions
+// MyCabins.jsx - Complete with Even More Increased Stats Card Height
 import axios from "axios";
 import {
   Building2,
@@ -2874,7 +2874,7 @@ const MyCabins = () => {
     return `${h12}:${minutes} ${ampm}`;
   };
 
-  // Compact Stats Cards
+  // Compact Stats Cards - EVEN MORE INCREASED HEIGHT
   const compactStats = [
     { label: 'Total', value: cabins.length, icon: Building2, color: 'indigo' },
     { label: 'Active', value: activeCount, icon: CheckCircle, color: 'emerald' },
@@ -2918,21 +2918,22 @@ const MyCabins = () => {
           </button>
         </div>
 
-        {/* Compact Stats Cards */}
+        {/* Compact Stats Cards - SIGNIFICANTLY INCREASED HEIGHT */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
           {compactStats.map((stat, index) => (
             <div
               key={index}
-              className="bg-white rounded-xl border border-gray-200 p-2.5 shadow-sm hover:shadow-md transition-all"
+              className="bg-white rounded-xl border border-gray-200 p-3.5 shadow-sm hover:shadow-md transition-all"
+              style={{ minHeight: '85px' }}
             >
               <div className="flex items-center justify-between">
                 <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">{stat.label}</span>
-                <div className={`w-6 h-6 rounded-lg flex items-center justify-center bg-${stat.color}-50`}>
-                  <stat.icon size={12} className={`text-${stat.color}-600`} />
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center bg-${stat.color}-50`}>
+                  <stat.icon size={16} className={`text-${stat.color}-600`} />
                 </div>
               </div>
-              <div className="mt-0.5">
-                <span className="text-base font-bold text-gray-800">{stat.value}</span>
+              <div className="mt-1.5">
+                <span className="text-2xl font-bold text-gray-800">{stat.value}</span>
               </div>
             </div>
           ))}

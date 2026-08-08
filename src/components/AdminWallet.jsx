@@ -60,6 +60,49 @@ const AdminWallet = () => {
   const [pagination, setPagination] = useState({ page: 1, total: 0, pages: 0 });
   const navigate = useNavigate();
 
+  // ✅ Format date to dd/mm/yyyy
+  const formatDateDDMMYYYY = (dateStr) => {
+    if (!dateStr) return "N/A";
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "N/A";
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  // ✅ Format datetime to dd/mm/yyyy HH:MM AM/PM
+  const formatDateTimeDDMMYYYY = (dateStr) => {
+    if (!dateStr) return "N/A";
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "N/A";
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    let hours = d.getHours();
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    return `${day}/${month}/${year} ${hours}:${minutes} ${ampm}`;
+  };
+
+  // Alias for backward compatibility
+  const formatDate = formatDateDDMMYYYY;
+  const formatTime = (dateStr) => {
+    if (!dateStr) return "N/A";
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "N/A";
+    let hours = d.getHours();
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    return `${hours}:${minutes} ${ampm}`;
+  };
+
+  const formatCurrency = (amount) => {
+    return `₹${amount.toLocaleString('en-IN')}`;
+  };
+
   // ─── FETCH WALLET DATA ───
   const fetchWalletData = async (page = 1) => {
     setLoading(true);
@@ -116,8 +159,8 @@ const AdminWallet = () => {
 
       const exportData = transactions.map((tx, index) => ({
         'S.No': index + 1,
-        'Date': new Date(tx.createdAt).toLocaleDateString('en-IN'),
-        'Time': new Date(tx.createdAt).toLocaleTimeString('en-IN'),
+        'Date': formatDateDDMMYYYY(tx.createdAt),
+        'Time': formatTime(tx.createdAt),
         'Type': tx.type === 'credit' ? 'Credit' : 'Debit',
         'Amount (₹)': tx.amount,
         'Description': tx.description || tx.reason || 'N/A',
@@ -127,8 +170,8 @@ const AdminWallet = () => {
         'Customer Name': tx.customerName || 'N/A',
         'Customer Mobile': tx.customerMobile || 'N/A',
         'Cabin Name': tx.cabinName || 'N/A',
-        'Start Date': tx.startDate || 'N/A',
-        'End Date': tx.endDate || 'N/A'
+        'Start Date': tx.startDate ? formatDateDDMMYYYY(tx.startDate) : 'N/A',
+        'End Date': tx.endDate ? formatDateDDMMYYYY(tx.endDate) : 'N/A'
       }));
 
       const ws = XLSX.utils.json_to_sheet(exportData);
@@ -147,22 +190,6 @@ const AdminWallet = () => {
   const viewTransactionDetails = (tx) => {
     setSelectedTransaction(tx);
     setShowTransactionModal(true);
-  };
-
-  const formatDate = (dateStr) => {
-    if (!dateStr) return "N/A";
-    const d = new Date(dateStr);
-    return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-  };
-
-  const formatTime = (dateStr) => {
-    if (!dateStr) return "N/A";
-    const d = new Date(dateStr);
-    return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-  };
-
-  const formatCurrency = (amount) => {
-    return `₹${amount.toLocaleString('en-IN')}`;
   };
 
   const getTransactionTypeBadge = (type) => {
@@ -208,9 +235,16 @@ const AdminWallet = () => {
             <h1 className="admin-dash__greeting">
               Admin <span>Wallet</span>
             </h1>
-            
           </div>
-          
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleRefresh}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200"
+              title="Refresh"
+            >
+              <RefreshCw size={14} />
+            </button>
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -293,7 +327,7 @@ const AdminWallet = () => {
           </div>
         </div>
 
-        {/* Transactions Table - Status Column Removed */}
+        {/* Transactions Table */}
         <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
           <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
             <div className="flex items-center gap-3">
@@ -340,9 +374,9 @@ const AdminWallet = () => {
                 <button
                   onClick={exportToExcel}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200"
+                  title="Export to Excel"
                 >
                   <Download size={14} />
-                  <span className="hidden xs:inline">Export</span>
                 </button>
               )}
             </div>
@@ -366,7 +400,7 @@ const AdminWallet = () => {
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Type</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Amount</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Payment</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Actions</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -381,7 +415,7 @@ const AdminWallet = () => {
                         </td>
                         <td className="p-4">
                           <div>
-                            <p className="text-sm font-medium text-gray-700">{formatDate(tx.createdAt)}</p>
+                            <p className="text-sm font-medium text-gray-700">{formatDateDDMMYYYY(tx.createdAt)}</p>
                             <p className="text-[10px] text-gray-400">{formatTime(tx.createdAt)}</p>
                           </div>
                         </td>
@@ -414,12 +448,13 @@ const AdminWallet = () => {
                           </div>
                           <p className="text-[9px] text-gray-400 truncate max-w-[80px]">{tx.transactionId || 'N/A'}</p>
                         </td>
-                        <td className="p-4">
+                        <td className="p-4 text-center">
                           <button
                             onClick={() => viewTransactionDetails(tx)}
-                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors"
+                            className="p-2 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors"
+                            title="View Details"
                           >
-                            <Eye size={13} /> View
+                            <Eye size={15} />
                           </button>
                         </td>
                       </tr>
@@ -504,7 +539,7 @@ const AdminWallet = () => {
                       {selectedTransaction.type === 'credit' ? 'Credit' : 'Debit'} Transaction
                     </h3>
                     <p className="text-sm opacity-80">
-                      {formatDate(selectedTransaction.createdAt)} at {formatTime(selectedTransaction.createdAt)}
+                      {formatDateTimeDDMMYYYY(selectedTransaction.createdAt)}
                     </p>
                   </div>
                 </div>
@@ -514,6 +549,7 @@ const AdminWallet = () => {
                     setSelectedTransaction(null);
                   }}
                   className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                  title="Close"
                 >
                   <XIcon size={20} className="text-white" />
                 </button>
@@ -563,11 +599,11 @@ const AdminWallet = () => {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-500">Start Date</span>
-                      <span className="text-sm font-medium text-gray-800">{selectedTransaction.startDate || 'N/A'}</span>
+                      <span className="text-sm font-medium text-gray-800">{selectedTransaction.startDate ? formatDateDDMMYYYY(selectedTransaction.startDate) : 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-500">End Date</span>
-                      <span className="text-sm font-medium text-gray-800">{selectedTransaction.endDate || 'N/A'}</span>
+                      <span className="text-sm font-medium text-gray-800">{selectedTransaction.endDate ? formatDateDDMMYYYY(selectedTransaction.endDate) : 'N/A'}</span>
                     </div>
                   </div>
                 </div>
@@ -623,7 +659,7 @@ const AdminWallet = () => {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-500">Date</span>
-                      <span className="text-sm text-gray-800">{formatDate(selectedTransaction.createdAt)}</span>
+                      <span className="text-sm text-gray-800">{formatDateDDMMYYYY(selectedTransaction.createdAt)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-500">Time</span>

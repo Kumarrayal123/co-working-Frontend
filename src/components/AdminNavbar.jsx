@@ -16,7 +16,8 @@ import {
   Plus,
   MessageCircle,
   ChevronRight,
-  TrendingUp
+  TrendingUp,
+  User
 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -98,6 +99,7 @@ function AdminNavbar() {
   const handleLogout = () => {
     localStorage.removeItem("admin");
     localStorage.removeItem("token");
+    localStorage.removeItem("userId");
     navigate("/login");
   };
 
@@ -120,7 +122,7 @@ function AdminNavbar() {
   const walletLinks = [
     { name: "Users Wallet", path: "/userwallets", icon: Wallet },
     { name: "Withdrawals", path: "/withdrawals", icon: Banknote },
-    { name: "My Wallet", path: "/adminwallet", icon: Wallet }, // ✅ Added My Wallet
+    { name: "My Wallet", path: "/adminwallet", icon: Wallet },
   ];
 
   const revenueLinks = [
@@ -366,7 +368,18 @@ function AdminNavbar() {
                   </div>
                   <div className="an-nav__dd-divider" />
                   
-                  {/* ✅ My Wallet in Profile Dropdown */}
+                  {/* ✅ My Profile */}
+                  <button 
+                    className="an-nav__dd-item" 
+                    onClick={() => { 
+                      setProfileOpen(false); 
+                      navigate("/adminprofile"); 
+                    }}
+                  >
+                    <User size={16} /> My Profile
+                  </button>
+                  
+                  {/* ✅ My Wallet */}
                   <button 
                     className="an-nav__dd-item" 
                     onClick={() => { 
@@ -376,6 +389,8 @@ function AdminNavbar() {
                   >
                     <Wallet size={16} /> My Wallet
                   </button>
+                  
+                  <div className="an-nav__dd-divider" />
                   
                   <button className="an-nav__dd-logout" onClick={handleLogout}>
                     <LogOut size={16} /> Sign Out
@@ -537,6 +552,19 @@ function AdminNavbar() {
               <MessageCircle size={18} />
               <span>User Support</span>
               {isActive("/userqueries") && <span className="an-mobile__link-dot" />}
+            </Link>
+          </div>
+
+          <div className="an-mobile__section">
+            <p className="an-mobile__section-label">Profile</p>
+            <Link
+              to="/adminprofile"
+              onClick={() => setOpen(false)}
+              className={`an-mobile__link${isActive("/adminprofile") ? " an-mobile__link--active" : ""}`}
+            >
+              <User size={18} />
+              <span>My Profile</span>
+              {isActive("/adminprofile") && <span className="an-mobile__link-dot" />}
             </Link>
           </div>
 

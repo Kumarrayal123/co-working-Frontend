@@ -1344,67 +1344,77 @@ const AdminCabins = () => {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="admin-dash__stats">
-          <div className="admin-dash__stat">
-            <div className="admin-dash__stat-top">
-              <span className="admin-dash__stat-label">Total Spaces</span>
-              <div className="admin-dash__stat-icon bg-indigo-100 text-indigo-600">
-                <Home size={18} />
+        {/* Stats Cards - ENHANCED WITH INCREASED HEIGHT */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
+          <div className="bg-white rounded-xl border border-gray-200 p-3.5 shadow-sm hover:shadow-md transition-all" style={{ minHeight: '85px' }}>
+            <div className="flex items-center justify-between">
+              <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">Total Spaces</span>
+              <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                <Home size={16} />
               </div>
             </div>
-            <div className="admin-dash__stat-value">{cabins.length}</div>
-            <div className="admin-dash__stat-meta">{activeCount} active</div>
+            <div className="mt-1.5">
+              <span className="text-2xl font-bold text-gray-800">{cabins.length}</span>
+            </div>
+            <div className="text-[8px] text-gray-400 mt-0.5">{activeCount} active</div>
           </div>
 
-          <div className="admin-dash__stat">
-            <div className="admin-dash__stat-top">
-              <span className="admin-dash__stat-label">Active</span>
-              <div className="admin-dash__stat-icon bg-emerald-100 text-emerald-600">
-                <CheckCircle size={18} />
+          <div className="bg-white rounded-xl border border-gray-200 p-3.5 shadow-sm hover:shadow-md transition-all" style={{ minHeight: '85px' }}>
+            <div className="flex items-center justify-between">
+              <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">Active</span>
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
+                <CheckCircle size={16} />
               </div>
             </div>
-            <div className="admin-dash__stat-value">{activeCount}</div>
-            <div className="admin-dash__stat-meta">Available spaces</div>
+            <div className="mt-1.5">
+              <span className="text-2xl font-bold text-gray-800">{activeCount}</span>
+            </div>
+            <div className="text-[8px] text-gray-400 mt-0.5">Available spaces</div>
           </div>
 
-          <div className="admin-dash__stat">
-            <div className="admin-dash__stat-top">
-              <span className="admin-dash__stat-label">Inactive</span>
-              <div className="admin-dash__stat-icon bg-gray-100 text-gray-600">
-                <XCircleIcon size={18} />
+          <div className="bg-white rounded-xl border border-gray-200 p-3.5 shadow-sm hover:shadow-md transition-all" style={{ minHeight: '85px' }}>
+            <div className="flex items-center justify-between">
+              <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">Inactive</span>
+              <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-gray-600">
+                <XCircleIcon size={16} />
               </div>
             </div>
-            <div className="admin-dash__stat-value">{inactiveCount}</div>
-            <div className="admin-dash__stat-meta">Unavailable</div>
+            <div className="mt-1.5">
+              <span className="text-2xl font-bold text-gray-800">{inactiveCount}</span>
+            </div>
+            <div className="text-[8px] text-gray-400 mt-0.5">Unavailable</div>
           </div>
 
-          <div className="admin-dash__stat">
-            <div className="admin-dash__stat-top">
-              <span className="admin-dash__stat-label">Medical</span>
-              <div className="admin-dash__stat-icon bg-rose-100 text-rose-600">
-                <Stethoscope size={18} />
+          <div className="bg-white rounded-xl border border-gray-200 p-3.5 shadow-sm hover:shadow-md transition-all" style={{ minHeight: '85px' }}>
+            <div className="flex items-center justify-between">
+              <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">Medical</span>
+              <div className="w-8 h-8 rounded-lg bg-rose-50 flex items-center justify-center text-rose-600">
+                <Stethoscope size={16} />
               </div>
             </div>
-            <div className="admin-dash__stat-value">{medicalCount}</div>
-            <div className="admin-dash__stat-meta">Chamber spaces</div>
+            <div className="mt-1.5">
+              <span className="text-2xl font-bold text-gray-800">{medicalCount}</span>
+            </div>
+            <div className="text-[8px] text-gray-400 mt-0.5">Chamber spaces</div>
           </div>
 
-          <div className="admin-dash__stat">
-            <div className="admin-dash__stat-top">
-              <span className="admin-dash__stat-label">Co-Working</span>
-              <div className="admin-dash__stat-icon bg-blue-100 text-blue-600">
-                <Briefcase size={18} />
+          <div className="bg-white rounded-xl border border-gray-200 p-3.5 shadow-sm hover:shadow-md transition-all" style={{ minHeight: '85px' }}>
+            <div className="flex items-center justify-between">
+              <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">Co-Working</span>
+              <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+                <Briefcase size={16} />
               </div>
             </div>
-            <div className="admin-dash__stat-value">{coworkingCount}</div>
-            <div className="admin-dash__stat-meta">Shared workspaces</div>
+            <div className="mt-1.5">
+              <span className="text-2xl font-bold text-gray-800">{coworkingCount}</span>
+            </div>
+            <div className="text-[8px] text-gray-400 mt-0.5">Shared workspaces</div>
           </div>
         </div>
 
         {/* ─── MINI STATS ─── */}
         <div className="grid grid-cols-2 gap-3 mb-6">
-          <div className="bg-amber-50/80 rounded-xl border border-amber-200/80 p-3 flex items-center justify-between shadow-sm">
+          <div className="bg-amber-50/80 rounded-xl border border-amber-200/80 p-3 flex items-center justify-between shadow-sm" style={{ minHeight: '60px' }}>
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600">
                 <Crown size={16} />
@@ -1415,7 +1425,7 @@ const AdminCabins = () => {
               </div>
             </div>
           </div>
-          <div className="bg-purple-50/80 rounded-xl border border-purple-200/80 p-3 flex items-center justify-between shadow-sm">
+          <div className="bg-purple-50/80 rounded-xl border border-purple-200/80 p-3 flex items-center justify-between shadow-sm" style={{ minHeight: '60px' }}>
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600">
                 <Clock size={16} />

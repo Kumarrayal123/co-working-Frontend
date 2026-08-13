@@ -62,6 +62,7 @@ import UserSiteVisits from "./components/UserSiteVisits";
 import DoctorCabinRevenue from "./components/DoctorCabinRevenue";
 import MyRevenue from "./components/MyRevenue";
 import AdminProfile from "./components/AdminProfile";
+import CafeDiningPage from "./components/CafeDiningPage";
 
 function App() {
   return (
@@ -69,6 +70,7 @@ function App() {
       <ToastContainer position="top-right" autoClose={3000} />
       <Routes>
         <Route path="/" element={<PromotionalPage />} />
+        <Route path="/cafe" element={<CafeDiningPage />} />
         <Route path="/doctor-chamber" element={<DoctorChamberPage />} />
         <Route path="/doctordashbaord" element={<DoctorDashboard />} />
         <Route path="/doctorwallet" element={<DoctorWallet />} />

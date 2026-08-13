@@ -4302,10 +4302,14 @@ import {
   Gauge,
   Microscope,
   TestTube,
-  HeartPulse
+  HeartPulse,
+  Utensils  // Added for Cafe icon
 } from "lucide-react";
 import logo from "../assets/logo.png";
 import iryaxHero from "../assets/iryaxspace.png";
+
+// ─── IMPORT CAFE PAGE ───
+import CafeDiningPage from "./CafeDiningPage";  // <-- ADD THIS
 
 // ─── IMAGES ───
 const IRYAX_HERO_IMAGE = iryaxHero;
@@ -4335,15 +4339,7 @@ const IRYAX_LOCATION_IMAGES = [
 ];
 
 // ═══════════════════════════════════════════════════════════════
-// DESIGN TOKENS
-// Palette   — ink #12181F · paper #FBF9F5 · paper-dim #F1EDE3
-//             brass #B08947 (signature) · teal #23474B (co-working)
-//             brick #8B4433 (medical) · line #E3DDCE
-// Type      — display: 'Fraunces' (editorial serif, used sparingly)
-//             body/UI: 'Inter'
-// Signature — the category divider is built like a ledger tab/index
-//             card, since Co-working / Medical genuinely are the two
-//             indexed sections of the directory.
+// DESIGN TOKENS (same as before — full styles)
 // ═══════════════════════════════════════════════════════════════
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap');
@@ -4361,6 +4357,8 @@ const styles = `
     --teal-tint: #E9EFEE;
     --brick: #8B4433;
     --brick-tint: #F3E9E3;
+    --cafe: #C67B3D;
+    --cafe-tint: #F5EDE5;
   }
 
   * { box-sizing: border-box; }
@@ -4471,7 +4469,7 @@ const styles = `
   .navbar-custom .navbar-logo:hover { border-color: var(--brass); }
   .navbar-custom .navbar-logo img { width: 100%; height: 100%; object-fit: contain; }
 
-  .navbar-custom .nav-links { display: flex; align-items: center; gap: 2px; }
+  .navbar-custom .nav-links { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; }
   .navbar-custom .navbar-link {
     font-size: 0.86rem;
     font-weight: 500;
@@ -4485,6 +4483,8 @@ const styles = `
     font-family: inherit;
   }
   .navbar-custom .navbar-link:hover { color: var(--ink); background: var(--paper-dim); }
+  .navbar-custom .navbar-link.cafe-link { color: var(--cafe); }
+  .navbar-custom .navbar-link.cafe-link:hover { background: var(--cafe-tint); }
 
   .navbar-custom .navbar-signin {
     font-size: 0.85rem;
@@ -4649,7 +4649,7 @@ const styles = `
   }
   .stats-strip .stat-label { font-size: 0.76rem; color: var(--ink-faint); margin-top: 4px; font-weight: 500; }
 
-  /* ─── LEDGER / CATEGORY DIVIDER (signature element) ─── */
+  /* ─── LEDGER / CATEGORY DIVIDER ─── */
   .ledger {
     max-width: 1000px;
     margin: 0 auto;
@@ -4657,7 +4657,7 @@ const styles = `
     border-radius: 16px;
     background: white;
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     overflow: hidden;
   }
   .ledger-tab {
@@ -4668,7 +4668,7 @@ const styles = `
     position: relative;
     transition: background 0.3s;
   }
-  .ledger-tab:first-child { border-right: 1px solid var(--line); }
+  .ledger-tab:not(:last-child) { border-right: 1px solid var(--line); }
   .ledger-tab .ledger-index {
     font-family: 'Fraunces', serif;
     font-size: 0.78rem;
@@ -4687,6 +4687,7 @@ const styles = `
   }
   .ledger-tab.co .ledger-icon { background: var(--teal-tint); color: var(--teal); }
   .ledger-tab.med .ledger-icon { background: var(--brick-tint); color: var(--brick); }
+  .ledger-tab.cafe .ledger-icon { background: var(--cafe-tint); color: var(--cafe); }
   .ledger-tab h4 {
     font-family: 'Fraunces', serif;
     font-size: 1.08rem;
@@ -4694,9 +4695,9 @@ const styles = `
     color: var(--ink);
   }
   .ledger-tab p { font-size: 0.78rem; color: var(--ink-faint); margin-top: 2px; }
-  @media (max-width: 640px) {
+  @media (max-width: 768px) {
     .ledger { grid-template-columns: 1fr; }
-    .ledger-tab:first-child { border-right: none; border-bottom: 1px solid var(--line); }
+    .ledger-tab:not(:last-child) { border-right: none; border-bottom: 1px solid var(--line); }
   }
 
   /* ─── SECTION HEADERS ─── */
@@ -4721,8 +4722,9 @@ const styles = `
   }
   .toolbar-pill.co svg { color: var(--teal); }
   .toolbar-pill.med svg { color: var(--brick); }
+  .toolbar-pill.cafe svg { color: var(--cafe); }
 
-  /* ─── LISTING CARD (co-working / medical) ─── */
+  /* ─── LISTING CARD ─── */
   .listing-card {
     background: white;
     border: 1px solid var(--line);
@@ -4756,6 +4758,7 @@ const styles = `
   }
   .listing-type-chip.co { background: var(--teal); }
   .listing-type-chip.med { background: var(--brick); }
+  .listing-type-chip.cafe { background: var(--cafe); }
 
   .listing-avail-chip {
     display: inline-flex; align-items: center; gap: 6px;
@@ -4806,6 +4809,7 @@ const styles = `
   }
   .listing-card.co .listing-amenity-chip svg { color: var(--teal); }
   .listing-card.med .listing-amenity-chip svg { color: var(--brick); }
+  .listing-card.cafe .listing-amenity-chip svg { color: var(--cafe); }
 
   .listing-footer {
     margin-top: auto; display: flex; align-items: center; justify-content: space-between;
@@ -4822,6 +4826,7 @@ const styles = `
   }
   .listing-card.co .listing-cta { background: var(--teal); }
   .listing-card.med .listing-cta { background: var(--brick); }
+  .listing-card.cafe .listing-cta { background: var(--cafe); }
   .listing-cta:hover { transform: translateX(2px); filter: brightness(1.1); }
 
   @media (max-width: 640px) {
@@ -4829,7 +4834,7 @@ const styles = `
     .listing-body { padding: 16px 16px 14px; }
   }
 
-  /* ─── CARD IMAGE SLIDER (shared) ─── */
+  /* ─── CARD IMAGE SLIDER ─── */
   .card-image-slider { position: relative; height: 100%; width: 100%; overflow: hidden; }
   .card-image-slider .card-slider-btn {
     position: absolute; top: 50%; transform: translateY(-50%);
@@ -4847,7 +4852,7 @@ const styles = `
   .card-image-slider .card-dots .dot { width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,0.4); cursor: pointer; border: none; padding: 0; transition: all 0.3s; }
   .card-image-slider .card-dots .dot.active { background: white; transform: scale(1.3); }
 
-  /* ─── PLAIN CARDS (benefits / values) ─── */
+  /* ─── PLAIN CARDS ─── */
   .plain-card {
     background: white; border: 1px solid var(--line); border-radius: 16px;
     padding: 28px 24px; height: 100%; display: flex; flex-direction: column;
@@ -5066,7 +5071,6 @@ const styles = `
   .site-footer a, .site-footer button { color: rgba(251,249,245,0.62); font-size: 0.87rem; transition: all 0.25s; }
   .site-footer a:hover, .site-footer button:hover { color: var(--brass); transform: translateX(3px); }
 
-  /* mobile drawer */
   .mobile-menu-close {
     position: absolute; top: 18px; right: 18px; padding: 8px; border-radius: 50%;
     background: var(--paper-dim); border: 1px solid var(--line); cursor: pointer;
@@ -5101,16 +5105,14 @@ const RevealSection = ({ children, delay = 0, className = "" }) => {
   );
 };
 
-// ─── THEME (kept for API compatibility) ───
+// ─── THEME ───
 const ThemeContext = createContext();
-
 const ThemeProvider = ({ children }) => {
   useEffect(() => {
     document.documentElement.className = "light";
   }, []);
   return <ThemeContext.Provider value={{ theme: "light", toggleTheme: () => {} }}>{children}</ThemeContext.Provider>;
 };
-
 const useTheme = () => useContext(ThemeContext);
 
 // ─── COUNTER ───
@@ -5170,8 +5172,8 @@ const ImageSlider = ({ images, alt, className = "" }) => {
   );
 };
 
-// ─── LEDGER (category divider, signature element) ───
-const CategoryLedger = ({ leftLabel, rightLabel, leftCount, rightCount, onLeftClick, onRightClick }) => (
+// ─── LEDGER (category divider) ───
+const CategoryLedger = ({ leftLabel, rightLabel, cafeLabel, leftCount, rightCount, cafeCount, onLeftClick, onRightClick, onCafeClick }) => (
   <div className="ledger">
     <button type="button" onClick={onLeftClick} className="ledger-tab co" style={{ cursor: "pointer", border: "none", background: "none", width: "100%" }}>
       <span className="ledger-index">01</span>
@@ -5187,6 +5189,14 @@ const CategoryLedger = ({ leftLabel, rightLabel, leftCount, rightCount, onLeftCl
       <span style={{ textAlign: "left" }}>
         <h4>{rightLabel}</h4>
         <p>{rightCount} Cabin listed</p>
+      </span>
+    </button>
+    <button type="button" onClick={onCafeClick} className="ledger-tab cafe" style={{ cursor: "pointer", border: "none", background: "none", width: "100%" }}>
+      <span className="ledger-index">03</span>
+      <span className="ledger-icon"><Utensils size={19} /></span>
+      <span style={{ textAlign: "left" }}>
+        <h4>{cafeLabel}</h4>
+        <p>{cafeCount} venues listed</p>
       </span>
     </button>
   </div>
@@ -5220,6 +5230,7 @@ const getDeterministicRating = (seed = "") => {
 // ─── LISTING CARD ───
 const ListingCard = ({ cabin, variant, onCardClick, onCtaClick, index = 0 }) => {
   const isMedical = variant === "medical";
+  const isCafe = variant === "cafe";
   const fallbackImages = isMedical ? DOCTOR_SPACE_IMAGES : IRYAX_SPACE_IMAGES;
   const cabinImages = cabin.images && cabin.images.length > 0
     ? cabin.images.map((img) => `https://spaceapi.iryax.com/${img}`)
@@ -5227,24 +5238,31 @@ const ListingCard = ({ cabin, variant, onCardClick, onCtaClick, index = 0 }) => 
 
   const topAmenities = getTopAmenities(cabin, 3);
   const rating = getDeterministicRating(cabin._id || cabin.name || `${index}`);
-  const TypeIcon = isMedical ? Stethoscope : Building2;
+  
+  let TypeIcon = Building2;
+  let chipLabel = "Co-Working";
+  let chipClass = "co";
+  if (isMedical) { TypeIcon = Stethoscope; chipLabel = "Medical Cabin"; chipClass = "med"; }
+  if (isCafe) { TypeIcon = Utensils; chipLabel = "Cafe / Dining"; chipClass = "cafe"; }
+
+  const pricePer = isCafe ? "per table" : "per day";
 
   return (
-    <div className={`listing-card ${isMedical ? "med" : "co"}`} onClick={() => onCardClick(cabin)}>
+    <div className={`listing-card ${chipClass}`} onClick={() => onCardClick(cabin)}>
       <div className="listing-media">
         <ImageSlider images={cabinImages} alt={cabin.name} />
         <div className="listing-badge-row">
-          <span className={`listing-type-chip ${isMedical ? "med" : "co"}`}>
-            <TypeIcon size={11} /> {isMedical ? "Medical Cabin" : "Co-Working"}
+          <span className={`listing-type-chip ${chipClass}`}>
+            <TypeIcon size={11} /> {chipLabel}
           </span>
           <span className="listing-avail-chip"><span className="avail-dot" /> Available</span>
         </div>
         <button className="listing-quickview" onClick={(e) => { e.stopPropagation(); onCardClick(cabin); }} aria-label="Quick view">
-          <Maximize2 size={14} color={isMedical ? "#8B4433" : "#23474B"} />
+          <Maximize2 size={14} color={isMedical ? "#8B4433" : isCafe ? "#C67B3D" : "#23474B"} />
         </button>
         <div className="listing-price-float">
           <div className="amt">₹{cabin.price?.toLocaleString("en-IN") || 0}</div>
-          <div className="per">per day</div>
+          <div className="per">{pricePer}</div>
         </div>
       </div>
 
@@ -5266,7 +5284,7 @@ const ListingCard = ({ cabin, variant, onCardClick, onCtaClick, index = 0 }) => 
         <div className="listing-footer">
           <div>
             <div className="amount">₹{cabin.price?.toLocaleString("en-IN") || 0}</div>
-            <div className="unit">per day</div>
+            <div className="unit">{pricePer}</div>
           </div>
           <button className="listing-cta" onClick={(e) => { e.stopPropagation(); onCtaClick(cabin); }}>
             View details <ArrowRight size={14} />
@@ -5309,6 +5327,14 @@ const SpaceDetailModal = ({ isOpen, onClose, space, onBookClick }) => {
 
   const features = getFeatures(space);
   const isMedical = space.type === "medical";
+  const isCafe = space.type === "cafe" || space.type === "restaurant";
+  
+  let typeLabel = "Co-Working";
+  let typeColor = "#23474B";
+  if (isMedical) { typeLabel = "Medical Cabin"; typeColor = "#8B4433"; }
+  if (isCafe) { typeLabel = "Cafe / Restaurant"; typeColor = "#C67B3D"; }
+
+  const pricePer = isCafe ? "per table" : "per day";
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -5333,9 +5359,7 @@ const SpaceDetailModal = ({ isOpen, onClose, space, onBookClick }) => {
                   </>
                 )}
               </div>
-              <span className="space-type-badge" style={{ background: isMedical ? "#8B4433" : "#23474B" }}>
-                {isMedical ? "Medical Cabin" : "Co-Working"}
-              </span>
+              <span className="space-type-badge" style={{ background: typeColor }}>{typeLabel}</span>
             </div>
 
             <div className="modal-content-section">
@@ -5344,6 +5368,8 @@ const SpaceDetailModal = ({ isOpen, onClose, space, onBookClick }) => {
               <p className="space-description">
                 {space.description || (isMedical
                   ? "A fully-equipped medical consultation cabin designed for healthcare professionals."
+                  : isCafe
+                  ? "A cozy dining space perfect for intimate meals, group gatherings, or business meetings."
                   : "A fully-equipped modern workspace designed for professionals.")}
               </p>
 
@@ -5360,7 +5386,7 @@ const SpaceDetailModal = ({ isOpen, onClose, space, onBookClick }) => {
 
               <div className="space-price">
                 <span className="amount">₹{space.price?.toLocaleString("en-IN") || 0}</span>
-                <span className="period">/ day</span>
+                <span className="period">{pricePer}</span>
               </div>
 
               <button className="btn-book-now-modal" onClick={() => onBookClick(space)}>
@@ -5395,9 +5421,10 @@ const DoctorChamberPage = () => {
           </button>
           <div className="nav-links">
             <button onClick={() => navigate("/")} className="navbar-link">Home</button>
-            <button onClick={() => navigate("/#benefits")} className="navbar-link">Benefits</button>
-            <button onClick={() => navigate("/#faq")} className="navbar-link">FAQ</button>
-            <button onClick={() => navigate("/#contact")} className="navbar-link">Contact</button>
+            <button onClick={() => navigate("/")} className="navbar-link">Benefits</button>
+            <button onClick={() => navigate("/")} className="navbar-link">FAQ</button>
+            <button onClick={() => navigate("/")} className="navbar-link">Contact</button>
+            <button onClick={() => navigate("/cafe")} className="navbar-link cafe-link"><Utensils size={14} /> Cafe</button>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={() => navigate("/login")} className="navbar-signin hidden sm:block">Sign in</button>
@@ -5433,7 +5460,7 @@ const DoctorChamberPage = () => {
                 <button onClick={() => navigate("/login")} className="btn-primary" style={{ background: "#8B4433" }}>
                   <Stethoscope size={16} /> Book your cabin <ArrowRight size={16} />
                 </button>
-                <button onClick={() => navigate("/#contact")} className="btn-secondary">
+                <button onClick={() => navigate("/")} className="btn-secondary">
                   <Phone size={16} /> Contact us
                 </button>
               </div>
@@ -5490,7 +5517,7 @@ const DoctorChamberPage = () => {
   );
 };
 
-// ─── MAIN PAGE ───
+// ─── MAIN PROMOTIONAL PAGE ───
 const PromotionalPage = () => {
   useTheme();
   const navigate = useNavigate();
@@ -5536,6 +5563,7 @@ const PromotionalPage = () => {
 
   const coworkingCabins = cabins.filter((c) => c.type === "coworking" || c.type === "co-working");
   const medicalCabins = cabins.filter((c) => c.type === "medical");
+  const cafeCabins = cabins.filter((c) => c.type === "cafe" || c.type === "restaurant");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -5703,6 +5731,7 @@ const PromotionalPage = () => {
               <button onClick={() => scrollToSection("benefits")} className="navbar-link">Benefits</button>
               <button onClick={() => scrollToSection("coworking-section")} className="navbar-link">Co-working</button>
               <button onClick={() => navigate("/doctor-chamber")} className="navbar-link">Doctor&rsquo;s Cabin</button>
+              <button onClick={() => navigate("/cafe")} className="navbar-link cafe-link"><Utensils size={14} /> Cafe & Dining</button>
               <button onClick={() => scrollToSection("specialties")} className="navbar-link">Specialties</button>
               <button onClick={() => scrollToSection("mission-vision")} className="navbar-link">About</button>
               <button onClick={() => scrollToSection("faq")} className="navbar-link">FAQ</button>
@@ -5732,16 +5761,14 @@ const PromotionalPage = () => {
           <div className="flex flex-col gap-2 max-w-sm mx-auto mt-6">
             {[
               ["Benefits", "benefits"], ["Co-working Space", "coworking-section"],
+              ["Doctor's Cabin", "doctor-chamber"], ["Cafe & Dining", "cafe"],
               ["Specialties", "specialties"], ["About", "mission-vision"],
               ["FAQ", "faq"], ["Contact", "contact"]
             ].map(([label, id]) => (
-              <button key={id} onClick={() => { setMobileOpen(false); scrollToSection(id); }} className="px-4 py-3.5 text-left rounded-xl font-medium" style={{ background: "#F1EDE3" }}>
+              <button key={id} onClick={() => { setMobileOpen(false); id === "doctor-chamber" ? navigate("/doctor-chamber") : id === "cafe" ? navigate("/cafe") : scrollToSection(id); }} className="px-4 py-3.5 text-left rounded-xl font-medium" style={{ background: "#F1EDE3" }}>
                 {label}
               </button>
             ))}
-            <button onClick={() => { setMobileOpen(false); navigate("/doctor-chamber"); }} className="px-4 py-3.5 text-left rounded-xl font-medium" style={{ background: "#F1EDE3" }}>
-              Doctor&rsquo;s Cabin
-            </button>
             <div className="h-px my-1" style={{ background: "#E3DDCE" }} />
             <button onClick={() => { navigate("/login"); setMobileOpen(false); }} className="px-4 py-3.5 text-center text-white rounded-xl font-semibold" style={{ background: "#12181F" }}>
               Start now
@@ -5763,7 +5790,7 @@ const PromotionalPage = () => {
               </RevealSection>
               <RevealSection delay={0.2}>
                 <p className="hero-desc">
-                  Fully-equipped co-working desks and doctor&rsquo;s cabins, on flexible terms. No lease, no setup, no admin — just walk in and get to work.
+                  Fully-equipped co-working desks, doctor&rsquo;s cabins, and curated dining spaces — on flexible terms. No lease, no setup, no admin — just walk in and get to work.
                 </p>
               </RevealSection>
               <RevealSection delay={0.3}>
@@ -5781,7 +5808,6 @@ const PromotionalPage = () => {
             <RevealSection delay={0.15}>
               <div className="hero-figure">
                 <img src={IRYAX_HERO_IMAGE} alt="IRYAX SPACE workspace" />
-               
               </div>
             </RevealSection>
           </div>
@@ -5809,10 +5835,13 @@ const PromotionalPage = () => {
             <CategoryLedger
               leftLabel="Co-Working Spaces"
               rightLabel="Medical Chambers"
+              cafeLabel="Cafe & Dining"
               leftCount={coworkingCabins.length}
               rightCount={medicalCabins.length}
+              cafeCount={cafeCabins.length}
               onLeftClick={() => scrollToSection("coworking-section")}
               onRightClick={() => scrollToSection("medical-section")}
+              onCafeClick={() => navigate("/cafe")}
             />
           </RevealSection>
         </div>
@@ -5897,6 +5926,28 @@ const PromotionalPage = () => {
                 </button>
               </RevealSection>
             </div>
+          </div>
+        </section>
+
+        {/* Cafe Section Preview */}
+        <section className="py-16 px-6" style={{ background: "#F5EDE5" }}>
+          <div className="max-w-6xl mx-auto text-center">
+            <RevealSection>
+              <span className="ix-eyebrow cafe"><span className="dot" style={{ background: "#C67B3D" }} />Section 03 — Cafe & Dining</span>
+            </RevealSection>
+            <RevealSection delay={0.1}>
+              <h2 className="ix-serif" style={{ fontSize: "clamp(1.8rem, 2.8vw, 2.4rem)" }}>Book tables at curated cafes & restaurants</h2>
+            </RevealSection>
+            <RevealSection delay={0.2}>
+              <p style={{ color: "#4A5160", maxWidth: 560, margin: "12px auto 0" }}>
+                Discover the best dining spots. Reserve tables, explore menus, and enjoy curated culinary experiences.
+              </p>
+            </RevealSection>
+            <RevealSection delay={0.3}>
+              <button onClick={() => navigate("/cafe")} className="mt-8 inline-flex items-center gap-2 px-8 py-4 text-white rounded-xl text-sm font-semibold" style={{ background: "#C67B3D" }}>
+                <Utensils size={18} /> Explore Cafe & Dining <ArrowRight size={16} />
+              </button>
+            </RevealSection>
           </div>
         </section>
 
@@ -6229,6 +6280,7 @@ const PromotionalPage = () => {
                     <button onClick={() => scrollToSection("benefits")} className="block text-left">Benefits</button>
                     <button onClick={() => scrollToSection("coworking-section")} className="block text-left">Co-working Space</button>
                     <button onClick={() => navigate("/doctor-chamber")} className="block text-left">Doctor&rsquo;s Cabin</button>
+                    <button onClick={() => navigate("/cafe")} className="block text-left">Cafe & Dining</button>
                     <button onClick={() => scrollToSection("specialties")} className="block text-left">Specialties</button>
                     <button onClick={() => scrollToSection("mission-vision")} className="block text-left">About</button>
                     <button onClick={() => scrollToSection("faq")} className="block text-left">FAQ</button>
@@ -6277,6 +6329,14 @@ export default function App() {
     return (
       <ThemeProvider>
         <DoctorChamberPage />
+      </ThemeProvider>
+    );
+  }
+
+  if (location === "/cafe") {
+    return (
+      <ThemeProvider>
+        <CafeDiningPage />
       </ThemeProvider>
     );
   }

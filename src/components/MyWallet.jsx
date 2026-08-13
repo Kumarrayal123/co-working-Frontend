@@ -566,7 +566,7 @@ const MyWallet = () => {
                   <table className="w-full min-w-[650px]">
                     <thead>
                       <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
-                        <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">#</th>
+                        <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">S.No</th>
                         <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Amount</th>
                         <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Bank</th>
                         <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Status</th>
@@ -588,7 +588,7 @@ const MyWallet = () => {
                           return (
                             <tr key={w._id || idx} className="transition-colors hover:bg-gray-50/80">
                               <td className="px-3 py-2">
-                                <span className="text-[10px] font-semibold text-gray-400">#{idx + 1}</span>
+                                <span className="text-[10px] font-semibold text-gray-400">{idx + 1}</span>
                               </td>
                               <td className="px-3 py-2">
                                 <span className="text-xs font-bold text-red-600">{formatCurrency(w.amount)}</span>
@@ -635,7 +635,7 @@ const MyWallet = () => {
                 <table className="w-full min-w-[900px] text-left text-sm">
                   <thead>
                     <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
-                      <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">#</th>
+                      <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">S.No</th>
                       <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Cabin</th>
                       <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Customer</th>
                       <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Date</th>
@@ -650,7 +650,7 @@ const MyWallet = () => {
                       return (
                         <tr key={transaction._id || transaction.transactionId || index} className="transition-colors hover:bg-gray-50/80">
                           <td className="px-3 py-2.5">
-                            <span className="text-[10px] font-semibold text-gray-400">#{index + 1}</span>
+                            <span className="text-[10px] font-semibold text-gray-400">{index + 1}</span>
                           </td>
                           <td className="px-3 py-2.5">
                             <div>

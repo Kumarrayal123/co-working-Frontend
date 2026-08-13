@@ -35,6 +35,32 @@ const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526
 const GST_RATE = 0.18;
 const SEAT_EXTRA_CHARGE = 100;
 
+const resolveSeatIds = (selections, cabinSeats) => {
+  if (!selections?.length || !cabinSeats?.length) return [];
+
+  const cabinSeatIds = cabinSeats
+    .filter((seat) => seat?._id)
+    .map((seat) => String(seat._id));
+
+  return selections
+    .map((selectedId) => {
+      const idStr = String(selectedId).trim();
+
+      if (cabinSeatIds.includes(idStr)) return idStr;
+
+      const seatNumber = Number(idStr.startsWith("num-") ? idStr.slice(4) : idStr);
+      if (!Number.isNaN(seatNumber)) {
+        const matchedSeat = cabinSeats.find(
+          (seat) => Number(seat.number) === seatNumber || String(seat.number) === idStr
+        );
+        if (matchedSeat?._id) return String(matchedSeat._id);
+      }
+
+      return null;
+    })
+    .filter(Boolean);
+};
+
 // Helper function to convert time to 24-hour format
 const convertTo24Hour = (timeStr, amPm) => {
   if (!timeStr) return "";
@@ -588,6 +614,46 @@ const BookCabin = () => {
   
   const [bookingSlots, setBookingSlots] = useState([]);
 
+  const getBookableSeats = () => {
+    if (!cabin) return [];
+
+    if (cabin.seats && cabin.seats.length > 0) {
+      return cabin.seats.map((seat) => ({
+        id: seat._id ? String(seat._id) : `num-${seat.number}`,
+        name: seat.name || `Seat ${seat.number}`,
+        number: seat.number,
+      }));
+    }
+
+    const capacity = Number(cabin.capacity) || 0;
+    if (capacity > 1) {
+      return Array.from({ length: capacity }, (_, index) => ({
+        id: index + 1,
+        name: `Seat ${index + 1}`,
+        number: index + 1,
+      }));
+    }
+
+    return [];
+  };
+
+  const bookableSeats = getBookableSeats();
+  const showSeatSelection = bookableSeats.length > 0;
+
+  const toggleSeatSelection = (seatId) => {
+    const idStr = String(seatId);
+    setSelectedSeats((prev) =>
+      prev.some((selectedId) => String(selectedId) === idStr)
+        ? prev.filter((selectedId) => String(selectedId) !== idStr)
+        : [...prev, idStr]
+    );
+  };
+
+  const getSelectedSeatLabels = () =>
+    bookableSeats
+      .filter((seat) => selectedSeats.some((selectedId) => String(selectedId) === String(seat.id)))
+      .map((seat) => seat.name);
+
   const getImageUrl = (img) => {
     if (!img) return PLACEHOLDER_IMAGE;
     if (img.startsWith("http")) return img;
@@ -946,6 +1012,18 @@ const BookCabin = () => {
         return;
       }
 
+      const resolvedSelectedSeats = resolveSeatIds(selectedSeats, cabin.seats || []);
+
+      if (
+        selectedSeats.length > 0 &&
+        cabin.seats?.length > 0 &&
+        resolvedSelectedSeats.length !== selectedSeats.length
+      ) {
+        toast.error("Invalid seat selection. Please re-select your seats.");
+        setLoading(false);
+        return;
+      }
+
       const bookingData = {
         cabinId: id,
         name,
@@ -957,10 +1035,11 @@ const BookCabin = () => {
         endTime: end24,
         bookingBasis,
         selectedPlan,
-        selectedSeats: selectedSeats || [],
+        selectedSeats: resolvedSelectedSeats,
         extraCharge: extraCharge || 0,
-        seatCount: selectedSeats.length || 0,
+        seatCount: resolvedSelectedSeats.length || selectedSeats.length || 0,
         totalPrice,
+        paymentMethod: "cash",
         bookingSlots: bookingSlots.length > 0 ? bookingSlots : undefined,
         termsAccepted
       };
@@ -1179,7 +1258,7 @@ const BookCabin = () => {
             </div>
 
             {/* Seat Selection */}
-            {cabin.capacity > 1 && (
+            {showSeatSelection && (
               <div className="admin-dash__card p-5 sm:p-6 bg-white shadow-sm border border-slate-100 rounded-2xl">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="p-2.5 bg-indigo-600 rounded-xl text-white shadow-lg">
@@ -1187,39 +1266,51 @@ const BookCabin = () => {
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-slate-900">Select Seats</h3>
-                    <p className="text-xs text-slate-500">Choose additional seats (₹{SEAT_EXTRA_CHARGE}/seat)</p>
+                    <p className="text-xs text-slate-500">Choose seats by name (₹{SEAT_EXTRA_CHARGE}/seat)</p>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
-                  {Array.from({ length: cabin.capacity }, (_, i) => i + 1).map((seat) => (
-                    <button
-                      key={seat}
-                      type="button"
-                      onClick={() => {
-                        if (selectedSeats.includes(seat)) {
-                          setSelectedSeats(selectedSeats.filter(s => s !== seat));
-                        } else {
-                          setSelectedSeats([...selectedSeats, seat]);
-                        }
-                      }}
-                      className={`py-3 rounded-xl font-bold text-sm transition-all ${
-                        selectedSeats.includes(seat)
-                          ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                      }`}
-                    >
-                      {seat}
-                    </button>
-                  ))}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                  {bookableSeats.map((seat) => {
+                    const isSelected = selectedSeats.some(
+                      (selectedId) => String(selectedId) === String(seat.id)
+                    );
+
+                    return (
+                      <button
+                        key={seat.id}
+                        type="button"
+                        onClick={() => toggleSeatSelection(seat.id)}
+                        className={`p-3 rounded-xl border-2 text-center transition-all ${
+                          isSelected
+                            ? "border-indigo-600 bg-indigo-50 shadow-md shadow-indigo-500/20"
+                            : "border-slate-200 bg-slate-50/50 hover:border-indigo-300 hover:bg-indigo-50/40"
+                        }`}
+                      >
+                        <Armchair
+                          size={18}
+                          className={`mx-auto mb-1 ${isSelected ? "text-indigo-600" : "text-slate-400"}`}
+                        />
+                        <div
+                          className={`text-xs font-bold truncate ${
+                            isSelected ? "text-indigo-700" : "text-slate-700"
+                          }`}
+                        >
+                          {seat.name}
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-medium">#{seat.number}</div>
+                      </button>
+                    );
+                  })}
                 </div>
 
                 {selectedSeats.length > 0 && (
                   <div className="mt-3 text-sm text-indigo-600 font-medium">
-                    Selected: {selectedSeats.length} seat(s) (+₹{selectedSeats.length * SEAT_EXTRA_CHARGE})
+                    Selected: {getSelectedSeatLabels().join(", ")} ({selectedSeats.length} seat
+                    {selectedSeats.length > 1 ? "s" : ""}) (+₹{selectedSeats.length * SEAT_EXTRA_CHARGE})
                   </div>
                 )}
-                
+
                 {selectedSeats.length === 0 && (
                   <div className="mt-2 text-[10px] text-slate-400 text-center">
                     No seats selected. You can book without selecting seats.

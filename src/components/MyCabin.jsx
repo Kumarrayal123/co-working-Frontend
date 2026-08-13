@@ -3025,7 +3025,7 @@ const MyCabins = () => {
               <table className="w-full min-w-[1000px] text-left">
                 <thead>
                   <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
-                    <th className="p-2.5 text-[8px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
+                    <th className="p-2.5 text-[8px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">S.No</th>
                     <th className="p-2.5 text-[8px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
                     <th className="p-2.5 text-[8px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Address</th>
                     <th className="p-2.5 text-[8px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Type</th>
@@ -3053,7 +3053,7 @@ const MyCabins = () => {
                       return (
                         <tr key={cabin._id} className="transition-colors group hover:bg-gray-50/80">
                           <td className="p-2.5">
-                            <span className="text-[10px] font-semibold text-gray-400">#{index + 1}</span>
+                            <span className="text-[10px] font-semibold text-gray-400">{index + 1}</span>
                           </td>
                           <td className="p-2.5">
                             <div className="flex items-center gap-2">

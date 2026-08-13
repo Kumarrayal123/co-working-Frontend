@@ -1600,7 +1600,7 @@ const MyCabinPayments = () => {
               <table className="w-full min-w-[900px] text-left text-sm">
                 <thead>
                   <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
-                    <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">#</th>
+                    <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">S.No</th>
                     <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Cabin</th>
                     <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Amount</th>
                     <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">TXN ID</th>
@@ -1621,7 +1621,7 @@ const MyCabinPayments = () => {
                     return (
                       <tr key={order._id} className="transition-colors group hover:bg-gray-50/80">
                         <td className="px-3 py-2.5">
-                          <span className="text-[10px] font-semibold text-gray-400">#{indexOfFirstItem + idx + 1}</span>
+                          <span className="text-[10px] font-semibold text-gray-400">{indexOfFirstItem + idx + 1}</span>
                         </td>
                         <td className="px-3 py-2.5">
                           <div>

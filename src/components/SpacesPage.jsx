@@ -38,7 +38,14 @@ import {
   ExternalLink,
   Rocket,
   Target,
-  Compass
+  Compass,
+  UtensilsCrossed,
+  Percent,
+  Clock as ClockIcon,
+  Gift,
+  Pizza,
+  CupSoda,
+  Sandwich
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -102,16 +109,232 @@ const CATEGORIES = [
     stats: "12 Rooms"
   },
   { 
-    id: "private", 
-    label: "Private Offices", 
-    icon: Lock, 
-    gradient: "from-emerald-500 to-teal-400",
-    bgGradient: "from-emerald-50 to-teal-50",
-    borderColor: "border-emerald-200",
-    textColor: "text-emerald-600",
-    bgHover: "hover:bg-emerald-50",
-    description: "Dedicated spaces",
-    stats: "15 Offices"
+    id: "cafe", 
+    label: "Cafe", 
+    icon: UtensilsCrossed, 
+    gradient: "from-blue-500 to-blue-600",
+    bgGradient: "from-blue-50 to-blue-50",
+    borderColor: "border-blue-200",
+    textColor: "text-blue-600",
+    bgHover: "hover:bg-blue-50",
+    description: "Cafes & dining",
+    stats: "15 Cafes"
+  }
+];
+
+// Dummy Cafe Data (Zomato style)
+const DUMMY_CAFES = [
+  {
+    _id: "cafe1",
+    name: "Palace Heights",
+    type: "cafe",
+    cabinType: "cafe",
+    price: 2000,
+    address: "Abids, Hyderabad",
+    distance: "3.9 km",
+    rating: 4.1,
+    reviews: 128,
+    openTime: "12:00",
+    closeTime: "23:00",
+    is24x7: false,
+    images: ["https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&q=80&w=1000"],
+    cuisines: ["Continental", "Chinese", "Mughlai"],
+    capacity: 50,
+    offer: "Flat 10% OFF",
+    promoted: true,
+    amenities: {
+      wifi: true,
+      parking: true,
+      coffee: true,
+      ac: true
+    },
+    description: "Fine dining with a view of the city"
+  },
+  {
+    _id: "cafe2",
+    name: "Mirame Cafe & Kitchen",
+    type: "cafe",
+    cabinType: "cafe",
+    price: 1100,
+    address: "RTC X roads, Hyderabad",
+    distance: "2.8 km",
+    rating: 4.4,
+    reviews: 256,
+    openTime: "12:00",
+    closeTime: "23:30",
+    is24x7: false,
+    images: ["https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=1000"],
+    cuisines: ["Chinese", "North Indian", "Cafe"],
+    capacity: 40,
+    offer: "Flat 10% OFF",
+    promoted: true,
+    amenities: {
+      wifi: true,
+      coffee: true,
+      ac: true,
+      comfortSeating: true
+    },
+    description: "Cozy cafe with delicious North Indian cuisine"
+  },
+  {
+    _id: "cafe3",
+    name: "Karachi Bakery And Cafe",
+    type: "cafe",
+    cabinType: "cafe",
+    price: 600,
+    address: "Narayanguda, Hyderabad",
+    distance: "4.7 km",
+    rating: 4.0,
+    reviews: 92,
+    openTime: "08:00",
+    closeTime: "22:00",
+    is24x7: false,
+    images: ["https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=1000"],
+    cuisines: ["Wraps", "Bakery", "Cake", "Desserts"],
+    capacity: 30,
+    offer: "Flat 10% OFF",
+    promoted: true,
+    amenities: {
+      wifi: true,
+      coffee: true,
+      parking: true
+    },
+    description: "Famous bakery with delicious cakes and wraps"
+  },
+  {
+    _id: "cafe4",
+    name: "The Coffee Cup",
+    type: "cafe",
+    cabinType: "cafe",
+    price: 450,
+    address: "Jubilee Hills, Hyderabad",
+    distance: "5.2 km",
+    rating: 4.6,
+    reviews: 340,
+    openTime: "07:00",
+    closeTime: "23:00",
+    is24x7: false,
+    images: ["https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=80&w=1000"],
+    cuisines: ["Coffee", "Snacks", "Desserts"],
+    capacity: 25,
+    offer: "Flat 15% OFF",
+    promoted: false,
+    amenities: {
+      wifi: true,
+      coffee: true,
+      ac: true,
+      comfortSeating: true,
+      tv: true
+    },
+    description: "Artisanal coffee and gourmet snacks"
+  },
+  {
+    _id: "cafe5",
+    name: "Bistro Central",
+    type: "cafe",
+    cabinType: "cafe",
+    price: 850,
+    address: "Banjara Hills, Hyderabad",
+    distance: "3.5 km",
+    rating: 4.3,
+    reviews: 189,
+    openTime: "10:00",
+    closeTime: "22:30",
+    is24x7: false,
+    images: ["https://images.unsplash.com/photo-1528605248644-14dd04022da1?auto=format&fit=crop&q=80&w=1000"],
+    cuisines: ["Italian", "Continental", "Cafe"],
+    capacity: 35,
+    offer: "Flat 20% OFF",
+    promoted: false,
+    amenities: {
+      wifi: true,
+      parking: true,
+      coffee: true,
+      ac: true,
+      comfortSeating: true
+    },
+    description: "Authentic Italian bistro in the heart of the city"
+  },
+  {
+    _id: "cafe6",
+    name: "Green Leaf Cafe",
+    type: "cafe",
+    cabinType: "cafe",
+    price: 350,
+    address: "Gachibowli, Hyderabad",
+    distance: "6.8 km",
+    rating: 4.2,
+    reviews: 156,
+    openTime: "08:00",
+    closeTime: "21:00",
+    is24x7: false,
+    images: ["https://images.unsplash.com/photo-1497534446932-c925b458314e?auto=format&fit=crop&q=80&w=1000"],
+    cuisines: ["Healthy", "Salads", "Smoothies"],
+    capacity: 20,
+    offer: "Flat 10% OFF",
+    promoted: false,
+    amenities: {
+      wifi: true,
+      coffee: true,
+      ac: true
+    },
+    description: "Healthy and organic cafe with fresh ingredients"
+  },
+  {
+    _id: "cafe7",
+    name: "Mocha House",
+    type: "cafe",
+    cabinType: "cafe",
+    price: 550,
+    address: "Madhapur, Hyderabad",
+    distance: "4.1 km",
+    rating: 4.5,
+    reviews: 275,
+    openTime: "09:00",
+    closeTime: "00:00",
+    is24x7: false,
+    images: ["https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&q=80&w=1000"],
+    cuisines: ["Continental", "Desserts", "Beverages"],
+    capacity: 45,
+    offer: "Flat 12% OFF",
+    promoted: false,
+    amenities: {
+      wifi: true,
+      parking: true,
+      coffee: true,
+      ac: true,
+      tv: true,
+      comfortSeating: true
+    },
+    description: "Premium coffee house with live music nights"
+  },
+  {
+    _id: "cafe8",
+    name: "Spice Garden Cafe",
+    type: "cafe",
+    cabinType: "cafe",
+    price: 700,
+    address: "Hitech City, Hyderabad",
+    distance: "7.2 km",
+    rating: 4.0,
+    reviews: 98,
+    openTime: "11:00",
+    closeTime: "23:00",
+    is24x7: false,
+    images: ["https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1000"],
+    cuisines: ["South Indian", "Chinese", "Cafe"],
+    capacity: 60,
+    offer: "Flat 10% OFF",
+    promoted: true,
+    amenities: {
+      wifi: true,
+      parking: true,
+      coffee: true,
+      ac: true,
+      comfortSeating: true,
+      privateWashroom: true
+    },
+    description: "Multi-cuisine cafe with outdoor seating"
   }
 ];
 
@@ -119,7 +342,6 @@ const CATEGORIES = [
 const formatTo12Hour = (time24) => {
   if (!time24) return "N/A";
   
-  // If it's already in 12hr format with AM/PM, return as is
   if (time24.includes('AM') || time24.includes('PM')) {
     return time24;
   }
@@ -147,9 +369,8 @@ const getTimingDisplay = (cabin) => {
   
   if (openTime && closeTime) {
     const open12 = formatTo12Hour(openTime);
-    const close12 = formatTo12Hour(closeTime);
     return { 
-      display: `${open12} - ${close12}`, 
+      display: `Opens at ${open12}`, 
       icon: Clock, 
       color: "text-blue-600"
     };
@@ -171,10 +392,10 @@ function SpacesPage() {
   const [showAllCabins, setShowAllCabins] = useState(false);
   const [wishlist, setWishlist] = useState([]);
   const [wishlistLoading, setWishlistLoading] = useState(false);
+  const [isCafeDummyData, setIsCafeDummyData] = useState(false);
 
   const navigate = useNavigate();
 
-  // Get current user
   const currentUser = (() => {
     try {
       const userStr = localStorage.getItem("user");
@@ -210,6 +431,7 @@ function SpacesPage() {
       const activeCabins = data.filter(cabin => cabin.isActive !== false);
       setCabins(activeCabins);
       setFilteredCabins(activeCabins);
+      setIsCafeDummyData(false);
     } catch (err) {
       console.error("Error fetching cabins:", err);
       setError("Failed to load spaces. Please try again.");
@@ -218,7 +440,6 @@ function SpacesPage() {
     }
   };
 
-  // ✅ FETCH WISHLIST - GET /api/cabins/mywishlist/:userId
   const fetchWishlist = async () => {
     if (!userId || !token) return;
     try {
@@ -226,14 +447,12 @@ function SpacesPage() {
         `${API_URL}/api/cabins/mywishlist/${userId}`,
         getAuthHeader()
       );
-      console.log("Wishlist Response:", res.data);
       setWishlist(res.data.wishlist || []);
     } catch (err) {
       console.error("Error fetching wishlist:", err);
     }
   };
 
-  // ✅ TOGGLE WISHLIST - POST /api/cabins/toggle/:userId
   const toggleWishlist = async (cabinId, e) => {
     if (e) e.stopPropagation();
     
@@ -251,9 +470,6 @@ function SpacesPage() {
         getAuthHeader()
       );
 
-      console.log("Toggle Response:", res.data);
-      
-      // ✅ Update wishlist based on action
       if (res.data.action === 'added') {
         setWishlist(res.data.wishlist || []);
         toast.success("Added to wishlist! ❤️");
@@ -270,19 +486,23 @@ function SpacesPage() {
     }
   };
 
-  // ✅ CHECK IF CABIN IS IN WISHLIST
   const isInWishlist = (cabinId) => {
     return wishlist.some(item => item._id === cabinId || item === cabinId);
   };
 
-  // ✅ GET WISHLIST COUNT
-  const getWishlistCount = () => {
-    return wishlist.length;
-  };
-
   const handleCategorySelect = (categoryId) => {
     setSelectedCategory(categoryId);
+    setShowAllCabins(true);
     
+    if (categoryId === "cafe") {
+      setIsCafeDummyData(true);
+      setFilteredCabins(DUMMY_CAFES);
+      setSelectedType("all");
+      setSelectedCabinType("all");
+      return;
+    }
+    
+    setIsCafeDummyData(false);
     let filtered = [...cabins];
     
     if (categoryId === "coworking") {
@@ -293,18 +513,34 @@ function SpacesPage() {
       setSelectedType("chamber");
     } else if (categoryId === "meeting") {
       filtered = filtered.filter(cabin => cabin.cabinType === "meeting" || cabin.type === "meeting");
-    } else if (categoryId === "private") {
-      filtered = filtered.filter(cabin => cabin.cabinType === "exclusive" || cabin.type === "private");
     } else {
       setSelectedType("all");
       filtered = [...cabins];
     }
     
     setFilteredCabins(filtered);
-    setShowAllCabins(true);
   };
 
   const applyFilters = () => {
+    if (isCafeDummyData) {
+      let filtered = [...DUMMY_CAFES];
+      
+      if (searchTerm.trim()) {
+        const term = searchTerm.toLowerCase().trim();
+        filtered = filtered.filter(cafe => {
+          const name = cafe.name?.toLowerCase() || '';
+          const address = cafe.address?.toLowerCase() || '';
+          const description = cafe.description?.toLowerCase() || '';
+          const cuisines = cafe.cuisines?.join(' ').toLowerCase() || '';
+          return name.includes(term) || address.includes(term) || description.includes(term) || cuisines.includes(term);
+        });
+      }
+      
+      const sorted = applySorting(filtered);
+      setFilteredCabins(sorted);
+      return;
+    }
+    
     let filtered = [...cabins];
 
     if (searchTerm.trim()) {
@@ -341,7 +577,7 @@ function SpacesPage() {
     
     switch (activeFilter) {
       case "top-rated":
-        return sorted.sort((a, b) => (b.price || 0) - (a.price || 0));
+        return sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
       case "new":
         return sorted.sort((a, b) => {
           const dateA = new Date(a.createdAt || 0);
@@ -349,7 +585,11 @@ function SpacesPage() {
           return dateB - dateA;
         });
       case "nearest":
-        return sorted.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        return sorted.sort((a, b) => {
+          const distA = parseFloat(a.distance) || 0;
+          const distB = parseFloat(b.distance) || 0;
+          return distA - distB;
+        });
       case "all":
       default:
         return sorted;
@@ -357,10 +597,12 @@ function SpacesPage() {
   };
 
   useEffect(() => {
-    if (!showAllCabins) {
+    if (!showAllCabins && !isCafeDummyData) {
+      applyFilters();
+    } else if (isCafeDummyData) {
       applyFilters();
     }
-  }, [searchTerm, selectedType, selectedCabinType, cabins, activeFilter, showAllCabins]);
+  }, [searchTerm, selectedType, selectedCabinType, cabins, activeFilter, showAllCabins, isCafeDummyData]);
 
   const clearFilters = () => {
     setSearchTerm("");
@@ -369,6 +611,7 @@ function SpacesPage() {
     setActiveFilter("all");
     setSelectedCategory("all");
     setShowAllCabins(false);
+    setIsCafeDummyData(false);
     setFilteredCabins(cabins);
   };
 
@@ -392,6 +635,7 @@ function SpacesPage() {
     if (cabin.isChamber) return "Medical Chamber";
     if (cabin.type === "coworking") return "Co-Working";
     if (cabin.cabinType === "meeting") return "Meeting Room";
+    if (cabin.cabinType === "cafe") return "Cafe";
     if (cabin.cabinType === "exclusive") return "Private Office";
     return "Workspace";
   };
@@ -400,6 +644,7 @@ function SpacesPage() {
     if (cabin.isChamber) return "bg-red-100 text-red-700 border-red-200";
     if (cabin.type === "coworking") return "bg-blue-100 text-blue-700 border-blue-200";
     if (cabin.cabinType === "meeting") return "bg-purple-100 text-purple-700 border-purple-200";
+    if (cabin.cabinType === "cafe") return "bg-blue-50 text-blue-700 border-blue-200";
     if (cabin.cabinType === "exclusive") return "bg-emerald-100 text-emerald-700 border-emerald-200";
     return "bg-gray-100 text-gray-700 border-gray-200";
   };
@@ -418,7 +663,7 @@ function SpacesPage() {
         <div className="pt-24 px-4 max-w-full mx-auto">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
-              <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto"></div>
+              <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
               <p className="mt-4 text-gray-500 text-sm">Loading spaces...</p>
             </div>
           </div>
@@ -450,28 +695,23 @@ function SpacesPage() {
     <div className="min-h-screen bg-gray-50">
       <SimpleUserNavbar />
 
-      {/* ============= HERO BANNER - CLEAN DESIGN ============= */}
-      <div className="relative pt-16 bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800">
-        {/* Decorative Elements */}
+      {/* ============= HERO BANNER ============= */}
+      <div className="relative pt-16 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800">
         <div className="absolute inset-0">
           <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-white/5 to-transparent"></div>
-          <div className="absolute bottom-0 left-0 w-1/3 h-1/2 bg-gradient-to-t from-purple-900/20 to-transparent"></div>
-          
-          {/* Floating Orbs */}
+          <div className="absolute bottom-0 left-0 w-1/3 h-1/2 bg-gradient-to-t from-indigo-900/20 to-transparent"></div>
           <div className="absolute top-5 right-10 w-48 h-48 bg-blue-400/20 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-5 left-5 w-56 h-56 bg-purple-400/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-indigo-300/10 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-5 left-5 w-56 h-56 bg-indigo-400/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-blue-300/10 rounded-full blur-3xl"></div>
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
           <div className="text-center max-w-3xl mx-auto">
-            {/* Badge */}
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-white/90 text-[10px] font-medium tracking-wider mb-4">
               <Sparkles size={12} className="text-yellow-300" />
               IRYAX SPACES
             </div>
 
-            {/* Main Heading */}
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight leading-[1.15]">
               Find Your Perfect
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-200 to-yellow-300">
@@ -479,19 +719,17 @@ function SpacesPage() {
               </span>
             </h1>
 
-            {/* Description */}
             <p className="mt-3 text-white/80 text-xs sm:text-sm max-w-xl mx-auto font-light leading-relaxed">
-              Discover premium co-working spaces, medical chambers, meeting rooms & private offices tailored to your professional needs
+              Discover premium co-working spaces, medical chambers, meeting rooms & cafes tailored to your professional needs
             </p>
 
-            {/* Search Bar */}
             <div className="mt-6 max-w-2xl mx-auto">
               <div className="flex items-center bg-white/10 backdrop-blur-md rounded-full border border-white/20 p-1 shadow-lg">
                 <div className="flex-1 px-4 flex items-center gap-2">
                   <Search size={16} className="text-white/50" />
                   <input
                     type="text"
-                    placeholder="Search for spaces..."
+                    placeholder={isCafeDummyData ? "Search for restaurants..." : "Search for spaces..."}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full bg-transparent text-white placeholder-white/40 text-xs outline-none"
@@ -502,22 +740,21 @@ function SpacesPage() {
                     const element = document.getElementById('spaces-section');
                     if (element) element.scrollIntoView({ behavior: 'smooth' });
                   }}
-                  className="px-5 py-2 bg-white text-indigo-700 rounded-full text-xs font-semibold hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center gap-1.5"
+                  className="px-5 py-2 bg-white text-blue-700 rounded-full text-xs font-semibold hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center gap-1.5"
                 >
                   Explore <ArrowRight size={14} />
                 </button>
               </div>
             </div>
 
-            {/* Stats */}
             <div className="mt-6 flex flex-wrap items-center justify-center gap-4 sm:gap-6">
               <div className="flex items-center gap-2 text-white/80">
                 <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm">
                   <Building2 size={14} className="text-white/70" />
                 </div>
                 <div className="text-left">
-                  <p className="font-bold text-white text-sm">{cabins.length}+</p>
-                  <p className="text-[7px] text-white/40 font-light uppercase tracking-wider">Spaces</p>
+                  <p className="font-bold text-white text-sm">{isCafeDummyData ? DUMMY_CAFES.length : cabins.length}+</p>
+                  <p className="text-[7px] text-white/40 font-light uppercase tracking-wider">{isCafeDummyData ? "Cafes" : "Spaces"}</p>
                 </div>
               </div>
               <div className="w-px h-8 bg-white/10"></div>
@@ -526,7 +763,7 @@ function SpacesPage() {
                   <Users size={14} className="text-white/70" />
                 </div>
                 <div className="text-left">
-                  <p className="font-bold text-white text-sm">100+</p>
+                  <p className="font-bold text-white text-sm">{isCafeDummyData ? "200+" : "100+"}</p>
                   <p className="text-[7px] text-white/40 font-light uppercase tracking-wider">Seats</p>
                 </div>
               </div>
@@ -536,7 +773,7 @@ function SpacesPage() {
                   <Star size={14} className="text-white/70" />
                 </div>
                 <div className="text-left">
-                  <p className="font-bold text-white text-sm">4.8★</p>
+                  <p className="font-bold text-white text-sm">{isCafeDummyData ? "4.3★" : "4.8★"}</p>
                   <p className="text-[7px] text-white/40 font-light uppercase tracking-wider">Rating</p>
                 </div>
               </div>
@@ -546,15 +783,14 @@ function SpacesPage() {
                   <Clock size={14} className="text-white/70" />
                 </div>
                 <div className="text-left">
-                  <p className="font-bold text-white text-sm">24/7</p>
-                  <p className="text-[7px] text-white/40 font-light uppercase tracking-wider">Access</p>
+                  <p className="font-bold text-white text-sm">{isCafeDummyData ? "10 AM" : "24/7"}</p>
+                  <p className="text-[7px] text-white/40 font-light uppercase tracking-wider">Open</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Simple bottom border instead of curve */}
         <div className="h-1 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
       </div>
 
@@ -563,7 +799,7 @@ function SpacesPage() {
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-5">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200">
+              <div className="w-9 h-9 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
                 <Compass size={16} className="text-white" />
               </div>
               <div>
@@ -576,10 +812,11 @@ function SpacesPage() {
                 onClick={() => {
                   setSelectedCategory("all");
                   setShowAllCabins(false);
+                  setIsCafeDummyData(false);
                   setFilteredCabins(cabins);
                   setSelectedType("all");
                 }}
-                className="text-[10px] text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1 bg-indigo-50 px-3 py-1 rounded-full"
+                className="text-[10px] text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 bg-blue-50 px-3 py-1 rounded-full"
               >
                 <XIcon size={11} /> Clear
               </button>
@@ -596,7 +833,7 @@ function SpacesPage() {
                   onClick={() => handleCategorySelect(category.id)}
                   className={`group relative p-3 rounded-xl border-2 transition-all duration-300 text-left ${
                     isActive
-                      ? `${category.bgGradient} ${category.borderColor} shadow-lg shadow-${category.id === 'coworking' ? 'blue' : category.id === 'medical' ? 'red' : category.id === 'meeting' ? 'purple' : 'emerald'}-100`
+                      ? `${category.bgGradient} ${category.borderColor} shadow-lg shadow-${category.id === 'coworking' ? 'blue' : category.id === 'medical' ? 'red' : category.id === 'meeting' ? 'purple' : 'blue'}-100`
                       : 'bg-gray-50 border-transparent hover:border-gray-200 hover:bg-white'
                   }`}
                 >
@@ -639,15 +876,28 @@ function SpacesPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div>
             <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-              <CircleDot size={20} className="text-indigo-500" />
-              {filteredCabins.length} {filteredCabins.length === 1 ? 'Space' : 'Spaces'} Available
+              <CircleDot size={20} className="text-blue-500" />
+              {isCafeDummyData ? (
+                <>
+                  <span className="text-blue-600">Get up to 50% OFF</span>
+                  <span className="text-sm font-normal text-gray-400">on your dining bills</span>
+                </>
+              ) : (
+                `${filteredCabins.length} ${filteredCabins.length === 1 ? 'Space' : 'Spaces'} Available`
+              )}
             </h2>
             <p className="text-xs text-gray-500">
-              {selectedCategory !== "all" ? `Showing ${CATEGORIES.find(c => c.id === selectedCategory)?.label || ''} spaces` : 'All premium spaces'}
+              {selectedCategory !== "all" ? `Showing ${CATEGORIES.find(c => c.id === selectedCategory)?.label || ''} ${isCafeDummyData ? 'restaurants' : 'spaces'}` : 'All premium spaces'}
             </p>
           </div>
           {filteredCabins.length > 0 && (
             <div className="flex items-center gap-2">
+              {isCafeDummyData && (
+                <button className="text-[10px] text-blue-600 bg-blue-50 px-3 py-1 rounded-full border border-blue-200 flex items-center gap-1 hover:bg-blue-100 transition">
+                  <Gift size={12} />
+                  Check out all the restaurants
+                </button>
+              )}
               <span className="text-[10px] text-gray-400 bg-white px-3 py-1 rounded-full border border-gray-200 flex items-center gap-1">
                 <TrendingUp size={12} className="text-green-500" />
                 {filteredCabins.length} results
@@ -656,6 +906,70 @@ function SpacesPage() {
           )}
         </div>
 
+        {/* ============= ZOMATO-STYLE BANNER - BLUE THEME ============= */}
+        {isCafeDummyData && (
+          <div className="relative mb-6 overflow-hidden rounded-2xl bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 shadow-lg shadow-blue-200">
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full blur-3xl"></div>
+              <div className="absolute bottom-0 left-0 w-48 h-48 bg-white rounded-full blur-3xl"></div>
+            </div>
+            
+            <div className="relative px-6 py-5 md:py-6 md:px-8">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="hidden sm:flex items-center gap-2">
+                    <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                      <Pizza size={24} className="text-white" />
+                    </div>
+                    <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                      <CupSoda size={24} className="text-white" />
+                    </div>
+                    <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                      <Sandwich size={24} className="text-white" />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-xl md:text-2xl font-bold text-white">
+                      🍽️ Hyderabad Restaurants
+                    </h3>
+                    <p className="text-white/90 text-sm flex items-center gap-2">
+                      <span>Discover the best dining experiences</span>
+                      <span className="hidden sm:inline">•</span>
+                      <span className="text-white/80 text-xs">Get up to 50% OFF</span>
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full">
+                    <Percent size={14} className="text-white" />
+                    <span className="text-white text-xs font-medium">Flat 10% OFF</span>
+                  </div>
+                  <button className="px-5 py-2 bg-white text-blue-600 rounded-full text-xs font-bold hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center gap-1.5">
+                    View All <ChevronRight size={16} />
+                  </button>
+                </div>
+              </div>
+              
+              <div className="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t border-white/20">
+                <span className="text-white/70 text-[10px] font-medium flex items-center gap-1">
+                  <Rocket size={12} className="text-yellow-300" />
+                  Promoted
+                </span>
+                <span className="text-white/70 text-[10px] font-medium flex items-center gap-1">
+                  <Star size={12} className="text-yellow-300 fill-yellow-300" />
+                  4.5★ Avg Rating
+                </span>
+                <span className="text-white/70 text-[10px] font-medium flex items-center gap-1">
+                  <Clock size={12} className="text-white/70" />
+                  Open Now
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Search & Filters */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-4">
           <div className="flex flex-col md:flex-row gap-3">
@@ -663,32 +977,37 @@ function SpacesPage() {
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search by name, address, or description..."
+                placeholder={isCafeDummyData ? "Search by restaurant name, cuisine, or location..." : "Search by name, address, or description..."}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-gray-50 hover:bg-white transition"
+                className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-gray-50 hover:bg-white transition"
               />
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <select
-                value={selectedType}
-                onChange={(e) => setSelectedType(e.target.value)}
-                className="px-3 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-gray-50 hover:bg-white transition"
-              >
-                <option value="all">All Types</option>
-                <option value="coworking">Co-Working</option>
-                <option value="chamber">Medical Chambers</option>
-              </select>
-              <select
-                value={selectedCabinType}
-                onChange={(e) => setSelectedCabinType(e.target.value)}
-                className="px-3 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-gray-50 hover:bg-white transition"
-              >
-                <option value="all">All Cabin Types</option>
-                <option value="normal">Normal</option>
-                <option value="exclusive">Exclusive</option>
-                <option value="meeting">Meeting Room</option>
-              </select>
+              {!isCafeDummyData && (
+                <>
+                  <select
+                    value={selectedType}
+                    onChange={(e) => setSelectedType(e.target.value)}
+                    className="px-3 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-gray-50 hover:bg-white transition"
+                  >
+                    <option value="all">All Types</option>
+                    <option value="coworking">Co-Working</option>
+                    <option value="chamber">Medical Chambers</option>
+                  </select>
+                  <select
+                    value={selectedCabinType}
+                    onChange={(e) => setSelectedCabinType(e.target.value)}
+                    className="px-3 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-gray-50 hover:bg-white transition"
+                  >
+                    <option value="all">All Cabin Types</option>
+                    <option value="normal">Normal</option>
+                    <option value="exclusive">Exclusive</option>
+                    <option value="meeting">Meeting Room</option>
+                    <option value="cafe">Cafe</option>
+                  </select>
+                </>
+              )}
               {(searchTerm || selectedType !== "all" || selectedCabinType !== "all" || selectedCategory !== "all") && (
                 <button
                   onClick={clearFilters}
@@ -713,7 +1032,7 @@ function SpacesPage() {
                 onClick={() => setActiveFilter(filter.id)}
                 className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
                   isActive
-                    ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-200"
+                    ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-200"
                     : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
                 }`}
               >
@@ -732,17 +1051,17 @@ function SpacesPage() {
           )}
         </div>
 
-        {/* Results Grid */}
+        {/* Results Grid - Clean Zomato Style */}
         {filteredCabins.length === 0 ? (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-16 text-center">
             <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Building2 size={32} className="text-gray-400" />
             </div>
-            <p className="text-gray-500 font-medium text-lg">No spaces found</p>
+            <p className="text-gray-500 font-medium text-lg">No {isCafeDummyData ? 'restaurants' : 'spaces'} found</p>
             <p className="text-sm text-gray-400 mt-1">Try adjusting your filters or search terms</p>
             <button
               onClick={clearFilters}
-              className="mt-4 px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg text-sm font-medium hover:shadow-lg hover:scale-105 transition-all duration-300"
+              className="mt-4 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg text-sm font-medium hover:shadow-lg hover:scale-105 transition-all duration-300"
             >
               Clear Filters
             </button>
@@ -753,109 +1072,94 @@ function SpacesPage() {
               const inWishlist = isInWishlist(cabin._id);
               const timing = getTimingDisplay(cabin);
               const TimingIcon = timing.icon;
+              const isCafe = cabin.cabinType === "cafe";
               
               return (
                 <div
                   key={cabin._id}
-                  className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer group hover:-translate-y-1.5"
+                  className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer group"
                   onClick={() => navigate(`/cabin/${cabin._id}`)}
                 >
-                  <div className="relative h-52 overflow-hidden bg-gray-100">
+                  <div className="relative h-48 overflow-hidden bg-gray-100">
                     <img
                       src={cabin.images?.[0] ? getImageUrl(cabin.images[0]) : "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000"}
                       alt={cabin.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition duration-500"
+                      className="w-full h-full object-cover"
                       onError={(e) => {
                         e.target.src = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
                       }}
                     />
-                    {/* Badges */}
-                    <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
-                      <span className={`px-2.5 py-0.5 text-[9px] font-bold rounded-full border backdrop-blur-sm ${getTypeColor(cabin)}`}>
-                        {getTypeLabel(cabin)}
-                      </span>
-                      {cabin.cabinType === "exclusive" && (
-                        <span className="px-2.5 py-0.5 text-[9px] font-bold rounded-full bg-amber-100/90 text-amber-700 border border-amber-200 flex items-center gap-0.5 backdrop-blur-sm">
-                          <Crown size={10} /> Exclusive
+                    
+                    {/* Badges - Top Left */}
+                    <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+                      {isCafe && cabin.promoted && (
+                        <span className="px-2.5 py-0.5 text-[9px] font-bold rounded bg-blue-600 text-white flex items-center gap-0.5">
+                          <Rocket size={10} /> Promoted
                         </span>
                       )}
-                      {cabin.is24x7 && (
-                        <span className="px-2.5 py-0.5 text-[9px] font-bold rounded-full bg-emerald-100/90 text-emerald-700 border border-emerald-200 flex items-center gap-0.5 backdrop-blur-sm">
-                          <Clock size={10} /> 24x7
+                      {isCafe && cabin.offer && (
+                        <span className="px-2.5 py-0.5 text-[9px] font-bold rounded bg-green-500 text-white flex items-center gap-0.5">
+                          <Percent size={10} /> {cabin.offer}
                         </span>
                       )}
                     </div>
-                    {/* Price */}
-                    <div className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-md px-3.5 py-1.5 rounded-lg">
-                      <span className="text-white font-bold text-sm">{formatCurrency(cabin.price)}</span>
-                      <span className="text-white/50 text-[8px] font-light">/hour</span>
-                    </div>
-                    {/* Wishlist button with API integration */}
+
+                    {/* Wishlist button */}
                     <button 
-                      className={`absolute top-3 right-3 w-8 h-8 backdrop-blur-sm rounded-full flex items-center justify-center transition shadow-md ${
+                      className={`absolute top-3 right-3 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center transition shadow-md ${
                         inWishlist 
-                          ? 'bg-red-500 text-white hover:bg-red-600' 
-                          : 'bg-white/90 hover:bg-white text-gray-500 hover:text-red-500'
+                          ? 'text-red-500' 
+                          : 'text-gray-400 hover:text-red-500'
                       } ${wishlistLoading ? 'opacity-50 pointer-events-none' : ''}`}
                       onClick={(e) => toggleWishlist(cabin._id, e)}
                       disabled={wishlistLoading}
                     >
                       <Heart 
-                        size={14} 
-                        className={inWishlist ? 'fill-current' : ''} 
+                        size={15} 
+                        className={inWishlist ? 'fill-red-500' : ''} 
                       />
                     </button>
                   </div>
 
                   <div className="p-4">
-                    <h3 className="font-semibold text-gray-900 text-sm line-clamp-1">{cabin.name}</h3>
-                    <p className="text-[10px] text-gray-400 flex items-center gap-1 mt-0.5">
-                      <MapPin size={11} />
-                      <span className="line-clamp-1">{cabin.address?.split(',')[0] || 'N/A'}</span>
+                    {/* Restaurant Name */}
+                    <h3 className="font-semibold text-gray-900 text-sm">{cabin.name}</h3>
+                    
+                    {/* Cuisines */}
+                    {isCafe && cabin.cuisines && (
+                      <p className="text-[11px] text-gray-500 line-clamp-1 mt-0.5">
+                        {cabin.cuisines.join(', ')}
+                      </p>
+                    )}
+                    
+                    {/* Location */}
+                    <p className="text-[11px] text-gray-400 flex items-center gap-1 mt-1">
+                      <MapPin size={12} />
+                      <span>{cabin.address?.split(',')[0] || 'N/A'}</span>
                     </p>
                     
-                    {/* Timing Display - NO IST */}
+                    {/* Timing and Distance */}
                     <div className={`flex items-center gap-1 mt-1 ${timing.color}`}>
-                      <TimingIcon size={11} />
-                      <span className="text-[10px] font-medium">{timing.display}</span>
-                    </div>
-                    
-                    {/* Rating */}
-                    <div className="flex items-center gap-1 mt-1.5">
-                      <Star size={12} className="text-yellow-400 fill-yellow-400" />
-                      <span className="text-[10px] font-medium text-gray-700">4.8</span>
-                      <span className="text-[9px] text-gray-400">(24 reviews)</span>
-                    </div>
-                    
-                    {/* Amenities */}
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {getActiveAmenities(cabin.amenities).slice(0, 4).map((key) => {
-                        const amenity = AMENITY_ICONS[key];
-                        if (!amenity) return null;
-                        const Icon = amenity.icon;
-                        return (
-                          <span key={key} className="p-1.5 bg-gray-50 rounded-lg" title={amenity.label}>
-                            <Icon size={12} className="text-gray-500" />
-                          </span>
-                        );
-                      })}
-                      {getActiveAmenities(cabin.amenities).length > 4 && (
-                        <span className="text-[9px] text-gray-400 font-medium px-1.5 py-0.5 bg-gray-50 rounded-lg">
-                          +{getActiveAmenities(cabin.amenities).length - 4}
-                        </span>
+                      <TimingIcon size={12} />
+                      <span className="text-[11px] font-medium">{timing.display}</span>
+                      {isCafe && cabin.distance && (
+                        <span className="text-[11px] text-gray-400 ml-1">• {cabin.distance}</span>
                       )}
                     </div>
                     
-                    <div className="mt-3 flex items-center justify-between pt-3 border-t border-gray-50">
-                      <span className="text-[10px] text-gray-400 flex items-center gap-1">
-                        <Users size={11} /> {cabin.capacity || 'N/A'} seats
-                      </span>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); navigate(`/cabin/${cabin._id}`); }}
-                        className="px-4 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-[10px] font-medium rounded-lg transition flex items-center gap-1 shadow-sm hover:shadow"
-                      >
-                        <Eye size={11} /> View
-                      </button>
+                    {/* Rating and Price Row */}
+                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
+                      <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-0.5 bg-green-600 text-white px-1.5 py-0.5 rounded text-[10px] font-bold">
+                          <span>{cabin.rating || 4.8}</span>
+                          <Star size={10} className="fill-white" />
+                        </div>
+                        <span className="text-[10px] text-gray-400">{cabin.reviews || 24} reviews</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-sm font-bold text-gray-900">{formatCurrency(cabin.price)}</span>
+                        <span className="text-[9px] text-gray-400 ml-0.5">for two</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -869,7 +1173,7 @@ function SpacesPage() {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center">
                   <Building2 size={14} className="text-white" />
                 </div>
                 <div>
@@ -895,7 +1199,6 @@ function SpacesPage() {
         </div>
       </div>
 
-      {/* CSS Animations */}
       <style>{`
         @keyframes fade-in {
           from { opacity: 0; transform: translateY(10px); }
@@ -913,6 +1216,12 @@ function SpacesPage() {
         }
         .animate-pulse {
           animation: pulse 3s ease-in-out infinite;
+        }
+        .line-clamp-1 {
+          display: -webkit-box;
+          -webkit-line-clamp: 1;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
         }
       `}</style>
     </div>

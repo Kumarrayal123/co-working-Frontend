@@ -63,6 +63,7 @@ import DoctorCabinRevenue from "./components/DoctorCabinRevenue";
 import MyRevenue from "./components/MyRevenue";
 import AdminProfile from "./components/AdminProfile";
 import CafeDiningPage from "./components/CafeDiningPage";
+import CafeDashboard from "./components/CafeDashboard";
 
 function App() {
   return (
@@ -71,6 +72,7 @@ function App() {
       <Routes>
         <Route path="/" element={<PromotionalPage />} />
         <Route path="/cafe" element={<CafeDiningPage />} />
+        <Route path="/cafedashboard" element={<CafeDashboard />} />
         <Route path="/doctor-chamber" element={<DoctorChamberPage />} />
         <Route path="/doctordashbaord" element={<DoctorDashboard />} />
         <Route path="/doctorwallet" element={<DoctorWallet />} />

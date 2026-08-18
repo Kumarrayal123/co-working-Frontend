@@ -26,7 +26,8 @@ import {
   X,
   Key,
   Check,
-  AlertCircle
+  AlertCircle,
+  UtensilsCrossed
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
@@ -109,10 +110,15 @@ function Login() {
       console.log("  - Role:", user.role);
       console.log("  - Mobile:", user.mobile);
       console.log("  - Address:", user.address);
+      console.log("  - isDoctor:", user.isDoctor);
+      console.log("  - isCafe:", user.isCafe);
+      console.log("  - isCabinOwner:", user.isCabinOwner);
 
       localStorage.removeItem("admin");
       localStorage.removeItem("user");
       localStorage.removeItem("isDoctor");
+      localStorage.removeItem("isCafe");
+      localStorage.removeItem("isCabinOwner");
       
       localStorage.setItem("token", token);
       
@@ -132,6 +138,14 @@ function Login() {
         if (user.role === "doctor") {
           localStorage.setItem("isDoctor", "true");
           console.log("👨‍⚕️ Doctor flag set");
+        }
+        if (user.role === "cafe") {
+          localStorage.setItem("isCafe", "true");
+          console.log("☕ Cafe flag set");
+        }
+        if (user.role === "cabinOwner") {
+          localStorage.setItem("isCabinOwner", "true");
+          console.log("🏢 Cabin Owner flag set");
         }
       }
       
@@ -159,6 +173,10 @@ function Login() {
         redirectPath = "/doctordashbaord";
         roleDisplay = "Doctor";
         console.log("👨‍⚕️ DOCTOR LOGIN! Redirecting to /doctordashbaord");
+      } else if (user.role === "cafe") {
+        redirectPath = "/cafedashboard";
+        roleDisplay = "Cafe";
+        console.log("☕ CAFE LOGIN! Redirecting to /cafedashboard");
       } else if (user.role === "user") {
         redirectPath = "/spaceforusers";
         roleDisplay = "User";
@@ -178,6 +196,8 @@ function Login() {
         toast.success(`🏪 Welcome Cabin Owner! ${user.name}`);
       } else if (user.role === "doctor") {
         toast.success(`👨‍⚕️ Welcome Doctor! ${user.name}`);
+      } else if (user.role === "cafe") {
+        toast.success(`☕ Welcome Cafe! ${user.name}`);
       } else {
         toast.success(`👤 Welcome ${user.name}!`);
       }
@@ -297,6 +317,7 @@ function Login() {
       admin: { emoji: '👑', color: 'from-purple-500 to-pink-500', icon: ShieldCheck, label: 'Admin' },
       cabinOwner: { emoji: '🏪', color: 'from-amber-500 to-orange-500', icon: Building2, label: 'Cabin Owner' },
       doctor: { emoji: '👨‍⚕️', color: 'from-emerald-500 to-teal-500', icon: Stethoscope, label: 'Doctor' },
+      cafe: { emoji: '☕', color: 'from-amber-500 to-yellow-500', icon: UtensilsCrossed, label: 'Cafe' },
       user: { emoji: '👤', color: 'from-indigo-500 to-blue-500', icon: User, label: 'User' }
     };
     return styles[role] || styles.user;
@@ -314,6 +335,7 @@ function Login() {
       admin: '👑',
       cabinOwner: '🏪',
       doctor: '👨‍⚕️',
+      cafe: '☕',
       user: '👤'
     };
     
@@ -723,6 +745,8 @@ function Login() {
                       <Building2 size={36} className="text-white" />
                     ) : userRole === "doctor" ? (
                       <Stethoscope size={36} className="text-white" />
+                    ) : userRole === "cafe" ? (
+                      <UtensilsCrossed size={36} className="text-white" />
                     ) : (
                       <User size={36} className="text-white" />
                     )}
@@ -743,6 +767,7 @@ function Login() {
                   {userRole === "admin" ? "👑 Administrator Access Granted" : 
                    userRole === "cabinOwner" ? "🏪 Cabin Owner Access Granted" : 
                    userRole === "doctor" ? "👨‍⚕️ Medical Professional Access Granted" : 
+                   userRole === "cafe" ? "☕ Cafe Access Granted" : 
                    "👤 User Access Granted"}
                 </p>
 
@@ -752,7 +777,7 @@ function Login() {
                     {userName}
                   </span>
                   <span className="px-3 py-1 bg-white/10 backdrop-blur-sm rounded-full text-[10px] text-white/60 border border-white/5">
-                    {userRole}
+                    {userRole === "cafe" ? "☕ Cafe" : userRole}
                   </span>
                 </div>
 
@@ -784,6 +809,7 @@ function Login() {
                   {userRole === "admin" ? "👑 Welcome to the Admin Panel" : 
                    userRole === "cabinOwner" ? "🏪 Welcome to Your Dashboard" : 
                    userRole === "doctor" ? "👨‍⚕️ Welcome to Your Medical Dashboard" : 
+                   userRole === "cafe" ? "☕ Welcome to Your Cafe Dashboard" : 
                    "✨ Explore the best workspaces"}
                 </p>
               </div>

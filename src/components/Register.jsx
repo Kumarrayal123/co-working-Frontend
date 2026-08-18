@@ -25,7 +25,8 @@ import {
   Store,
   UserCheck,
   UserCog,
-  Stethoscope // Added for Doctor
+  Stethoscope,
+  UtensilsCrossed
 } from "lucide-react";
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -50,7 +51,7 @@ function Register() {
   const [currentStep, setCurrentStep] = useState(1);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [userName, setUserName] = useState("");
-  const [userType, setUserType] = useState(null); // 'user' or 'cabinOwner'
+  const [userType, setUserType] = useState(null);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -81,6 +82,11 @@ function Register() {
   };
 
   const handleUserTypeSelect = (type) => {
+    // Doctor registration - navigate to doctor register page
+    if (type === "doctor") {
+      navigate("/doctorregister");
+      return;
+    }
     setUserType(type);
     setCurrentStep(1);
   };
@@ -92,27 +98,25 @@ function Register() {
     try {
       const data = new FormData();
       
-      // Common fields for both user types
       data.append("name", formData.name);
       data.append("email", formData.email);
       data.append("password", formData.password);
       data.append("mobile", formData.mobile);
       data.append("address", formData.address);
       
-      // If cabin owner, add organization details
-      if (userType === "cabinOwner") {
+      if (userType === "cabinOwner" || userType === "cafe") {
         data.append("organizationName", formData.organizationName || "");
         data.append("gstNumber", formData.gstNumber || "");
         data.append("panNumber", formData.panNumber || "");
         if (panFile) {
           data.append("panCard", panFile);
         }
-        data.append("role", "cabinOwner");
+        data.append("role", userType);
       } else {
         data.append("role", "user");
       }
 
-      const res = await axios.post("https://spaceapi.iryax.com/api/auth/register", data, {
+      const res = await axios.post("http://localhost:5003/api/auth/register", data, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -155,11 +159,9 @@ function Register() {
           <div className="absolute -top-40 -right-40 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl animate-pulse"></div>
           <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl"></div>
-          <div className="absolute top-20 left-10 w-2 h-2 bg-emerald-400 rounded-full blur-sm animate-ping"></div>
-          <div className="absolute bottom-20 right-10 w-3 h-3 bg-blue-400 rounded-full blur-sm animate-ping delay-700"></div>
         </div>
 
-        <div className="relative z-10 max-w-3xl w-full">
+        <div className="relative z-10 max-w-4xl w-full">
           <div className="bg-white/5 backdrop-blur-xl p-8 rounded-3xl shadow-2xl border border-white/10 hover:border-white/20 transition-all duration-500">
             <div className="w-16 h-0.5 bg-gradient-to-r from-emerald-400 via-blue-500 to-purple-500 rounded-full mx-auto mb-4"></div>
 
@@ -184,8 +186,8 @@ function Register() {
               Select how you want to register with IRYAX Space
             </p>
 
-            {/* Grid with 3 options - User, Cabin Owner, Medical Cabin */}
-            <div className="grid md:grid-cols-3 gap-4">
+            {/* Grid with 4 options */}
+            <div className="grid md:grid-cols-4 gap-4">
               {/* User Card */}
               <button
                 onClick={() => handleUserTypeSelect("user")}
@@ -234,7 +236,7 @@ function Register() {
 
               {/* Medical Cabin / Doctor Card */}
               <button
-                onClick={() => navigate("/doctorregister")}
+                onClick={() => handleUserTypeSelect("doctor")}
                 className="group relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 text-left hover:border-purple-400/50 hover:bg-white/10 transition-all duration-500 hover:-translate-y-1 hover:shadow-xl hover:shadow-purple-500/10"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-500/0 to-purple-500/0 group-hover:from-purple-500/5 group-hover:to-purple-500/10 rounded-2xl transition-all duration-500"></div>
@@ -250,6 +252,29 @@ function Register() {
                   </p>
                   <div className="mt-4 flex items-center gap-2 text-purple-400/60 text-xs font-medium group-hover:text-purple-400 transition-colors">
                     <span>Join as Medical Cabin Owner</span>
+                    <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </div>
+              </button>
+
+              {/* Cafe Card */}
+              <button
+                onClick={() => handleUserTypeSelect("cafe")}
+                className="group relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 text-left hover:border-amber-400/50 hover:bg-white/10 transition-all duration-500 hover:-translate-y-1 hover:shadow-xl hover:shadow-amber-500/10"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-amber-500/0 to-amber-500/0 group-hover:from-amber-500/5 group-hover:to-amber-500/10 rounded-2xl transition-all duration-500"></div>
+                <div className="relative">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400/20 to-orange-600/20 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform duration-300 mb-4 border border-amber-400/20 group-hover:border-amber-400/40">
+                    <UtensilsCrossed size={28} />
+                  </div>
+                  <h3 className="text-white font-semibold text-base tracking-wide group-hover:text-amber-400 transition-colors">
+                    Cafe
+                  </h3>
+                  <p className="text-white/40 text-xs font-light mt-1 leading-relaxed">
+                    Register your cafe, list your menu, manage dining bookings & offers.
+                  </p>
+                  <div className="mt-4 flex items-center gap-2 text-amber-400/60 text-xs font-medium group-hover:text-amber-400 transition-colors">
+                    <span>Register Your Cafe</span>
                     <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                   </div>
                 </div>
@@ -281,15 +306,13 @@ function Register() {
     );
   }
 
-  // Main Registration Form (User / Cabin Owner)
+  // Main Registration Form (User / Cabin Owner / Cafe)
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 flex items-center justify-center px-4 relative overflow-hidden py-8">
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl"></div>
-        <div className="absolute top-20 left-10 w-2 h-2 bg-emerald-400 rounded-full blur-sm animate-ping"></div>
-        <div className="absolute bottom-20 right-10 w-3 h-3 bg-blue-400 rounded-full blur-sm animate-ping delay-700"></div>
       </div>
 
       <div className="relative z-10 max-w-[600px] w-full">
@@ -310,9 +333,11 @@ function Register() {
               <div className={`px-3 py-1 rounded-full text-[8px] font-bold tracking-wider uppercase border ${
                 userType === "user" 
                   ? "bg-emerald-500/20 text-emerald-400 border-emerald-400/30" 
+                  : userType === "cafe"
+                  ? "bg-amber-500/20 text-amber-400 border-amber-400/30"
                   : "bg-blue-500/20 text-blue-400 border-blue-400/30"
               }`}>
-                {userType === "user" ? "👤 User" : "🏢 Cabin Owner"}
+                {userType === "user" ? "👤 User" : userType === "cafe" ? "☕ Cafe" : "🏢 Cabin Owner"}
               </div>
             </div>
 
@@ -358,7 +383,7 @@ function Register() {
           </div>
 
           <form onSubmit={handleSubmit}>
-            {/* Step 1: Personal Information - Same for both */}
+            {/* Step 1: Personal Information - Same for all */}
             {currentStep === 1 && (
               <div className="space-y-3">
                 <p className="text-[9px] text-white/30 font-light tracking-wider uppercase flex items-center gap-2 pb-0.5">
@@ -456,7 +481,7 @@ function Register() {
             {currentStep === 2 && (
               <div className="space-y-3">
                 {userType === "user" ? (
-                  // USER - Simple confirmation step
+                  // USER - Simple confirmation
                   <div className="space-y-4">
                     <div className="bg-white/5 rounded-xl p-4 border border-white/5">
                       <p className="text-white/60 text-xs font-light text-center">
@@ -511,47 +536,47 @@ function Register() {
                     </div>
                   </div>
                 ) : (
-                  // CABIN OWNER - Organization Details
+                  // CABIN OWNER OR CAFE - Organization Details
                   <div className="space-y-3">
                     <p className="text-[9px] text-white/30 font-light tracking-wider uppercase flex items-center gap-2 pb-0.5">
-                      <Briefcase size={11} className="text-blue-400/40" />
+                      <Briefcase size={11} className={userType === "cafe" ? "text-amber-400/40" : "text-blue-400/40"} />
                       Organization & Documents
                     </p>
 
                     <div className="grid grid-cols-2 gap-3">
                       <div className="relative group col-span-2">
-                        <Building2 className="absolute left-3 top-2.5 text-white/30 group-focus-within:text-blue-400/70 transition-colors" size={14} />
+                        <Building2 className="absolute left-3 top-2.5 text-white/30 group-focus-within:text-emerald-400/70 transition-colors" size={14} />
                         <input
                           type="text"
                           name="organizationName"
                           placeholder="Organization Name"
                           value={formData.organizationName}
                           onChange={handleChange}
-                          className="w-full pl-9 pr-3 py-2 bg-white/5 border border-white/10 rounded-xl focus:ring-1 focus:ring-blue-400/30 focus:border-blue-400/30 transition-all outline-none text-white/80 placeholder:text-white/20 font-light text-sm group-hover:border-white/20"
+                          className="w-full pl-9 pr-3 py-2 bg-white/5 border border-white/10 rounded-xl focus:ring-1 focus:ring-emerald-400/30 focus:border-emerald-400/30 transition-all outline-none text-white/80 placeholder:text-white/20 font-light text-sm group-hover:border-white/20"
                         />
                       </div>
 
                       <div className="relative group">
-                        <Clipboard className="absolute left-3 top-2.5 text-white/30 group-focus-within:text-blue-400/70 transition-colors" size={14} />
+                        <Clipboard className="absolute left-3 top-2.5 text-white/30 group-focus-within:text-emerald-400/70 transition-colors" size={14} />
                         <input
                           type="text"
                           name="gstNumber"
                           placeholder="GST Number"
                           value={formData.gstNumber}
                           onChange={handleChange}
-                          className="w-full pl-9 pr-3 py-2 bg-white/5 border border-white/10 rounded-xl focus:ring-1 focus:ring-blue-400/30 focus:border-blue-400/30 transition-all outline-none text-white/80 placeholder:text-white/20 font-light text-sm group-hover:border-white/20"
+                          className="w-full pl-9 pr-3 py-2 bg-white/5 border border-white/10 rounded-xl focus:ring-1 focus:ring-emerald-400/30 focus:border-emerald-400/30 transition-all outline-none text-white/80 placeholder:text-white/20 font-light text-sm group-hover:border-white/20"
                         />
                       </div>
 
                       <div className="relative group">
-                        <IdCard className="absolute left-3 top-2.5 text-white/30 group-focus-within:text-blue-400/70 transition-colors" size={14} />
+                        <IdCard className="absolute left-3 top-2.5 text-white/30 group-focus-within:text-emerald-400/70 transition-colors" size={14} />
                         <input
                           type="text"
                           name="panNumber"
                           placeholder="PAN Number"
                           value={formData.panNumber}
                           onChange={handleChange}
-                          className="w-full pl-9 pr-3 py-2 bg-white/5 border border-white/10 rounded-xl focus:ring-1 focus:ring-blue-400/30 focus:border-blue-400/30 transition-all outline-none text-white/80 placeholder:text-white/20 font-light text-sm group-hover:border-white/20"
+                          className="w-full pl-9 pr-3 py-2 bg-white/5 border border-white/10 rounded-xl focus:ring-1 focus:ring-emerald-400/30 focus:border-emerald-400/30 transition-all outline-none text-white/80 placeholder:text-white/20 font-light text-sm group-hover:border-white/20"
                         />
                       </div>
                     </div>
@@ -559,7 +584,7 @@ function Register() {
                     {/* PAN Card Upload */}
                     <div className="space-y-1.5">
                       <label className="text-[9px] text-white/40 font-medium tracking-wider flex items-center gap-1.5">
-                        <Upload size={11} className="text-blue-400/50" />
+                        <Upload size={11} className={userType === "cafe" ? "text-amber-400/50" : "text-blue-400/50"} />
                         Upload PAN Card (Optional)
                       </label>
                       <div className="relative group">
@@ -571,12 +596,12 @@ function Register() {
                         />
                         <div className={`flex items-center justify-between pl-4 pr-3 py-2.5 bg-white/5 border rounded-xl transition-all ${
                           panFile 
-                            ? "border-blue-400/30 bg-blue-500/5" 
+                            ? "border-emerald-400/30 bg-emerald-500/5" 
                             : "border-white/10 group-hover:border-white/20"
                         }`}>
                           <div className="flex items-center gap-3 overflow-hidden">
                             {panFile 
-                              ? <FileText size={14} className="text-blue-400 flex-shrink-0" /> 
+                              ? <FileText size={14} className="text-emerald-400 flex-shrink-0" /> 
                               : <Upload size={14} className="text-white/30 flex-shrink-0" />
                             }
                             <span className={`text-xs truncate ${panFile ? "text-white/80 font-medium" : "text-white/30"}`}>
@@ -584,7 +609,7 @@ function Register() {
                             </span>
                           </div>
                           {panFile && (
-                            <span className="flex-shrink-0 bg-blue-500/20 text-blue-400 text-[9px] font-bold px-2 py-0.5 rounded-lg border border-blue-400/30">
+                            <span className="flex-shrink-0 bg-emerald-500/20 text-emerald-400 text-[9px] font-bold px-2 py-0.5 rounded-lg border border-emerald-400/30">
                               Uploaded
                             </span>
                           )}
@@ -597,7 +622,7 @@ function Register() {
 
                     <div className="bg-white/5 rounded-xl p-2.5 border border-white/5">
                       <p className="text-[9px] text-white/30 font-light leading-relaxed flex items-start gap-1.5">
-                        <span className="text-blue-400/40 text-[10px]">ⓘ</span>
+                        <span className={userType === "cafe" ? "text-amber-400/40 text-[10px]" : "text-blue-400/40 text-[10px]"}>ⓘ</span>
                         <span>GST, PAN numbers and PAN Card upload are optional but recommended for complete verification.</span>
                       </p>
                     </div>
@@ -623,7 +648,7 @@ function Register() {
                         ) : (
                           <>
                             <Sparkles size={14} />
-                            <span>Register Business</span>
+                            <span>Register</span>
                             <ArrowRight size={14} />
                           </>
                         )}
@@ -695,7 +720,9 @@ function Register() {
                 {userName || "User"}
               </p>
               <p className="text-white/40 text-xs font-light mt-2">
-                {userType === "cabinOwner" 
+                {userType === "cafe" 
+                  ? "Your cafe registration is pending admin approval." 
+                  : userType === "cabinOwner"
                   ? "Your business registration is pending admin approval." 
                   : "Please wait for admin approval before logging in."}
               </p>

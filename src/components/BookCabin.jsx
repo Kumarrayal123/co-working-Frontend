@@ -28,6 +28,7 @@ import UsersNavbar from "./UsersNavbar";
 import AdminNavbar from "./AdminNavbar";
 import SimpleUserNavbar from "./SimpleUserNavbar";
 import DoctorNavbar from "./DoctorNavbar";
+import CafeNavbar from "./CafeNavbar";
 import "./Dashboard.css";
 
 const API_URL = "https://spaceapi.iryax.com";
@@ -350,17 +351,20 @@ const BookCabin = () => {
           const isCabinOwner = userData.role === "cabinOwner";
           const isDoctor = userData.isDoctor === true || userData.role === "doctor";
           const isAdmin = userData.role === "admin";
+          const isCafe = userData.isCafe === true || userData.role === "cafe";
           
           let role = "user";
           if (isAdmin) role = "admin";
           else if (isDoctor) role = "doctor";
           else if (isCabinOwner) role = "cabinOwner";
           else if (isCoworking) role = "coworking";
+          else if (isCafe) role = "cafe";
           else role = "user";
           
           return { 
             user: userData, 
-            role: role
+            role: role,
+            isCafe: isCafe
           };
         }
       }
@@ -369,7 +373,7 @@ const BookCabin = () => {
       if (adminStr) {
         const adminData = JSON.parse(adminStr);
         if (adminData && adminData._id) {
-          return { user: adminData, role: "admin" };
+          return { user: adminData, role: "admin", isCafe: false };
         }
       }
 
@@ -378,36 +382,38 @@ const BookCabin = () => {
         try {
           const payload = JSON.parse(atob(token.split('.')[1]));
           const role = payload.role || payload.userRole || "user";
-          return { user: null, role: role };
+          const isCafe = role === "cafe" || payload.isCafe === true;
+          return { user: null, role: role, isCafe: isCafe };
         } catch (e) {
-          return { user: null, role: "user" };
+          return { user: null, role: "user", isCafe: false };
         }
       }
 
-      return { user: null, role: "user" };
+      return { user: null, role: "user", isCafe: false };
     } catch (e) {
       console.error("Error getting user data:", e);
-      return { user: null, role: "user" };
+      return { user: null, role: "user", isCafe: false };
     }
   };
 
-  const { user: currentUser, role: userRole } = getUserData();
+  const { user: currentUser, role: userRole, isCafe } = getUserData();
   
   const isAdmin = userRole === "admin";
   const isDoctor = userRole === "doctor";
   const isCoworking = userRole === "coworking";
   const isCabinOwner = userRole === "cabinOwner";
+  const isCafeUser = isCafe || userRole === "cafe";
 
   const renderNavbar = () => {
     if (isAdmin) {
       return <AdminNavbar />;
     } else if (isDoctor) {
       return <DoctorNavbar />;
+    } else if (isCafeUser) {
+      return <CafeNavbar />;
     } else if (isCoworking || isCabinOwner) {
-      // Show UsersNavbar for both coworking and cabinOwner
       return <UsersNavbar />;
     } else {
-      // Only show SimpleUserNavbar for regular 'user' role
       return <SimpleUserNavbar />;
     }
   };
@@ -1057,10 +1063,11 @@ const BookCabin = () => {
           navigate("/adminbookings");
         } else if (userRole === "doctor") {
           navigate("/doctorbookings");
+        } else if (userRole === "cafe") {
+          navigate("/cafebookings");
         } else if (userRole === "coworking" || userRole === "cabinOwner") {
           navigate("/coworkingbookings");
         } else {
-          // Regular user goes to userbooking
           navigate("/userbooking");
         }
       } else {

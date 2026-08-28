@@ -6,28 +6,21 @@ import {
   Mail, 
   ShieldCheck, 
   ArrowRight,
-  Sparkles,
   CheckCircle,
   LogIn,
-  Zap,
+    Zap,        // ← Add this
   User,
   Building2,
   Loader2,
   Stethoscope,
-  Crown,
-  PartyPopper,
-  Rocket,
-  Star,
-  Heart,
-  Coffee,
+  UtensilsCrossed,
   KeyRound,
   Send,
   ArrowLeft,
   X,
   Key,
-  Check,
   AlertCircle,
-  UtensilsCrossed
+  Check
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
@@ -311,37 +304,6 @@ function Login() {
     setForgotLoading(false);
   };
 
-  // Get role-specific emoji and color
-  const getRoleStyle = (role) => {
-    const styles = {
-      admin: { emoji: '👑', color: 'from-purple-500 to-pink-500', icon: ShieldCheck, label: 'Admin' },
-      cabinOwner: { emoji: '🏪', color: 'from-amber-500 to-orange-500', icon: Building2, label: 'Cabin Owner' },
-      doctor: { emoji: '👨‍⚕️', color: 'from-emerald-500 to-teal-500', icon: Stethoscope, label: 'Doctor' },
-      cafe: { emoji: '☕', color: 'from-amber-500 to-yellow-500', icon: UtensilsCrossed, label: 'Cafe' },
-      user: { emoji: '👤', color: 'from-indigo-500 to-blue-500', icon: User, label: 'User' }
-    };
-    return styles[role] || styles.user;
-  };
-
-  // Get welcome message based on role and time
-  const getWelcomeMessage = (role, name) => {
-    const hour = new Date().getHours();
-    let greeting = '';
-    if (hour < 12) greeting = 'Good Morning';
-    else if (hour < 17) greeting = 'Good Afternoon';
-    else greeting = 'Good Evening';
-    
-    const roleEmojis = {
-      admin: '👑',
-      cabinOwner: '🏪',
-      doctor: '👨‍⚕️',
-      cafe: '☕',
-      user: '👤'
-    };
-    
-    return `${greeting}, ${roleEmojis[role] || '👤'} ${name}!`;
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 flex items-center justify-center px-4 relative overflow-hidden">
       {/* Animated Background Elements */}
@@ -512,7 +474,6 @@ function Login() {
               Protected by advanced encryption & security protocols
             </p>
           </div>
-
         </div>
 
         {/* Bottom Decorative Line */}
@@ -520,7 +481,7 @@ function Login() {
       </div>
 
       {/* ====================== */}
-      {/* FORGOT PASSWORD POPUP - NO OTP */}
+      {/* FORGOT PASSWORD POPUP */}
       {/* ====================== */}
       {showForgotPassword && (
         <div 
@@ -532,16 +493,12 @@ function Login() {
           }}
         >
           <div className="relative max-w-md w-full">
-            {/* Animated Background Glow */}
             <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 via-purple-500 to-blue-500 rounded-2xl blur-xl opacity-20 animate-pulse"></div>
             
-            {/* Main Card */}
-            <div className="relative bg-white/10 backdrop-blur-2xl rounded-2xl border border-white/20 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
-              {/* Decorative Top Gradient */}
+            <div className="relative bg-white/10 backdrop-blur-2xl rounded-2xl border border-white/20 shadow-2xl overflow-hidden">
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-400 via-purple-400 to-blue-400"></div>
               
               <div className="p-6 text-center relative z-10">
-                {/* Close Button */}
                 <button
                   onClick={closeForgotPassword}
                   className="absolute top-3 right-3 p-1.5 rounded-full hover:bg-white/10 transition-colors text-white/40 hover:text-white/60"
@@ -549,7 +506,6 @@ function Login() {
                   <X size={18} />
                 </button>
 
-                {/* Icon */}
                 <div className="relative inline-flex items-center justify-center w-20 h-20 mb-3">
                   <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/20 to-blue-400/20 rounded-full animate-ping"></div>
                   <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/10 to-blue-400/10 rounded-full animate-pulse"></div>
@@ -562,7 +518,6 @@ function Login() {
                   </div>
                 </div>
 
-                {/* Title */}
                 <h3 className="text-xl font-bold text-white tracking-tight">
                   {emailVerified ? "Set New Password 🔐" : "Reset Password"}
                 </h3>
@@ -573,7 +528,6 @@ function Login() {
                     : "Enter your email to reset your password"}
                 </p>
 
-                {/* Step 1: Email */}
                 {!emailVerified ? (
                   <form onSubmit={handleVerifyEmail} className="mt-4 space-y-3">
                     <div className="relative group">
@@ -614,7 +568,6 @@ function Login() {
                     </button>
                   </form>
                 ) : (
-                  /* Step 2: New Password */
                   <form onSubmit={handleResetPassword} className="mt-4 space-y-3">
                     <div className="relative group">
                       <Lock className="absolute left-3 top-3 text-white/30 group-focus-within:text-emerald-400/70 transition-colors" size={16} />
@@ -703,115 +656,48 @@ function Login() {
       )}
 
       {/* ====================== */}
-      {/* ATTRACTIVE SUCCESS POPUP */}
+      {/* SIMPLE SUCCESS POPUP */}
       {/* ====================== */}
       {showSuccessPopup && (
         <div 
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-md p-4"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setShowSuccessPopup(false);
             }
           }}
         >
-          <div className="relative max-w-md w-full">
-            {/* Animated Background Glow */}
-            <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 via-purple-500 to-pink-500 rounded-2xl blur-xl opacity-30 animate-pulse"></div>
-            
-            {/* Main Card */}
-            <div className="relative bg-white/10 backdrop-blur-2xl rounded-2xl border border-white/20 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
-              {/* Decorative Top Gradient */}
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-400 via-purple-400 to-pink-400"></div>
+          <div className="relative max-w-sm w-full">
+            <div className="relative bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl overflow-hidden">
+              {/* Top accent line */}
+              <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-400 to-blue-400"></div>
               
-              {/* Confetti Particles - Decorative */}
-              <div className="absolute top-0 left-0 right-0 bottom-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-10 left-5 w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                <div className="absolute top-20 right-10 w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></div>
-                <div className="absolute top-32 left-20 w-2.5 h-2.5 bg-pink-400 rounded-full animate-bounce" style={{ animationDelay: '0.5s' }}></div>
-                <div className="absolute top-40 right-20 w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.7s' }}></div>
-                <div className="absolute bottom-10 left-10 w-2 h-2 bg-yellow-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                <div className="absolute bottom-20 right-15 w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
-              </div>
-
-              <div className="p-8 text-center relative z-10">
-                {/* Icon Container */}
-                <div className="relative inline-flex items-center justify-center w-24 h-24 mb-4">
-                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/20 to-purple-400/20 rounded-full animate-ping"></div>
-                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/10 to-purple-400/10 rounded-full animate-pulse"></div>
-                  <div className={`relative w-20 h-20 bg-gradient-to-br ${getRoleStyle(userRole).color} rounded-full flex items-center justify-center shadow-2xl shadow-emerald-500/30`}>
-                    {userRole === "admin" ? (
-                      <ShieldCheck size={36} className="text-white" />
-                    ) : userRole === "cabinOwner" ? (
-                      <Building2 size={36} className="text-white" />
-                    ) : userRole === "doctor" ? (
-                      <Stethoscope size={36} className="text-white" />
-                    ) : userRole === "cafe" ? (
-                      <UtensilsCrossed size={36} className="text-white" />
-                    ) : (
-                      <User size={36} className="text-white" />
-                    )}
-                  </div>
-                  
-                  {/* Floating Badge */}
-                  <div className="absolute -top-1 -right-1 bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full p-1.5 shadow-lg shadow-emerald-500/30">
-                    <CheckCircle size={14} className="text-white" />
-                  </div>
+              <div className="p-6 text-center">
+                {/* Simple Icon */}
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-emerald-500 to-blue-500 shadow-lg shadow-emerald-500/20 mb-3">
+                  <CheckCircle size={28} className="text-white" />
                 </div>
 
-                {/* Welcome Message */}
-                <h3 className="text-2xl font-bold text-white tracking-tight">
-                  {getWelcomeMessage(userRole, userName)}
+                {/* Message */}
+                <h3 className="text-lg font-semibold text-white">
+                  Welcome back!
                 </h3>
                 
-                <p className="text-white/50 text-sm mt-1 font-light">
-                  {userRole === "admin" ? "👑 Administrator Access Granted" : 
-                   userRole === "cabinOwner" ? "🏪 Cabin Owner Access Granted" : 
-                   userRole === "doctor" ? "👨‍⚕️ Medical Professional Access Granted" : 
-                   userRole === "cafe" ? "☕ Cafe Access Granted" : 
-                   "👤 User Access Granted"}
+                <p className="text-white/60 text-sm mt-1 font-light">
+                  {userName || "User"}
                 </p>
 
-                {/* User Info Chips */}
-                <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-                  <span className="px-3 py-1 bg-white/10 backdrop-blur-sm rounded-full text-[10px] text-white/60 border border-white/5">
-                    {userName}
-                  </span>
-                  <span className="px-3 py-1 bg-white/10 backdrop-blur-sm rounded-full text-[10px] text-white/60 border border-white/5">
-                    {userRole === "cafe" ? "☕ Cafe" : userRole}
-                  </span>
+                {/* Role badge */}
+                <div className="mt-3 inline-block px-3 py-1 bg-white/10 rounded-full text-xs text-white/50 border border-white/5">
+                  {userRole || "User"}
                 </div>
 
-                {/* Divider */}
-                <div className="relative my-4">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-white/10"></div>
-                  </div>
-                  <div className="relative flex justify-center">
-                    <span className="px-3 bg-transparent text-white/20 text-[8px] font-light tracking-[0.15em]">
-                      SECURE SESSION
-                    </span>
+                {/* Loading indicator */}
+                <div className="mt-4">
+                  <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-emerald-400 to-blue-400 rounded-full animate-progress"></div>
                   </div>
                 </div>
-
-                {/* Loading Progress */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-[10px] text-white/30">
-                    <span>Redirecting to Dashboard</span>
-                    <span className="text-white/50 font-medium">2s</span>
-                  </div>
-                  <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-emerald-400 via-purple-400 to-pink-400 rounded-full animate-progress"></div>
-                  </div>
-                </div>
-
-                {/* Footer Text */}
-                <p className="mt-4 text-[8px] text-white/20 font-light tracking-widest">
-                  {userRole === "admin" ? "👑 Welcome to the Admin Panel" : 
-                   userRole === "cabinOwner" ? "🏪 Welcome to Your Dashboard" : 
-                   userRole === "doctor" ? "👨‍⚕️ Welcome to Your Medical Dashboard" : 
-                   userRole === "cafe" ? "☕ Welcome to Your Cafe Dashboard" : 
-                   "✨ Explore the best workspaces"}
-                </p>
               </div>
             </div>
           </div>

@@ -64,6 +64,10 @@ import MyRevenue from "./components/MyRevenue";
 import AdminProfile from "./components/AdminProfile";
 import CafeDiningPage from "./components/CafeDiningPage";
 import CafeDashboard from "./components/CafeDashboard";
+import MyCafes from "./components/MyCafes";
+import AllCafes from "./components/AllCafes";
+import CafeBookings from "./components/CafeBookings";
+import CafeProfile from "./components/CafeProfile";
 
 function App() {
   return (
@@ -73,6 +77,10 @@ function App() {
         <Route path="/" element={<PromotionalPage />} />
         <Route path="/cafe" element={<CafeDiningPage />} />
         <Route path="/cafedashboard" element={<CafeDashboard />} />
+        <Route path="/mycafes" element={<MyCafes />} />
+        <Route path="/allcafes" element={<AllCafes />} />
+        <Route path="/cafebookings" element={<CafeBookings />} />
+        <Route path="/cafeprofile" element={<CafeProfile />} />
         <Route path="/doctor-chamber" element={<DoctorChamberPage />} />
         <Route path="/doctordashbaord" element={<DoctorDashboard />} />
         <Route path="/doctorwallet" element={<DoctorWallet />} />

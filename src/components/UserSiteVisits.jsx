@@ -19,7 +19,8 @@ import {
   FileDown,
   CalendarPlus,
   Info,
-  Layers
+  Layers,
+  Coffee // 👈 Cafe icon add kiya
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -97,20 +98,38 @@ const UserSiteVisits = () => {
     return map[status?.toLowerCase()] || { label: status || 'Unknown', color: 'bg-gray-100 text-gray-700' };
   };
 
+  // ✅ UPDATED: Space Type detection - isCafe, isChamber, otherwise co-working
   const getSpaceType = (visit) => {
-    if (visit.cabin?.isChamber) return 'medical';
+    const cabin = visit.cabin || {};
+    if (cabin.isChamber) return 'medical';
+    if (cabin.isCafe) return 'cafe';
     return 'coworking';
   };
 
   const getSpaceTypeBadge = (visit) => {
-    const isChamber = visit.cabin?.isChamber || false;
+    const cabin = visit.cabin || {};
+    if (cabin.isChamber) {
+      return {
+        label: 'Medical Chamber',
+        color: 'bg-emerald-100 text-emerald-700',
+        icon: <Stethoscope size={9} />
+      };
+    }
+    if (cabin.isCafe) {
+      return {
+        label: 'Cafe',
+        color: 'bg-amber-100 text-amber-700',
+        icon: <Coffee size={9} />
+      };
+    }
     return {
-      label: isChamber ? 'Medical Chamber' : 'Co-Working Space',
-      color: isChamber ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700',
-      icon: isChamber ? <Stethoscope size={9} /> : <Briefcase size={9} />
+      label: 'Co-Working Space',
+      color: 'bg-blue-100 text-blue-700',
+      icon: <Briefcase size={9} />
     };
   };
 
+  // ✅ UPDATED: New API endpoint for site visits only
   const fetchSiteVisits = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -121,12 +140,12 @@ const UserSiteVisits = () => {
       }
 
       const res = await axios.get(
-        `${API_URL}/api/bookings/user`,
+        `${API_URL}/api/bookings/user/visits`, // ✅ NEW API ENDPOINT
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      const allBookings = res.data.bookings || [];
-      const siteVisits = allBookings.filter(b => b.bookingType === 'visit');
+      // ✅ Directly set visits from response (already filtered for site visits)
+      const siteVisits = res.data.bookings || res.data || [];
       setVisits(siteVisits);
 
       if (siteVisits.length === 0) {
@@ -194,18 +213,25 @@ const UserSiteVisits = () => {
         toast.warning("No visits to export");
         return;
       }
-      const data = filteredVisits.map((v, i) => ({
-        'S.No': i + 1,
-        'Cabin': v.cabin?.name || 'Unknown',
-        'Type': v.cabin?.isChamber ? 'Medical Chamber' : 'Co-Working Space',
-        'Visit Date': formatDateDDMMYYYY(v.startDate),
-        'Visit Time': formatTime12(v.startTime),
-        'Status': getStatusBadge(v.status).label,
-        'Name': v.name || 'N/A',
-        'Mobile': v.mobile || 'N/A',
-        'Email': v.email || 'N/A',
-        'Created At': formatDateTime(v.createdAt)
-      }));
+      const data = filteredVisits.map((v, i) => {
+        const cabin = v.cabin || {};
+        let typeLabel = 'Co-Working Space';
+        if (cabin.isChamber) typeLabel = 'Medical Chamber';
+        else if (cabin.isCafe) typeLabel = 'Cafe';
+        
+        return {
+          'S.No': i + 1,
+          'Cabin': v.cabin?.name || 'Unknown',
+          'Type': typeLabel,
+          'Visit Date': formatDateDDMMYYYY(v.startDate),
+          'Visit Time': formatTime12(v.startTime),
+          'Status': getStatusBadge(v.status).label,
+          'Name': v.name || 'N/A',
+          'Mobile': v.mobile || 'N/A',
+          'Email': v.email || 'N/A',
+          'Created At': formatDateTime(v.createdAt)
+        };
+      });
       const ws = XLSX.utils.json_to_sheet(data);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Site Visits');
@@ -357,6 +383,7 @@ const UserSiteVisits = () => {
                 <option value="completed">Completed</option>
                 <option value="cancelled">Cancelled</option>
               </select>
+              {/* ✅ UPDATED: Space Type filter with Cafe option */}
               <select
                 value={spaceTypeFilter}
                 onChange={(e) => setSpaceTypeFilter(e.target.value)}
@@ -364,6 +391,7 @@ const UserSiteVisits = () => {
               >
                 <option value="all">All Types</option>
                 <option value="medical">🏥 Medical Chamber</option>
+                <option value="cafe">☕ Cafe</option>
                 <option value="coworking">💼 Co-Working Space</option>
               </select>
               {(statusFilter !== 'all' || spaceTypeFilter !== 'all' || filterDate || searchTerm) && (
@@ -388,11 +416,11 @@ const UserSiteVisits = () => {
           </div>
           <div className="mt-1.5 text-[10px] text-gray-400">
             Showing {filteredVisits.length} of {visits.length} site visits
-            {spaceTypeFilter !== 'all' && ` • Filtered by: ${spaceTypeFilter === 'medical' ? 'Medical Chamber' : 'Co-Working Space'}`}
+            {spaceTypeFilter !== 'all' && ` • Filtered by: ${spaceTypeFilter === 'medical' ? 'Medical Chamber' : spaceTypeFilter === 'cafe' ? 'Cafe' : 'Co-Working Space'}`}
           </div>
         </div>
 
-        {/* Visits Table - Visit ID column REMOVED */}
+        {/* Visits Table */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
           <div className="px-4 py-3 bg-purple-50 border-b border-gray-200 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -421,7 +449,6 @@ const UserSiteVisits = () => {
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-100">
                     <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">S.No</th>
-                    {/* ✅ Visit ID column REMOVED */}
                     <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Cabin</th>
                     <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Type</th>
                     <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Visit Date</th>
@@ -442,7 +469,6 @@ const UserSiteVisits = () => {
                         <td className="px-3 py-2">
                           <span className="text-[10px] font-semibold text-gray-400">{idx + 1}</span>
                         </td>
-                        {/* ✅ Visit ID column REMOVED */}
                         <td className="px-3 py-2">
                           <div>
                             <p className="font-semibold text-gray-900 text-xs">
@@ -548,22 +574,25 @@ const UserSiteVisits = () => {
                     <span>Type: {viewVisit.cabin?.cabinType || 'Normal'}</span>
                   </div>
                 </div>
+                {/* ✅ UPDATED: Space Type with Cafe support */}
                 <div className="p-4 bg-purple-50 rounded-xl border border-purple-200">
                   <p className="text-[10px] font-bold text-purple-600 uppercase tracking-wider flex items-center gap-1">
                     <Layers size={12} /> Space Type
                   </p>
                   <div className="mt-2">
-                    <span className={`px-3 py-1.5 text-xs font-bold rounded-full inline-flex items-center gap-2 ${
-                      viewVisit.cabin?.isChamber 
-                        ? 'bg-emerald-100 text-emerald-700' 
-                        : 'bg-blue-100 text-blue-700'
-                    }`}>
-                      {viewVisit.cabin?.isChamber ? (
-                        <><Stethoscope size={14} /> Medical Chamber</>
-                      ) : (
-                        <><Briefcase size={14} /> Co-Working Space</>
-                      )}
-                    </span>
+                    {viewVisit.cabin?.isChamber ? (
+                      <span className="px-3 py-1.5 text-xs font-bold rounded-full inline-flex items-center gap-2 bg-emerald-100 text-emerald-700">
+                        <Stethoscope size={14} /> Medical Chamber
+                      </span>
+                    ) : viewVisit.cabin?.isCafe ? (
+                      <span className="px-3 py-1.5 text-xs font-bold rounded-full inline-flex items-center gap-2 bg-amber-100 text-amber-700">
+                        <Coffee size={14} /> Cafe
+                      </span>
+                    ) : (
+                      <span className="px-3 py-1.5 text-xs font-bold rounded-full inline-flex items-center gap-2 bg-blue-100 text-blue-700">
+                        <Briefcase size={14} /> Co-Working Space
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>

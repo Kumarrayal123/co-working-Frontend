@@ -46,7 +46,8 @@ import {
   Hash,
   QrCode,
   History,
-  Timer
+  Timer,
+  Coffee // 👈 Cafe icon add kiya
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -267,22 +268,41 @@ const SimpleUserBookings = () => {
     return { label: 'Pending', color: 'bg-yellow-100 text-yellow-700' };
   };
 
+  // ✅ UPDATED: Space Type detection - isCafe, isChamber, otherwise co-working
   const getSpaceType = (booking) => {
-    if (booking.cabin?.isChamber) return 'medical';
+    const cabin = booking.cabin || {};
+    if (cabin.isChamber) return 'medical';
+    if (cabin.isCafe) return 'cafe';
     return 'coworking';
   };
 
   const getSpaceTypeLabel = (booking) => {
-    if (booking.cabin?.isChamber) return 'Medical Chamber';
+    const cabin = booking.cabin || {};
+    if (cabin.isChamber) return 'Medical Chamber';
+    if (cabin.isCafe) return 'Cafe';
     return 'Co-Working Space';
   };
 
   const getSpaceTypeBadge = (booking) => {
-    const isChamber = booking.cabin?.isChamber || false;
+    const cabin = booking.cabin || {};
+    if (cabin.isChamber) {
+      return {
+        label: 'Medical Chamber',
+        color: 'bg-emerald-100 text-emerald-700',
+        icon: <Stethoscope size={9} />
+      };
+    }
+    if (cabin.isCafe) {
+      return {
+        label: 'Cafe',
+        color: 'bg-amber-100 text-amber-700',
+        icon: <Coffee size={9} />
+      };
+    }
     return {
-      label: isChamber ? 'Medical Chamber' : 'Co-Working Space',
-      color: isChamber ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700',
-      icon: isChamber ? <Stethoscope size={9} /> : <Briefcase size={9} />
+      label: 'Co-Working Space',
+      color: 'bg-blue-100 text-blue-700',
+      icon: <Briefcase size={9} />
     };
   };
 
@@ -455,8 +475,11 @@ const downloadInvoice = (booking) => {
     const status = getStatusBadge(booking.status);
     const pmtMethod = getPaymentMethodBadge(booking.paymentMethod);
     const pmtStatus = getPaymentStatusBadge(booking.paymentStatus);
-    const isChamber = cabin.isChamber || false;
-    const spaceTypeLabel = isChamber ? 'MEDICAL CHAMBER' : 'CO-WORKING SPACE';
+    
+    // ✅ Space type label for invoice
+    let spaceTypeLabel = 'CO-WORKING SPACE';
+    if (cabin.isChamber) spaceTypeLabel = 'MEDICAL CHAMBER';
+    else if (cabin.isCafe) spaceTypeLabel = 'CAFE';
 
     // ✅ Get owner name from owner object
     const ownerName = owner.name || owner.organizationName || 'IRYAX SPACE';
@@ -861,7 +884,8 @@ const downloadInvoice = (booking) => {
     toast.error('Failed to generate invoice');
   }
 };
-  // ✅ FILTER: Space Type filter added
+
+  // ✅ FILTER: Space Type filter updated with Cafe
   const filteredBookings = bookings.filter((b) => {
     const search = searchTerm.toLowerCase();
     const matchSearch = b.cabin?.name?.toLowerCase().includes(search) ||
@@ -1220,6 +1244,7 @@ const downloadInvoice = (booking) => {
                 <option value="completed">Completed</option>
                 <option value="cancelled">Cancelled</option>
               </select>
+              {/* ✅ UPDATED: Space Type filter with Cafe option */}
               <select
                 value={filters.spaceType}
                 onChange={(e) => setFilters({...filters, spaceType: e.target.value})}
@@ -1227,6 +1252,7 @@ const downloadInvoice = (booking) => {
               >
                 <option value="all">All Types</option>
                 <option value="medical">🏥 Medical Chamber</option>
+                <option value="cafe">☕ Cafe</option>
                 <option value="coworking">💼 Co-Working Space</option>
               </select>
               <select
@@ -1261,7 +1287,7 @@ const downloadInvoice = (booking) => {
           </div>
           <div className="mt-1.5 text-[10px] text-gray-400">
             Showing {displayBookings.length} of {bookings.length} bookings
-            {filters.spaceType !== 'all' && ` • Filtered by: ${filters.spaceType === 'medical' ? 'Medical Chamber' : 'Co-Working Space'}`}
+            {filters.spaceType !== 'all' && ` • Filtered by: ${filters.spaceType === 'medical' ? 'Medical Chamber' : filters.spaceType === 'cafe' ? 'Cafe' : 'Co-Working Space'}`}
           </div>
         </div>
 
@@ -1332,17 +1358,19 @@ const downloadInvoice = (booking) => {
                     <Layers size={12} /> Space Type
                   </p>
                   <div className="mt-2">
-                    <span className={`px-3 py-1.5 text-xs font-bold rounded-full inline-flex items-center gap-2 ${
-                      viewBooking.cabin?.isChamber 
-                        ? 'bg-emerald-100 text-emerald-700' 
-                        : 'bg-blue-100 text-blue-700'
-                    }`}>
-                      {viewBooking.cabin?.isChamber ? (
-                        <><Stethoscope size={14} /> Medical Chamber</>
-                      ) : (
-                        <><Briefcase size={14} /> Co-Working Space</>
-                      )}
-                    </span>
+                    {viewBooking.cabin?.isChamber ? (
+                      <span className="px-3 py-1.5 text-xs font-bold rounded-full inline-flex items-center gap-2 bg-emerald-100 text-emerald-700">
+                        <Stethoscope size={14} /> Medical Chamber
+                      </span>
+                    ) : viewBooking.cabin?.isCafe ? (
+                      <span className="px-3 py-1.5 text-xs font-bold rounded-full inline-flex items-center gap-2 bg-amber-100 text-amber-700">
+                        <Coffee size={14} /> Cafe
+                      </span>
+                    ) : (
+                      <span className="px-3 py-1.5 text-xs font-bold rounded-full inline-flex items-center gap-2 bg-blue-100 text-blue-700">
+                        <Briefcase size={14} /> Co-Working Space
+                      </span>
+                    )}
                   </div>
                   <div className="mt-2 text-xs text-gray-500">
                     <p><span className="font-medium">Booking Type:</span> {viewBooking.bookingType || 'booking'}</p>
@@ -1536,11 +1564,16 @@ const downloadInvoice = (booking) => {
                     <option value="">Select a cabin...</option>
                     {allCabins
                       .filter(c => c._id !== replaceBooking.cabin?._id)
-                      .map(c => (
-                        <option key={c._id} value={c._id}>
-                          {c.name} - ₹{c.price}/hr {c.isChamber ? '🏥' : '💼'}
-                        </option>
-                      ))}
+                      .map(c => {
+                        let typeIcon = '💼';
+                        if (c.isChamber) typeIcon = '🏥';
+                        else if (c.isCafe) typeIcon = '☕';
+                        return (
+                          <option key={c._id} value={c._id}>
+                            {c.name} - ₹{c.price}/hr {typeIcon}
+                          </option>
+                        );
+                      })}
                   </select>
                   <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 </div>

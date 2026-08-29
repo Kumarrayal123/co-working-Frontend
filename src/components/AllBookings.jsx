@@ -2068,7 +2068,7 @@
 
 
 
-// AllBookings.jsx - Complete with VIEW + STATUS + DELETE in Site Visits, FULL ACTIONS in Space Bookings
+// AllBookings.jsx - Complete with VIEW + STATUS + DELETE + CAFE TYPE
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -2122,7 +2122,8 @@ import {
   CalendarDays,
   Calculator,
   Info,
-  Ticket
+  Ticket,
+  Coffee // ✅ Cafe icon add kiya
 } from "lucide-react";
 import { toast } from "react-toastify";
 import * as XLSX from 'xlsx';
@@ -2245,6 +2246,30 @@ const AllBookings = () => {
     if (status === 'refunded') return { label: 'Refunded', color: 'bg-purple-100 text-purple-700', icon: <XCircle size={12} className="text-purple-500" /> };
     if (status === 'failed') return { label: 'Failed', color: 'bg-red-100 text-red-700', icon: <XCircle size={12} className="text-red-500" /> };
     return { label: 'Pending', color: 'bg-yellow-100 text-yellow-700', icon: <ClockIcon size={12} className="text-yellow-500" /> };
+  };
+
+  // ✅ GET SPACE TYPE BADGE - with Cafe support
+  const getSpaceTypeBadge = (booking) => {
+    const cabin = booking?.cabin || {};
+    if (cabin.isChamber) {
+      return {
+        label: 'Medical Chamber',
+        color: 'bg-emerald-100 text-emerald-700',
+        icon: <Stethoscope size={9} />
+      };
+    }
+    if (cabin.isCafe) {
+      return {
+        label: 'Cafe',
+        color: 'bg-amber-100 text-amber-700',
+        icon: <Coffee size={9} />
+      };
+    }
+    return {
+      label: 'Co-Working Space',
+      color: 'bg-blue-100 text-blue-700',
+      icon: <Briefcase size={9} />
+    };
   };
 
   const calculateStats = (bookingsData) => {
@@ -2536,7 +2561,7 @@ const AllBookings = () => {
     }
   };
 
-  // ✅ PROFESSIONAL BLACK & GRAY INVOICE
+  // ✅ PROFESSIONAL BLACK & GRAY INVOICE - with Cafe support
   const downloadInvoice = (booking) => {
     try {
       const cabin = booking.cabin || {};
@@ -2568,6 +2593,11 @@ const AllBookings = () => {
 
       const ownerName = owner.name || owner.organizationName || 'IRYAX SPACE';
       const ownerAddress = owner.address || 'Premium Workspaces';
+      
+      // ✅ Space type label for invoice
+      let spaceTypeLabel = 'CO-WORKING SPACE';
+      if (cabin.isChamber) spaceTypeLabel = '🏥 MEDICAL CHAMBER';
+      else if (cabin.isCafe) spaceTypeLabel = '☕ CAFE';
 
       win.document.write(`
         <html><head><title>Invoice</title>
@@ -2807,13 +2837,12 @@ const AllBookings = () => {
         </style>
         </head><body>
         <div class="invoice-wrapper">
-          <!-- HEADER -->
           <div class="header">
             <div class="header-left">
               <h1>${ownerName}</h1>
               <div class="subtitle">${ownerAddress}</div>
               <div style="margin-top:6px;">
-                <span class="space-type-badge">${cabin.isChamber ? '🏥 MEDICAL CHAMBER' : '💼 CO-WORKING SPACE'}</span>
+                <span class="space-type-badge">${spaceTypeLabel}</span>
               </div>
             </div>
             <div class="header-right">
@@ -2822,7 +2851,6 @@ const AllBookings = () => {
             </div>
           </div>
 
-          <!-- BILL TO & CABIN -->
           <div class="info-grid">
             <div class="info-item">
               <div class="label">Bill To</div>
@@ -2838,7 +2866,6 @@ const AllBookings = () => {
             </div>
           </div>
 
-          <!-- SCHEDULE -->
           <div class="info-grid">
             <div class="info-item">
               <div class="label">Start</div>
@@ -2852,7 +2879,6 @@ const AllBookings = () => {
             </div>
           </div>
 
-          <!-- BOOKING INFO -->
           <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px;padding:12px 16px;background:#fafafa;border:1px solid #eeeeee;">
             <div><span style="color:#999999;font-size:10px;text-transform:uppercase;letter-spacing:0.3px;">Total Hours</span><br><strong>${booking.totalHours || 0}h</strong></div>
             <div><span style="color:#999999;font-size:10px;text-transform:uppercase;letter-spacing:0.3px;">Total Days</span><br><strong>${booking.totalDays || 0} days</strong></div>
@@ -2861,7 +2887,6 @@ const AllBookings = () => {
             ${booking.selectedPlan ? `<div><span style="color:#999999;font-size:10px;text-transform:uppercase;letter-spacing:0.3px;">Plan</span><br><strong>${booking.selectedPlan.label || 'N/A'}</strong></div>` : ''}
           </div>
 
-          <!-- SLOTS -->
           ${booking.bookingSlots && booking.bookingSlots.length > 0 ? `
             <div class="section">
               <div class="section-title">Booking Slots (${booking.bookingSlots.length} days)</div>
@@ -2878,7 +2903,6 @@ const AllBookings = () => {
             </div>
           ` : ''}
 
-          <!-- SEATS -->
           ${booking.selectedSeats && booking.selectedSeats.length > 0 ? `
             <div class="seat-section">
               <div class="seat-title">Selected Seats (${booking.seatCount})</div>
@@ -2887,7 +2911,6 @@ const AllBookings = () => {
             </div>
           ` : ''}
 
-          <!-- PRICE BREAKDOWN -->
           <div class="section">
             <div class="section-title">Price Breakdown</div>
             <table class="breakdown-table">
@@ -2917,7 +2940,6 @@ const AllBookings = () => {
             </table>
           </div>
 
-          <!-- PAYMENT DETAILS -->
           ${booking.transactionId || booking.paymentDetails?.transactionId ? `
             <div class="payment-details">
               <div style="font-size:9px;font-weight:700;color:#999999;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Payment Details</div>
@@ -2929,7 +2951,6 @@ const AllBookings = () => {
             </div>
           ` : ''}
 
-          <!-- STATUS -->
           <div class="status-section">
             <div class="status-item"><span class="label-text">Status</span> <span class="badge badge-${booking.status}">${status.label}</span></div>
             <div class="status-item"><span class="label-text">Payment</span> <span class="badge badge-${booking.paymentStatus === 'paid' ? 'confirmed' : 'pending'}">${pmtStatus.label}</span></div>
@@ -2937,7 +2958,6 @@ const AllBookings = () => {
             ${booking.isPaidToOwner ? `<div class="status-item"><span class="label-text">Paid to Owner</span> <span style="font-weight:600;color:#2e7d32;font-size:12px;">Yes</span></div>` : ''}
           </div>
 
-          <!-- VISIT LOG -->
           ${booking.visitingTimings && booking.visitingTimings.length > 0 ? `
             <div style="background:#fafafa;padding:12px 16px;margin:10px 0;border:1px solid #eeeeee;">
               <div style="font-size:9px;font-weight:700;color:#999999;text-transform:uppercase;letter-spacing:0.5px;">Visit Log (${booking.visitingTimings.length} entries)</div>
@@ -2950,7 +2970,6 @@ const AllBookings = () => {
             </div>
           ` : ''}
 
-          <!-- FOOTER -->
           <div class="footer">
             <span class="brand">${ownerName}</span> — ${ownerAddress}<br>
             Created: ${formatDateTimeIndian(booking.createdAt)}<br>
@@ -2977,6 +2996,11 @@ const AllBookings = () => {
         const statusBadge = getStatusBadge(booking.status);
         const paymentMethod = getPaymentMethodBadge(booking.paymentMethod);
         const paymentStatus = getPaymentStatusBadge(booking.paymentStatus);
+        const cabin = booking.cabin || {};
+        
+        let spaceTypeLabel = 'Co-Working Space';
+        if (cabin.isChamber) spaceTypeLabel = 'Medical Chamber';
+        else if (cabin.isCafe) spaceTypeLabel = 'Cafe';
         
         const slotsStr = booking.bookingSlots?.map(s => 
           `${formatDateIndian(s.date)} ${s.startTime}-${s.endTime} (${s.hours}h)`
@@ -2989,7 +3013,7 @@ const AllBookings = () => {
           'Basis': booking.bookingBasis === 'plan' ? 'Plan' : 'Hourly',
           'Cabin Name': booking.cabin?.name || 'Unknown Cabin',
           'Address': booking.cabin?.address || 'No Address',
-          'Space Type': booking.cabin?.isChamber ? 'Medical Chamber' : 'Co-Working Space',
+          'Space Type': spaceTypeLabel,
           'Customer Name': booking.name || booking.user?.name || 'Unknown Guest',
           'Mobile': booking.mobile || booking.user?.mobile || 'N/A',
           'Email': booking.email || booking.user?.email || 'N/A',
@@ -3062,10 +3086,13 @@ const AllBookings = () => {
       b._id?.slice(-8).toLowerCase().includes(search);
 
     let matchesSpaceType = true;
+    const cabin = b.cabin || {};
     if (filterSpaceType === 'medical') {
-      matchesSpaceType = b.cabin?.isChamber === true;
+      matchesSpaceType = cabin.isChamber === true;
+    } else if (filterSpaceType === 'cafe') {
+      matchesSpaceType = cabin.isCafe === true;
     } else if (filterSpaceType === 'coworking') {
-      matchesSpaceType = b.cabin?.isChamber === false;
+      matchesSpaceType = cabin.isChamber === false && cabin.isCafe !== true;
     }
     
     return matchesDateFrom && matchesDateTo && matchesCabinName && matchesOwner && 
@@ -3246,11 +3273,13 @@ const AllBookings = () => {
                 ))}
               </select>
             </div>
+            {/* ✅ UPDATED: Space Type filter with Cafe */}
             <div className="min-w-[140px]">
               <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Space Type</label>
               <select value={filterSpaceType} onChange={(e) => setFilterSpaceType(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white">
                 <option value="all">All Spaces</option>
                 <option value="medical">🏥 Medical</option>
+                <option value="cafe">☕ Cafe</option>
                 <option value="coworking">💼 Co-Working</option>
               </select>
             </div>
@@ -3422,10 +3451,12 @@ const AllBookings = () => {
                     const paymentStatusBadge = getPaymentStatusBadge(booking.paymentStatus);
                     const visitCount = booking.visitingTimings?.length || 0;
                     const seatCount = booking.seatCount || 0;
-                    const isChamber = booking.cabin?.isChamber || false;
+                    const cabin = booking.cabin || {};
                     const isVisit = booking.bookingType === 'visit';
                     const totalDays = booking.totalDays || 0;
                     const isCashPending = (booking.paymentMethod === 'cash' || booking.paymentMethod === 'counter') && booking.paymentStatus === 'pending';
+                    // ✅ Get space type badge with Cafe support
+                    const spaceTypeBadge = getSpaceTypeBadge(booking);
 
                     return (
                       <tr key={booking._id} className="hover:bg-gray-50/80 transition-colors border-b border-gray-50 last:border-0">
@@ -3439,17 +3470,11 @@ const AllBookings = () => {
                             </p>
                           </div>
                         </td>
+                        {/* ✅ Space Type with Cafe support */}
                         <td className="px-3 py-2">
-                          <span className={`px-2 py-0.5 text-[9px] font-bold rounded-full inline-flex items-center gap-1 ${
-                            isChamber 
-                              ? 'bg-emerald-100 text-emerald-700' 
-                              : 'bg-blue-100 text-blue-700'
-                          }`}>
-                            {isChamber ? (
-                              <><Stethoscope size={9} /> Medical</>
-                            ) : (
-                              <><Briefcase size={9} /> Co-Work</>
-                            )}
+                          <span className={`px-2 py-0.5 text-[9px] font-bold rounded-full inline-flex items-center gap-1 ${spaceTypeBadge.color}`}>
+                            {spaceTypeBadge.icon}
+                            {spaceTypeBadge.label}
                           </span>
                         </td>
                         <td className="px-3 py-2">
@@ -3501,7 +3526,7 @@ const AllBookings = () => {
                             </td>
                           </>
                         ) : (
-                          // SPACE BOOKING ROW - FULL ACTIONS (NO TIMING)
+                          // SPACE BOOKING ROW - FULL ACTIONS
                           <>
                             <td className="px-3 py-2">
                               <div>
@@ -3609,7 +3634,7 @@ const AllBookings = () => {
         </div>
       </div>
 
-      {/* VIEW BOOKING MODAL */}
+      {/* VIEW BOOKING MODAL - with Cafe support */}
       {showViewModal && viewBooking && (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setShowViewModal(false); }}>
           <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
@@ -3624,7 +3649,7 @@ const AllBookings = () => {
               </button>
             </div>
             <div className="p-6 space-y-4">
-              {/* Cabin & Space Type */}
+              {/* Cabin & Space Type - with Cafe support */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-200">
                   <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider flex items-center gap-2">
@@ -3642,17 +3667,19 @@ const AllBookings = () => {
                     <Layers size={14} /> Space Type
                   </p>
                   <div className="mt-2">
-                    <span className={`px-3 py-1 text-xs font-bold rounded-full inline-flex items-center gap-2 ${
-                      viewBooking.cabin?.isChamber 
-                        ? 'bg-emerald-100 text-emerald-700' 
-                        : 'bg-blue-100 text-blue-700'
-                    }`}>
-                      {viewBooking.cabin?.isChamber ? (
-                        <><Stethoscope size={14} /> Medical Chamber</>
-                      ) : (
-                        <><Briefcase size={14} /> Co-Working Space</>
-                      )}
-                    </span>
+                    {viewBooking.cabin?.isChamber ? (
+                      <span className="px-3 py-1 text-xs font-bold rounded-full inline-flex items-center gap-2 bg-emerald-100 text-emerald-700">
+                        <Stethoscope size={14} /> Medical Chamber
+                      </span>
+                    ) : viewBooking.cabin?.isCafe ? (
+                      <span className="px-3 py-1 text-xs font-bold rounded-full inline-flex items-center gap-2 bg-amber-100 text-amber-700">
+                        <Coffee size={14} /> Cafe
+                      </span>
+                    ) : (
+                      <span className="px-3 py-1 text-xs font-bold rounded-full inline-flex items-center gap-2 bg-blue-100 text-blue-700">
+                        <Briefcase size={14} /> Co-Working Space
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>

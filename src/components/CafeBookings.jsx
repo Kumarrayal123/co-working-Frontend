@@ -54,7 +54,8 @@ import {
   Trash2,
   Plus,
   ArrowUpRight,
-  QrCode
+  QrCode,
+  Coffee
 } from "lucide-react";
 import { toast } from "react-toastify";
 import * as XLSX from 'xlsx';
@@ -68,8 +69,8 @@ const CafeBookings = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDate, setFilterDate] = useState("");
-  const [filterType, setFilterType] = useState("all");
-  const [activeTab, setActiveTab] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [activeSection, setActiveSection] = useState("all"); // all, confirmed, visits
   const navigate = useNavigate();
 
   // ─── MODALS ───
@@ -83,10 +84,8 @@ const CafeBookings = () => {
   const [newPaymentStatus, setNewPaymentStatus] = useState("");
   const [amountPaid, setAmountPaid] = useState(0);
   const [updatingPayment, setUpdatingPayment] = useState(false);
-  const [paymentMode, setPaymentMode] = useState("cash");
-  const [paymentScreenshot, setPaymentScreenshot] = useState(null);
-  const [paymentScreenshotPreview, setPaymentScreenshotPreview] = useState(null);
   const [paymentDetails, setPaymentDetails] = useState({
+    paymentMode: 'cash',
     transactionId: "",
     paymentDate: "",
     notes: "",
@@ -97,6 +96,8 @@ const CafeBookings = () => {
     cardExpiry: "",
     cardCVV: ""
   });
+  const [paymentScreenshot, setPaymentScreenshot] = useState(null);
+  const [paymentScreenshotPreview, setPaymentScreenshotPreview] = useState(null);
 
   const [showViewModal, setShowViewModal] = useState(false);
   const [viewBooking, setViewBooking] = useState(null);
@@ -111,23 +112,19 @@ const CafeBookings = () => {
     completed: 0,
     cancelled: 0,
     pending: 0,
-    totalRevenue: 0,
-    confirmedRevenue: 0,
-    completedRevenue: 0
+    visits: 0,
+    totalRevenue: 0
   });
 
   // ─── HELPERS ───
-  const isCafeBooking = (b) => {
-    if (!b) return false;
-    const cabin = b.cabin || b.cabinId;
-    if (!cabin) return true;
-    if (cabin.isChamber === true) return false;
+  // ✅ FIXED: isCafe detection - check isCafe property, fallback to name/cabin
+  const isCafeSpace = (cabin) => {
+    if (!cabin) return false;
+    // Explicit isCafe flag
     if (cabin.isCafe === true) return true;
-    if (cabin.spaceType === "cafe" || cabin.type === "cafe") return true;
-
+    // Check name for cafe keywords
     const name = (cabin.name || "").toLowerCase();
-    const spec = (cabin.cabin || cabin.tableNumber || "").toLowerCase();
-
+    const cabinSpec = (cabin.cabin || cabin.tableNumber || "").toLowerCase();
     return (
       name.includes("cafe") ||
       name.includes("coffee") ||
@@ -135,10 +132,18 @@ const CafeBookings = () => {
       name.includes("bistro") ||
       name.includes("restaurant") ||
       name.includes("tea") ||
-      spec.includes("table") ||
-      spec.includes("booth") ||
+      cabinSpec.includes("table") ||
+      cabinSpec.includes("booth") ||
       Boolean(cabin.tableNumber)
     );
+  };
+
+  const isCafeBooking = (b) => {
+    if (!b) return false;
+    const cabin = b.cabin || b.cabinId;
+    if (!cabin) return false;
+    // ✅ Check if it's a cafe space
+    return isCafeSpace(cabin);
   };
 
   const getStatusBadge = (status) => {
@@ -167,9 +172,14 @@ const CafeBookings = () => {
   };
 
   const getCafeTypeBadge = (cabin) => {
-    if (!cabin) return { label: 'Standard', icon: Layout, className: 'bg-blue-100 text-blue-700' };
-    if (cabin.isCafe) return { label: 'Cafe', icon: UtensilsCrossed, className: 'bg-amber-100 text-amber-700' };
+    if (!cabin) return { label: 'Cafe', icon: Coffee, className: 'bg-amber-100 text-amber-700' };
+    if (cabin.isCafe) return { label: 'Cafe', icon: Coffee, className: 'bg-amber-100 text-amber-700' };
     if (cabin.cabinType === 'exclusive') return { label: 'VIP', icon: Crown, className: 'bg-purple-100 text-purple-700' };
+    // Check if it's a cafe by name
+    const name = (cabin.name || "").toLowerCase();
+    if (name.includes("cafe") || name.includes("coffee") || name.includes("dining")) {
+      return { label: 'Cafe', icon: Coffee, className: 'bg-amber-100 text-amber-700' };
+    }
     return { label: 'Standard', icon: Layout, className: 'bg-blue-100 text-blue-700' };
   };
 
@@ -232,11 +242,10 @@ const CafeBookings = () => {
     const completed = bookingsData.filter(b => b.status === 'completed').length;
     const cancelled = bookingsData.filter(b => b.status === 'cancelled').length;
     const pending = bookingsData.filter(b => b.status === 'pending').length;
+    const visits = bookingsData.filter(b => b.bookingType === 'visit').length;
     const totalRevenue = bookingsData.reduce((sum, b) => sum + (b.totalPrice || 0), 0);
-    const confirmedRevenue = bookingsData.filter(b => b.status === 'confirmed').reduce((sum, b) => sum + (b.totalPrice || 0), 0);
-    const completedRevenue = bookingsData.filter(b => b.status === 'completed').reduce((sum, b) => sum + (b.totalPrice || 0), 0);
 
-    setStats({ totalBookings: total, confirmed, active, completed, cancelled, pending, totalRevenue, confirmedRevenue, completedRevenue });
+    setStats({ totalBookings: total, confirmed, active, completed, cancelled, pending, visits, totalRevenue });
   };
 
   // ─── FETCH ───
@@ -251,8 +260,12 @@ const CafeBookings = () => {
       });
 
       const allBookings = res.data.bookings || res.data || [];
-      const cafeBookings = allBookings.filter(isCafeBooking);
+      
+      // ✅ FIXED: Filter cafe bookings using isCafeSpace function
+      const cafeBookings = allBookings.filter(b => isCafeBooking(b));
 
+      console.log(`✅ Found ${cafeBookings.length} cafe bookings out of ${allBookings.length} total`);
+      
       setBookings(cafeBookings);
       setFilteredBookings(cafeBookings);
       calculateStats(cafeBookings);
@@ -272,10 +285,19 @@ const CafeBookings = () => {
   const applyFilters = () => {
     let filtered = [...bookings];
 
-    if (activeTab !== "all") {
-      filtered = filtered.filter(b => b.status?.toLowerCase() === activeTab);
+    // Section filter
+    if (activeSection === 'confirmed') {
+      filtered = filtered.filter(b => b.bookingType !== 'visit');
+    } else if (activeSection === 'visits') {
+      filtered = filtered.filter(b => b.bookingType === 'visit');
     }
 
+    // Status filter (dropdown)
+    if (filterStatus !== "all") {
+      filtered = filtered.filter(b => b.status?.toLowerCase() === filterStatus);
+    }
+
+    // Search filter
     if (searchTerm) {
       const q = searchTerm.toLowerCase();
       filtered = filtered.filter(b => {
@@ -289,18 +311,9 @@ const CafeBookings = () => {
       });
     }
 
+    // Date filter
     if (filterDate) {
       filtered = filtered.filter(b => b.startDate === filterDate);
-    }
-
-    if (filterType !== "all") {
-      filtered = filtered.filter(b => {
-        const cabin = b.cabin || b.cabinId;
-        if (filterType === "cafe") return cabin?.isCafe === true;
-        if (filterType === "exclusive") return cabin?.cabinType === "exclusive" && !cabin?.isCafe;
-        if (filterType === "normal") return cabin?.cabinType === "normal" && !cabin?.isCafe;
-        return true;
-      });
     }
 
     setFilteredBookings(filtered);
@@ -308,13 +321,13 @@ const CafeBookings = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [bookings, activeTab, searchTerm, filterDate, filterType]);
+  }, [bookings, activeSection, filterStatus, searchTerm, filterDate]);
 
   const clearFilters = () => {
     setSearchTerm("");
     setFilterDate("");
-    setFilterType("all");
-    setActiveTab("all");
+    setFilterStatus("all");
+    setActiveSection("all");
   };
 
   // ─── STATUS UPDATE ───
@@ -524,6 +537,7 @@ const CafeBookings = () => {
         const typeBadge = getCafeTypeBadge(cabin);
         return {
           'S.No': index + 1,
+          'Booking Type': booking.bookingType === 'visit' ? 'Site Visit' : 'Booking',
           'Cafe Name': cabin?.name || 'Unknown Cafe',
           'Table': cabin?.tableNumber || cabin?.cabin || 'N/A',
           'Address': cabin?.address || 'No Address',
@@ -572,72 +586,6 @@ const CafeBookings = () => {
       toast.error('Please allow popups to print invoice');
       return;
     }
-
-    const formatDateDMYFn = (dateStr) => {
-      if (!dateStr) return "N/A";
-      const d = new Date(dateStr);
-      const day = String(d.getDate()).padStart(2, '0');
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const year = d.getFullYear();
-      return `${day}/${month}/${year}`;
-    };
-
-    const formatTimeIndianFn = (timeStr) => {
-      if (!timeStr) return "N/A";
-      if (timeStr.includes('AM') || timeStr.includes('PM')) return timeStr;
-      try {
-        const parts = timeStr.split(':');
-        if (parts.length < 2) return timeStr;
-        let hours = parseInt(parts[0]);
-        const minutes = parts[1];
-        if (isNaN(hours)) return timeStr;
-        const ampm = hours >= 12 ? 'PM' : 'AM';
-        const hour12 = hours % 12 || 12;
-        return `${hour12}:${minutes} ${ampm}`;
-      } catch (e) { return timeStr; }
-    };
-
-    const getTotalHoursDisplayFn = (booking) => {
-      if (booking.bookingSlots && booking.bookingSlots.length > 0) {
-        return booking.bookingSlots.reduce((sum, slot) => sum + (slot.hours || 0), 0);
-      }
-      return booking.totalHours || 0;
-    };
-
-    const getTotalDaysFn = (booking) => {
-      if (booking.bookingSlots && booking.bookingSlots.length > 0) return booking.bookingSlots.length;
-      return booking.totalDays || 1;
-    };
-
-    const getStatusBadgeFn = (status) => {
-      const map = {
-        pending: 'badge-pending',
-        confirmed: 'badge-confirmed',
-        active: 'badge-active',
-        completed: 'badge-completed',
-        cancelled: 'badge-cancelled'
-      };
-      return map[status?.toLowerCase()] || 'badge-pending';
-    };
-
-    const getPaymentStatusBadgeFn = (status) => {
-      const map = {
-        paid: 'badge-paid',
-        pending: 'badge-pending',
-        failed: 'badge-pending',
-        refunded: 'badge-pending'
-      };
-      return map[status?.toLowerCase()] || 'badge-pending';
-    };
-
-    const getPaymentMethodBadgeFn = (method) => {
-      const map = {
-        cash: 'badge-cash',
-        upi: 'badge-upi',
-        card: 'badge-card'
-      };
-      return map[method?.toLowerCase()] || 'badge-cash';
-    };
 
     const b = invoiceBooking;
 
@@ -792,7 +740,7 @@ const CafeBookings = () => {
             .slots-section .slot-item .hours {
               font-size: 12px;
               font-weight: 600;
-              color: #f59e0b;
+              color: #4f46e5;
             }
             .seats-section {
               background: #f9fafb;
@@ -859,7 +807,7 @@ const CafeBookings = () => {
             .price-breakdown .total-row .amount {
               font-size: 20px;
               font-weight: 800;
-              color: #f59e0b;
+              color: #4f46e5;
             }
             .payment-status-row {
               display: grid;
@@ -932,11 +880,11 @@ const CafeBookings = () => {
               transition: all 0.2s;
             }
             .print-btn-container .print-btn {
-              background: #f59e0b;
+              background: #4f46e5;
               color: white;
             }
             .print-btn-container .print-btn:hover {
-              background: #d97706;
+              background: #4338ca;
             }
             .print-btn-container .close-btn {
               background: #e5e7eb;
@@ -955,12 +903,11 @@ const CafeBookings = () => {
         </head>
         <body>
           <div class="invoice-container" id="invoice-print-content">
-            <!-- HEADER -->
             <div class="invoice-header">
               <div>
                 <div class="cafe-name">${b?.cabin?.name || 'Cafe'}</div>
                 <div class="cafe-address">${b?.cabin?.address || ''}</div>
-                <div class="cafe-type">${b?.cabin?.spaceType || 'CO-WORKING SPACE'}</div>
+                <div class="cafe-type">${b?.cabin?.spaceType || 'CAFE'}</div>
               </div>
               <div class="right-section">
                 <div class="invoice-label">Invoice</div>
@@ -968,7 +915,6 @@ const CafeBookings = () => {
               </div>
             </div>
 
-            <!-- BILL TO -->
             <div class="bill-to">
               <div class="section-title">BILL TO</div>
               <div class="name">${b?.name || 'Guest'}</div>
@@ -976,7 +922,6 @@ const CafeBookings = () => {
               <div class="email">${b?.email || 'N/A'}</div>
             </div>
 
-            <!-- CABIN DETAILS -->
             <div style="margin-bottom:12px;">
               <div class="section-title">CABIN DETAILS</div>
               <div style="background:#f9fafb;border-radius:10px;padding:12px 16px;">
@@ -989,41 +934,38 @@ const CafeBookings = () => {
               </div>
             </div>
 
-            <!-- START / END -->
             <div class="details-grid">
               <div class="detail-box">
                 <div class="label">START</div>
-                <div class="value">${formatDateDMYFn(b?.startDate)}</div>
-                <div class="value-small">${formatTimeIndianFn(b?.startTime)}</div>
+                <div class="value">${formatDateDMY(b?.startDate)}</div>
+                <div class="value-small">${formatTimeIndian(b?.startTime)}</div>
               </div>
               <div class="detail-box">
                 <div class="label">END</div>
-                <div class="value">${formatDateDMYFn(b?.endDate)}</div>
-                <div class="value-small">${formatTimeIndianFn(b?.endTime)}</div>
+                <div class="value">${formatDateDMY(b?.endDate)}</div>
+                <div class="value-small">${formatTimeIndian(b?.endTime)}</div>
               </div>
             </div>
 
-            <!-- TOTAL HOURS / DAYS -->
             <div class="details-grid">
               <div class="detail-box">
                 <div class="label">TOTAL HOURS</div>
-                <div class="value">${getTotalHoursDisplayFn(b)}h</div>
+                <div class="value">${getTotalHoursDisplay(b)}h</div>
               </div>
               <div class="detail-box">
                 <div class="label">TOTAL DAYS</div>
-                <div class="value">${getTotalDaysFn(b)} days</div>
+                <div class="value">${getTotalDays(b)} days</div>
               </div>
             </div>
 
-            <!-- BOOKING SLOTS -->
             ${b?.bookingSlots && b.bookingSlots.length > 0 ? `
               <div class="slots-section">
                 <div class="section-title">BOOKING SLOTS (${b.bookingSlots.length} DAYS)</div>
                 <div class="slots-grid">
                   ${b.bookingSlots.map(slot => `
                     <div class="slot-item">
-                      <div class="date">${formatDateDMYFn(slot.date)}</div>
-                      <div class="time">${formatTimeIndianFn(slot.startTime)} - ${formatTimeIndianFn(slot.endTime)}</div>
+                      <div class="date">${formatDateDMY(slot.date)}</div>
+                      <div class="time">${formatTimeIndian(slot.startTime)} - ${formatTimeIndian(slot.endTime)}</div>
                       <div class="hours">${slot.hours}h</div>
                     </div>
                   `).join('')}
@@ -1034,7 +976,6 @@ const CafeBookings = () => {
               </div>
             ` : ''}
 
-            <!-- SELECTED SEATS -->
             ${b?.selectedSeats && b.selectedSeats.length > 0 ? `
               <div class="seats-section">
                 <div class="section-title">SELECTED SEATS (${b.seatCount})</div>
@@ -1049,11 +990,10 @@ const CafeBookings = () => {
               </div>
             ` : ''}
 
-            <!-- PRICE BREAKDOWN -->
             <div class="price-breakdown">
               <div class="section-title">PRICE BREAKDOWN</div>
               <div class="row">
-                <span class="label">Subtotal (${getTotalHoursDisplayFn(b)}h × ₹${Math.round((b?.subtotal || 0) / (getTotalHoursDisplayFn(b) || 1))})</span>
+                <span class="label">Subtotal (${getTotalHoursDisplay(b)}h × ₹${Math.round((b?.subtotal || 0) / (getTotalHoursDisplay(b) || 1))})</span>
                 <span class="amount">₹${(b?.subtotal || 0).toFixed(2)}</span>
               </div>
               ${b?.extraCharge > 0 ? `
@@ -1072,23 +1012,21 @@ const CafeBookings = () => {
               </div>
             </div>
 
-            <!-- PAYMENT & STATUS -->
             <div class="payment-status-row">
               <div class="status-box">
                 <div class="label">STATUS</div>
-                <div class="value"><span class="badge ${getStatusBadgeFn(b?.status)}">${(b?.status || 'PENDING').toUpperCase()}</span></div>
+                <div class="value"><span class="badge badge-${b?.status || 'pending'}">${(b?.status || 'PENDING').toUpperCase()}</span></div>
               </div>
               <div class="status-box">
                 <div class="label">PAYMENT</div>
-                <div class="value"><span class="badge ${getPaymentStatusBadgeFn(b?.paymentStatus)}">${(b?.paymentStatus || 'PENDING').toUpperCase()}</span></div>
+                <div class="value"><span class="badge badge-${b?.paymentStatus || 'pending'}">${(b?.paymentStatus || 'PENDING').toUpperCase()}</span></div>
               </div>
               <div class="status-box">
                 <div class="label">PAYMENT METHOD</div>
-                <div class="value"><span class="badge ${getPaymentMethodBadgeFn(b?.paymentMethod)}">${(b?.paymentMethod || 'CASH').toUpperCase()}</span></div>
+                <div class="value"><span class="badge badge-${b?.paymentMethod || 'cash'}">${(b?.paymentMethod || 'CASH').toUpperCase()}</span></div>
               </div>
             </div>
 
-            <!-- FOOTER -->
             <div class="invoice-footer">
               <div class="powered">POWERED BY IRYAX SPACE</div>
               <div class="created">Created: ${new Date(b?.createdAt).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })}</div>
@@ -1108,26 +1046,15 @@ const CafeBookings = () => {
 
   // ─── STATS ───
   const totalBookings = bookings.length;
-  const normalCount = bookings.filter(b => b.cabin?.cabinType === "normal" && !b.cabin?.isCafe).length;
-  const exclusiveCount = bookings.filter(b => b.cabin?.cabinType === "exclusive" && !b.cabin?.isCafe).length;
-  const cafeCount = bookings.filter(b => b.cabin?.isCafe === true).length;
+  const confirmedCount = bookings.filter(b => b.bookingType !== 'visit').length;
+  const visitsCount = bookings.filter(b => b.bookingType === 'visit').length;
 
-  const tabs = [
-    { key: "all", label: "All Bookings", count: stats.totalBookings },
-    { key: "pending", label: "Pending", count: stats.pending },
-    { key: "confirmed", label: "Confirmed", count: stats.confirmed },
-    { key: "active", label: "Active", count: stats.active },
-    { key: "completed", label: "Completed", count: stats.completed },
-    { key: "cancelled", label: "Cancelled", count: stats.cancelled },
-  ];
-
-  // ─── RENDER ───
   if (loading) {
     return (
       <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
         <CafeNavbar />
         <div className="flex justify-center items-center h-64">
-          <div className="w-12 h-12 border-4 border-amber-500 rounded-full border-t-transparent animate-spin" />
+          <div className="w-12 h-12 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin" />
         </div>
       </div>
     );
@@ -1142,7 +1069,7 @@ const CafeBookings = () => {
         <div className="admin-dash__header" style={{ marginBottom: '8px' }}>
           <div>
             <h1 className="admin-dash__greeting" style={{ fontSize: '1.25rem' }}>
-              Cafe <span>Bookings</span>
+              <span style={{ color: '#4f46e5' }}>Cafe</span> <span>Bookings</span>
             </h1>
             <p className="admin-dash__subtitle" style={{ fontSize: '11px' }}>
               Manage all your cafe & dining table bookings
@@ -1152,7 +1079,7 @@ const CafeBookings = () => {
             {filteredBookings.length > 0 && (
               <button
                 onClick={exportToExcel}
-                className="flex items-center gap-1.5 px-3 py-2 bg-amber-50 text-amber-700 rounded-lg text-xs font-medium hover:bg-amber-100 transition border border-amber-200"
+                className="flex items-center gap-1.5 px-3 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition border border-indigo-200"
               >
                 <Download size={14} />
                 Export
@@ -1160,7 +1087,7 @@ const CafeBookings = () => {
             )}
             <button
               onClick={() => navigate("/mycafes")}
-              className="flex items-center gap-1.5 px-3 py-2 bg-amber-600 text-white rounded-lg text-xs font-medium hover:bg-amber-700 transition shadow-sm shadow-amber-200"
+              className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition shadow-sm shadow-indigo-200"
             >
               <UtensilsCrossed size={14} />
               My Tables
@@ -1169,49 +1096,61 @@ const CafeBookings = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
           <div className="bg-white rounded-2xl border border-slate-200 p-3 shadow-sm">
             <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Total</p>
             <p className="text-xl font-black text-slate-900 mt-1">{stats.totalBookings}</p>
             <p className="text-[9px] text-slate-400 mt-0.5">all reservations</p>
           </div>
           <div className="bg-white rounded-2xl border border-slate-200 p-3 shadow-sm">
-            <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Pending</p>
-            <p className="text-xl font-black text-yellow-600 mt-1">{stats.pending}</p>
-            <p className="text-[9px] text-slate-400 mt-0.5">awaiting confirmation</p>
+            <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Confirmed</p>
+            <p className="text-xl font-black text-emerald-600 mt-1">{confirmedCount}</p>
+            <p className="text-[9px] text-slate-400 mt-0.5">confirmed bookings</p>
           </div>
           <div className="bg-white rounded-2xl border border-slate-200 p-3 shadow-sm">
-            <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Active</p>
-            <p className="text-xl font-black text-indigo-600 mt-1">{stats.active + stats.confirmed}</p>
-            <p className="text-[9px] text-slate-400 mt-0.5">active & confirmed</p>
+            <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Site Visits</p>
+            <p className="text-xl font-black text-purple-600 mt-1">{visitsCount}</p>
+            <p className="text-[9px] text-slate-400 mt-0.5">site visit requests</p>
           </div>
           <div className="bg-white rounded-2xl border border-slate-200 p-3 shadow-sm">
-            <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Completed</p>
-            <p className="text-xl font-black text-emerald-600 mt-1">{stats.completed}</p>
-            <p className="text-[9px] text-slate-400 mt-0.5">confirmed & paid</p>
-          </div>
-          <div className="bg-white rounded-2xl border border-slate-200 p-3 shadow-sm">
-            <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Cancelled</p>
-            <p className="text-xl font-black text-red-600 mt-1">{stats.cancelled}</p>
-            <p className="text-[9px] text-slate-400 mt-0.5">cancelled reservations</p>
+            <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Revenue</p>
+            <p className="text-xl font-black text-indigo-600 mt-1">₹{stats.totalRevenue.toLocaleString('en-IN')}</p>
+            <p className="text-[9px] text-slate-400 mt-0.5">total revenue</p>
           </div>
         </div>
 
-        {/* Tabs */}
+        {/* Section Tabs - All, Confirmed, Site Visits */}
         <div className="flex items-center gap-1 mb-4 border-b border-gray-200">
-          {tabs.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`px-4 py-2.5 text-sm font-semibold border-b-2 transition ${
-                activeTab === tab.key
-                  ? 'border-amber-600 text-amber-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              {tab.label} ({tab.count})
-            </button>
-          ))}
+          <button
+            onClick={() => setActiveSection('all')}
+            className={`px-5 py-2.5 text-sm font-semibold border-b-2 transition ${
+              activeSection === 'all'
+                ? 'border-indigo-600 text-indigo-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            All Bookings ({stats.totalBookings})
+          </button>
+          <button
+            onClick={() => setActiveSection('confirmed')}
+            className={`px-5 py-2.5 text-sm font-semibold border-b-2 transition ${
+              activeSection === 'confirmed'
+                ? 'border-indigo-600 text-indigo-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Confirmed Bookings ({confirmedCount})
+          </button>
+          <button
+            onClick={() => setActiveSection('visits')}
+            className={`px-5 py-2.5 text-sm font-semibold border-b-2 transition ${
+              activeSection === 'visits'
+                ? 'border-indigo-600 text-indigo-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Site Visits ({visitsCount})
+          </button>
         </div>
 
         {/* Filters */}
@@ -1224,7 +1163,7 @@ const CafeBookings = () => {
                 placeholder="Search cafe bookings..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
               />
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -1232,19 +1171,21 @@ const CafeBookings = () => {
                 type="date"
                 value={filterDate}
                 onChange={(e) => setFilterDate(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 bg-white"
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
               />
               <select
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 bg-white"
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
               >
-                <option value="all">All Types</option>
-                <option value="normal">Standard</option>
-                <option value="exclusive">VIP</option>
-                <option value="cafe">Cafe</option>
+                <option value="all">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="active">Active</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
               </select>
-              {(searchTerm || filterDate || filterType !== "all" || activeTab !== "all") && (
+              {(searchTerm || filterDate || filterStatus !== "all" || activeSection !== "all") && (
                 <button
                   onClick={clearFilters}
                   className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition"
@@ -1264,7 +1205,7 @@ const CafeBookings = () => {
         {filteredBookings.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-12 text-center">
             <UtensilsCrossed size={48} className="mx-auto text-gray-300 mb-4" />
-            <p className="text-gray-500 font-medium">No cafe bookings found</p>
+            <p className="text-gray-500 font-medium">No bookings found</p>
             <p className="text-sm text-gray-400 mt-1">Try adjusting your filters.</p>
           </div>
         ) : (
@@ -1302,6 +1243,7 @@ const CafeBookings = () => {
                     const totalHours = getTotalHoursDisplay(booking);
                     const isCashPending = (booking.paymentMethod === 'cash' || booking.paymentMethod === 'counter') && booking.paymentStatus === 'pending';
                     const guestName = booking.name || booking.user?.name || 'Guest';
+                    const isVisit = booking.bookingType === 'visit';
 
                     return (
                       <tr key={booking._id} className="hover:bg-gray-50/80 transition-colors">
@@ -1317,9 +1259,14 @@ const CafeBookings = () => {
                               <MapPin size={9} />
                               {cabin?.address?.split(',')[0] || 'N/A'}
                             </p>
-                            <p className="text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-md inline-block mt-0.5">
+                            <p className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-md inline-block mt-0.5">
                               {cabin?.tableNumber || cabin?.cabin || "Table"}
                             </p>
+                            {isVisit && (
+                              <span className="text-[8px] font-bold text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded-md inline-block mt-0.5">
+                                🏠 Site Visit
+                              </span>
+                            )}
                           </div>
                         </td>
                         <td className="px-3 py-2">
@@ -1338,24 +1285,24 @@ const CafeBookings = () => {
                         <td className="px-3 py-2">
                           <div>
                             <span className="text-xs font-medium text-gray-700">{formatDateDMY(booking.startDate)}</span>
-                            <p className="text-[9px] text-amber-600 font-medium">{formatTimeIndian(booking.startTime)}</p>
+                            <p className="text-[9px] text-indigo-600 font-medium">{formatTimeIndian(booking.startTime)}</p>
                           </div>
                         </td>
                         <td className="px-3 py-2">
                           <div>
                             <span className="text-xs font-medium text-gray-700">{formatDateDMY(booking.endDate)}</span>
-                            <p className="text-[9px] text-amber-600 font-medium">{formatTimeIndian(booking.endTime)}</p>
+                            <p className="text-[9px] text-indigo-600 font-medium">{formatTimeIndian(booking.endTime)}</p>
                           </div>
                         </td>
                         <td className="px-3 py-2">
-                          <span className="px-2 py-0.5 bg-amber-50 text-amber-700 rounded-full text-[9px] font-bold">{totalHours}h</span>
+                          <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-full text-[9px] font-bold">{totalHours}h</span>
                         </td>
                         <td className="px-3 py-2">
                           <span className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded-full text-[9px] font-bold">{totalDays}d</span>
                         </td>
                         <td className="px-3 py-2">
                           <span className="flex items-center gap-1 text-xs font-medium text-gray-700">
-                            <Armchair size={12} className="text-amber-500" />
+                            <Armchair size={12} className="text-indigo-500" />
                             {guestCount}
                           </span>
                           {guestCount > 0 && (
@@ -1375,7 +1322,7 @@ const CafeBookings = () => {
                           </span>
                         </td>
                         <td className="px-3 py-2">
-                          <span className="text-xs font-bold text-amber-600">₹{booking.totalPrice || 0}</span>
+                          <span className="text-xs font-bold text-indigo-600">₹{booking.totalPrice || 0}</span>
                           {booking.extraCharge > 0 && (
                             <p className="text-[8px] text-amber-500">+₹{booking.extraCharge} seat</p>
                           )}
@@ -1449,9 +1396,8 @@ const CafeBookings = () => {
                 Showing <strong>{filteredBookings.length}</strong> of <strong>{bookings.length}</strong> bookings
               </span>
               <div className="flex items-center gap-3 text-[10px] text-gray-500">
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500"></span> Std: {normalCount}</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-purple-500"></span> VIP: {exclusiveCount}</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500"></span> Cafe: {cafeCount}</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> Confirmed: {confirmedCount}</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-purple-500"></span> Visits: {visitsCount}</span>
               </div>
             </div>
           </div>
@@ -1466,10 +1412,10 @@ const CafeBookings = () => {
       {showStatusModal && selectedBooking && (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) { setShowStatusModal(false); setSelectedBooking(null); setNewStatus(""); } }}>
           <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden">
-            <div className="bg-gradient-to-br from-amber-600 to-orange-600 p-5 text-white rounded-t-3xl flex justify-between items-center">
+            <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 p-5 text-white rounded-t-3xl flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center"><Edit size={20} className="text-white" /></div>
-                <div><h3 className="text-xl font-bold">Update Status</h3><p className="text-sm text-amber-100">{selectedBooking.cabin?.name || 'Cafe'}</p></div>
+                <div><h3 className="text-xl font-bold">Update Status</h3><p className="text-sm text-indigo-200">{selectedBooking.cabin?.name || 'Cafe'}</p></div>
               </div>
               <button onClick={() => { setShowStatusModal(false); setSelectedBooking(null); setNewStatus(""); }} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"><X size={20} /></button>
             </div>
@@ -1487,7 +1433,7 @@ const CafeBookings = () => {
                     const badge = getStatusBadge(status);
                     const isSelected = newStatus === status;
                     return (
-                      <button key={status} onClick={() => setNewStatus(status)} className={`py-2.5 rounded-xl text-xs font-bold border transition ${isSelected ? 'border-amber-500 bg-amber-50 text-amber-700' : 'border-gray-200 hover:bg-gray-50 text-gray-700'}`}>
+                      <button key={status} onClick={() => setNewStatus(status)} className={`py-2.5 rounded-xl text-xs font-bold border transition ${isSelected ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-200 hover:bg-gray-50 text-gray-700'}`}>
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${badge.color}`}>{badge.label}</span>
                       </button>
                     );
@@ -1499,7 +1445,7 @@ const CafeBookings = () => {
                 <span>Changing status will update the booking visibility and availability.</span>
               </div>
               <div className="flex gap-3">
-                <button onClick={handleUpdateStatus} disabled={updating || !newStatus} className={`flex-1 py-3 rounded-xl text-white font-bold transition ${(updating || !newStatus) ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-amber-600 to-orange-600 hover:shadow-lg'}`}>
+                <button onClick={handleUpdateStatus} disabled={updating || !newStatus} className={`flex-1 py-3 rounded-xl text-white font-bold transition ${(updating || !newStatus) ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-indigo-600 to-indigo-700 hover:shadow-lg'}`}>
                   {updating ? 'Updating...' : 'Update Status'}
                 </button>
                 <button onClick={() => { setShowStatusModal(false); setSelectedBooking(null); setNewStatus(""); }} className="px-5 py-3 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition">Cancel</button>
@@ -1513,10 +1459,10 @@ const CafeBookings = () => {
       {showPaymentModal && paymentBooking && (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) resetPaymentModal(); }}>
           <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-y-auto max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
-            <div className="sticky top-0 bg-gradient-to-br from-amber-500 to-amber-600 p-5 text-white rounded-t-3xl flex justify-between items-center z-10">
+            <div className="sticky top-0 bg-gradient-to-br from-indigo-600 to-indigo-700 p-5 text-white rounded-t-3xl flex justify-between items-center z-10">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center"><CreditCard size={20} className="text-white" /></div>
-                <div><h3 className="text-xl font-bold">Update Payment</h3><p className="text-sm text-amber-100">₹{paymentBooking.totalPrice}</p></div>
+                <div><h3 className="text-xl font-bold">Update Payment</h3><p className="text-sm text-indigo-200">₹{paymentBooking.totalPrice}</p></div>
               </div>
               <button onClick={resetPaymentModal} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"><X size={20} /></button>
             </div>
@@ -1535,7 +1481,7 @@ const CafeBookings = () => {
                     const badge = getPaymentStatusBadge(s);
                     const isSelected = newPaymentStatus === s;
                     return (
-                      <button key={s} onClick={() => { setNewPaymentStatus(s); if(s === 'paid') setAmountPaid(paymentBooking.totalPrice); else setAmountPaid(0); }} className={`py-2.5 rounded-xl text-xs font-bold border transition ${isSelected ? 'border-amber-500 bg-amber-50 text-amber-700' : 'border-gray-200 hover:bg-gray-50 text-gray-700'}`}>
+                      <button key={s} onClick={() => { setNewPaymentStatus(s); if(s === 'paid') setAmountPaid(paymentBooking.totalPrice); else setAmountPaid(0); }} className={`py-2.5 rounded-xl text-xs font-bold border transition ${isSelected ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-200 hover:bg-gray-50 text-gray-700'}`}>
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${badge.color}`}>{badge.label}</span>
                       </button>
                     );
@@ -1546,7 +1492,7 @@ const CafeBookings = () => {
               {newPaymentStatus === 'paid' && (
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1.5">Amount Paid (₹)</label>
-                  <input type="number" value={amountPaid} onChange={(e) => setAmountPaid(Number(e.target.value))} placeholder="Enter amount" className="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
+                  <input type="number" value={amountPaid} onChange={(e) => setAmountPaid(Number(e.target.value))} placeholder="Enter amount" className="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
                 </div>
               )}
 
@@ -1589,15 +1535,15 @@ const CafeBookings = () => {
 
               {newPaymentStatus === 'paid' && (
                 <div className="space-y-3">
-                  <div><label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1.5">Transaction ID</label><input type="text" placeholder="TXN123456789" value={paymentDetails.transactionId} onChange={(e) => setPaymentDetails({...paymentDetails, transactionId: e.target.value})} className="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" /></div>
-                  <div><label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1.5">Payment Date</label><input type="date" value={paymentDetails.paymentDate} onChange={(e) => setPaymentDetails({...paymentDetails, paymentDate: e.target.value})} className="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" /></div>
+                  <div><label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1.5">Transaction ID</label><input type="text" placeholder="TXN123456789" value={paymentDetails.transactionId} onChange={(e) => setPaymentDetails({...paymentDetails, transactionId: e.target.value})} className="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" /></div>
+                  <div><label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1.5">Payment Date</label><input type="date" value={paymentDetails.paymentDate} onChange={(e) => setPaymentDetails({...paymentDetails, paymentDate: e.target.value})} className="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" /></div>
                 </div>
               )}
 
               {newPaymentStatus === 'paid' && paymentDetails.paymentMode !== 'cash' && (
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1.5">Payment Screenshot</label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-4 text-center hover:border-amber-400 transition cursor-pointer relative" onClick={() => document.getElementById('screenshotUpload').click()}>
+                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-4 text-center hover:border-indigo-400 transition cursor-pointer relative" onClick={() => document.getElementById('screenshotUpload').click()}>
                     <input id="screenshotUpload" type="file" accept="image/*" className="hidden" onChange={handlePaymentScreenshotChange} />
                     {paymentScreenshotPreview ? (
                       <div className="relative">
@@ -1616,7 +1562,7 @@ const CafeBookings = () => {
                 <span>Marking as paid will add the amount to the owner's wallet. All payment details will be securely stored.</span>
               </div>
               <div className="flex gap-3">
-                <button onClick={handleUpdatePayment} disabled={updatingPayment || !newPaymentStatus || (newPaymentStatus === 'paid' && (!amountPaid || amountPaid <= 0))} className={`flex-1 py-3 rounded-xl text-white font-bold transition ${(updatingPayment || !newPaymentStatus || (newPaymentStatus === 'paid' && (!amountPaid || amountPaid <= 0))) ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:shadow-lg'}`}>
+                <button onClick={handleUpdatePayment} disabled={updatingPayment || !newPaymentStatus || (newPaymentStatus === 'paid' && (!amountPaid || amountPaid <= 0))} className={`flex-1 py-3 rounded-xl text-white font-bold transition ${(updatingPayment || !newPaymentStatus || (newPaymentStatus === 'paid' && (!amountPaid || amountPaid <= 0))) ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-indigo-600 to-indigo-700 hover:shadow-lg'}`}>
                   {updatingPayment ? 'Updating...' : 'Update Payment'}
                 </button>
                 <button onClick={resetPaymentModal} className="px-5 py-3 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition">Cancel</button>
@@ -1630,13 +1576,15 @@ const CafeBookings = () => {
       {showViewModal && viewBooking && (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setShowViewModal(false); }}>
           <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="sticky top-0 bg-gradient-to-br from-amber-600 to-orange-600 text-white p-6 rounded-t-3xl flex justify-between items-center">
+            <div className="sticky top-0 bg-gradient-to-br from-indigo-600 to-indigo-700 text-white p-6 rounded-t-3xl flex justify-between items-center">
               <div>
                 <h3 className="text-2xl font-bold">Booking Details</h3>
-                <p className="text-sm text-amber-200 flex items-center gap-2"><Hash size={14} /> #{viewBooking._id?.slice(-8).toUpperCase()}</p>
+                <p className="text-sm text-indigo-200 flex items-center gap-2"><Hash size={14} /> #{viewBooking._id?.slice(-8).toUpperCase()}</p>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="px-2 py-0.5 bg-white/20 rounded-full text-[10px] font-medium capitalize">{viewBooking.bookingBasis || 'Hourly'}</span>
-                  <span className="px-2 py-0.5 bg-white/20 rounded-full text-[10px] font-medium">Cafe Table</span>
+                  <span className="px-2 py-0.5 bg-white/20 rounded-full text-[10px] font-medium">
+                    {viewBooking.bookingType === 'visit' ? '🏠 Site Visit' : 'Cafe Table'}
+                  </span>
                 </div>
               </div>
               <button onClick={() => setShowViewModal(false)} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"><X size={20} /></button>
@@ -1654,8 +1602,8 @@ const CafeBookings = () => {
                     <span>Capacity: {viewBooking.cabin?.capacity || 'N/A'}</span>
                   </div>
                 </div>
-                <div className="p-4 bg-amber-50 rounded-xl border border-amber-200">
-                  <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider flex items-center gap-1"><UtensilsCrossed size={12} /> Table Type</p>
+                <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-200">
+                  <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider flex items-center gap-1"><UtensilsCrossed size={12} /> Table Type</p>
                   <div className="mt-2">
                     {(() => {
                       const badge = getCafeTypeBadge(viewBooking.cabin);
@@ -1667,13 +1615,16 @@ const CafeBookings = () => {
                       );
                     })()}
                   </div>
+                  {viewBooking.bookingType === 'visit' && (
+                    <div className="mt-2 text-xs text-purple-600 font-medium">🏠 Site Visit Request</div>
+                  )}
                   {viewBooking.selectedPlan && (
                     <div className="mt-2 text-xs text-gray-500"><p><span className="font-medium">Plan:</span> {viewBooking.selectedPlan.label || 'N/A'}</p></div>
                   )}
                 </div>
               </div>
 
-              {/* Customer Details - Guest name fixed */}
+              {/* Customer Details */}
               <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
                 <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider flex items-center gap-1"><User size={12} /> Guest Details</p>
                 <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
@@ -1688,12 +1639,12 @@ const CafeBookings = () => {
                 <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1"><CalendarDays size={12} /> Start</p>
                   <p className="mt-1 font-semibold text-gray-800">{formatDateDMY(viewBooking.startDate)}</p>
-                  <p className="text-sm font-bold text-amber-600">{formatTimeIndian(viewBooking.startTime)}</p>
+                  <p className="text-sm font-bold text-indigo-600">{formatTimeIndian(viewBooking.startTime)}</p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1"><CalendarDays size={12} /> End</p>
                   <p className="mt-1 font-semibold text-gray-800">{formatDateDMY(viewBooking.endDate)}</p>
-                  <p className="text-sm font-bold text-amber-600">{formatTimeIndian(viewBooking.endTime)}</p>
+                  <p className="text-sm font-bold text-indigo-600">{formatTimeIndian(viewBooking.endTime)}</p>
                 </div>
               </div>
 
@@ -1701,22 +1652,25 @@ const CafeBookings = () => {
               <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1"><Info size={12} /> Booking Info</p>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold">{getTotalHoursDisplay(viewBooking)}h Total</span>
+                  <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold">{getTotalHoursDisplay(viewBooking)}h Total</span>
                   <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-bold">{getTotalDays(viewBooking)} Days</span>
                   <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">Daily: {viewBooking.dailyHours?.join(', ') || 'N/A'}h</span>
+                  {viewBooking.bookingType === 'visit' && (
+                    <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-bold">🏠 Site Visit</span>
+                  )}
                 </div>
               </div>
 
               {/* Booking Slots */}
               {viewBooking.bookingSlots && viewBooking.bookingSlots.length > 0 && (
-                <div className="p-4 bg-amber-50 rounded-xl border border-amber-200">
-                  <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider flex items-center gap-2"><CalendarDays size={14} /> Booking Slots ({viewBooking.bookingSlots.length} days)</p>
+                <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-200">
+                  <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider flex items-center gap-2"><CalendarDays size={14} /> Booking Slots ({viewBooking.bookingSlots.length} days)</p>
                   <div className="grid grid-cols-2 gap-2 mt-2">
                     {viewBooking.bookingSlots.map((slot, idx) => (
-                      <div key={idx} className="bg-white p-2 rounded-lg border border-amber-100">
+                      <div key={idx} className="bg-white p-2 rounded-lg border border-indigo-100">
                         <p className="text-xs font-bold text-gray-700">{formatDateDMY(slot.date)}</p>
                         <p className="text-[10px] text-gray-500">{formatTimeIndian(slot.startTime)} - {formatTimeIndian(slot.endTime)}</p>
-                        <p className="text-[10px] font-bold text-amber-600">{slot.hours}h</p>
+                        <p className="text-[10px] font-bold text-indigo-600">{slot.hours}h</p>
                       </div>
                     ))}
                   </div>
@@ -1757,9 +1711,9 @@ const CafeBookings = () => {
                           key={status}
                           onClick={() => handleUpdateStatusFromView(viewBooking._id, status)}
                           disabled={updating || isSelected}
-                          className={`py-2 px-3 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1 ${isSelected ? 'border-orange-500 bg-orange-100 text-orange-700 cursor-default' : 'border-gray-200 hover:bg-gray-50 text-gray-600 hover:text-gray-800'} ${updating ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          className={`py-2 px-3 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1 ${isSelected ? 'border-indigo-500 bg-indigo-100 text-indigo-700 cursor-default' : 'border-gray-200 hover:bg-gray-50 text-gray-600 hover:text-gray-800'} ${updating ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
-                          {badge.icon} {badge.label} {isSelected && <Check size={12} className="text-orange-600" />}
+                          {badge.icon} {badge.label} {isSelected && <Check size={12} className="text-indigo-600" />}
                         </button>
                       );
                     })}
@@ -1783,31 +1737,31 @@ const CafeBookings = () => {
                 </div>
                 <div className="p-3 bg-gray-50 rounded-xl text-center border border-gray-200">
                   <p className="text-[10px] text-gray-500 font-bold uppercase">Amount</p>
-                  <p className="mt-1 font-bold text-amber-600 text-lg">₹{viewBooking.totalPrice || 0}</p>
+                  <p className="mt-1 font-bold text-indigo-600 text-lg">₹{viewBooking.totalPrice || 0}</p>
                 </div>
               </div>
 
               {/* Price Breakdown */}
-              <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200">
-                <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wider flex items-center gap-2 mb-3"><IndianRupee size={14} /> Price Breakdown</p>
+              <div className="p-4 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl border border-indigo-200">
+                <p className="text-[10px] font-bold text-indigo-700 uppercase tracking-wider flex items-center gap-2 mb-3"><IndianRupee size={14} /> Price Breakdown</p>
                 <div className="space-y-2 text-sm">
-                  <div className="flex justify-between items-center border-b border-amber-100 pb-1.5">
+                  <div className="flex justify-between items-center border-b border-indigo-100 pb-1.5">
                     <span className="text-gray-600">Subtotal</span>
                     <span className="font-semibold text-gray-800">₹{(viewBooking.subtotal || 0).toFixed(2)}</span>
                   </div>
                   {viewBooking.extraCharge > 0 && (
-                    <div className="flex justify-between items-center border-b border-amber-100 pb-1.5">
+                    <div className="flex justify-between items-center border-b border-indigo-100 pb-1.5">
                       <span className="text-gray-600">Seat Charges</span>
-                      <span className="font-semibold text-amber-600">₹{(viewBooking.extraCharge || 0).toFixed(2)}</span>
+                      <span className="font-semibold text-indigo-600">₹{(viewBooking.extraCharge || 0).toFixed(2)}</span>
                     </div>
                   )}
-                  <div className="flex justify-between items-center border-b border-amber-100 pb-1.5">
+                  <div className="flex justify-between items-center border-b border-indigo-100 pb-1.5">
                     <span className="text-gray-600">GST (18%)</span>
                     <span className="font-semibold text-gray-800">₹{(viewBooking.gstAmount || 0).toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between items-center pt-2 border-t-2 border-amber-300">
+                  <div className="flex justify-between items-center pt-2 border-t-2 border-indigo-300">
                     <span className="font-bold text-gray-800">Total Amount</span>
-                    <span className="text-xl font-bold text-amber-700">₹{(viewBooking.totalPrice || 0).toFixed(2)}</span>
+                    <span className="text-xl font-bold text-indigo-700">₹{(viewBooking.totalPrice || 0).toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -1822,7 +1776,7 @@ const CafeBookings = () => {
                 </button>
                 <button
                   onClick={() => { handlePrintInvoice(viewBooking); setShowViewModal(false); }}
-                  className="px-6 py-3 bg-emerald-600 text-white rounded-xl font-medium hover:bg-emerald-700 transition flex items-center gap-2"
+                  className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition flex items-center gap-2"
                 >
                   <Receipt size={16} /> Invoice
                 </button>
@@ -1853,12 +1807,15 @@ const CafeBookings = () => {
             </div>
 
             <div className="p-8" id="invoice-content">
-              {/* Header - Cafe name on top */}
+              {/* Header */}
               <div className="flex justify-between items-start border-b-2 border-emerald-200 pb-6 mb-6">
                 <div>
                   <h1 className="text-2xl font-bold text-gray-800">{invoiceBooking?.cabin?.name || 'Cafe'}</h1>
                   <p className="text-sm text-gray-500">{invoiceBooking?.cabin?.address || ''}</p>
-                  <p className="text-xs text-gray-400 uppercase tracking-wider">{invoiceBooking?.cabin?.spaceType || 'CO-WORKING SPACE'}</p>
+                  <p className="text-xs text-gray-400 uppercase tracking-wider">{invoiceBooking?.cabin?.spaceType || 'CAFE'}</p>
+                  {invoiceBooking?.bookingType === 'visit' && (
+                    <p className="text-xs text-purple-600 font-bold mt-1">🏠 Site Visit</p>
+                  )}
                 </div>
                 <div className="text-right">
                   <p className="text-xs text-gray-400 uppercase tracking-wider">Invoice</p>
@@ -1890,20 +1847,20 @@ const CafeBookings = () => {
                 <div className="bg-gray-50 p-3 rounded-xl">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">START</p>
                   <p className="font-bold text-gray-800">{formatDateDMY(invoiceBooking.startDate)}</p>
-                  <p className="text-sm text-amber-600 font-medium">{formatTimeIndian(invoiceBooking.startTime)}</p>
+                  <p className="text-sm text-indigo-600 font-medium">{formatTimeIndian(invoiceBooking.startTime)}</p>
                 </div>
                 <div className="bg-gray-50 p-3 rounded-xl">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">END</p>
                   <p className="font-bold text-gray-800">{formatDateDMY(invoiceBooking.endDate)}</p>
-                  <p className="text-sm text-amber-600 font-medium">{formatTimeIndian(invoiceBooking.endTime)}</p>
+                  <p className="text-sm text-indigo-600 font-medium">{formatTimeIndian(invoiceBooking.endTime)}</p>
                 </div>
               </div>
 
               {/* Hours / Days */}
               <div className="grid grid-cols-3 gap-3 mb-5">
-                <div className="bg-amber-50 p-3 rounded-xl text-center">
+                <div className="bg-indigo-50 p-3 rounded-xl text-center">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">TOTAL HOURS</p>
-                  <p className="font-bold text-amber-600 text-lg">{getTotalHoursDisplay(invoiceBooking)}h</p>
+                  <p className="font-bold text-indigo-600 text-lg">{getTotalHoursDisplay(invoiceBooking)}h</p>
                 </div>
                 <div className="bg-purple-50 p-3 rounded-xl text-center">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">TOTAL DAYS</p>
@@ -1912,6 +1869,9 @@ const CafeBookings = () => {
                 <div className="bg-blue-50 p-3 rounded-xl text-center">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">BOOKING TYPE</p>
                   <p className="font-bold text-blue-600 text-lg uppercase">{invoiceBooking.bookingBasis || 'hourly'}</p>
+                  {invoiceBooking.bookingType === 'visit' && (
+                    <p className="text-[10px] text-purple-600 font-bold">Site Visit</p>
+                  )}
                 </div>
               </div>
 
@@ -1924,7 +1884,7 @@ const CafeBookings = () => {
                       <div key={idx} className="bg-white p-3 rounded-lg border border-gray-200">
                         <p className="font-bold text-gray-800 text-sm">{formatDateDMY(slot.date)}</p>
                         <p className="text-sm text-gray-600">{formatTimeIndian(slot.startTime)} - {formatTimeIndian(slot.endTime)}</p>
-                        <p className="text-sm font-bold text-amber-600">{slot.hours}h</p>
+                        <p className="text-sm font-bold text-indigo-600">{slot.hours}h</p>
                       </div>
                     ))}
                   </div>
@@ -1950,26 +1910,26 @@ const CafeBookings = () => {
               )}
 
               {/* Price Breakdown */}
-              <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-5 rounded-xl border-2 border-amber-200 mb-5">
-                <p className="text-xs font-bold text-amber-700 uppercase tracking-wider mb-3">PRICE BREAKDOWN</p>
+              <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-5 rounded-xl border-2 border-indigo-200 mb-5">
+                <p className="text-xs font-bold text-indigo-700 uppercase tracking-wider mb-3">PRICE BREAKDOWN</p>
                 <div className="space-y-2">
-                  <div className="flex justify-between items-center border-b border-amber-100 pb-2">
+                  <div className="flex justify-between items-center border-b border-indigo-100 pb-2">
                     <span className="text-gray-600 text-sm">Subtotal ({getTotalHoursDisplay(invoiceBooking)}h × ₹{Math.round((invoiceBooking?.subtotal || 0) / (getTotalHoursDisplay(invoiceBooking) || 1))})</span>
                     <span className="font-semibold text-gray-800">₹{(invoiceBooking.subtotal || 0).toFixed(2)}</span>
                   </div>
                   {invoiceBooking.extraCharge > 0 && (
-                    <div className="flex justify-between items-center border-b border-amber-100 pb-2">
+                    <div className="flex justify-between items-center border-b border-indigo-100 pb-2">
                       <span className="text-gray-600 text-sm">Seat Charges ({invoiceBooking.seatCount || 0} seats × ₹{Math.round((invoiceBooking?.extraCharge || 0) / (invoiceBooking?.seatCount || 1))})</span>
-                      <span className="font-semibold text-amber-600">₹{(invoiceBooking.extraCharge || 0).toFixed(2)}</span>
+                      <span className="font-semibold text-indigo-600">₹{(invoiceBooking.extraCharge || 0).toFixed(2)}</span>
                     </div>
                   )}
-                  <div className="flex justify-between items-center border-b border-amber-100 pb-2">
+                  <div className="flex justify-between items-center border-b border-indigo-100 pb-2">
                     <span className="text-gray-600 text-sm">GST (18%)</span>
                     <span className="font-semibold text-gray-800">₹{(invoiceBooking.gstAmount || 0).toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between items-center pt-3 border-t-2 border-amber-400">
+                  <div className="flex justify-between items-center pt-3 border-t-2 border-indigo-400">
                     <span className="font-bold text-gray-800 text-lg">Total Amount</span>
-                    <span className="text-2xl font-extrabold text-amber-700">₹{(invoiceBooking.totalPrice || 0).toFixed(2)}</span>
+                    <span className="text-2xl font-extrabold text-indigo-700">₹{(invoiceBooking.totalPrice || 0).toFixed(2)}</span>
                   </div>
                 </div>
               </div>

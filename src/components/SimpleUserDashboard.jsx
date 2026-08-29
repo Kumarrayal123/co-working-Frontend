@@ -1,4 +1,4 @@
-// SimpleUserDashboard.jsx - With Fixed Modal (Centered + No Overflow)
+// SimpleUserDashboard.jsx - With Type Column Added (FIXED) - Using /api/user/dashboard
 import axios from "axios";
 import {
   Calendar,
@@ -25,7 +25,10 @@ import {
   AlertTriangle,
   ArrowRight,
   Mail,
-  Phone
+  Phone,
+  Stethoscope,
+  Briefcase,
+  Coffee
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -113,6 +116,30 @@ function SimpleUserDashboard() {
     } catch {
       return timeStr;
     }
+  };
+
+  // ✅ GET SPACE TYPE BADGE - Return component reference NOT JSX
+  const getSpaceTypeBadge = (booking) => {
+    const cabin = booking?.cabin || {};
+    if (cabin.isChamber) {
+      return {
+        label: 'Medical Chamber',
+        color: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+        icon: Stethoscope
+      };
+    }
+    if (cabin.isCafe) {
+      return {
+        label: 'Cafe',
+        color: 'bg-amber-100 text-amber-700 border-amber-200',
+        icon: Coffee
+      };
+    }
+    return {
+      label: 'Co-Working Space',
+      color: 'bg-blue-100 text-blue-700 border-blue-200',
+      icon: Briefcase
+    };
   };
 
   const getUserId = () => {
@@ -235,6 +262,7 @@ function SimpleUserDashboard() {
     fetchProfile();
   }, []);
 
+  // ✅ UPDATED: Using NEW API /api/user/dashboard
   const fetchBookings = async () => {
     setLoading(true);
     setError(null);
@@ -246,45 +274,46 @@ function SimpleUserDashboard() {
         return;
       }
 
+      // ✅ NEW API ENDPOINT: /api/user/dashboard
       const res = await axios.get(
-        `${API_URL}/api/bookings/user`,
+        `${API_URL}/api/bookings/user/dashboard`, // ✅ CHANGED: /api/bookings/user → /api/user/dashboard
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      const bookingsData = res.data.bookings || [];
+      // ✅ Extract bookings from dashboard response
+      const dashboardData = res.data.data || res.data;
       
-      setBookings(bookingsData);
-      setFilteredBookings(bookingsData);
+      // Combine recentBookings and recentCabinBookings
+      const recentBookings = dashboardData.recentBookings || [];
+      const recentCabinBookings = dashboardData.recentCabinBookings || [];
       
-      // Calculate stats
-      const statsData = {
-        total: bookingsData.length,
+      // Merge all bookings
+      const allBookings = [...recentBookings, ...recentCabinBookings];
+      
+      setBookings(allBookings);
+      setFilteredBookings(allBookings);
+      
+      // Calculate stats from dashboard data
+      const statusDist = dashboardData.statusDistribution || {
         pending: 0,
         confirmed: 0,
         active: 0,
         completed: 0,
         cancelled: 0
       };
-
-      bookingsData.forEach(b => {
-        const status = b.status?.toLowerCase() || 'pending';
-        if (status === 'confirmed' && b.paymentStatus === 'paid') {
-          statsData.completed += 1;
-        } else if (status === 'confirmed') {
-          statsData.confirmed += 1;
-        } else if (status === 'cancelled') {
-          statsData.cancelled += 1;
-        } else if (status === 'active') {
-          statsData.active += 1;
-        } else {
-          statsData.pending += 1;
-        }
+      
+      setStats({
+        total: dashboardData.totalBookings || allBookings.length,
+        pending: statusDist.pending || 0,
+        confirmed: statusDist.confirmed || 0,
+        active: statusDist.active || 0,
+        completed: statusDist.completed || 0,
+        cancelled: statusDist.cancelled || 0
       });
 
-      setStats(statsData);
     } catch (err) {
-      console.error("Error fetching bookings:", err);
-      setError(err.response?.data?.message || "Failed to fetch bookings");
+      console.error("Error fetching dashboard data:", err);
+      setError(err.response?.data?.message || "Failed to fetch dashboard data");
     } finally {
       setLoading(false);
     }
@@ -310,8 +339,8 @@ function SimpleUserDashboard() {
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase().trim();
       filtered = filtered.filter(b => {
-        const cabinName = b.cabin?.name?.toLowerCase() || '';
-        const address = b.cabin?.address?.toLowerCase() || '';
+        const cabinName = b.cabinName?.toLowerCase() || b.cabin?.name?.toLowerCase() || '';
+        const address = b.address?.toLowerCase() || b.cabin?.address?.toLowerCase() || '';
         const customerName = b.name?.toLowerCase() || '';
         return cabinName.includes(term) || address.includes(term) || customerName.includes(term);
       });
@@ -342,14 +371,6 @@ function SimpleUserDashboard() {
     setSearchTerm("");
     setFilterDate("");
     setActiveTab("all");
-  };
-
-  const formatDate = (dateStr) => {
-    return formatDateDDMMYYYY(dateStr);
-  };
-
-  const formatDateTime = (dateStr) => {
-    return formatDateTimeDDMMYYYY(dateStr);
   };
 
   const getStatusBadge = (status, paymentStatus) => {
@@ -386,21 +407,21 @@ function SimpleUserDashboard() {
     return `₹${Number(amount).toLocaleString('en-IN')}`;
   };
 
-  // ✅ FIXED: Handle View Booking - Open Modal with body scroll lock
+  // Handle View Booking - Open Modal with body scroll lock
   const handleViewBooking = (booking) => {
     setSelectedBooking(booking);
     setIsModalOpen(true);
     document.body.style.overflow = 'hidden';
   };
 
-  // ✅ FIXED: Close modal with body scroll restore
+  // Close modal with body scroll restore
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedBooking(null);
     document.body.style.overflow = '';
   };
 
-  // ✅ PROFESSIONAL BLACK & GRAY INVOICE - NO EMOJIS, NO IRYAX AT TOP
+  // Invoice download function
   const downloadInvoice = (booking) => {
     try {
       if (!booking) {
@@ -438,7 +459,6 @@ function SimpleUserDashboard() {
       const seatCount = booking.seatCount || 0;
       const seatExtraChargePerSeat = booking.seatExtraChargePerSeat || 100;
 
-      // Get owner name
       const ownerName = owner.name || owner.organizationName || 'IRYAX SPACE';
       const ownerAddress = owner.address || 'Premium Workspaces';
       const isChamber = cabin.isChamber || false;
@@ -662,7 +682,6 @@ function SimpleUserDashboard() {
           </head>
           <body>
             <div class="invoice-wrapper">
-              <!-- HEADER -->
               <div class="header">
                 <div class="header-left">
                   <h1>${ownerName}</h1>
@@ -676,7 +695,6 @@ function SimpleUserDashboard() {
                 </div>
               </div>
 
-              <!-- BILL TO & CABIN -->
               <div class="info-grid">
                 <div class="info-item">
                   <div class="label">Bill To</div>
@@ -692,7 +710,6 @@ function SimpleUserDashboard() {
                 </div>
               </div>
 
-              <!-- SCHEDULE -->
               <div class="info-grid">
                 <div class="info-item">
                   <div class="label">Start</div>
@@ -706,7 +723,6 @@ function SimpleUserDashboard() {
                 </div>
               </div>
 
-              <!-- BOOKING INFO -->
               <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px;padding:12px 16px;background:#fafafa;border:1px solid #eeeeee;">
                 <div><span style="color:#999999;font-size:10px;text-transform:uppercase;letter-spacing:0.3px;">Total Hours</span><br><strong>${totalHours}h</strong></div>
                 <div><span style="color:#999999;font-size:10px;text-transform:uppercase;letter-spacing:0.3px;">Booking Type</span><br><strong>${booking.bookingBasis || 'Hourly'}</strong></div>
@@ -714,7 +730,6 @@ function SimpleUserDashboard() {
                 <div><span style="color:#999999;font-size:10px;text-transform:uppercase;letter-spacing:0.3px;">Created</span><br><strong>${formatDateTimeDDMMYYYY(booking.createdAt)}</strong></div>
               </div>
 
-              <!-- SEATS -->
               ${booking.selectedSeats && booking.selectedSeats.length > 0 ? `
                 <div class="seat-section">
                   <div class="seat-title">Selected Seats (${seatCount})</div>
@@ -723,7 +738,6 @@ function SimpleUserDashboard() {
                 </div>
               ` : ''}
 
-              <!-- PRICE BREAKDOWN -->
               <div class="section">
                 <div class="section-title">Price Breakdown</div>
                 <table class="breakdown-table">
@@ -753,7 +767,6 @@ function SimpleUserDashboard() {
                 </table>
               </div>
 
-              <!-- PAYMENT DETAILS -->
               ${booking.transactionId || booking.paymentDetails?.transactionId ? `
                 <div class="payment-details">
                   <div style="font-size:9px;font-weight:700;color:#999999;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Payment Details</div>
@@ -765,7 +778,6 @@ function SimpleUserDashboard() {
                 </div>
               ` : ''}
 
-              <!-- STATUS -->
               <div class="status-section">
                 <div class="status-item"><span class="label-text">Status</span> <span class="badge badge-${booking.status}">${status.label}</span></div>
                 <div class="status-item"><span class="label-text">Payment</span> <span class="badge badge-${booking.paymentStatus === 'paid' ? 'confirmed' : 'pending'}">${pmtStatus.label}</span></div>
@@ -773,7 +785,6 @@ function SimpleUserDashboard() {
                 ${booking.isPaidToOwner ? `<div class="status-item"><span class="label-text">Paid to Owner</span> <span style="font-weight:600;color:#2e7d32;font-size:12px;">Yes</span></div>` : ''}
               </div>
 
-              <!-- FOOTER -->
               <div class="footer">
                 <span class="brand">${ownerName}</span> — ${ownerAddress}<br>
                 Created: ${formatDateTimeDDMMYYYY(booking.createdAt)}<br>
@@ -805,11 +816,9 @@ function SimpleUserDashboard() {
     if (activeTab === "visits") {
       return filteredBookings.filter(b => b.bookingType === "visit");
     }
-
     if (activeTab === "spaces") {
       return filteredBookings.filter(b => b.bookingType !== "visit");
     }
-
     return filteredBookings;
   };
 
@@ -873,13 +882,6 @@ function SimpleUserDashboard() {
       onClick: () => setFilters(prev => ({ ...prev, status: "cancelled" }))
     }
   ];
-
-  // ✅ FIXED: Modal close handler
-  const handleModalClose = () => {
-    setIsModalOpen(false);
-    setSelectedBooking(null);
-    document.body.style.overflow = '';
-  };
 
   if (loading) {
     return (
@@ -1104,7 +1106,7 @@ function SimpleUserDashboard() {
           </div>
         </div>
 
-        {/* Bookings Table */}
+        {/* Bookings Table - WITH TYPE COLUMN ADDED */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
           {displayBookings.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-gray-400">
@@ -1129,6 +1131,7 @@ function SimpleUserDashboard() {
                   <tr className="bg-gray-50 border-b border-gray-100">
                     <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">S.No</th>
                     <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Cabin</th>
+                    <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Type</th>
                     <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Date &amp; Time</th>
                     <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Status</th>
                     <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Amount</th>
@@ -1138,6 +1141,10 @@ function SimpleUserDashboard() {
                 <tbody className="divide-y divide-gray-100">
                   {displayBookings.map((booking, idx) => {
                     const status = getStatusBadge(booking.status, booking.paymentStatus);
+                    // ✅ Get space type badge
+                    const spaceType = getSpaceTypeBadge(booking);
+                    const SpaceIcon = spaceType.icon;
+                    
                     return (
                       <tr key={booking._id} className="hover:bg-gray-50/80 transition-colors">
                         <td className="px-3 py-2.5">
@@ -1146,16 +1153,23 @@ function SimpleUserDashboard() {
                         <td className="px-3 py-2.5">
                           <div>
                             <p className="font-semibold text-gray-900 text-sm">
-                              {booking.cabin?.name || 'Unknown Cabin'}
+                              {booking.cabin?.name || booking.cabinName || 'Unknown Cabin'}
                             </p>
                             <p className="text-[9px] text-gray-400 flex items-center gap-0.5">
                               <MapPin size={9} />
-                              {booking.cabin?.address?.split(',')[0] || 'N/A'}
+                              {booking.cabin?.address?.split(',')[0] || booking.address?.split(',')[0] || 'N/A'}
                             </p>
                             <p className="text-[8px] text-gray-400">
                               Owner: {booking.cabin?.owner?.name || 'N/A'}
                             </p>
                           </div>
+                        </td>
+                        {/* ✅ TYPE COLUMN RENDER */}
+                        <td className="px-3 py-2.5">
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-[9px] font-bold rounded-lg border ${spaceType.color}`}>
+                            <SpaceIcon size={10} />
+                            {spaceType.label}
+                          </span>
                         </td>
                         <td className="px-3 py-2.5">
                           <p className="text-sm text-gray-700">{formatDateDDMMYYYY(booking.startDate)}</p>
@@ -1219,18 +1233,18 @@ function SimpleUserDashboard() {
       </div>
 
       {/* ============================================================ */}
-      {/* ✅ FIXED MODAL - Properly Centered with No Overflow */}
+      {/* MODAL */}
       {/* ============================================================ */}
       {isModalOpen && selectedBooking && (
         <div 
           className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-          onClick={handleModalClose}
+          onClick={closeModal}
         >
           <div 
             className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal Header - Sticky */}
+            {/* Modal Header */}
             <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-indigo-100 rounded-lg">
@@ -1242,7 +1256,7 @@ function SimpleUserDashboard() {
                 </div>
               </div>
               <button
-                onClick={handleModalClose}
+                onClick={closeModal}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <XIcon size={20} className="text-gray-500" />
@@ -1268,9 +1282,9 @@ function SimpleUserDashboard() {
                 <div className="bg-gray-50 rounded-xl p-4">
                   <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Cabin Details</h3>
                   <div className="space-y-1.5">
-                    <p className="text-sm font-semibold text-gray-900">{selectedBooking.cabin?.name || 'N/A'}</p>
+                    <p className="text-sm font-semibold text-gray-900">{selectedBooking.cabin?.name || selectedBooking.cabinName || 'N/A'}</p>
                     <p className="text-xs text-gray-600 flex items-center gap-1.5">
-                      <MapPin size={12} /> {selectedBooking.cabin?.address || 'N/A'}
+                      <MapPin size={12} /> {selectedBooking.cabin?.address || selectedBooking.address || 'N/A'}
                     </p>
                     <p className="text-xs text-gray-600">Type: {selectedBooking.cabin?.cabinType || 'Normal'}</p>
                   </div>
@@ -1421,7 +1435,7 @@ function SimpleUserDashboard() {
               )}
             </div>
 
-            {/* Modal Footer - Sticky */}
+            {/* Modal Footer */}
             <div className="sticky bottom-0 z-10 bg-white border-t border-gray-200 px-6 py-4 flex justify-end gap-3 rounded-b-2xl">
               <button
                 onClick={() => downloadInvoice(selectedBooking)}
@@ -1431,7 +1445,7 @@ function SimpleUserDashboard() {
                 Download Invoice
               </button>
               <button
-                onClick={handleModalClose}
+                onClick={closeModal}
                 className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition"
               >
                 Close

@@ -92,6 +92,7 @@ const AdminSpaces = () => {
     cabin: "",
     cabinType: "normal",
     isChamber: false,
+    isCafe: false,
     amenities: {
       wifi: false,
       parking: false,
@@ -217,12 +218,39 @@ const AdminSpaces = () => {
     }
   };
 
+  // ─── GET SPACE TYPE ───
+  const getSpaceType = (cabin) => {
+    if (cabin.isChamber) return 'chamber';
+    if (cabin.isCafe) return 'cafe';
+    return 'coworking';
+  };
+
+  const getSpaceTypeLabel = (cabin) => {
+    if (cabin.isChamber) return 'Medical Chamber';
+    if (cabin.isCafe) return 'Cafe';
+    return 'Co-Working Space';
+  };
+
+  const getSpaceTypeIcon = (cabin) => {
+    if (cabin.isChamber) return Stethoscope;
+    if (cabin.isCafe) return Coffee;
+    return Briefcase;
+  };
+
+  const getSpaceTypeColor = (cabin) => {
+    if (cabin.isChamber) return 'emerald';
+    if (cabin.isCafe) return 'amber';
+    return 'blue';
+  };
+
   // ─── FILTERS ───
   const getFilteredByTab = () => {
     if (activeTab === "chambers") {
       return cabins.filter(c => c.isChamber === true);
     } else if (activeTab === "coworking") {
-      return cabins.filter(c => c.isChamber === false);
+      return cabins.filter(c => c.isChamber === false && c.isCafe !== true);
+    } else if (activeTab === "cafe") {
+      return cabins.filter(c => c.isCafe === true);
     }
     return cabins;
   };
@@ -287,14 +315,14 @@ const AdminSpaces = () => {
   };
 
   const chamberCount = cabins.filter(c => c.isChamber === true).length;
-  const coworkingCount = cabins.filter(c => c.isChamber === false).length;
+  const coworkingCount = cabins.filter(c => c.isChamber === false && c.isCafe !== true).length;
+  const cafeCount = cabins.filter(c => c.isCafe === true).length;
 
   // ─── ADD SPACE FUNCTIONS ───
   const handleAddChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
     
-    // Validate field on change
     const error = validateField(name, value);
     setErrors({ ...errors, [name]: error });
   };
@@ -376,7 +404,6 @@ const AdminSpaces = () => {
   const handleAddSubmit = async (e) => {
     e.preventDefault();
     
-    // Validate all fields before submission
     const nameError = validateField("name", formData.name);
     const addressError = validateField("address", formData.address);
     const cabinError = validateField("cabin", formData.cabin);
@@ -391,7 +418,6 @@ const AdminSpaces = () => {
     
     setErrors(newErrors);
     
-    // Check if there are any errors
     if (nameError || addressError || cabinError || descriptionError) {
       toast.error("Please fix the validation errors before submitting");
       return;
@@ -408,6 +434,7 @@ const AdminSpaces = () => {
     data.append("price", formData.price);
     data.append("cabinType", formData.cabinType);
     data.append("isChamber", formData.isChamber);
+    data.append("isCafe", formData.isCafe);
     data.append("pricingPlans", JSON.stringify(pricingPlans));
     data.append("amenities", JSON.stringify(formData.amenities));
     images.forEach((img) => data.append("images", img));
@@ -417,10 +444,14 @@ const AdminSpaces = () => {
       await axios.post(`${API_URL}/api/cabins`, data, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      toast.success(`${formData.isChamber ? 'Medical Chamber' : 'Co-Working Space'} added successfully!`);
+      
+      let typeLabel = 'Co-Working Space';
+      if (formData.isChamber) typeLabel = 'Medical Chamber';
+      else if (formData.isCafe) typeLabel = 'Cafe';
+      
+      toast.success(`${typeLabel} added successfully!`);
       setIsAddModalOpen(false);
       
-      // Reset form
       setFormData({
         name: "",
         description: "",
@@ -430,6 +461,7 @@ const AdminSpaces = () => {
         cabin: "",
         cabinType: "normal",
         isChamber: false,
+        isCafe: false,
         amenities: {
           wifi: false,
           parking: false,
@@ -448,7 +480,6 @@ const AdminSpaces = () => {
       setImages([]);
       setPricingPlans([]);
       
-      // Refresh list
       const res = await axios.get(`${API_URL}/api/cabins`);
       setCabins(res.data);
     } catch (err) {
@@ -483,7 +514,7 @@ const AdminSpaces = () => {
               All <span>Spaces</span>
             </h1>
             <p className="text-sm text-slate-500 mt-1">
-              Manage all your medical chambers and co-working spaces
+              Manage all your medical chambers, co-working spaces and cafes
             </p>
           </div>
           <button
@@ -495,7 +526,7 @@ const AdminSpaces = () => {
           </button>
         </div>
 
-        {/* Tab Navigation */}
+        {/* Tab Navigation - Cafe LAST MEIN */}
         <div className="flex flex-wrap gap-2 mb-6 border-b border-slate-200 pb-0">
           <button
             onClick={() => {
@@ -525,7 +556,7 @@ const AdminSpaces = () => {
             className={`
               px-5 py-2.5 rounded-t-lg text-sm font-medium transition-all flex items-center gap-2
               ${activeTab === "chambers" 
-                ? 'bg-indigo-50 text-indigo-600 border-b-2 border-indigo-600' 
+                ? 'bg-emerald-50 text-emerald-600 border-b-2 border-emerald-600' 
                 : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
               }
             `}
@@ -545,7 +576,7 @@ const AdminSpaces = () => {
             className={`
               px-5 py-2.5 rounded-t-lg text-sm font-medium transition-all flex items-center gap-2
               ${activeTab === "coworking" 
-                ? 'bg-indigo-50 text-indigo-600 border-b-2 border-indigo-600' 
+                ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600' 
                 : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
               }
             `}
@@ -554,6 +585,27 @@ const AdminSpaces = () => {
             Co-Working Spaces
             <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
               {coworkingCount}
+            </span>
+          </button>
+
+          {/* ✅ CAFE TAB - LAST MEIN */}
+          <button
+            onClick={() => {
+              setActiveTab("cafe");
+              clearFilters();
+            }}
+            className={`
+              px-5 py-2.5 rounded-t-lg text-sm font-medium transition-all flex items-center gap-2
+              ${activeTab === "cafe" 
+                ? 'bg-amber-50 text-amber-600 border-b-2 border-amber-600' 
+                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+              }
+            `}
+          >
+            <Coffee size={16} />
+            Cafes
+            <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+              {cafeCount}
             </span>
           </button>
         </div>
@@ -669,11 +721,13 @@ const AdminSpaces = () => {
               <Stethoscope size={48} className="text-slate-300 mb-4" />
             ) : activeTab === "coworking" ? (
               <Briefcase size={48} className="text-slate-300 mb-4" />
+            ) : activeTab === "cafe" ? (
+              <Coffee size={48} className="text-slate-300 mb-4" />
             ) : (
               <Building2 size={48} className="text-slate-300 mb-4" />
             )}
             <p className="admin-dash__error-title" style={{ color: '#475569' }}>
-              No {activeTab === "chambers" ? "medical chambers" : activeTab === "coworking" ? "co-working spaces" : "spaces"} found
+              No {activeTab === "chambers" ? "medical chambers" : activeTab === "coworking" ? "co-working spaces" : activeTab === "cafe" ? "cafes" : "spaces"} found
             </p>
             <p className="admin-dash__error-message">Try adjusting your filters.</p>
           </div>
@@ -683,7 +737,16 @@ const AdminSpaces = () => {
               const isActive = cabin.isActive === true;
               const isExclusive = cabin.cabinType === 'exclusive';
               const isNew = new Date(cabin.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-              const isChamber = cabin.isChamber === true;
+              const spaceType = getSpaceType(cabin);
+              const spaceLabel = getSpaceTypeLabel(cabin);
+              const SpaceIcon = getSpaceTypeIcon(cabin);
+              const color = getSpaceTypeColor(cabin);
+              
+              const colorMap = {
+                emerald: 'bg-emerald-500 text-white',
+                amber: 'bg-amber-500 text-white',
+                blue: 'bg-blue-500 text-white'
+              };
               
               return (
                 <div
@@ -704,24 +767,9 @@ const AdminSpaces = () => {
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-900/50 via-transparent to-transparent z-20 opacity-40" />
 
                     <div className="absolute top-3 right-3 z-30 flex flex-col gap-1.5">
-                      <span className={`
-                        px-2.5 py-0.5 rounded-full text-[9px] font-bold shadow-lg flex items-center gap-1
-                        ${isChamber 
-                          ? 'bg-emerald-500 text-white' 
-                          : 'bg-blue-500 text-white'
-                        }
-                      `}>
-                        {isChamber ? (
-                          <>
-                            <Stethoscope size={10} />
-                            Chamber
-                          </>
-                        ) : (
-                          <>
-                            <Briefcase size={10} />
-                            Co-Working
-                          </>
-                        )}
+                      <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold shadow-lg flex items-center gap-1 ${colorMap[color]}`}>
+                        <SpaceIcon size={10} />
+                        {spaceLabel}
                       </span>
 
                       {isExclusive && isActive && (
@@ -751,10 +799,10 @@ const AdminSpaces = () => {
                   <div className="p-5 flex flex-col flex-grow">
                     <div className="mb-4">
                       <p className="text-[10px] font-bold uppercase tracking-widest mb-1 flex items-center gap-1.5">
-                        <span className={isChamber ? 'text-emerald-600' : 'text-blue-600'}>
-                          {isChamber ? 'Medical Chamber' : 'Co-Working Space'}
+                        <span className={cabin.isChamber ? 'text-emerald-600' : cabin.isCafe ? 'text-amber-600' : 'text-blue-600'}>
+                          {spaceLabel}
                         </span>
-                        {isChamber && (
+                        {cabin.isChamber && (
                           <span className="text-[8px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">
                             Doctor's Cabin
                           </span>
@@ -773,8 +821,10 @@ const AdminSpaces = () => {
                     </div>
 
                     <p className="text-slate-500 text-xs leading-relaxed mb-4 line-clamp-2">
-                      {cabin.description || (isChamber 
+                      {cabin.description || (cabin.isChamber 
                         ? "Professional medical chamber designed for consultations and patient care." 
+                        : cabin.isCafe
+                        ? "A cozy cafe perfect for work, meetings, and networking."
                         : "Experience a premium workspace designed for focus and collaboration.")}
                     </p>
 
@@ -875,10 +925,16 @@ const AdminSpaces = () => {
                     Medical Chamber
                   </span>
                 )}
-                {!selectedCabin.isChamber && (
+                {!selectedCabin.isChamber && !selectedCabin.isCafe && (
                   <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-lg">
                     <Briefcase size={14} />
                     Co-Working
+                  </span>
+                )}
+                {selectedCabin.isCafe && (
+                  <span className="bg-amber-600 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-lg">
+                    <Coffee size={14} />
+                    Cafe
                   </span>
                 )}
                 {selectedCabin.cabinType === 'exclusive' && (
@@ -919,8 +975,8 @@ const AdminSpaces = () => {
               <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-widest mb-1 flex items-center gap-1.5">
-                    <span className={selectedCabin.isChamber ? 'text-emerald-600' : 'text-blue-600'}>
-                      {selectedCabin.isChamber ? 'Medical Chamber' : 'Co-Working Space'}
+                    <span className={selectedCabin.isChamber ? 'text-emerald-600' : selectedCabin.isCafe ? 'text-amber-600' : 'text-blue-600'}>
+                      {selectedCabin.isChamber ? 'Medical Chamber' : selectedCabin.isCafe ? 'Cafe' : 'Co-Working Space'}
                     </span>
                     {selectedCabin.isChamber && (
                       <span className="text-[8px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded">
@@ -979,7 +1035,7 @@ const AdminSpaces = () => {
                 <div className="p-3 bg-slate-50 rounded-xl">
                   <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Type</p>
                   <p className="text-sm font-semibold text-slate-900 capitalize">
-                    {selectedCabin.isChamber ? 'Medical Chamber' : 'Co-Working'}
+                    {selectedCabin.isChamber ? 'Medical Chamber' : selectedCabin.isCafe ? 'Cafe' : 'Co-Working'}
                   </p>
                 </div>
                 <div className="p-3 bg-slate-50 rounded-xl">
@@ -1022,7 +1078,7 @@ const AdminSpaces = () => {
         </div>
       )}
 
-      {/* ─── ADD SPACE MODAL (FIXED) ─── */}
+      {/* ─── ADD SPACE MODAL ─── */}
       {isAddModalOpen && (
         <div 
           className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
@@ -1045,7 +1101,7 @@ const AdminSpaces = () => {
                 <div>
                   <h2 className="text-base sm:text-lg font-bold text-white">Add New Space</h2>
                   <p className="text-[10px] sm:text-xs text-white/75">
-                    {formData.isChamber ? 'Medical Chamber' : 'Co-Working Space'}
+                    {formData.isChamber ? 'Medical Chamber' : formData.isCafe ? 'Cafe' : 'Co-Working Space'}
                   </p>
                 </div>
               </div>
@@ -1062,10 +1118,10 @@ const AdminSpaces = () => {
                 {/* ─── SPACE TYPE SELECTION ─── */}
                 <div>
                   <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Space Type *</label>
-                  <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-1">
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-1">
                     <button
                       type="button"
-                      onClick={() => setFormData({...formData, isChamber: true})}
+                      onClick={() => setFormData({...formData, isChamber: true, isCafe: false})}
                       className={`py-2.5 sm:py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold border-2 transition-all flex items-center justify-center gap-2 ${
                         formData.isChamber === true
                           ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
@@ -1073,19 +1129,31 @@ const AdminSpaces = () => {
                       }`}
                     >
                       <Stethoscope size={16} className={formData.isChamber ? 'text-emerald-500' : 'text-slate-400'} />
-                      Medical Chamber
+                      Medical
                     </button>
                     <button
                       type="button"
-                      onClick={() => setFormData({...formData, isChamber: false})}
+                      onClick={() => setFormData({...formData, isChamber: false, isCafe: false})}
                       className={`py-2.5 sm:py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold border-2 transition-all flex items-center justify-center gap-2 ${
-                        formData.isChamber === false
+                        formData.isChamber === false && formData.isCafe === false
                           ? 'border-blue-500 bg-blue-50 text-blue-700'
                           : 'border-slate-200 text-slate-600 hover:bg-slate-50'
                       }`}
                     >
-                      <Briefcase size={16} className={formData.isChamber === false ? 'text-blue-500' : 'text-slate-400'} />
-                      Co-Working Space
+                      <Briefcase size={16} className={formData.isChamber === false && formData.isCafe === false ? 'text-blue-500' : 'text-slate-400'} />
+                      Co-Working
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({...formData, isChamber: false, isCafe: true})}
+                      className={`py-2.5 sm:py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold border-2 transition-all flex items-center justify-center gap-2 ${
+                        formData.isCafe === true
+                          ? 'border-amber-500 bg-amber-50 text-amber-700'
+                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      <Coffee size={16} className={formData.isCafe ? 'text-amber-500' : 'text-slate-400'} />
+                      Cafe
                     </button>
                   </div>
                 </div>

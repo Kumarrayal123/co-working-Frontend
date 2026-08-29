@@ -27,7 +27,7 @@ import { toast } from "react-toastify";
 import AdminNavbar from "./AdminNavbar";
 import "./Dashboard.css";
 
-const API_URL = "https://spaceapi.iryax.com";
+const API_URL = "http://localhost:5003";
 
 const AllQueries = () => {
   const [queries, setQueries] = useState([]);

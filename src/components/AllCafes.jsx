@@ -16,11 +16,19 @@ import {
   Calendar,
   Sparkles,
   Award,
-  Filter
+  Filter,
+  X,
+  Eye,
+  Building2,
+  Trash2,
+  Download,
+  XCircle,
+  Edit
 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import CafeNavbar from "./CafeNavbar";
+import { toast } from "react-toastify";
 import "./Dashboard.css";
 
 const API_URL = import.meta.env.VITE_API_URL || "https://spaceapi.iryax.com";
@@ -31,54 +39,39 @@ const AllCafes = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [locationFilter, setLocationFilter] = useState("");
+  const [filterType, setFilterType] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
   const [sortBy, setSortBy] = useState("latest");
   const navigate = useNavigate();
 
-  // Helper to determine if a space is a Cafe / Dining Table
-  const isCafeSpace = (c) => {
-    if (!c) return false;
-    // Exclude doctor chambers
-    if (c.isChamber === true) return false;
-    // Explicitly marked cafe
-    if (c.isCafe === true) return true;
-    if (c.spaceType === "cafe" || c.type === "cafe") return true;
-
-    const name = (c.name || "").toLowerCase();
-    const spec = (c.cabin || c.tableNumber || "").toLowerCase();
-
-    return (
-      name.includes("cafe") ||
-      name.includes("coffee") ||
-      name.includes("dining") ||
-      name.includes("bistro") ||
-      name.includes("restaurant") ||
-      name.includes("tea") ||
-      spec.includes("table") ||
-      spec.includes("booth") ||
-      Boolean(c.tableNumber)
-    );
-  };
-
+  // ✅ SIRF isCafe === true WALE SHOW KARENGE
   useEffect(() => {
     axios
       .get(`${API_URL}/api/cabins`)
       .then((res) => {
         const data = res.data.cabins || res.data;
         const allCabins = Array.isArray(data) ? data : [];
-        // ✅ ONLY SHOW CAFES
-        const cafeCabins = allCabins.filter(isCafeSpace);
+        
+        // ✅ SIRF isCafe === true WALE FILTER
+        const cafeCabins = allCabins.filter(c => c.isCafe === true);
+        
+        console.log(`✅ Found ${cafeCabins.length} cafes (isCafe: true)`);
         setCabins(cafeCabins);
         setLoading(false);
+        
+        if (cafeCabins.length === 0) {
+          toast.info("No cafes found. Add a cafe to get started.");
+        }
       })
       .catch((err) => {
         console.error("Error fetching cafes:", err);
+        toast.error("Failed to load cafes");
         setLoading(false);
       });
   }, []);
 
-  const activeCabins = cabins.filter((c) => c.isActive !== false);
-
-  const filteredCabins = activeCabins.filter((cabin) => {
+  // ✅ FILTERED CAFES
+  const filteredCabins = cabins.filter((cabin) => {
     const matchSearch =
       cabin.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       cabin.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -86,7 +79,11 @@ const AllCafes = () => {
     const matchLocation = locationFilter
       ? cabin.address?.toLowerCase().includes(locationFilter.toLowerCase())
       : true;
-    return matchSearch && matchLocation;
+    const matchType = filterType === 'all' || cabin.cabinType === filterType;
+    const matchStatus = filterStatus === 'all' || 
+                       (filterStatus === 'active' && cabin.isActive === true) ||
+                       (filterStatus === 'inactive' && cabin.isActive === false);
+    return matchSearch && matchLocation && matchType && matchStatus;
   });
 
   const getSortedCabins = () => {
@@ -110,151 +107,387 @@ const AllCafes = () => {
     return `${API_URL}/${cleanPath}`;
   };
 
+  // Clear filters
+  const clearFilters = () => {
+    setSearchTerm("");
+    setLocationFilter("");
+    setFilterType("all");
+    setFilterStatus("all");
+    setSortBy("latest");
+  };
+
+  const hasActiveFilters = searchTerm || locationFilter || filterType !== 'all' || filterStatus !== 'all';
+
+  // Get unique locations
+  const locations = [...new Set(cabins.map(c => c.address?.split(',')[0]?.trim()).filter(Boolean))];
+
+  // Stats
+  const totalCount = cabins.length;
+  const activeCount = cabins.filter(c => c.isActive === true).length;
+  const inactiveCount = cabins.filter(c => c.isActive === false).length;
+  const exclusiveCount = cabins.filter(c => c.cabinType === 'exclusive').length;
+  const normalCount = cabins.filter(c => c.cabinType !== 'exclusive').length;
+
+  if (loading) {
+    return (
+      <div className="admin-dash">
+        <CafeNavbar />
+        <div className="admin-dash__loading">
+          <div className="admin-dash__spinner" />
+          <p className="admin-dash__loading-text">Loading cafes...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[#FAF8F5]">
+    <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
       <CafeNavbar />
 
-      <div className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-20">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+      <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        {/* Header - "Cafes" text color = Add Cafe button color (Indigo) */}
+        <div className="admin-dash__header mb-4 flex flex-wrap items-start justify-between gap-3">
           <div>
-            <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">
-              ☕ Cafe & Dining Spaces
-            </span>
-            <h1 className="text-3xl font-extrabold text-slate-900 mt-2">
-              All Available <span className="text-[#C67B3D]">Cafe Tables</span>
+            <h1 className="admin-dash__greeting">
+              All <span style={{ color: '#4f46e5' }}>Cafes</span>
             </h1>
             <p className="text-sm text-slate-500 mt-1">
-              Explore and reserve dining tables, coffee workstations, and VIP lounge booths.
+              Manage all your cafe and dining spaces
             </p>
           </div>
+          <button
+            onClick={() => navigate("/mycafes")}
+            className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors shadow-sm hover:shadow-md whitespace-nowrap"
+          >
+            <Plus size={18} />
+            Add Cafe
+          </button>
+        </div>
 
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate("/mycafes")}
-              className="flex items-center gap-2 px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs sm:text-sm font-bold shadow-md shadow-amber-600/20 transition-all cursor-pointer"
+        {/* Stats Cards */}
+        <div className="admin-dash__stats" style={{ marginBottom: '16px' }}>
+          {[
+            {
+              label: "Total Cafes",
+              value: totalCount,
+              meta: "all dining spaces",
+              icon: Coffee,
+              color: "indigo"
+            },
+            {
+              label: "Active",
+              value: activeCount,
+              meta: "currently active",
+              icon: CheckCircle,
+              color: "emerald"
+            },
+            {
+              label: "Inactive",
+              value: inactiveCount,
+              meta: "currently inactive",
+              icon: XCircle,
+              color: "red"
+            },
+            {
+              label: "Exclusive",
+              value: exclusiveCount,
+              meta: "VIP lounge",
+              icon: Crown,
+              color: "amber"
+            },
+            {
+              label: "Normal",
+              value: normalCount,
+              meta: "regular tables",
+              icon: UtensilsCrossed,
+              color: "blue"
+            }
+          ].map((stat, index) => (
+            <div
+              key={index}
+              className="admin-dash__stat"
+              style={{ 
+                padding: '12px 14px',
+                minHeight: '80px'
+              }}
             >
-              <Plus size={16} />
-              <span>Manage My Tables</span>
-            </button>
-          </div>
+              <div className="admin-dash__stat-top">
+                <span className="admin-dash__stat-label" style={{ fontSize: '11px' }}>{stat.label}</span>
+                <div className={`admin-dash__stat-icon admin-dash__stat-icon--${stat.color}`} style={{ width: '28px', height: '28px' }}>
+                  <stat.icon size={14} />
+                </div>
+              </div>
+              <div className="admin-dash__stat-value" style={{ fontSize: '18px', fontWeight: '700' }}>{stat.value}</div>
+              <div className="admin-dash__stat-meta" style={{ fontSize: '9px' }}>{stat.meta}</div>
+            </div>
+          ))}
         </div>
 
-        {/* Search and Filters */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm mb-8">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="relative">
-              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search by cafe name or table..."
-                className="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
-              />
+        {/* Filters Panel */}
+        {cabins.length > 0 && (
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 mb-6 shadow-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+              <div>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
+                  Search
+                </label>
+                <div className="relative">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Search cafes..."
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
+                  Location
+                </label>
+                <select
+                  value={locationFilter}
+                  onChange={(e) => setLocationFilter(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                >
+                  <option value="">All Locations</option>
+                  {locations.map((loc, idx) => (
+                    <option key={idx} value={loc}>{loc}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
+                  Type
+                </label>
+                <select
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                >
+                  <option value="all">All Types</option>
+                  <option value="normal">Normal</option>
+                  <option value="exclusive">Exclusive</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
+                  Status
+                </label>
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                >
+                  <option value="all">All Status</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
+                  Sort By
+                </label>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                >
+                  <option value="latest">Newest First</option>
+                  <option value="priceLow">Price: Low to High</option>
+                  <option value="priceHigh">Price: High to Low</option>
+                </select>
+              </div>
             </div>
 
-            <div className="relative">
-              <MapPin size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                value={locationFilter}
-                onChange={(e) => setLocationFilter(e.target.value)}
-                placeholder="Filter by city or location..."
-                className="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
-              />
-            </div>
+            {hasActiveFilters && (
+              <div className="flex flex-wrap gap-1.5 mt-4 pt-4 border-t border-slate-100">
+                {searchTerm && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-full text-[10px] font-medium">
+                    Search: {searchTerm}
+                    <button onClick={() => setSearchTerm("")} className="hover:text-indigo-900">
+                      <XCircle size={10} />
+                    </button>
+                  </span>
+                )}
+                {locationFilter && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-full text-[10px] font-medium">
+                    Location: {locationFilter}
+                    <button onClick={() => setLocationFilter("")} className="hover:text-indigo-900">
+                      <XCircle size={10} />
+                    </button>
+                  </span>
+                )}
+                {filterType !== 'all' && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-full text-[10px] font-medium">
+                    Type: {filterType}
+                    <button onClick={() => setFilterType("all")} className="hover:text-indigo-900">
+                      <XCircle size={10} />
+                    </button>
+                  </span>
+                )}
+                {filterStatus !== 'all' && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-full text-[10px] font-medium">
+                    Status: {filterStatus}
+                    <button onClick={() => setFilterStatus("all")} className="hover:text-indigo-900">
+                      <XCircle size={10} />
+                    </button>
+                  </span>
+                )}
+                <button
+                  onClick={clearFilters}
+                  className="px-2.5 py-1 bg-red-50 text-red-600 rounded-full text-[10px] font-medium hover:bg-red-100 transition-colors flex items-center gap-1"
+                >
+                  <X size={12} /> Clear All
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
-            <div>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+        {/* Results Count */}
+        {(hasActiveFilters) && (
+          <div className="flex items-center justify-between mb-4 px-1">
+            <p className="text-sm text-slate-500">
+              Showing <strong className="text-slate-900">{sortedCabins.length}</strong> results
+            </p>
+            <span className="text-xs text-slate-400">
+              {sortedCabins.length} of {cabins.length} total cafes
+            </span>
+          </div>
+        )}
+
+        {/* Main Content - Card Grid with Book Now Button */}
+        {sortedCabins.length === 0 ? (
+          <div className="admin-dash__error" style={{ background: '#f8fafc', borderColor: '#e2e8f0' }}>
+            <Coffee size={48} className="text-slate-300 mb-4" />
+            <p className="admin-dash__error-title" style={{ color: '#475569' }}>
+              No cafes found
+            </p>
+            <p className="admin-dash__error-message">
+              {hasActiveFilters ? "Try adjusting your filters." : "No cafes have been added yet."}
+            </p>
+            {!hasActiveFilters && (
+              <button
+                onClick={() => navigate("/mycafes")}
+                className="mt-3 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
               >
-                <option value="latest">Sort: Newest First</option>
-                <option value="priceLow">Sort: Price Low to High</option>
-                <option value="priceHigh">Sort: Price High to Low</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Listings Grid */}
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <Loader2 size={36} className="text-amber-600 animate-spin" />
-            <p className="text-sm font-semibold text-slate-500">Loading tables...</p>
-          </div>
-        ) : sortedCabins.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-2xl border border-slate-200 p-8">
-            <UtensilsCrossed size={48} className="mx-auto text-slate-300 mb-3" />
-            <h3 className="text-base font-bold text-slate-800">No Cafe Tables Found</h3>
-            <p className="text-xs text-slate-500 mt-1">Try modifying your search or location filter.</p>
+                Add Your First Cafe
+              </button>
+            )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {sortedCabins.map((cabin) => {
-              const isExclusive = cabin.cabinType === "exclusive";
-              const firstImg = cabin.images?.[0] ? getImageUrl(cabin.images[0]) : PLACEHOLDER_IMAGE;
+              const isActive = cabin.isActive === true;
+              const isExclusive = cabin.cabinType === 'exclusive';
+              const isNew = new Date(cabin.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
               const cafeName = cabin.name?.includes(" - ") ? cabin.name.split(" - ")[0] : cabin.name;
               const tableNum = cabin.cabin || cabin.tableNumber || (cabin.name?.includes(" - ") ? cabin.name.split(" - ")[1] : "Table");
-
+              
               return (
                 <div
                   key={cabin._id}
-                  className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col group"
+                  className="admin-dash__card group flex flex-col h-full hover:shadow-lg transition-all duration-300"
                 >
-                  <div className="relative h-52 overflow-hidden bg-slate-100">
+                  <div className="relative h-48 overflow-hidden rounded-t-2xl cursor-pointer" onClick={() => navigate(`/cafe/${cabin._id}`)}>
+                    <div className="absolute inset-0 bg-slate-200 animate-pulse" />
                     <img
-                      src={firstImg}
+                      src={cabin.images?.[0] ? getImageUrl(cabin.images[0]) : PLACEHOLDER_IMAGE}
                       alt={cabin.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
+                      className="w-full h-full object-cover relative z-10 group-hover:scale-105 transition-transform duration-500"
+                      onError={(e) => {
+                        e.target.src = PLACEHOLDER_IMAGE;
+                      }}
                     />
-                    <div className="absolute top-3 left-3">
-                      <span className={`px-2.5 py-1 rounded-full text-[10.5px] font-bold text-white shadow ${
-                        isExclusive ? "bg-amber-600" : "bg-slate-800"
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/50 via-transparent to-transparent z-20 opacity-40" />
+
+                    <div className="absolute top-3 right-3 z-30 flex flex-col gap-1.5">
+                      <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold shadow-lg flex items-center gap-1 ${
+                        isExclusive 
+                          ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-white' 
+                          : 'bg-blue-500 text-white'
                       }`}>
-                        {isExclusive ? "👑 VIP Lounge" : "☕ Dining Table"}
+                        {isExclusive ? <Crown size={10} /> : <UtensilsCrossed size={10} />}
+                        {isExclusive ? 'VIP' : 'Cafe'}
+                      </span>
+                      <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold shadow-lg flex items-center gap-1 ${
+                        isActive ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'
+                      }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-white animate-pulse' : 'bg-white/70'}`}></span>
+                        {isActive ? 'Active' : 'Inactive'}
                       </span>
                     </div>
-                    <div className="absolute bottom-3 right-3 bg-black/75 backdrop-blur-sm text-white px-3 py-1 rounded-xl text-right">
-                      <span className="text-sm font-black">₹{cabin.price || 0}</span>
-                      <span className="text-[9px] block text-white/70 uppercase">per hour</span>
-                    </div>
+
+                    {isNew && isActive && (
+                      <div className="absolute top-3 left-3 z-30">
+                        <span className="bg-blue-500 text-white px-2.5 py-0.5 rounded-full text-[8px] font-bold shadow-lg flex items-center gap-1">
+                          <Sparkles size={10} />
+                          New
+                        </span>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="p-5 flex flex-col flex-1">
-                    <div className="flex items-start justify-between gap-2 mb-1">
-                      <div>
-                        <h3 className="font-bold text-slate-900 text-base">{cafeName}</h3>
-                        <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-700 mt-0.5">
-                          <UtensilsCrossed size={12} /> {tableNum}
+                  <div className="p-5 flex flex-col flex-grow">
+                    <div className="mb-4 cursor-pointer" onClick={() => navigate(`/cafe/${cabin._id}`)}>
+                      <p className="text-[10px] font-bold uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                        <span className={isExclusive ? 'text-amber-600' : 'text-blue-600'}>
+                          {isExclusive ? 'VIP Lounge' : 'Cafe Table'}
                         </span>
+                      </p>
+                      <h3 className="text-base font-bold text-slate-900 leading-tight line-clamp-1">{cafeName}</h3>
+                      <p className="text-xs text-slate-500 mt-0.5">{tableNum}</p>
+                    </div>
+                    <div className="flex items-start gap-3 mb-3 cursor-pointer" onClick={() => navigate(`/cafe/${cabin._id}`)}>
+                      <div className="p-2 bg-indigo-50 rounded-lg shrink-0 text-indigo-600">
+                        <MapPin size={16} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900 line-clamp-1">{cabin.address?.split(',')[0] || "Location"}</p>
+                        <p className="text-xs text-slate-500 line-clamp-1">{cabin.address}</p>
                       </div>
                     </div>
 
-                    <p className="text-xs text-slate-500 flex items-center gap-1.5 my-2">
-                      <MapPin size={13} className="text-amber-600 flex-shrink-0" />
-                      <span className="truncate">{cabin.address}</span>
-                    </p>
-
-                    <div className="flex items-center gap-3 text-xs text-slate-600 py-2.5 border-y border-slate-100 my-2">
+                    <div className="flex items-center gap-3 text-xs text-slate-600 py-2.5 border-y border-slate-100 my-2 cursor-pointer" onClick={() => navigate(`/cafe/${cabin._id}`)}>
                       <span className="flex items-center gap-1 font-semibold">
                         <Users size={13} className="text-slate-400" /> {cabin.capacity || 4} Guests
                       </span>
                       <span className="flex items-center gap-1 font-semibold">
-                        <Clock size={13} className="text-slate-400" /> {cabin.is24x7 ? "24x7 Open" : `${cabin.openTime || "08:00"} - ${cabin.closeTime || "23:00"}`}
+                        <Clock size={13} className="text-slate-400" /> {cabin.is24x7 ? "24x7" : `${cabin.openTime || "08:00"} - ${cabin.closeTime || "23:00"}`}
                       </span>
                     </div>
 
-                    <div className="mt-auto pt-3 flex gap-2">
+                    <p className="text-slate-500 text-xs leading-relaxed mb-4 line-clamp-2 cursor-pointer" onClick={() => navigate(`/cafe/${cabin._id}`)}>
+                      {cabin.description || (isExclusive 
+                        ? "Premium VIP lounge with exclusive amenities and personalized service." 
+                        : "Cozy cafe perfect for work, meetings, and networking.")}
+                    </p>
+
+                    <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
+                      <div className="cursor-pointer" onClick={() => navigate(`/cafe/${cabin._id}`)}>
+                        <div className="flex items-baseline gap-0.5">
+                          <span className="text-xl font-bold text-slate-900">₹{cabin.price || '0'}</span>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase">/ Hour</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-[10px] font-medium text-slate-500 mt-0.5">
+                          <Users size={10} />
+                          {cabin.capacity || 4} Guests
+                        </div>
+                      </div>
+
+                      {/* ✅ ONLY BOOK NOW BUTTON - NO EDIT/DELETE ICONS */}
                       <button
                         onClick={() => navigate(`/book/${cabin._id}`)}
-                        className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white text-xs font-bold transition-all shadow-md shadow-amber-600/20 flex items-center justify-center gap-1.5 cursor-pointer"
+                        className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-colors shadow-md shadow-indigo-200 flex items-center gap-1.5"
                       >
-                        <span>Reserve Table</span>
-                        <ArrowRight size={14} />
+                        <Calendar size={14} />
+                        Book Now
                       </button>
                     </div>
                   </div>
@@ -263,6 +496,11 @@ const AllCafes = () => {
             })}
           </div>
         )}
+      </main>
+
+      {/* Footer */}
+      <div className="mt-12 text-center text-[9px] text-slate-400 font-medium tracking-wider border-t border-slate-200 pt-6 max-w-7xl mx-auto px-4">
+        © IRYAX SPACE — All Rights Reserved
       </div>
     </div>
   );

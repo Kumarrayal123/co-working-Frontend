@@ -101,7 +101,6 @@ const CafeNavbar = () => {
   ];
 
   const bookingsLinks = [
-    { name: "My Bookings", path: "/cafebookings", icon: Calendar },
     { name: "My Cafe Bookings", path: "/cafebookings", icon: Building2 },
   ];
 

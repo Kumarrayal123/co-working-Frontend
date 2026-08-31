@@ -117,12 +117,9 @@ const CafeBookings = () => {
   });
 
   // ─── HELPERS ───
-  // ✅ FIXED: isCafe detection - check isCafe property, fallback to name/cabin
   const isCafeSpace = (cabin) => {
     if (!cabin) return false;
-    // Explicit isCafe flag
     if (cabin.isCafe === true) return true;
-    // Check name for cafe keywords
     const name = (cabin.name || "").toLowerCase();
     const cabinSpec = (cabin.cabin || cabin.tableNumber || "").toLowerCase();
     return (
@@ -142,7 +139,6 @@ const CafeBookings = () => {
     if (!b) return false;
     const cabin = b.cabin || b.cabinId;
     if (!cabin) return false;
-    // ✅ Check if it's a cafe space
     return isCafeSpace(cabin);
   };
 
@@ -175,7 +171,6 @@ const CafeBookings = () => {
     if (!cabin) return { label: 'Cafe', icon: Coffee, className: 'bg-amber-100 text-amber-700' };
     if (cabin.isCafe) return { label: 'Cafe', icon: Coffee, className: 'bg-amber-100 text-amber-700' };
     if (cabin.cabinType === 'exclusive') return { label: 'VIP', icon: Crown, className: 'bg-purple-100 text-purple-700' };
-    // Check if it's a cafe by name
     const name = (cabin.name || "").toLowerCase();
     if (name.includes("cafe") || name.includes("coffee") || name.includes("dining")) {
       return { label: 'Cafe', icon: Coffee, className: 'bg-amber-100 text-amber-700' };
@@ -261,7 +256,6 @@ const CafeBookings = () => {
 
       const allBookings = res.data.bookings || res.data || [];
       
-      // ✅ FIXED: Filter cafe bookings using isCafeSpace function
       const cafeBookings = allBookings.filter(b => isCafeBooking(b));
 
       console.log(`✅ Found ${cafeBookings.length} cafe bookings out of ${allBookings.length} total`);
@@ -285,19 +279,16 @@ const CafeBookings = () => {
   const applyFilters = () => {
     let filtered = [...bookings];
 
-    // Section filter
     if (activeSection === 'confirmed') {
       filtered = filtered.filter(b => b.bookingType !== 'visit');
     } else if (activeSection === 'visits') {
       filtered = filtered.filter(b => b.bookingType === 'visit');
     }
 
-    // Status filter (dropdown)
     if (filterStatus !== "all") {
       filtered = filtered.filter(b => b.status?.toLowerCase() === filterStatus);
     }
 
-    // Search filter
     if (searchTerm) {
       const q = searchTerm.toLowerCase();
       filtered = filtered.filter(b => {
@@ -311,7 +302,6 @@ const CafeBookings = () => {
       });
     }
 
-    // Date filter
     if (filterDate) {
       filtered = filtered.filter(b => b.startDate === filterDate);
     }
@@ -1201,7 +1191,7 @@ const CafeBookings = () => {
           </div>
         </div>
 
-        {/* Table */}
+        {/* Table - WITH BOOKING STATUS COLUMN ADDED */}
         {filteredBookings.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-12 text-center">
             <UtensilsCrossed size={48} className="mx-auto text-gray-300 mb-4" />
@@ -1211,7 +1201,7 @@ const CafeBookings = () => {
         ) : (
           <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm min-w-[1500px]">
+              <table className="w-full text-left text-sm min-w-[1600px]">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-100">
                     <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">S.No</th>
@@ -1223,6 +1213,8 @@ const CafeBookings = () => {
                     <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Hours</th>
                     <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Days</th>
                     <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Seats</th>
+                    {/* ✅ BOOKING STATUS COLUMN ADDED */}
+                    <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Booking Status</th>
                     <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Payment</th>
                     <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Pmt Status</th>
                     <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Amount</th>
@@ -1310,6 +1302,13 @@ const CafeBookings = () => {
                               {booking.selectedSeats?.map(s => s.name).join(', ') || 'N/A'}
                             </p>
                           )}
+                        </td>
+                        {/* ✅ BOOKING STATUS COLUMN RENDER */}
+                        <td className="px-3 py-2">
+                          <span className={`px-2 py-0.5 text-[9px] font-bold rounded-full inline-flex items-center gap-1 ${statusInfo.color}`}>
+                            {statusInfo.icon}
+                            {statusInfo.label}
+                          </span>
                         </td>
                         <td className="px-3 py-2">
                           <span className={`px-2 py-0.5 text-[9px] font-bold rounded-full ${pmtMethod.color}`}>

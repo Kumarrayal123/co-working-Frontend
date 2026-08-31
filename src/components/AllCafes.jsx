@@ -395,7 +395,7 @@ const AllCafes = () => {
                   key={cabin._id}
                   className="admin-dash__card group flex flex-col h-full hover:shadow-lg transition-all duration-300"
                 >
-                  <div className="relative h-48 overflow-hidden rounded-t-2xl cursor-pointer" onClick={() => navigate(`/cafe/${cabin._id}`)}>
+                  <div className="relative h-48 overflow-hidden rounded-t-2xl cursor-pointer" onClick={() => navigate(`/cabin/${cabin._id}`)}>
                     <div className="absolute inset-0 bg-slate-200 animate-pulse" />
                     <img
                       src={cabin.images?.[0] ? getImageUrl(cabin.images[0]) : PLACEHOLDER_IMAGE}
@@ -435,7 +435,7 @@ const AllCafes = () => {
                   </div>
 
                   <div className="p-5 flex flex-col flex-grow">
-                    <div className="mb-4 cursor-pointer" onClick={() => navigate(`/cafe/${cabin._id}`)}>
+                    <div className="mb-4 cursor-pointer" onClick={() => navigate(`/cabin/${cabin._id}`)}>
                       <p className="text-[10px] font-bold uppercase tracking-widest mb-1 flex items-center gap-1.5">
                         <span className={isExclusive ? 'text-amber-600' : 'text-blue-600'}>
                           {isExclusive ? 'VIP Lounge' : 'Cafe Table'}
@@ -444,7 +444,7 @@ const AllCafes = () => {
                       <h3 className="text-base font-bold text-slate-900 leading-tight line-clamp-1">{cafeName}</h3>
                       <p className="text-xs text-slate-500 mt-0.5">{tableNum}</p>
                     </div>
-                    <div className="flex items-start gap-3 mb-3 cursor-pointer" onClick={() => navigate(`/cafe/${cabin._id}`)}>
+                    <div className="flex items-start gap-3 mb-3 cursor-pointer" onClick={() => navigate(`/cabin/${cabin._id}`)}>
                       <div className="p-2 bg-indigo-50 rounded-lg shrink-0 text-indigo-600">
                         <MapPin size={16} />
                       </div>
@@ -454,7 +454,7 @@ const AllCafes = () => {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3 text-xs text-slate-600 py-2.5 border-y border-slate-100 my-2 cursor-pointer" onClick={() => navigate(`/cafe/${cabin._id}`)}>
+                    <div className="flex items-center gap-3 text-xs text-slate-600 py-2.5 border-y border-slate-100 my-2 cursor-pointer" onClick={() => navigate(`/cabin/${cabin._id}`)}>
                       <span className="flex items-center gap-1 font-semibold">
                         <Users size={13} className="text-slate-400" /> {cabin.capacity || 4} Guests
                       </span>
@@ -463,14 +463,14 @@ const AllCafes = () => {
                       </span>
                     </div>
 
-                    <p className="text-slate-500 text-xs leading-relaxed mb-4 line-clamp-2 cursor-pointer" onClick={() => navigate(`/cafe/${cabin._id}`)}>
+                    <p className="text-slate-500 text-xs leading-relaxed mb-4 line-clamp-2 cursor-pointer" onClick={() => navigate(`/cabin/${cabin._id}`)}>
                       {cabin.description || (isExclusive 
                         ? "Premium VIP lounge with exclusive amenities and personalized service." 
                         : "Cozy cafe perfect for work, meetings, and networking.")}
                     </p>
 
                     <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
-                      <div className="cursor-pointer" onClick={() => navigate(`/cafe/${cabin._id}`)}>
+                      <div className="cursor-pointer" onClick={() => navigate(`/cabin/${cabin._id}`)}>
                         <div className="flex items-baseline gap-0.5">
                           <span className="text-xl font-bold text-slate-900">₹{cabin.price || '0'}</span>
                           <span className="text-[10px] text-slate-400 font-bold uppercase">/ Hour</span>

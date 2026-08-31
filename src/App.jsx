@@ -70,6 +70,7 @@ import CafeBookings from "./components/CafeBookings";
 import CafeProfile from "./components/CafeProfile";
 import CafeRevenue from "./components/CafeRevenue";
 import CafeWallet from "./components/CafeWallet";
+import MyCafePayments from "./components/MyCafePayments";
 
 function App() {
   return (
@@ -84,6 +85,7 @@ function App() {
         <Route path="/cafebookings" element={<CafeBookings />} />
         <Route path="/caferevenue" element={<CafeRevenue />} />
         <Route path="/cafewallet" element={<CafeWallet />} />
+        <Route path="/cafepayments" element={<MyCafePayments />} />
         <Route path="/cafeprofile" element={<CafeProfile />} />
         <Route path="/doctor-chamber" element={<DoctorChamberPage />} />
         <Route path="/doctordashbaord" element={<DoctorDashboard />} />

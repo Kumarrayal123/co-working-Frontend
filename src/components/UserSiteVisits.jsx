@@ -20,16 +20,59 @@ import {
   CalendarPlus,
   Info,
   Layers,
-  Coffee // 👈 Cafe icon add kiya
+  Coffee
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import SimpleUserNavbar from "./SimpleUserNavbar";
 import * as XLSX from 'xlsx';
-import "./Dashboard.css";
+import "./UserSiteVisits.css";
 
 const API_URL = "https://spaceapi.iryax.com";
+
+const getCurrentUser = () => {
+  try {
+    return JSON.parse(localStorage.getItem("user") || "null")
+      || JSON.parse(localStorage.getItem("admin") || "null");
+  } catch {
+    return null;
+  }
+};
+
+const normalizeId = (value) => {
+  if (!value) return "";
+  if (typeof value === "object") return String(value._id || value.id || "");
+  return String(value);
+};
+
+const normalizeEmail = (value) => String(value || "").trim().toLowerCase();
+
+const getBookingUserId = (booking) =>
+  normalizeId(booking?.user?._id || booking?.userId?._id || booking?.userId || booking?.user);
+
+const belongsToCurrentUser = (booking, currentUser) => {
+  if (!booking || !currentUser) return false;
+
+  const currentUserId = normalizeId(currentUser._id || currentUser.id);
+  const currentEmail = normalizeEmail(currentUser.email);
+  const bookingUserId = getBookingUserId(booking);
+  const bookingEmails = [
+    booking.email,
+    booking.user?.email,
+  ].map(normalizeEmail).filter(Boolean);
+
+  const idMatch = Boolean(currentUserId && bookingUserId && bookingUserId === currentUserId);
+  const emailMatch = Boolean(currentEmail && bookingEmails.includes(currentEmail));
+  return idMatch || emailMatch;
+};
+
+const normalizeVisit = (booking) => ({
+  ...booking,
+  cabin: booking.cabin || (booking.cabinId && typeof booking.cabinId === "object" ? booking.cabinId : null),
+});
+
+const isSiteVisit = (booking) => booking?.bookingType === "visit";
 
 const UserSiteVisits = () => {
   const [visits, setVisits] = useState([]);
@@ -129,23 +172,56 @@ const UserSiteVisits = () => {
     };
   };
 
-  // ✅ UPDATED: New API endpoint for site visits only
   const fetchSiteVisits = async () => {
     try {
       const token = localStorage.getItem("token");
-      if (!token) {
+      const currentUser = getCurrentUser();
+      const currentUserId = normalizeId(currentUser?._id || currentUser?.id);
+
+      if (!token || !currentUserId) {
         toast.error("Please login to view your site visits");
         navigate("/login");
         return;
       }
 
-      const res = await axios.get(
-        `${API_URL}/api/bookings/user/visits`, // ✅ NEW API ENDPOINT
-        { headers: { Authorization: `Bearer ${token}` } }
+      const authHeaders = { headers: { Authorization: `Bearer ${token}` } };
+
+      const [userByIdRes, userRes] = await Promise.allSettled([
+        axios.get(`${API_URL}/api/bookings/userbookings/${currentUserId}`, authHeaders),
+        axios.get(`${API_URL}/api/bookings/user`, authHeaders),
+      ]);
+
+      const collect = (result) =>
+        result.status === "fulfilled"
+          ? (result.value.data?.bookings || [])
+          : [];
+
+      const mergedById = new Map();
+      [...collect(userByIdRes), ...collect(userRes)].forEach((booking) => {
+        if (booking?._id) mergedById.set(String(booking._id), normalizeVisit(booking));
+      });
+
+      const typedVisitsNeeded = [...mergedById.values()].some((b) => !b.bookingType);
+      if (typedVisitsNeeded || mergedById.size === 0) {
+        try {
+          const allRes = await axios.get(`${API_URL}/api/bookings`, authHeaders);
+          (allRes.data?.bookings || []).forEach((booking) => {
+            if (!belongsToCurrentUser(booking, currentUser)) return;
+            const id = String(booking._id);
+            mergedById.set(id, {
+              ...(mergedById.get(id) || {}),
+              ...normalizeVisit(booking),
+            });
+          });
+        } catch (lookupError) {
+          console.error("Could not look up booking types:", lookupError);
+        }
+      }
+
+      const siteVisits = [...mergedById.values()].filter((booking) =>
+        isSiteVisit(booking) && belongsToCurrentUser(booking, currentUser)
       );
 
-      // ✅ Directly set visits from response (already filtered for site visits)
-      const siteVisits = res.data.bookings || res.data || [];
       setVisits(siteVisits);
 
       if (siteVisits.length === 0) {
@@ -196,11 +272,9 @@ const UserSiteVisits = () => {
   const handleViewVisit = (visit) => {
     setViewVisit(visit);
     setShowViewModal(true);
-    // ✅ Prevent body scroll when modal is open
     document.body.style.overflow = 'hidden';
   };
 
-  // ✅ Close modal with body scroll restore
   const closeViewModal = () => {
     setShowViewModal(false);
     setViewVisit(null);
@@ -245,16 +319,14 @@ const UserSiteVisits = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="user-visits">
         <SimpleUserNavbar />
-        <div className="pt-24 px-4 max-w-full mx-auto">
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto"></div>
-              <p className="mt-4 text-gray-500 text-sm">Loading site visits...</p>
-            </div>
+        <main className="p-2 sm:p-4 lg:p-6" style={{ paddingTop: "1.5rem" }}>
+          <div className="user-visits__loading">
+            <div className="user-visits__spinner" />
+            <p className="user-visits__loading-text">Loading site visits...</p>
           </div>
-        </div>
+        </main>
       </div>
     );
   }
@@ -273,55 +345,60 @@ const UserSiteVisits = () => {
       value: statsCount.total,
       meta: "all visits",
       icon: Ticket,
-      color: "purple"
+      color: "purple",
+      onClick: () => setStatusFilter('all')
     },
     {
       label: "Pending",
       value: statsCount.pending,
       meta: "awaiting confirmation",
       icon: ClockIcon,
-      color: "amber"
+      color: "amber",
+      onClick: () => setStatusFilter('pending')
     },
     {
       label: "Confirmed",
       value: statsCount.confirmed,
       meta: "confirmed visits",
       icon: Calendar,
-      color: "emerald"
+      color: "emerald",
+      onClick: () => setStatusFilter('confirmed')
     },
     {
       label: "Completed",
       value: statsCount.completed,
       meta: "completed visits",
       icon: CalendarDays,
-      color: "blue"
+      color: "blue",
+      onClick: () => setStatusFilter('completed')
     },
     {
       label: "Cancelled",
       value: statsCount.cancelled,
       meta: "cancelled visits",
       icon: XIcon,
-      color: "rose"
+      color: "rose",
+      onClick: () => setStatusFilter('cancelled')
     }
   ];
 
   return (
-    <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
+    <div className="user-visits">
       <SimpleUserNavbar />
 
-      <div className="pt-20 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
+      <main className="p-2 sm:p-4 lg:p-6" style={{ paddingTop: "1.5rem" }}>
         {/* Header */}
-        <div className="admin-dash__header" style={{ marginBottom: '8px' }}>
+        <div className="user-visits__header">
           <div>
-            <h1 className="admin-dash__greeting" style={{ fontSize: '1.25rem' }}>
-              My <span style={{ color: '#7c3aed' }}>Site Visits</span>
+            <h1 className="user-visits__greeting">
+              My <span>Site Visits</span>
             </h1>
-            <p className="admin-dash__subtitle" style={{ fontSize: '11px' }}>Manage all your site visit appointments</p>
+            <p className="user-visits__subtitle">Manage all your site visit appointments</p>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => navigate("/userbooking")}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition flex items-center gap-2 shadow-sm shadow-indigo-200"
+              className="user-visits__btn user-visits__btn--primary"
             >
               <Building2 size={16} />
               View Space Bookings
@@ -330,39 +407,35 @@ const UserSiteVisits = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="admin-dash__stats" style={{ marginBottom: '16px' }}>
+        <div className="user-visits__stats">
           {statsCards.map((stat, index) => (
             <div
               key={index}
-              className="admin-dash__stat"
-              style={{
-                padding: '12px 14px',
-                minHeight: '80px'
-              }}
+              className={`user-visits__stat ${statusFilter === stat.label.toLowerCase() ? 'user-visits__stat--active' : ''}`}
+              onClick={stat.onClick}
             >
-              <div className="admin-dash__stat-top">
-                <span className="admin-dash__stat-label" style={{ fontSize: '11px' }}>{stat.label}</span>
-                <div className={`admin-dash__stat-icon admin-dash__stat-icon--${stat.color}`} style={{ width: '28px', height: '28px' }}>
+              <div className="user-visits__stat-top">
+                <span className="user-visits__stat-label">{stat.label}</span>
+                <div className={`user-visits__stat-icon user-visits__stat-icon--${stat.color}`}>
                   <stat.icon size={14} />
                 </div>
               </div>
-              <div className="admin-dash__stat-value" style={{ fontSize: '18px', fontWeight: '700' }}>{stat.value}</div>
-              <div className="admin-dash__stat-meta" style={{ fontSize: '9px' }}>{stat.meta}</div>
+              <div className="user-visits__stat-value">{stat.value}</div>
+              <div className="user-visits__stat-meta">{stat.meta}</div>
             </div>
           ))}
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-3 mb-4">
-          <div className="flex flex-col sm:flex-row gap-2">
-            <div className="flex-1 relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <div className="user-visits__filters">
+          <div className="user-visits__filter-row">
+            <div className="user-visits__search-input">
+              <Search size={14} className="user-visits__search-icon" />
               <input
                 type="text"
                 placeholder="Search visits..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
               />
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -370,12 +443,12 @@ const UserSiteVisits = () => {
                 type="date"
                 value={filterDate}
                 onChange={(e) => setFilterDate(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 bg-white"
+                className="user-visits__filter-select"
               />
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 bg-white"
+                className="user-visits__filter-select"
               >
                 <option value="all">All Status</option>
                 <option value="pending">Pending</option>
@@ -387,7 +460,7 @@ const UserSiteVisits = () => {
               <select
                 value={spaceTypeFilter}
                 onChange={(e) => setSpaceTypeFilter(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 bg-white"
+                className="user-visits__filter-select"
               >
                 <option value="all">All Types</option>
                 <option value="medical">🏥 Medical Chamber</option>
@@ -397,7 +470,7 @@ const UserSiteVisits = () => {
               {(statusFilter !== 'all' || spaceTypeFilter !== 'all' || filterDate || searchTerm) && (
                 <button
                   onClick={clearFilters}
-                  className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                  className="user-visits__btn user-visits__btn--secondary"
                   title="Clear filters"
                 >
                   <XIcon size={16} />
@@ -406,7 +479,7 @@ const UserSiteVisits = () => {
               {filteredVisits.length > 0 && (
                 <button
                   onClick={exportToExcel}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-purple-50 text-purple-700 rounded-lg text-xs font-medium hover:bg-purple-100 transition"
+                  className="user-visits__btn user-visits__btn--secondary"
                 >
                   <Download size={14} />
                   <span className="hidden xs:inline">Export</span>
@@ -421,55 +494,53 @@ const UserSiteVisits = () => {
         </div>
 
         {/* Visits Table */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-4 py-3 bg-purple-50 border-b border-gray-200 flex items-center justify-between">
+        <div className="user-visits__card">
+          <div className="user-visits__card-header">
             <div className="flex items-center gap-2">
               <Calendar size={16} className="text-purple-600" />
-              <h3 className="font-bold text-gray-800">Site Visits</h3>
+              <h3 className="user-visits__card-title">Site Visits</h3>
               <span className="px-2 py-0.5 bg-white/60 rounded-full text-xs font-bold text-gray-600">{filteredVisits.length}</span>
             </div>
           </div>
 
           {filteredVisits.length === 0 ? (
-            <div className="p-8 text-center">
-              <div className="flex flex-col items-center text-gray-400">
-                <Calendar size={32} className="opacity-20 mb-2" />
-                <p className="text-sm font-medium">No site visits found</p>
-                <button
-                  onClick={() => navigate("/spaceforusers")}
-                  className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition"
-                >
-                  Browse Spaces
-                </button>
-              </div>
+            <div className="user-visits__empty">
+              <Calendar size={32} className="user-visits__empty-icon" />
+              <p className="user-visits__empty-text">No site visits found</p>
+              <button
+                onClick={() => navigate("/spaceforusers")}
+                className="user-visits__btn user-visits__btn--primary"
+              >
+                Browse Spaces
+              </button>
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
+              <table className="user-visits__table">
                 <thead>
-                  <tr className="bg-gray-50 border-b border-gray-100">
-                    <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">S.No</th>
-                    <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Cabin</th>
-                    <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Type</th>
-                    <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Visit Date</th>
-                    <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Visit Time</th>
-                    <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Visitor</th>
-                    <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Status</th>
-                    <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Created At</th>
-                    <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase text-center">Actions</th>
+                  <tr>
+                    <th>S.No</th>
+                    <th>Cabin</th>
+                    <th>Type</th>
+                    <th>Visit Date</th>
+                    <th>Visit Time</th>
+                    <th>Visitor</th>
+                    <th>Status</th>
+                    <th>Created At</th>
+                    <th className="text-center">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody>
                   {filteredVisits.map((v, idx) => {
                     const status = getStatusBadge(v.status);
                     const spaceTypeBadge = getSpaceTypeBadge(v);
 
                     return (
-                      <tr key={v._id} className="hover:bg-purple-50/30 transition-colors">
-                        <td className="px-3 py-2">
+                      <tr key={v._id}>
+                        <td>
                           <span className="text-[10px] font-semibold text-gray-400">{idx + 1}</span>
                         </td>
-                        <td className="px-3 py-2">
+                        <td>
                           <div>
                             <p className="font-semibold text-gray-900 text-xs">
                               {v.cabin?.name || 'Unknown Cabin'}
@@ -480,34 +551,35 @@ const UserSiteVisits = () => {
                             </p>
                           </div>
                         </td>
-                        <td className="px-3 py-2">
+                        <td>
                           <span className={`px-2 py-0.5 text-[9px] font-bold rounded-full inline-flex items-center gap-1 ${spaceTypeBadge.color}`}>
                             {spaceTypeBadge.icon}
                             {spaceTypeBadge.label}
                           </span>
                         </td>
-                        <td className="px-3 py-2">
+                        <td>
                           <span className="text-xs font-medium text-gray-700">{formatDateDDMMYYYY(v.startDate)}</span>
                         </td>
-                        <td className="px-3 py-2">
+                        <td>
                           <span className="text-xs font-medium text-gray-700">{formatTime12(v.startTime)}</span>
                         </td>
-                        <td className="px-3 py-2">
+                        <td>
                           <div>
                             <p className="text-xs font-medium text-gray-700">{v.name || 'N/A'}</p>
                             <p className="text-[9px] text-gray-400">{v.mobile || 'N/A'}</p>
                           </div>
                         </td>
-                        <td className="px-3 py-2">
+                        <td>
                           <span className={`px-2 py-0.5 text-[9px] font-bold rounded-full ${status.color}`}>{status.label}</span>
                         </td>
-                        <td className="px-3 py-2">
+                        <td>
                           <span className="text-[10px] text-gray-500 font-medium">{formatDateTime(v.createdAt)}</span>
                         </td>
-                        <td className="px-3 py-2 text-center">
+                        <td className="text-center">
                           <button
                             onClick={() => handleViewVisit(v)}
-                            className="p-1.5 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition"
+                            className="user-visits__btn user-visits__btn--secondary"
+                            style={{ padding: "0.375rem 0.5rem" }}
                             title="View Details"
                           >
                             <Eye size={14} />
@@ -526,7 +598,7 @@ const UserSiteVisits = () => {
         <div className="mt-6 text-center text-[9px] text-gray-400 font-medium tracking-wider">
           © IRYAX SPACE — All Rights Reserved
         </div>
-      </div>
+      </main>
 
       {/* ============================================================ */}
       {/* ✅ FIXED VIEW MODAL - Properly Centered with No Overflow */}
@@ -658,7 +730,7 @@ const UserSiteVisits = () => {
               <div className="flex flex-wrap gap-3 pt-2 border-t border-gray-200">
                 <button
                   onClick={closeViewModal}
-                  className="flex-1 min-w-[120px] py-3 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 transition shadow-sm"
+                  className="user-visits__btn user-visits__btn--primary"
                 >
                   Close
                 </button>

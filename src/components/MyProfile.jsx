@@ -48,6 +48,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import UsersNavbar from "./UsersNavbar";
 import "./Dashboard.css";
+import "./UserSiteVisits.css";
 
 const API_URL = "https://spaceapi.iryax.com";
 
@@ -566,25 +567,28 @@ const MyProfile = () => {
 
   if (loading) {
     return (
-      <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
+      <div className="user-visits">
         <UsersNavbar />
-        <div className="flex justify-center items-center h-64">
-          <div className="w-12 h-12 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin" />
-        </div>
+        <main className="p-2 sm:p-4 lg:p-6">
+          <div className="user-visits__loading">
+            <div className="user-visits__spinner" />
+            <p className="user-visits__loading-text">Loading profile...</p>
+          </div>
+        </main>
       </div>
     );
   }
 
   if (!profile) {
     return (
-      <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
+      <div className="user-visits">
         <UsersNavbar />
-        <div className="pt-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
-          <div className="flex flex-col items-center justify-center gap-4 py-20 text-gray-400">
-            <User size={48} className="opacity-20" />
-            <p className="text-lg font-medium">No profile data found</p>
+        <main className="p-2 sm:p-4 lg:p-6">
+          <div className="user-visits__empty">
+            <User size={32} className="user-visits__empty-icon" />
+            <p className="user-visits__empty-text">No profile data found</p>
           </div>
-        </div>
+        </main>
       </div>
     );
   }
@@ -596,23 +600,22 @@ const MyProfile = () => {
   const hasAadharCardFile = profile.adharCard && profile.adharCard.trim() !== '';
 
   return (
-    <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
+    <div className="user-visits">
       <UsersNavbar />
 
-      <div className="pt-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
+      <main className="p-2 sm:p-4 lg:p-6">
         {/* Header */}
-        <div className="admin-dash__header">
+        <div className="user-visits__header">
           <div>
-            <h1 className="admin-dash__greeting">
+            <h1 className="user-visits__greeting">
               My <span>Profile</span>
             </h1>
-          
+            <p className="user-visits__subtitle">Manage your personal information and documents</p>
           </div>
-        
         </div>
 
         {/* Profile Completion Card */}
-        <div className="bg-gradient-to-r from-amber-50 via-yellow-50 to-orange-50 rounded-2xl border border-amber-200 shadow-sm p-4 sm:p-5 mb-4">
+        <div className="user-visits__card mb-4">
           <div className="flex flex-col sm:flex-row sm:items-center gap-5">
             <div className="flex-shrink-0 flex justify-center">
               <CircularProgress 
@@ -682,7 +685,7 @@ const MyProfile = () => {
 
         {/* ✅ QUICK ACTION BUTTONS - ALAG DIV MEIN, PERCENTAGE KE NICHE (SAME AS DOCTORPROFILE) */}
         <div className="mb-5">
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-5">
+          <div className="user-visits__card">
             <div className="flex items-center gap-2 mb-3">
               <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
                 <ArrowRight size={16} className="text-amber-600" />
@@ -692,41 +695,41 @@ const MyProfile = () => {
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
               <button
                 onClick={() => navigate("/mybookings")}
-                className="flex items-center justify-center gap-2 px-3 py-3 bg-indigo-50 text-indigo-700 rounded-xl text-sm font-medium hover:bg-indigo-100 transition-colors border border-indigo-200 hover:shadow-md"
+                className="user-visits__btn user-visits__btn--secondary"
               >
-                <Ticket size={18} className="text-indigo-500" />
+                <Ticket size={18} />
                 <span className="hidden sm:inline">My Bookings</span>
                 <span className="sm:hidden">Bookings</span>
               </button>
               <button
                 onClick={() => navigate("/mycabin")}
-                className="flex items-center justify-center gap-2 px-3 py-3 bg-emerald-50 text-emerald-700 rounded-xl text-sm font-medium hover:bg-emerald-100 transition-colors border border-emerald-200 hover:shadow-md"
+                className="user-visits__btn user-visits__btn--secondary"
               >
-                <Home size={18} className="text-emerald-500" />
+                <Home size={18} />
                 <span className="hidden sm:inline">My Cabins</span>
                 <span className="sm:hidden">Cabins</span>
               </button>
               <button
                 onClick={() => navigate("/my-wallet")}
-                className="flex items-center justify-center gap-2 px-3 py-3 bg-amber-50 text-amber-700 rounded-xl text-sm font-medium hover:bg-amber-100 transition-colors border border-amber-200 hover:shadow-md"
+                className="user-visits__btn user-visits__btn--secondary"
               >
-                <Wallet size={18} className="text-amber-500" />
+                <Wallet size={18} />
                 <span className="hidden sm:inline">Wallet</span>
                 <span className="sm:hidden">Wallet</span>
               </button>
               <button
                 onClick={() => navigate("/my-cabin-payments")}
-                className="flex items-center justify-center gap-2 px-3 py-3 bg-purple-50 text-purple-700 rounded-xl text-sm font-medium hover:bg-purple-100 transition-colors border border-purple-200 hover:shadow-md"
+                className="user-visits__btn user-visits__btn--secondary"
               >
-                <CreditCard size={18} className="text-purple-500" />
+                <CreditCard size={18} />
                 <span className="hidden sm:inline">Payments</span>
                 <span className="sm:hidden">Payments</span>
               </button>
               <button
                 onClick={() => navigate("/spacerevenue")}
-                className="flex items-center justify-center gap-2 px-3 py-3 bg-cyan-50 text-cyan-700 rounded-xl text-sm font-medium hover:bg-cyan-100 transition-colors border border-cyan-200 hover:shadow-md"
+                className="user-visits__btn user-visits__btn--secondary"
               >
-                <BarChart3 size={18} className="text-cyan-500" />
+                <BarChart3 size={18} />
                 <span className="hidden sm:inline">Revenue</span>
                 <span className="sm:hidden">Revenue</span>
               </button>
@@ -735,7 +738,7 @@ const MyProfile = () => {
         </div>
 
         {/* Profile Card */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="user-visits__card">
           {/* Cover Image */}
           <div className="h-32 bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 relative">
             <div className="absolute -bottom-12 left-6 sm:left-8">
@@ -768,7 +771,7 @@ const MyProfile = () => {
               </div>
               <button
                 onClick={openEditPopup}
-                className="flex items-center gap-2 px-4 py-2 bg-amber-50 text-amber-700 rounded-xl text-sm font-medium hover:bg-amber-100 transition-colors border border-amber-200"
+                className="user-visits__btn user-visits__btn--primary"
               >
                 <Edit size={14} />
                 Edit Profile
@@ -776,25 +779,42 @@ const MyProfile = () => {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Role</p>
-                <p className="text-lg font-bold text-gray-900 mt-1 capitalize">{profile.role || 'User'}</p>
+            <div className="user-visits__stats mt-6">
+              <div className="user-visits__stat">
+                <div className="user-visits__stat-top">
+                  <span className="user-visits__stat-label">Role</span>
+                  <div className="user-visits__stat-icon user-visits__stat-icon--indigo">
+                    <User size={14} />
+                  </div>
+                </div>
+                <div className="user-visits__stat-value capitalize">{profile.role || 'User'}</div>
               </div>
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Status</p>
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-full border mt-1 ${statusBadge.color}`}>
-                  {statusBadge.icon}
-                  {statusBadge.label}
-                </span>
+              <div className="user-visits__stat">
+                <div className="user-visits__stat-top">
+                  <span className="user-visits__stat-label">Status</span>
+                  <div className="user-visits__stat-icon user-visits__stat-icon--emerald">
+                    <CheckCircle size={14} />
+                  </div>
+                </div>
+                <div className="user-visits__stat-value">{statusBadge.label}</div>
               </div>
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Member Since</p>
-                <p className="text-sm font-medium text-gray-900 mt-1">{formatDate(profile.createdAt)}</p>
+              <div className="user-visits__stat">
+                <div className="user-visits__stat-top">
+                  <span className="user-visits__stat-label">Member Since</span>
+                  <div className="user-visits__stat-icon user-visits__stat-icon--blue">
+                    <Calendar size={14} />
+                  </div>
+                </div>
+                <div className="user-visits__stat-value">{formatDate(profile.createdAt)}</div>
               </div>
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">User ID</p>
-                <p className="text-xs font-mono text-gray-600 mt-1">#{profile._id.slice(-8).toUpperCase()}</p>
+              <div className="user-visits__stat">
+                <div className="user-visits__stat-top">
+                  <span className="user-visits__stat-label">User ID</span>
+                  <div className="user-visits__stat-icon user-visits__stat-icon--purple">
+                    <IdCard size={14} />
+                  </div>
+                </div>
+                <div className="user-visits__stat-value text-xs font-mono">#{profile._id.slice(-8).toUpperCase()}</div>
               </div>
             </div>
 
@@ -988,7 +1008,7 @@ const MyProfile = () => {
             </div>
           </div>
         </div>
-      </div>
+      </main>
 
       {/* ====================== */}
       {/* DOCUMENT VIEW POPUP */}

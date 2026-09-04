@@ -63,6 +63,7 @@ import * as XLSX from 'xlsx';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import "./Dashboard.css";
+import "./UserSiteVisits.css";
 
 const API_URL = "https://spaceapi.iryax.com";
 
@@ -1397,35 +1398,36 @@ const CabinBookings = () => {
 
   if (loading) {
     return (
-      <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
+      <div className="user-visits">
         {isAdmin ? <AdminNavbar /> : <UsersNavbar />}
-        <div className="flex justify-center items-center h-64">
-          <div className="w-12 h-12 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin" />
-        </div>
+        <main className="p-2 sm:p-4 lg:p-6">
+          <div className="user-visits__loading">
+            <div className="user-visits__spinner" />
+            <p className="user-visits__loading-text">Loading bookings...</p>
+          </div>
+        </main>
       </div>
     );
   }
 
   return (
-    <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
+    <div className="user-visits">
       {isAdmin ? <AdminNavbar /> : <UsersNavbar />}
 
-      <div className="pt-20 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
+      <main className="p-2 sm:p-4 lg:p-6">
         {/* Header */}
-        <div className="admin-dash__header" style={{ marginBottom: '8px' }}>
+        <div className="user-visits__header">
           <div>
-            <h1 className="admin-dash__greeting" style={{ fontSize: '1.25rem' }}>
+            <h1 className="user-visits__greeting">
               Cabin <span>Bookings</span>
             </h1>
-            <p className="admin-dash__subtitle" style={{ fontSize: '11px' }}>
-              Manage all your cabin and space bookings
-            </p>
+            <p className="user-visits__subtitle">Manage all your cabin and space bookings</p>
           </div>
           <div className="flex items-center gap-2">
             {displayBookings.length > 0 && (
               <button
                 onClick={exportToExcel}
-                className="flex items-center gap-1.5 px-3 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition border border-indigo-200"
+                className="user-visits__btn user-visits__btn--primary"
               >
                 <Download size={14} />
                 Export
@@ -1433,14 +1435,14 @@ const CabinBookings = () => {
             )}
             <button
               onClick={() => navigate("/my-cabin-payments")}
-              className="flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition"
+              className="user-visits__btn user-visits__btn--secondary"
             >
               <CreditCard size={14} className="text-indigo-600" />
               Payments
             </button>
             <button
               onClick={() => navigate("/my-cabins")}
-              className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition shadow-sm shadow-indigo-200"
+              className="user-visits__btn user-visits__btn--primary"
             >
               <Building2 size={14} />
               My Cabins
@@ -1449,26 +1451,21 @@ const CabinBookings = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="admin-dash__stats" style={{ marginBottom: '16px' }}>
+        <div className="user-visits__stats">
           {bookingStatsCards.map((stat, index) => (
             <div
               key={index}
-              className="admin-dash__stat"
+              className="user-visits__stat"
               onClick={stat.onClick}
-              style={{ 
-                cursor: stat.onClick ? 'pointer' : 'default',
-                padding: '12px 14px',
-                minHeight: '80px'
-              }}
             >
-              <div className="admin-dash__stat-top">
-                <span className="admin-dash__stat-label" style={{ fontSize: '11px' }}>{stat.label}</span>
-                <div className={`admin-dash__stat-icon admin-dash__stat-icon--${stat.color}`} style={{ width: '28px', height: '28px' }}>
+              <div className="user-visits__stat-top">
+                <span className="user-visits__stat-label">{stat.label}</span>
+                <div className={`user-visits__stat-icon user-visits__stat-icon--${stat.color}`}>
                   <stat.icon size={14} />
                 </div>
               </div>
-              <div className="admin-dash__stat-value" style={{ fontSize: '18px', fontWeight: '700' }}>{stat.value}</div>
-              <div className="admin-dash__stat-meta" style={{ fontSize: '9px' }}>{stat.meta}</div>
+              <div className="user-visits__stat-value">{stat.value}</div>
+              <div className="user-visits__stat-meta">{stat.meta}</div>
             </div>
           ))}
         </div>
@@ -1511,16 +1508,15 @@ const CabinBookings = () => {
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-3 mb-4">
-          <div className="flex flex-col sm:flex-row gap-2">
-            <div className="flex-1 relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <div className="user-visits__filters">
+          <div className="user-visits__filter-row">
+            <div className="user-visits__search-input">
+              <Search size={14} className="user-visits__search-icon" />
               <input
                 type="text"
                 placeholder="Search bookings..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
               />
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -1528,12 +1524,12 @@ const CabinBookings = () => {
                 type="date"
                 value={filterDate}
                 onChange={(e) => setFilterDate(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                className="user-visits__filter-select"
               />
               <select
                 value={filters.status}
                 onChange={(e) => setFilters({...filters, status: e.target.value})}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                className="user-visits__filter-select"
               >
                 <option value="all">All Status</option>
                 <option value="pending">Pending</option>
@@ -1545,7 +1541,7 @@ const CabinBookings = () => {
               <select
                 value={filters.paymentStatus}
                 onChange={(e) => setFilters({...filters, paymentStatus: e.target.value})}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                className="user-visits__filter-select"
               >
                 <option value="all">Payment Status</option>
                 <option value="pending">Pending</option>
@@ -1556,7 +1552,7 @@ const CabinBookings = () => {
               <select
                 value={filters.paymentMethod}
                 onChange={(e) => setFilters({...filters, paymentMethod: e.target.value})}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                className="user-visits__filter-select"
               >
                 <option value="all">Payment Method</option>
                 <option value="online">Online</option>
@@ -1568,7 +1564,7 @@ const CabinBookings = () => {
               {(filters.status !== 'all' || filters.paymentStatus !== 'all' || filters.paymentMethod !== 'all' || filterDate || searchTerm) && (
                 <button
                   onClick={clearFilters}
-                  className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                  className="user-visits__btn user-visits__btn--secondary"
                   title="Clear filters"
                 >
                   <XCircleIcon size={16} />
@@ -1582,41 +1578,41 @@ const CabinBookings = () => {
         </div>
 
         {/* Main Table */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+        <div className="user-visits__card">
           {displayBookings.length === 0 ? (
-            <div className="p-12 text-center">
-              <Calendar size={48} className="mx-auto text-gray-300 mb-4" />
-              <p className="text-gray-500 font-medium">No bookings found</p>
+            <div className="user-visits__empty">
+              <Calendar size={32} className="user-visits__empty-icon" />
+              <p className="user-visits__empty-text">No bookings found</p>
               <p className="text-sm text-gray-400 mt-1">Try adjusting your filters.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm min-w-[1200px]">
+              <table className="user-visits__table">
                 <thead>
-                  <tr className="bg-gray-50 border-b border-gray-100">
-                    <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">S.No</th>
-                    <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Cabin</th>
-                    <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Space</th>
-                    <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Customer</th>
-                    <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Start</th>
-                    <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">End</th>
+                  <tr>
+                    <th>S.No</th>
+                    <th>Cabin</th>
+                    <th>Space</th>
+                    <th>Customer</th>
+                    <th>Start</th>
+                    <th>End</th>
                     {!isVisitsTab && (
                       <>
-                        <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Hours</th>
-                        <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Days</th>
-                        <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Seats</th>
-                        <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Payment</th>
-                        <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Pmt Status</th>
-                        <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Visits</th>
-                        <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Amount</th>
+                        <th>Hours</th>
+                        <th>Days</th>
+                        <th>Seats</th>
+                        <th>Payment</th>
+                        <th>Pmt Status</th>
+                        <th>Visits</th>
+                        <th>Amount</th>
                       </>
                     )}
-                    <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Status</th>
-                    <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Created</th>
-                    <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase text-center">Actions</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th className="text-center">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody>
                   {displayBookings.map((booking, idx) => {
                     const status = getStatusBadge(booking.status);
                     const pmtMethod = getPaymentMethodBadge(booking.paymentMethod);
@@ -1630,11 +1626,11 @@ const CabinBookings = () => {
                     const isChamber = booking.cabin?.isChamber || false;
 
                     return (
-                      <tr key={booking._id} className="hover:bg-gray-50/80 transition-colors">
-                        <td className="px-3 py-2">
+                      <tr key={booking._id}>
+                        <td>
                           <span className="text-[10px] font-semibold text-gray-400">{idx + 1}</span>
                         </td>
-                        <td className="px-3 py-2">
+                        <td>
                           <div>
                             <p className="font-semibold text-gray-900 text-xs">
                               {booking.cabin?.name || 'Unknown'}
@@ -1645,7 +1641,7 @@ const CabinBookings = () => {
                             </p>
                           </div>
                         </td>
-                        <td className="px-3 py-2">
+                        <td>
                           <span className={`px-2 py-0.5 text-[9px] font-bold rounded-full inline-flex items-center gap-1 ${
                             isChamber 
                               ? 'bg-rose-100 text-rose-700' 
@@ -1660,7 +1656,7 @@ const CabinBookings = () => {
                             </span>
                           )}
                         </td>
-                        <td className="px-3 py-2">
+                        <td>
                           <div>
                             <p className="font-medium text-gray-800 text-xs">
                               {booking.name || booking.user?.name || 'Unknown'}
@@ -1668,13 +1664,13 @@ const CabinBookings = () => {
                             <p className="text-[9px] text-gray-400">{booking.mobile || booking.user?.mobile || 'N/A'}</p>
                           </div>
                         </td>
-                        <td className="px-3 py-2">
+                        <td>
                           <div>
                             <span className="text-xs font-medium text-gray-700">{formatDateDMY(booking.startDate)}</span>
                             <p className="text-[9px] text-indigo-600 font-medium">{formatTimeIndian(booking.startTime)}</p>
                           </div>
                         </td>
-                        <td className="px-3 py-2">
+                        <td>
                           <div>
                             <span className="text-xs font-medium text-gray-700">{formatDateDMY(booking.endDate)}</span>
                             <p className="text-[9px] text-indigo-600 font-medium">{formatTimeIndian(booking.endTime)}</p>
@@ -1682,13 +1678,13 @@ const CabinBookings = () => {
                         </td>
                         {!isVisitsTab && (
                           <>
-                            <td className="px-3 py-2">
+                            <td>
                               <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-full text-[9px] font-bold">{totalHours}h</span>
                             </td>
-                            <td className="px-3 py-2">
+                            <td>
                               <span className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded-full text-[9px] font-bold">{totalDays}d</span>
                             </td>
-                            <td className="px-3 py-2">
+                            <td>
                               <span className="flex items-center gap-1 text-xs font-medium text-gray-700">
                                 <Armchair size={12} className="text-indigo-500" />
                                 {seatCount}
@@ -1699,23 +1695,23 @@ const CabinBookings = () => {
                                 </p>
                               )}
                             </td>
-                            <td className="px-3 py-2">
+                            <td>
                               <span className={`px-2 py-0.5 text-[9px] font-bold rounded-full ${pmtMethod.color}`}>
                                 {pmtMethod.label}
                               </span>
                             </td>
-                            <td className="px-3 py-2">
+                            <td>
                               <span className={`px-2 py-0.5 text-[9px] font-bold rounded-full ${pmtStatus.color}`}>
                                 {pmtStatus.label}
                               </span>
                             </td>
-                            <td className="px-3 py-2">
+                            <td>
                               <div className="flex items-center gap-1">
                                 <History size={12} className="text-indigo-400" />
                                 <span className="text-xs font-semibold text-gray-700">{visitCountVal}</span>
                               </div>
                             </td>
-                            <td className="px-3 py-2">
+                            <td>
                               <span className="text-xs font-bold text-indigo-600">₹{booking.totalPrice || 0}</span>
                               {booking.extraCharge > 0 && (
                                 <p className="text-[8px] text-amber-500">+₹{booking.extraCharge} seat</p>
@@ -1723,22 +1719,23 @@ const CabinBookings = () => {
                             </td>
                           </>
                         )}
-                        <td className="px-3 py-2">
+                        <td>
                           <span className={`px-2 py-0.5 text-[9px] font-bold rounded-full ${status.color}`}>
                             {status.label}
                           </span>
                         </td>
-                        <td className="px-3 py-2">
+                        <td>
                           <span className="text-[9px] text-gray-500 font-medium">{formatDateTime(booking.createdAt)}</span>
                         </td>
-                        <td className="px-3 py-2 text-center">
+                        <td className="text-center">
                           <div className="flex items-center justify-center gap-1 flex-wrap">
                             <button
                               onClick={() => handleViewBooking(booking)}
-                              className="p-1 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition"
+                              className="user-visits__btn user-visits__btn--secondary"
+                              style={{ padding: "0.375rem 0.5rem" }}
                               title="View"
                             >
-                              <Eye size={13} />
+                              <Eye size={14} />
                             </button>
                             <button 
                               onClick={() => { 
@@ -1746,26 +1743,29 @@ const CabinBookings = () => {
                                 setNewStatus(booking.status || 'pending'); 
                                 setShowStatusModal(true); 
                               }} 
-                              className="p-1 bg-orange-50 text-orange-700 rounded-lg hover:bg-orange-100 transition"
+                              className="user-visits__btn user-visits__btn--secondary"
+                              style={{ padding: "0.375rem 0.5rem" }}
                               title="Update Status"
                             >
-                              <Edit size={13} />
+                              <Edit size={14} />
                             </button>
                             {!isVisit && (
                               <>
                                 <button
                                   onClick={() => printReceipt(booking)}
-                                  className="p-1 bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition"
+                                  className="user-visits__btn user-visits__btn--secondary"
+                                  style={{ padding: "0.375rem 0.5rem" }}
                                   title="Print Receipt"
                                 >
-                                  <Printer size={13} />
+                                  <Printer size={14} />
                                 </button>
                                 <button
                                   onClick={() => downloadInvoice(booking)}
-                                  className="p-1 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
+                                  className="user-visits__btn user-visits__btn--secondary"
+                                  style={{ padding: "0.375rem 0.5rem" }}
                                   title="Invoice"
                                 >
-                                  <Receipt size={13} />
+                                  <Receipt size={14} />
                                 </button>
                                 {isCashPending && (
                                   <button 
@@ -1789,7 +1789,8 @@ const CabinBookings = () => {
                                       setPaymentScreenshotPreview(null);
                                       setShowPaymentModal(true);
                                     }} 
-                                    className="p-1 bg-yellow-50 text-yellow-700 rounded-lg hover:bg-yellow-100 transition"
+                                    className="user-visits__btn user-visits__btn--secondary"
+                                    style={{ padding: "0.375rem 0.5rem" }}
                                     title="Update Payment"
                                   >
                                     <CreditCard size={13} />
@@ -1811,7 +1812,7 @@ const CabinBookings = () => {
         <div className="mt-6 text-center text-[9px] text-gray-400 font-medium tracking-wider">
           © IRYAX SPACE — All Rights Reserved
         </div>
-      </div>
+      </main>
 
       {/* ============================================================
           VIEW MODAL 

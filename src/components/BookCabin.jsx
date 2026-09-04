@@ -1169,39 +1169,53 @@ const BookCabin = () => {
         />
       )}
 
-      <div className="pt-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-7xl mx-auto pb-16">
-        <div className="flex items-center gap-2 text-sm text-slate-500 mb-6">
-          <button onClick={() => navigate(-1)} className="hover:text-indigo-600 transition-colors">
-            <ArrowLeft size={16} />
-          </button>
-          <span>/</span>
-          <span className="text-slate-900 font-medium">Book Space</span>
+      <div className="p-2 sm:p-4 lg:p-6">
+        {/* Header matching attendance list style */}
+        <div className="flex items-center justify-between gap-3 mb-6">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
+            >
+              <ArrowLeft size={18} className="text-gray-600" />
+            </button>
+            <div>
+              <h1 className="text-lg sm:text-xl font-bold text-gray-900">
+                Book Space
+              </h1>
+              <p className="text-xs text-gray-500">Complete your booking details</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-full">
+            <Calendar size={14} className="text-blue-600" />
+            <span className="text-xs font-semibold text-blue-700">Booking</span>
+          </div>
         </div>
 
         <div className="grid lg:grid-cols-5 gap-6">
           {/* Left: Space Details */}
           <div className="lg:col-span-3 space-y-6">
-            <div className="admin-dash__card overflow-hidden rounded-2xl shadow-sm border border-slate-100">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               <div className="relative h-48 sm:h-64">
                 <img
                   src={getImageUrl(cabin.images?.[0])}
                   alt={cabin.name}
                   className="w-full h-full object-cover"
                 />
-                <div className="absolute top-4 left-4">
-                  <span className="px-3 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-bold text-indigo-600 shadow-sm">
+                <div className="absolute top-3 left-3">
+                  <span className="px-2.5 py-1 bg-white/90 backdrop-blur-sm rounded-full text-[10px] font-semibold text-blue-700 shadow-sm border border-blue-100">
                     {cabin.cabinType === 'exclusive' ? 'Premium' : 'Standard'}
                   </span>
                 </div>
-                <div className="absolute bottom-4 left-4 flex gap-2">
+                <div className="absolute bottom-3 left-3 flex gap-2">
                   {!cabin.is24x7 && cabin.openTime && cabin.closeTime && (
-                    <span className="px-3 py-1 bg-black/60 backdrop-blur-sm rounded-full text-[10px] text-white font-medium">
-                      ⏰ {convertTo12Hour(cabin.openTime)} - {convertTo12Hour(cabin.closeTime)}
+                    <span className="px-2.5 py-1 bg-black/60 backdrop-blur-sm rounded-full text-[10px] text-white font-medium">
+                      {convertTo12Hour(cabin.openTime)} - {convertTo12Hour(cabin.closeTime)}
                     </span>
                   )}
                   {cabin.is24x7 && (
-                    <span className="px-3 py-1 bg-emerald-600/80 backdrop-blur-sm rounded-full text-[10px] text-white font-medium">
-                      🕐 24x7 Open
+                    <span className="px-2.5 py-1 bg-emerald-600/80 backdrop-blur-sm rounded-full text-[10px] text-white font-medium">
+                      24x7 Open
                     </span>
                   )}
                 </div>
@@ -1210,51 +1224,51 @@ const BookCabin = () => {
               <div className="p-5 sm:p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h1 className="text-xl sm:text-2xl font-black text-slate-900 mb-1">{cabin.name}</h1>
-                    <div className="flex items-center gap-2 text-slate-500 text-sm">
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">{cabin.name}</h1>
+                    <div className="flex items-center gap-2 text-gray-500 text-sm">
                       <MapPin size={14} />
                       <span>{cabin.address}</span>
                     </div>
                     {!cabin.is24x7 && cabin.openTime && cabin.closeTime && (
-                      <div className="flex items-center gap-1 text-xs text-indigo-600 font-medium mt-1">
+                      <div className="flex items-center gap-1 text-xs text-blue-600 font-medium mt-1">
                         <Clock size={12} />
                         <span>Open: {convertTo12Hour(cabin.openTime)} - {convertTo12Hour(cabin.closeTime)}</span>
                       </div>
                     )}
                     {cabin.is24x7 && (
-                      <div className="flex items-center gap-1 text-xs text-emerald-600 font-medium mt-1">
+                      <div className="flex items-center gap-1 text-xs text-green-600 font-medium mt-1">
                         <Clock size={12} />
                         <span>24x7 Open</span>
                       </div>
                     )}
                   </div>
                   <div className="text-right">
-                    <div className="text-2xl sm:text-3xl font-black text-indigo-600">
+                    <div className="text-2xl sm:text-3xl font-bold text-blue-600">
                       ₹{cabin.price}
                     </div>
-                    <div className="text-xs text-slate-500">per hour</div>
+                    <div className="text-xs text-gray-500">per hour</div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div className="bg-slate-50 rounded-xl p-3 text-center">
-                    <Users size={20} className="mx-auto mb-1 text-indigo-600" />
-                    <div className="text-lg font-bold text-slate-900">{cabin.capacity}</div>
-                    <div className="text-xs text-slate-500">Capacity</div>
+                  <div className="bg-gray-50 rounded-lg p-3 text-center">
+                    <Users size={20} className="mx-auto mb-1 text-blue-600" />
+                    <div className="text-lg font-bold text-gray-900">{cabin.capacity}</div>
+                    <div className="text-xs text-gray-500">Capacity</div>
                   </div>
-                  <div className="bg-slate-50 rounded-xl p-3 text-center">
-                    <Armchair size={20} className="mx-auto mb-1 text-indigo-600" />
-                    <div className="text-lg font-bold text-slate-900">{cabin.cabin}</div>
-                    <div className="text-xs text-slate-500">Space</div>
+                  <div className="bg-gray-50 rounded-lg p-3 text-center">
+                    <Armchair size={20} className="mx-auto mb-1 text-blue-600" />
+                    <div className="text-lg font-bold text-gray-900">{cabin.cabin}</div>
+                    <div className="text-xs text-gray-500">Space</div>
                   </div>
                 </div>
 
                 {cabin.amenities && Object.keys(cabin.amenities).filter(key => cabin.amenities[key]).length > 0 && (
-                  <div className="border-t border-slate-100 pt-4">
-                    <h3 className="text-sm font-bold text-slate-900 mb-3">Amenities</h3>
+                  <div className="border-t border-gray-100 pt-4">
+                    <h3 className="text-sm font-bold text-gray-900 mb-3">Amenities</h3>
                     <div className="flex flex-wrap gap-2">
                       {Object.keys(cabin.amenities).filter(key => cabin.amenities[key]).map(amenity => (
-                        <span key={amenity} className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-medium">
+                        <span key={amenity} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
                           {amenity.charAt(0).toUpperCase() + amenity.slice(1)}
                         </span>
                       ))}
@@ -1266,14 +1280,14 @@ const BookCabin = () => {
 
             {/* Seat Selection */}
             {showSeatSelection && (
-              <div className="admin-dash__card p-5 sm:p-6 bg-white shadow-sm border border-slate-100 rounded-2xl">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-6">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2.5 bg-indigo-600 rounded-xl text-white shadow-lg">
-                    <Users size={20} />
+                  <div className="p-2.5 bg-blue-600 rounded-lg text-white">
+                    <Users size={18} />
                   </div>
                   <div>
-                    <h3 className="text-base font-bold text-slate-900">Select Seats</h3>
-                    <p className="text-xs text-slate-500">Choose seats by name (₹{SEAT_EXTRA_CHARGE}/seat)</p>
+                    <h3 className="text-base font-bold text-gray-900">Select Seats</h3>
+                    <p className="text-xs text-gray-500">Choose seats by name (₹{SEAT_EXTRA_CHARGE}/seat)</p>
                   </div>
                 </div>
 
@@ -1288,46 +1302,46 @@ const BookCabin = () => {
                         key={seat.id}
                         type="button"
                         onClick={() => toggleSeatSelection(seat.id)}
-                        className={`p-3 rounded-xl border-2 text-center transition-all ${
+                        className={`p-3 rounded-lg border-2 text-center transition-all ${
                           isSelected
-                            ? "border-indigo-600 bg-indigo-50 shadow-md shadow-indigo-500/20"
-                            : "border-slate-200 bg-slate-50/50 hover:border-indigo-300 hover:bg-indigo-50/40"
+                            ? "border-blue-600 bg-blue-50"
+                            : "border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/40"
                         }`}
                       >
                         <Armchair
-                          size={18}
-                          className={`mx-auto mb-1 ${isSelected ? "text-indigo-600" : "text-slate-400"}`}
+                          size={16}
+                          className={`mx-auto mb-1 ${isSelected ? "text-blue-600" : "text-gray-400"}`}
                         />
                         <div
-                          className={`text-xs font-bold truncate ${
-                            isSelected ? "text-indigo-700" : "text-slate-700"
+                          className={`text-xs font-semibold truncate ${
+                            isSelected ? "text-blue-700" : "text-gray-700"
                           }`}
                         >
                           {seat.name}
                         </div>
-                        <div className="text-[10px] text-slate-400 font-medium">#{seat.number}</div>
+                        <div className="text-[10px] text-gray-400 font-medium">#{seat.number}</div>
                       </button>
                     );
                   })}
                 </div>
 
                 {selectedSeats.length > 0 && (
-                  <div className="mt-3 text-sm text-indigo-600 font-medium">
+                  <div className="mt-3 text-sm text-blue-600 font-medium">
                     Selected: {getSelectedSeatLabels().join(", ")} ({selectedSeats.length} seat
                     {selectedSeats.length > 1 ? "s" : ""}) (+₹{selectedSeats.length * SEAT_EXTRA_CHARGE})
                   </div>
                 )}
 
                 {selectedSeats.length === 0 && (
-                  <div className="mt-2 text-[10px] text-slate-400 text-center">
+                  <div className="mt-2 text-[10px] text-gray-400 text-center">
                     No seats selected. You can book without selecting seats.
                   </div>
                 )}
               </div>
             )}
 
-            <div className="flex items-center gap-3 pt-5 border-t border-slate-100 text-slate-500 text-xs font-medium">
-              <ShieldCheck size={16} className="text-emerald-600" />
+            <div className="flex items-center gap-3 pt-5 border-t border-gray-100 text-gray-500 text-xs font-medium">
+              <ShieldCheck size={14} className="text-green-600" />
               Verified professional workspace
             </div>
           </div>
@@ -1335,23 +1349,23 @@ const BookCabin = () => {
           {/* Right: Booking Form */}
           <div className="lg:col-span-2 space-y-6">
             <form onSubmit={handleBooking} className="space-y-6">
-              <div className="admin-dash__card p-6 sm:p-8">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8">
                 <div className="flex items-center gap-3 mb-6 sm:mb-8">
-                  <div className="p-2.5 bg-indigo-600 rounded-xl text-white shadow-lg">
-                    <User size={20} />
+                  <div className="p-2.5 bg-blue-600 rounded-lg text-white">
+                    <User size={18} />
                   </div>
-                  <h3 className="text-base sm:text-lg font-black uppercase text-slate-900 tracking-tight">
+                  <h3 className="text-base sm:text-lg font-bold text-gray-900">
                     Client Credential
                   </h3>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Full Name</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Full Name</label>
                     <div className="relative">
-                      <User className="absolute left-4 top-4 text-slate-400" size={18} />
+                      <User className="absolute left-4 top-4 text-gray-400" size={18} />
                       <input
-                        className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-semibold text-sm text-slate-900 placeholder:text-slate-300"
+                        className="w-full pl-11 pr-4 py-3.5 rounded-lg bg-gray-50 border border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-semibold text-sm text-gray-900 placeholder:text-gray-300"
                         placeholder="e.g. John Doe"
                         value={name}
                         onChange={handleNameChange}
@@ -1362,11 +1376,11 @@ const BookCabin = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Mobile Number</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Mobile Number</label>
                     <div className="relative">
-                      <PhoneCall className="absolute left-4 top-4 text-slate-400" size={18} />
+                      <PhoneCall className="absolute left-4 top-4 text-gray-400" size={18} />
                       <input
-                        className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-semibold text-sm text-slate-900 placeholder:text-slate-300"
+                        className="w-full pl-11 pr-4 py-3.5 rounded-lg bg-gray-50 border border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-semibold text-sm text-gray-900 placeholder:text-gray-300"
                         placeholder="e.g. 9876543210"
                         value={mobile}
                         onChange={handleMobileChange}
@@ -1378,28 +1392,28 @@ const BookCabin = () => {
                 </div>
               </div>
 
-              <div className="admin-dash__card p-4 sm:p-5 bg-white shadow-sm border border-slate-100 rounded-2xl">
-                <div className="flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
-                  <IndianRupee size={20} className="text-emerald-600" />
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5">
+                <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <IndianRupee size={18} className="text-green-600" />
                   <div>
-                    <p className="text-sm font-bold text-emerald-700">Pay on Counter</p>
-                    <p className="text-xs text-emerald-600">Pay cash when you arrive at the workspace</p>
+                    <p className="text-sm font-semibold text-green-700">Pay on Counter</p>
+                    <p className="text-xs text-green-600">Pay cash when you arrive at the workspace</p>
                   </div>
                 </div>
               </div>
 
               {cabin.pricingPlans && cabin.pricingPlans.length > 0 && (
-                <div className="admin-dash__card p-4 sm:p-5 flex gap-4 bg-white shadow-sm border border-slate-100 rounded-2xl">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5 flex gap-4">
                   <button
                     type="button"
                     onClick={() => {
                       setBookingBasis("hourly");
                       setSelectedPlan(null);
                     }}
-                    className={`flex-1 py-3 px-4 rounded-xl font-bold text-xs uppercase tracking-wider transition-all border ${
+                    className={`flex-1 py-3 px-4 rounded-lg font-semibold text-xs uppercase tracking-wider transition-all border ${
                       bookingBasis === "hourly"
-                        ? "bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-500/20"
-                        : "border-slate-200 text-slate-600 hover:bg-slate-50 bg-white"
+                        ? "bg-blue-600 border-blue-600 text-white"
+                        : "border-gray-200 text-gray-600 hover:bg-gray-50 bg-white"
                     }`}
                   >
                     Hourly Booking
@@ -1410,10 +1424,10 @@ const BookCabin = () => {
                       setBookingBasis("plan");
                       setSelectedPlan(cabin.pricingPlans[0]);
                     }}
-                    className={`flex-1 py-3 px-4 rounded-xl font-bold text-xs uppercase tracking-wider transition-all border ${
+                    className={`flex-1 py-3 px-4 rounded-lg font-semibold text-xs uppercase tracking-wider transition-all border ${
                       bookingBasis === "plan"
-                        ? "bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-500/20"
-                        : "border-slate-200 text-slate-600 hover:bg-slate-50 bg-white"
+                        ? "bg-blue-600 border-blue-600 text-white"
+                        : "border-gray-200 text-gray-600 hover:bg-gray-50 bg-white"
                     }`}
                   >
                     Plan Booking
@@ -1421,18 +1435,18 @@ const BookCabin = () => {
                 </div>
               )}
 
-              <div className="admin-dash__card p-6 sm:p-8 bg-white shadow-sm border border-slate-100 rounded-2xl">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8">
                 <div className="flex items-center gap-3 mb-6 sm:mb-8">
-                  <div className="p-2.5 bg-indigo-600 rounded-xl text-white shadow-lg">
-                    <Calendar size={20} />
+                  <div className="p-2.5 bg-blue-600 rounded-lg text-white">
+                    <Calendar size={18} />
                   </div>
-                  <h3 className="text-base sm:text-lg font-black uppercase text-slate-900 tracking-tight">
+                  <h3 className="text-base sm:text-lg font-bold text-gray-900">
                     {bookingBasis === "hourly" ? "Booking Schedule" : "Plan Start Window"}
                   </h3>
                 </div>
 
                 {!cabin.is24x7 && cabin.openTime && cabin.closeTime && (
-                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4">
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
                     <div className="flex items-center gap-2 text-xs text-amber-700">
                       <Clock size={14} />
                       <span>Available: <strong>{convertTo12Hour(cabin.openTime)}</strong> to <strong>{convertTo12Hour(cabin.closeTime)}</strong></span>
@@ -1440,8 +1454,8 @@ const BookCabin = () => {
                   </div>
                 )}
                 {cabin.is24x7 && (
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 mb-4">
-                    <div className="flex items-center gap-2 text-xs text-emerald-700">
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+                    <div className="flex items-center gap-2 text-xs text-green-700">
                       <Clock size={14} />
                       <span>Available: <strong>24x7</strong> - Always Open</span>
                     </div>
@@ -1450,19 +1464,19 @@ const BookCabin = () => {
 
                 {bookingBasis === "plan" && selectedPlan ? (
                   <div className="space-y-4">
-                    <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-bold text-indigo-900">{selectedPlan.label}</span>
-                        <span className="text-lg font-black text-indigo-600">₹{selectedPlan.cost}</span>
+                        <span className="text-sm font-semibold text-blue-900">{selectedPlan.label}</span>
+                        <span className="text-lg font-bold text-blue-600">₹{selectedPlan.cost}</span>
                       </div>
-                      <div className="text-xs text-indigo-700">
+                      <div className="text-xs text-blue-700">
                         {selectedPlan.hours} hours • Valid for {selectedPlan.validity}
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Start Date</label>
+                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Start Date</label>
                         <div 
                           className="relative cursor-pointer" 
                           onClick={handleStartDateClick}
@@ -1471,10 +1485,10 @@ const BookCabin = () => {
                             type="text"
                             value={startDate ? formatDateIndian(startDate) : ''}
                             placeholder="dd-mm-yyyy"
-                            className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-semibold text-sm text-slate-900 cursor-pointer"
+                            className="w-full pl-11 pr-4 py-3.5 rounded-lg bg-gray-50 border border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-semibold text-sm text-gray-900 cursor-pointer"
                             readOnly
                           />
-                          <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                          <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                           {startDate && bookedSlots.some(b => b.startDate === startDate) && (
                             <div className="absolute right-3 top-1/2 -translate-y-1/2">
                               <div className="w-2.5 h-2.5 bg-blue-500 rounded-full"></div>
@@ -1483,7 +1497,7 @@ const BookCabin = () => {
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Start Time</label>
+                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Start Time</label>
                         <div className="flex gap-2">
                           <div className="relative flex-1" onClick={() => startTimeRef.current?.showPicker?.() || startTimeRef.current?.click()}>
                             <input
@@ -1491,14 +1505,14 @@ const BookCabin = () => {
                               type="time"
                               value={startTime}
                               onChange={handleStartTimeChange}
-                              className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-semibold text-sm text-slate-900 cursor-pointer [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:hidden"
+                              className="w-full pl-11 pr-4 py-3.5 rounded-lg bg-gray-50 border border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-semibold text-sm text-gray-900 cursor-pointer [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:hidden"
                             />
-                            <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                            <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
                           </div>
                           <select
                             value={startAmPm}
                             onChange={handleStartAmPmChange}
-                            className="px-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-semibold text-sm text-slate-900"
+                            className="px-4 py-3.5 rounded-lg bg-gray-50 border border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-semibold text-sm text-gray-900"
                           >
                             <option value="AM">AM</option>
                             <option value="PM">PM</option>
@@ -1511,7 +1525,7 @@ const BookCabin = () => {
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Start Date</label>
+                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Start Date</label>
                         <div 
                           className="relative cursor-pointer" 
                           onClick={handleStartDateClick}
@@ -1520,10 +1534,10 @@ const BookCabin = () => {
                             type="text"
                             value={startDate ? formatDateIndian(startDate) : ''}
                             placeholder="dd-mm-yyyy"
-                            className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-semibold text-sm text-slate-900 cursor-pointer"
+                            className="w-full pl-11 pr-4 py-3.5 rounded-lg bg-gray-50 border border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-semibold text-sm text-gray-900 cursor-pointer"
                             readOnly
                           />
-                          <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                          <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                           {startDate && bookedSlots.some(b => b.startDate === startDate) && (
                             <div className="absolute right-3 top-1/2 -translate-y-1/2">
                               <div className="w-2.5 h-2.5 bg-blue-500 rounded-full"></div>
@@ -1532,7 +1546,7 @@ const BookCabin = () => {
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Start Time</label>
+                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Start Time</label>
                         <div className="flex gap-2">
                           <div className="relative flex-1" onClick={() => startTimeRef.current?.showPicker?.() || startTimeRef.current?.click()}>
                             <input
@@ -1540,14 +1554,14 @@ const BookCabin = () => {
                               type="time"
                               value={startTime}
                               onChange={handleStartTimeChange}
-                              className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-semibold text-sm text-slate-900 cursor-pointer [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:hidden"
+                              className="w-full pl-11 pr-4 py-3.5 rounded-lg bg-gray-50 border border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-semibold text-sm text-gray-900 cursor-pointer [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:hidden"
                             />
-                            <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                            <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
                           </div>
                           <select
                             value={startAmPm}
                             onChange={handleStartAmPmChange}
-                            className="px-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-semibold text-sm text-slate-900"
+                            className="px-4 py-3.5 rounded-lg bg-gray-50 border border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-semibold text-sm text-gray-900"
                           >
                             <option value="AM">AM</option>
                             <option value="PM">PM</option>
@@ -1558,7 +1572,7 @@ const BookCabin = () => {
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">End Date</label>
+                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">End Date</label>
                         <div 
                           className="relative cursor-pointer" 
                           onClick={handleEndDateClick}
@@ -1567,10 +1581,10 @@ const BookCabin = () => {
                             type="text"
                             value={endDate ? formatDateIndian(endDate) : ''}
                             placeholder="dd-mm-yyyy"
-                            className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-semibold text-sm text-slate-900 cursor-pointer"
+                            className="w-full pl-11 pr-4 py-3.5 rounded-lg bg-gray-50 border border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-semibold text-sm text-gray-900 cursor-pointer"
                             readOnly
                           />
-                          <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                          <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                           {endDate && bookedSlots.some(b => b.startDate === endDate) && (
                             <div className="absolute right-3 top-1/2 -translate-y-1/2">
                               <div className="w-2.5 h-2.5 bg-blue-500 rounded-full"></div>
@@ -1579,7 +1593,7 @@ const BookCabin = () => {
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">End Time</label>
+                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">End Time</label>
                         <div className="flex gap-2">
                           <div className="relative flex-1" onClick={() => endTimeRef.current?.showPicker?.() || endTimeRef.current?.click()}>
                             <input
@@ -1587,14 +1601,14 @@ const BookCabin = () => {
                               type="time"
                               value={endTime}
                               onChange={handleEndTimeChange}
-                              className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-semibold text-sm text-slate-900 cursor-pointer [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:hidden"
+                              className="w-full pl-11 pr-4 py-3.5 rounded-lg bg-gray-50 border border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-semibold text-sm text-gray-900 cursor-pointer [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:hidden"
                             />
-                            <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                            <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
                           </div>
                           <select
                             value={endAmPm}
                             onChange={handleEndAmPmChange}
-                            className="px-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-semibold text-sm text-slate-900"
+                            className="px-4 py-3.5 rounded-lg bg-gray-50 border border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-semibold text-sm text-gray-900"
                           >
                             <option value="AM">AM</option>
                             <option value="PM">PM</option>
@@ -1604,18 +1618,18 @@ const BookCabin = () => {
                     </div>
 
                     {bookingSlots.length > 0 && !timeError && (
-                      <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                         <div className="flex items-center justify-between mb-3">
-                          <h4 className="text-sm font-bold text-indigo-900">Daily Schedule</h4>
-                          <span className="text-xs bg-indigo-600 text-white px-2 py-1 rounded-full">
+                          <h4 className="text-sm font-semibold text-blue-900">Daily Schedule</h4>
+                          <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded-full">
                             {bookingSlots.length} day(s)
                           </span>
                         </div>
                         <div className="space-y-2 max-h-40 overflow-y-auto">
                           {bookingSlots.map((slot, index) => (
-                            <div key={index} className="bg-white rounded-xl p-3 border border-indigo-200">
+                            <div key={index} className="bg-white rounded-lg p-3 border border-blue-200">
                               <div className="flex items-center justify-between">
-                                <span className="text-sm font-bold text-slate-800">
+                                <span className="text-sm font-semibold text-gray-800">
                                   {(() => {
                                     const [year, month, day] = slot.date.split('-');
                                     const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
@@ -1626,19 +1640,19 @@ const BookCabin = () => {
                                     });
                                   })()}
                                 </span>
-                                <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full">
+                                <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
                                   {slot.hours.toFixed(1)}h
                                 </span>
                               </div>
-                              <div className="flex items-center gap-1 text-xs text-slate-500 mt-1">
+                              <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
                                 <Clock size={12} />
                                 <span>{convertToIndianTime(slot.startTime)} - {convertToIndianTime(slot.endTime)}</span>
                               </div>
                             </div>
                           ))}
                         </div>
-                        <div className="mt-3 text-xs text-slate-500 bg-indigo-50 p-2 rounded-xl text-center">
-                          Total: <strong className="text-indigo-700">{totalHours.toFixed(1)} hours</strong> across {bookingSlots.length} days
+                        <div className="mt-3 text-xs text-gray-500 bg-blue-50 p-2 rounded-lg text-center">
+                          Total: <strong className="text-blue-700">{totalHours.toFixed(1)} hours</strong> across {bookingSlots.length} days
                         </div>
                       </div>
                     )}
@@ -1647,20 +1661,20 @@ const BookCabin = () => {
               </div>
 
               {/* Terms and Conditions */}
-              <div className="admin-dash__card p-6 sm:p-8 bg-white border border-slate-200 rounded-2xl">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8">
                 <div 
                   className="flex items-center justify-between cursor-pointer"
                   onClick={toggleTerms}
                 >
                   <div className="flex items-center gap-3">
-                    <FileText size={20} className="text-indigo-600" />
-                    <h3 className="text-base font-bold text-slate-900">Terms and Conditions</h3>
+                    <FileText size={18} className="text-blue-600" />
+                    <h3 className="text-base font-bold text-gray-900">Terms and Conditions</h3>
                   </div>
-                  {termsExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                  {termsExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                 </div>
 
                 {termsExpanded && (
-                  <div className="mt-4 text-xs text-slate-600 space-y-2 leading-relaxed">
+                  <div className="mt-4 text-xs text-gray-600 space-y-2 leading-relaxed">
                     <p>1. Booking confirmation is subject to availability.</p>
                     <p>2. Cancellations must be made at least 24 hours before the scheduled time.</p>
                     <p>3. No-show bookings will be charged in full.</p>
@@ -1678,9 +1692,9 @@ const BookCabin = () => {
                     id="terms"
                     checked={termsAccepted}
                     onChange={(e) => setTermsAccepted(e.target.checked)}
-                    className="mt-1 w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
+                    className="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                   />
-                  <label htmlFor="terms" className="text-xs text-slate-600">
+                  <label htmlFor="terms" className="text-xs text-gray-600">
                     I have read and agree to the terms and conditions
                   </label>
                 </div>
@@ -1688,25 +1702,25 @@ const BookCabin = () => {
 
               {/* Price Summary */}
               {totalPrice > 0 && !timeError && (
-                <div className="p-6 sm:p-8 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl shadow-lg shadow-indigo-500/20 text-white">
-                  <h3 className="text-lg font-black mb-4">Price Summary</h3>
+                <div className="p-6 sm:p-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl shadow-lg text-white">
+                  <h3 className="text-lg font-bold mb-4">Price Summary</h3>
                   
                   <div className="space-y-3 mb-4">
                     <div className="flex justify-between text-sm">
-                      <span className="text-indigo-200">Hours</span>
+                      <span className="text-blue-200">Hours</span>
                       <span className="font-semibold">{totalHours.toFixed(1)}h</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-indigo-200">Base Price</span>
+                      <span className="text-blue-200">Base Price</span>
                       <span className="font-semibold">₹{(totalPrice - gstAmount - extraCharge).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-indigo-200">GST (18%)</span>
+                      <span className="text-blue-200">GST (18%)</span>
                       <span className="font-semibold">₹{gstAmount.toFixed(2)}</span>
                     </div>
                     {extraCharge > 0 && (
                       <div className="flex justify-between text-sm">
-                        <span className="text-indigo-200">Extra Seats</span>
+                        <span className="text-blue-200">Extra Seats</span>
                         <span className="font-semibold">₹{extraCharge.toFixed(2)}</span>
                       </div>
                     )}
@@ -1714,13 +1728,13 @@ const BookCabin = () => {
 
                   <div className="border-t border-white/20 pt-4 flex justify-between items-center">
                     <span className="text-lg font-bold">Total</span>
-                    <span className="text-2xl sm:text-3xl font-black">₹{totalPrice.toFixed(2)}</span>
+                    <span className="text-2xl sm:text-3xl font-bold">₹{totalPrice.toFixed(2)}</span>
                   </div>
                 </div>
               )}
 
               {availabilityError && (
-                <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 text-sm">
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">
                   {availabilityError}
                 </div>
               )}
@@ -1729,10 +1743,10 @@ const BookCabin = () => {
               <button
                 type="submit"
                 disabled={loading || availabilityError || timeError || !totalPrice || isNaN(totalPrice) || totalPrice === 0}
-                className={`w-full py-4 rounded-xl font-bold text-white text-sm sm:text-base transition-all ${
+                className={`w-full py-4 rounded-lg font-semibold text-white text-sm sm:text-base transition-all ${
                   loading || availabilityError || timeError || !totalPrice || isNaN(totalPrice) || totalPrice === 0
-                    ? 'bg-slate-400 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:shadow-lg hover:shadow-indigo-500/20'
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-blue-600 hover:bg-blue-700'
                 }`}
               >
                 {loading ? (
@@ -1757,16 +1771,16 @@ const BookCabin = () => {
 
         {/* Related Spaces */}
         {relatedCabins.length > 0 && (
-          <div className="mt-12">
-            <h2 className="text-xl font-black text-slate-900 mb-6">Related Spaces</h2>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="mt-8">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">Related Spaces</h2>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {relatedCabins.map((relatedCabin) => (
                 <div
                   key={relatedCabin._id}
                   onClick={() => navigate(`/book/${relatedCabin._id}`)}
-                  className="admin-dash__card overflow-hidden rounded-2xl shadow-sm border border-slate-100 cursor-pointer hover:shadow-md transition-shadow"
+                  className="bg-white rounded-xl shadow-sm border border-gray-200 cursor-pointer hover:shadow-md transition-shadow overflow-hidden"
                 >
-                  <div className="h-40">
+                  <div className="h-44">
                     <img
                       src={getImageUrl(relatedCabin.images?.[0])}
                       alt={relatedCabin.name}
@@ -1774,10 +1788,10 @@ const BookCabin = () => {
                     />
                   </div>
                   <div className="p-4">
-                    <h3 className="font-bold text-slate-900 mb-1">{relatedCabin.name}</h3>
+                    <h3 className="font-semibold text-gray-900 mb-1 text-sm">{relatedCabin.name}</h3>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-slate-500">{relatedCabin.address}</span>
-                      <span className="font-bold text-indigo-600">₹{relatedCabin.price}/hr</span>
+                      <span className="text-xs text-gray-500">{relatedCabin.address}</span>
+                      <span className="font-semibold text-blue-600 text-sm">₹{relatedCabin.price}/hr</span>
                     </div>
                   </div>
                 </div>

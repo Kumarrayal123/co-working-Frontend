@@ -541,19 +541,25 @@ const AdminProfile = () => {
       <div className="pt-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
         {/* Header */}
         <div className="admin-dash__header">
-          <div>
-            <h1 className="admin-dash__greeting">
-              Admin <span>Profile</span>
-            </h1>
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+              <User size={24} className="text-white" />
+            </div>
+            <div>
+              <h1 className="admin-dash__greeting">
+                Admin <span>Profile</span>
+              </h1>
+              <p className="text-sm text-gray-500 mt-1">Manage your profile and account settings</p>
+            </div>
           </div>
         </div>
 
         {/* ✅ Login Info Card */}
-        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl border border-indigo-200 shadow-sm p-4 mb-5">
+        <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 rounded-2xl border border-indigo-200/50 shadow-lg shadow-indigo-500/10 p-4 mb-5 hover:shadow-xl hover:shadow-indigo-500/15 transition-all duration-300">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
-                <LogIn size={20} className="text-indigo-600" />
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md">
+                <LogIn size={20} className="text-white" />
               </div>
               <div>
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Logged in as</p>
@@ -570,18 +576,18 @@ const AdminProfile = () => {
 
         {/* ✅ Quick Action Buttons - Admin Specific */}
         <div className="mb-5">
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
-                <ArrowRight size={16} className="text-indigo-600" />
+          <div className="bg-white rounded-2xl border border-gray-200/80 shadow-lg shadow-gray-500/5 p-4 sm:p-5 hover:shadow-xl hover:shadow-gray-500/10 transition-all duration-300">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md">
+                <ArrowRight size={16} className="text-white" />
               </div>
               <h3 className="text-sm font-semibold text-gray-700">Quick Actions</h3>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
               {/* My Spaces */}
               <button
                 onClick={() => navigate("/admincabin")}
-                className="flex items-center justify-center gap-2 px-3 py-3 bg-emerald-50 text-emerald-700 rounded-xl text-sm font-medium hover:bg-emerald-100 transition-colors border border-emerald-200 hover:shadow-md"
+                className="flex items-center justify-center gap-2 px-3 py-3.5 bg-gradient-to-br from-emerald-50 to-emerald-100 text-emerald-700 rounded-xl text-sm font-medium hover:from-emerald-100 hover:to-emerald-200 transition-all duration-300 border border-emerald-200 hover:shadow-lg hover:shadow-emerald-500/20 hover:-translate-y-0.5"
               >
                 <Home size={18} className="text-emerald-500" />
                 <span className="hidden sm:inline">My Spaces</span>
@@ -591,7 +597,7 @@ const AdminProfile = () => {
               {/* My Bookings */}
               <button
                 onClick={() => navigate("/mybookings")}
-                className="flex items-center justify-center gap-2 px-3 py-3 bg-blue-50 text-blue-700 rounded-xl text-sm font-medium hover:bg-blue-100 transition-colors border border-blue-200 hover:shadow-md"
+                className="flex items-center justify-center gap-2 px-3 py-3.5 bg-gradient-to-br from-blue-50 to-blue-100 text-blue-700 rounded-xl text-sm font-medium hover:from-blue-100 hover:to-blue-200 transition-all duration-300 border border-blue-200 hover:shadow-lg hover:shadow-blue-500/20 hover:-translate-y-0.5"
               >
                 <Calendar size={18} className="text-blue-500" />
                 <span className="hidden sm:inline">My Bookings</span>
@@ -601,7 +607,7 @@ const AdminProfile = () => {
               {/* My Wallet */}
               <button
                 onClick={() => navigate("/adminwallet")}
-                className="flex items-center justify-center gap-2 px-3 py-3 bg-amber-50 text-amber-700 rounded-xl text-sm font-medium hover:bg-amber-100 transition-colors border border-amber-200 hover:shadow-md"
+                className="flex items-center justify-center gap-2 px-3 py-3.5 bg-gradient-to-br from-amber-50 to-amber-100 text-amber-700 rounded-xl text-sm font-medium hover:from-amber-100 hover:to-amber-200 transition-all duration-300 border border-amber-200 hover:shadow-lg hover:shadow-amber-500/20 hover:-translate-y-0.5"
               >
                 <Wallet size={18} className="text-amber-500" />
                 <span className="hidden sm:inline">My Wallet</span>
@@ -611,7 +617,7 @@ const AdminProfile = () => {
               {/* Space Bookings */}
               <button
                 onClick={() => navigate("/adminbookings")}
-                className="flex items-center justify-center gap-2 px-3 py-3 bg-purple-50 text-purple-700 rounded-xl text-sm font-medium hover:bg-purple-100 transition-colors border border-purple-200 hover:shadow-md"
+                className="flex items-center justify-center gap-2 px-3 py-3.5 bg-gradient-to-br from-purple-50 to-purple-100 text-purple-700 rounded-xl text-sm font-medium hover:from-purple-100 hover:to-purple-200 transition-all duration-300 border border-purple-200 hover:shadow-lg hover:shadow-purple-500/20 hover:-translate-y-0.5"
               >
                 <Ticket size={18} className="text-purple-500" />
                 <span className="hidden sm:inline">Space Bookings</span>
@@ -621,7 +627,7 @@ const AdminProfile = () => {
               {/* My Revenue */}
               <button
                 onClick={() => navigate("/spacerevenue")}
-                className="flex items-center justify-center gap-2 px-3 py-3 bg-cyan-50 text-cyan-700 rounded-xl text-sm font-medium hover:bg-cyan-100 transition-colors border border-cyan-200 hover:shadow-md"
+                className="flex items-center justify-center gap-2 px-3 py-3.5 bg-gradient-to-br from-cyan-50 to-cyan-100 text-cyan-700 rounded-xl text-sm font-medium hover:from-cyan-100 hover:to-cyan-200 transition-all duration-300 border border-cyan-200 hover:shadow-lg hover:shadow-cyan-500/20 hover:-translate-y-0.5"
               >
                 <BarChart3 size={18} className="text-cyan-500" />
                 <span className="hidden sm:inline">Revenue</span>
@@ -632,22 +638,23 @@ const AdminProfile = () => {
         </div>
 
         {/* Profile Card */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-2xl border border-gray-200/80 shadow-lg shadow-gray-500/10 overflow-hidden hover:shadow-xl hover:shadow-gray-500/15 transition-all duration-300">
           {/* Cover Image */}
-          <div className="h-32 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 relative">
+          <div className="h-32 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/20 to-purple-600/20"></div>
             <div className="absolute -bottom-12 left-6 sm:left-8">
-              <div className="w-24 h-24 rounded-full bg-white border-4 border-white shadow-lg flex items-center justify-center">
+              <div className="w-24 h-24 rounded-full bg-white border-4 border-white shadow-xl flex items-center justify-center hover:scale-105 transition-transform duration-300">
                 <span className="text-3xl font-bold text-indigo-600">
                   {profile.name?.charAt(0)?.toUpperCase() || 'A'}
                 </span>
               </div>
             </div>
             <div className="absolute bottom-4 right-4 flex flex-wrap items-center gap-2">
-              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border bg-white/90 backdrop-blur-sm ${statusBadge.color}`}>
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border bg-white/90 backdrop-blur-sm shadow-sm ${statusBadge.color}`}>
                 {statusBadge.icon}
                 {statusBadge.label}
               </span>
-              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border bg-white/90 backdrop-blur-sm ${roleBadge.color}`}>
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border bg-white/90 backdrop-blur-sm shadow-sm ${roleBadge.color}`}>
                 <Crown size={12} />
                 {roleBadge.label}
               </span>
@@ -666,7 +673,7 @@ const AdminProfile = () => {
               </div>
               <button
                 onClick={openEditPopup}
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-sm font-medium hover:bg-indigo-100 transition-colors border border-indigo-200"
+                className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl text-sm font-medium hover:shadow-lg hover:shadow-indigo-500/25 transition-all duration-300 hover:scale-105 border border-indigo-500"
               >
                 <Edit size={14} />
                 Edit Profile
@@ -675,24 +682,44 @@ const AdminProfile = () => {
 
             {/* Stats Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Role</p>
-                <p className="text-lg font-bold text-gray-900 mt-1 capitalize">{profile.role || 'Admin'}</p>
+              <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl p-4 border border-indigo-200/50 hover:shadow-lg hover:shadow-indigo-500/10 transition-all duration-300 hover:-translate-y-0.5">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-6 h-6 rounded-lg bg-indigo-500 flex items-center justify-center">
+                    <Crown size={12} className="text-white" />
+                  </div>
+                  <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">Role</p>
+                </div>
+                <p className="text-lg font-bold text-gray-900 capitalize">{profile.role || 'Admin'}</p>
               </div>
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Status</p>
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-full border mt-1 ${statusBadge.color}`}>
+              <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl p-4 border border-emerald-200/50 hover:shadow-lg hover:shadow-emerald-500/10 transition-all duration-300 hover:-translate-y-0.5">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-6 h-6 rounded-lg bg-emerald-500 flex items-center justify-center">
+                    <CheckCircle size={12} className="text-white" />
+                  </div>
+                  <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Status</p>
+                </div>
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-full border bg-white/50 ${statusBadge.color}`}>
                   {statusBadge.icon}
                   {statusBadge.label}
                 </span>
               </div>
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Member Since</p>
-                <p className="text-sm font-medium text-gray-900 mt-1">{formatDate(profile.createdAt)}</p>
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 border border-purple-200/50 hover:shadow-lg hover:shadow-purple-500/10 transition-all duration-300 hover:-translate-y-0.5">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-6 h-6 rounded-lg bg-purple-500 flex items-center justify-center">
+                    <Calendar size={12} className="text-white" />
+                  </div>
+                  <p className="text-[10px] font-bold text-purple-600 uppercase tracking-wider">Member Since</p>
+                </div>
+                <p className="text-sm font-medium text-gray-900">{formatDate(profile.createdAt)}</p>
               </div>
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">User ID</p>
-                <p className="text-xs font-mono text-gray-600 mt-1">#{profile._id?.slice(-8).toUpperCase() || 'N/A'}</p>
+              <div className="bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl p-4 border border-amber-200/50 hover:shadow-lg hover:shadow-amber-500/10 transition-all duration-300 hover:-translate-y-0.5">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-6 h-6 rounded-lg bg-amber-500 flex items-center justify-center">
+                    <IdCard size={12} className="text-white" />
+                  </div>
+                  <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">User ID</p>
+                </div>
+                <p className="text-xs font-mono text-gray-900 font-semibold">#{profile._id?.slice(-8).toUpperCase() || 'N/A'}</p>
               </div>
             </div>
 
@@ -700,47 +727,47 @@ const AdminProfile = () => {
             <div className="mt-6 border-t border-gray-200 pt-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Personal Information */}
-                <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
-                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2 pb-3 border-b border-gray-200">
+                <div className="bg-gradient-to-br from-indigo-50 to-indigo-100/50 rounded-xl p-5 border border-indigo-200/50 hover:shadow-lg hover:shadow-indigo-500/10 transition-all duration-300">
+                  <h3 className="text-xs font-bold text-indigo-600 uppercase tracking-wider flex items-center gap-2 pb-3 border-b border-indigo-200">
                     <User size={14} className="text-indigo-600" /> Personal Information
                   </h3>
                   <div className="space-y-3 mt-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0">
-                        <User size={14} className="text-indigo-600" />
+                    <div className="flex items-center gap-3 group hover:bg-white/50 rounded-lg p-2 -mx-2 transition-all duration-200">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-md">
+                        <User size={14} className="text-white" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Full Name</p>
+                        <p className="text-[10px] text-indigo-600 font-bold uppercase tracking-wider">Full Name</p>
                         <p className="font-medium text-gray-800 text-sm truncate">{profile.name}</p>
                       </div>
                       <CheckCircle size={14} className="text-emerald-500 flex-shrink-0" />
                     </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
-                        <Mail size={14} className="text-blue-600" />
+                    <div className="flex items-center gap-3 group hover:bg-white/50 rounded-lg p-2 -mx-2 transition-all duration-200">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center flex-shrink-0 shadow-md">
+                        <Mail size={14} className="text-white" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Email</p>
+                        <p className="text-[10px] text-blue-600 font-bold uppercase tracking-wider">Email</p>
                         <p className="font-medium text-gray-800 text-sm truncate">{profile.email}</p>
                       </div>
                       <CheckCircle size={14} className="text-emerald-500 flex-shrink-0" />
                     </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                        <Phone size={14} className="text-emerald-600" />
+                    <div className="flex items-center gap-3 group hover:bg-white/50 rounded-lg p-2 -mx-2 transition-all duration-200">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center flex-shrink-0 shadow-md">
+                        <Phone size={14} className="text-white" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Mobile</p>
+                        <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider">Mobile</p>
                         <p className="font-medium text-gray-800 text-sm">{profile.mobile}</p>
                       </div>
                       <CheckCircle size={14} className="text-emerald-500 flex-shrink-0" />
                     </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-yellow-100 flex items-center justify-center flex-shrink-0">
-                        <MapPin size={14} className="text-yellow-600" />
+                    <div className="flex items-center gap-3 group hover:bg-white/50 rounded-lg p-2 -mx-2 transition-all duration-200">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center flex-shrink-0 shadow-md">
+                        <MapPin size={14} className="text-white" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Address</p>
+                        <p className="text-[10px] text-amber-600 font-bold uppercase tracking-wider">Address</p>
                         <p className={`font-medium text-sm ${profile.address ? 'text-gray-800' : 'text-gray-400 italic'}`}>
                           {profile.address || 'Not provided'}
                         </p>
@@ -753,17 +780,17 @@ const AdminProfile = () => {
                 </div>
 
                 {/* Organization Details */}
-                <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
-                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2 pb-3 border-b border-gray-200">
+                <div className="bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-xl p-5 border border-amber-200/50 hover:shadow-lg hover:shadow-amber-500/10 transition-all duration-300">
+                  <h3 className="text-xs font-bold text-amber-600 uppercase tracking-wider flex items-center gap-2 pb-3 border-b border-amber-200">
                     <Building2 size={14} className="text-amber-600" /> Organization Details
                   </h3>
                   <div className="space-y-3 mt-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
-                        <Building2 size={14} className="text-amber-600" />
+                    <div className="flex items-center gap-3 group hover:bg-white/50 rounded-lg p-2 -mx-2 transition-all duration-200">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center flex-shrink-0 shadow-md">
+                        <Building2 size={14} className="text-white" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Organization</p>
+                        <p className="text-[10px] text-amber-600 font-bold uppercase tracking-wider">Organization</p>
                         <p className={`font-medium text-sm ${profile.organizationName ? 'text-gray-800' : 'text-gray-400 italic'}`}>
                           {profile.organizationName || 'Not provided'}
                         </p>
@@ -772,12 +799,12 @@ const AdminProfile = () => {
                         <CheckCircle size={14} className="text-emerald-500 flex-shrink-0" />
                       )}
                     </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center flex-shrink-0">
-                        <FileText size={14} className="text-orange-600" />
+                    <div className="flex items-center gap-3 group hover:bg-white/50 rounded-lg p-2 -mx-2 transition-all duration-200">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center flex-shrink-0 shadow-md">
+                        <FileText size={14} className="text-white" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">GST Number</p>
+                        <p className="text-[10px] text-orange-600 font-bold uppercase tracking-wider">GST Number</p>
                         <p className={`font-medium text-sm ${profile.gstNumber ? 'text-gray-800' : 'text-gray-400 italic'}`}>
                           {profile.gstNumber || 'Not provided'}
                         </p>
@@ -786,12 +813,12 @@ const AdminProfile = () => {
                         <CheckCircle size={14} className="text-emerald-500 flex-shrink-0" />
                       )}
                     </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0">
-                        <IdCard size={14} className="text-indigo-600" />
+                    <div className="flex items-center gap-3 group hover:bg-white/50 rounded-lg p-2 -mx-2 transition-all duration-200">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-md">
+                        <IdCard size={14} className="text-white" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">PAN Number</p>
+                        <p className="text-[10px] text-indigo-600 font-bold uppercase tracking-wider">PAN Number</p>
                         <p className={`font-medium text-sm ${profile.panNumber ? 'text-gray-800' : 'text-gray-400 italic'}`}>
                           {profile.panNumber || 'Not provided'}
                         </p>
@@ -807,18 +834,18 @@ const AdminProfile = () => {
 
             {/* Document Status */}
             <div className="mt-6 border-t border-gray-200 pt-6">
-              <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
-                <div className="flex items-center justify-between pb-3 border-b border-gray-200">
-                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                    <Upload size={14} className="text-amber-600" /> Document Status
+              <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl p-5 border border-slate-200/50 hover:shadow-lg hover:shadow-slate-500/10 transition-all duration-300">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+                  <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-2">
+                    <Upload size={14} className="text-slate-600" /> Document Status
                   </h3>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
                   {/* PAN Card Status */}
-                  <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-gray-100 hover:border-amber-200 transition-colors">
+                  <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-200/80 hover:border-orange-300 hover:shadow-lg hover:shadow-orange-500/10 transition-all duration-300 group">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center flex-shrink-0">
-                        <FileText size={14} className="text-orange-600" />
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center flex-shrink-0 shadow-md">
+                        <FileText size={14} className="text-white" />
                       </div>
                       <span className="text-sm font-medium text-gray-700">PAN Card</span>
                     </div>
@@ -827,21 +854,21 @@ const AdminProfile = () => {
                         <>
                           <button
                             onClick={() => openDocView('PAN Card', profile.panCard, profile.panCardStatus)}
-                            className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors border border-indigo-200"
+                            className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 hover:shadow-md transition-all duration-200 border border-indigo-200"
                             title="View Document"
                           >
                             <EyeIcon size={14} />
                           </button>
                           <button
                             onClick={() => downloadDocument(profile.panCard, 'PAN Card')}
-                            className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors border border-emerald-200"
+                            className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 hover:shadow-md transition-all duration-200 border border-emerald-200"
                             title="Download Document"
                           >
                             <Download size={14} />
                           </button>
                         </>
                       )}
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border ${getDocStatusBadge(profile.panCardStatus).color}`}>
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border bg-white/50 ${getDocStatusBadge(profile.panCardStatus).color}`}>
                         {getDocStatusBadge(profile.panCardStatus).icon}
                         {getDocStatusBadge(profile.panCardStatus).label}
                       </span>
@@ -849,10 +876,10 @@ const AdminProfile = () => {
                   </div>
 
                   {/* Aadhar Card Status */}
-                  <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-gray-100 hover:border-amber-200 transition-colors">
+                  <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-200/80 hover:border-indigo-300 hover:shadow-lg hover:shadow-indigo-500/10 transition-all duration-300 group">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0">
-                        <IdCard size={14} className="text-indigo-600" />
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-md">
+                        <IdCard size={14} className="text-white" />
                       </div>
                       <span className="text-sm font-medium text-gray-700">Aadhar Card</span>
                     </div>
@@ -861,21 +888,21 @@ const AdminProfile = () => {
                         <>
                           <button
                             onClick={() => openDocView('Aadhar Card', profile.adharCard, profile.adharCardStatus)}
-                            className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors border border-indigo-200"
+                            className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 hover:shadow-md transition-all duration-200 border border-indigo-200"
                             title="View Document"
                           >
                             <EyeIcon size={14} />
                           </button>
                           <button
                             onClick={() => downloadDocument(profile.adharCard, 'Aadhar Card')}
-                            className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors border border-emerald-200"
+                            className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 hover:shadow-md transition-all duration-200 border border-emerald-200"
                             title="Download Document"
                           >
                             <Download size={14} />
                           </button>
                         </>
                       )}
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border ${getDocStatusBadge(profile.adharCardStatus).color}`}>
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border bg-white/50 ${getDocStatusBadge(profile.adharCardStatus).color}`}>
                         {getDocStatusBadge(profile.adharCardStatus).icon}
                         {getDocStatusBadge(profile.adharCardStatus).label}
                       </span>
@@ -1003,27 +1030,27 @@ const AdminProfile = () => {
       {/* ====================== */}
       {showEditPopup && (
         <div 
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               closeEditPopup();
             }
           }}
         >
-          <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div className="sticky top-0 bg-white z-10 border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+          <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-in zoom-in-95 duration-300">
+            <div className="sticky top-0 bg-gradient-to-r from-indigo-500 to-purple-600 z-10 px-6 py-5 flex items-center justify-between rounded-t-2xl shadow-lg">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
-                  <Edit size={20} className="text-indigo-600" />
+                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm border border-white/30">
+                  <Edit size={20} className="text-white" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900">Edit Profile</h2>
-                  <p className="text-xs text-gray-500">Update your personal, organization & document details</p>
+                  <h2 className="text-lg font-bold text-white">Edit Profile</h2>
+                  <p className="text-xs text-white/80">Update your personal, organization & document details</p>
                 </div>
               </div>
               <button
                 onClick={closeEditPopup}
-                className="w-8 h-8 rounded-full hover:bg-gray-100 transition-colors flex items-center justify-center text-gray-500 hover:text-gray-700"
+                className="w-8 h-8 rounded-full hover:bg-white/20 transition-colors flex items-center justify-center text-white hover:text-white border border-white/20"
               >
                 <X size={20} />
               </button>
@@ -1033,7 +1060,7 @@ const AdminProfile = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Personal Information */}
                 <div className="md:col-span-2">
-                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2 mb-3">
+                  <h3 className="text-xs font-bold text-indigo-600 uppercase tracking-wider flex items-center gap-2 mb-3">
                     <User size={14} className="text-indigo-600" /> Personal Information
                   </h3>
                 </div>
@@ -1047,7 +1074,7 @@ const AdminProfile = () => {
                     value={editFormData.name}
                     onChange={handleEditChange}
                     required
-                    className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none text-gray-800 placeholder:text-gray-400 text-sm"
+                    className="w-full pl-9 pr-4 py-2.5 bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:from-white focus:to-white transition-all outline-none text-gray-800 placeholder:text-gray-400 text-sm shadow-sm"
                   />
                 </div>
 
@@ -1060,7 +1087,7 @@ const AdminProfile = () => {
                     value={editFormData.email}
                     onChange={handleEditChange}
                     required
-                    className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none text-gray-800 placeholder:text-gray-400 text-sm"
+                    className="w-full pl-9 pr-4 py-2.5 bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:from-white focus:to-white transition-all outline-none text-gray-800 placeholder:text-gray-400 text-sm shadow-sm"
                   />
                 </div>
 
@@ -1073,7 +1100,7 @@ const AdminProfile = () => {
                     value={editFormData.mobile}
                     onChange={handleEditChange}
                     required
-                    className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none text-gray-800 placeholder:text-gray-400 text-sm"
+                    className="w-full pl-9 pr-4 py-2.5 bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:from-white focus:to-white transition-all outline-none text-gray-800 placeholder:text-gray-400 text-sm shadow-sm"
                   />
                 </div>
 
@@ -1086,13 +1113,13 @@ const AdminProfile = () => {
                     value={editFormData.address}
                     onChange={handleEditChange}
                     required
-                    className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none text-gray-800 placeholder:text-gray-400 text-sm"
+                    className="w-full pl-9 pr-4 py-2.5 bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:from-white focus:to-white transition-all outline-none text-gray-800 placeholder:text-gray-400 text-sm shadow-sm"
                   />
                 </div>
 
                 {/* Organization Details */}
                 <div className="md:col-span-2 mt-2">
-                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2 mb-3">
+                  <h3 className="text-xs font-bold text-amber-600 uppercase tracking-wider flex items-center gap-2 mb-3">
                     <Building2 size={14} className="text-amber-600" /> Organization Details
                   </h3>
                 </div>
@@ -1105,7 +1132,7 @@ const AdminProfile = () => {
                     placeholder="Organization Name"
                     value={editFormData.organizationName}
                     onChange={handleEditChange}
-                    className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all outline-none text-gray-800 placeholder:text-gray-400 text-sm"
+                    className="w-full pl-9 pr-4 py-2.5 bg-gradient-to-r from-amber-50 to-amber-100 border border-amber-200 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 focus:from-white focus:to-white transition-all outline-none text-gray-800 placeholder:text-gray-400 text-sm shadow-sm"
                   />
                 </div>
 
@@ -1117,7 +1144,7 @@ const AdminProfile = () => {
                     placeholder="GST Number"
                     value={editFormData.gstNumber}
                     onChange={handleEditChange}
-                    className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all outline-none text-gray-800 placeholder:text-gray-400 text-sm"
+                    className="w-full pl-9 pr-4 py-2.5 bg-gradient-to-r from-amber-50 to-amber-100 border border-amber-200 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 focus:from-white focus:to-white transition-all outline-none text-gray-800 placeholder:text-gray-400 text-sm shadow-sm"
                   />
                 </div>
 
@@ -1129,16 +1156,16 @@ const AdminProfile = () => {
                     placeholder="PAN Number"
                     value={editFormData.panNumber}
                     onChange={handleEditChange}
-                    className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all outline-none text-gray-800 placeholder:text-gray-400 text-sm"
+                    className="w-full pl-9 pr-4 py-2.5 bg-gradient-to-r from-amber-50 to-amber-100 border border-amber-200 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 focus:from-white focus:to-white transition-all outline-none text-gray-800 placeholder:text-gray-400 text-sm shadow-sm"
                   />
                 </div>
 
                 {/* Document Uploads */}
                 <div className="md:col-span-2 mt-2">
-                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2 mb-3">
-                    <Upload size={14} className="text-amber-600" /> Document Uploads
+                  <h3 className="text-xs font-bold text-purple-600 uppercase tracking-wider flex items-center gap-2 mb-3">
+                    <Upload size={14} className="text-purple-600" /> Document Uploads
                   </h3>
-                  <p className="text-[10px] text-gray-400 mb-3">Upload or update your documents (JPG, PNG, WEBP, PDF - Max 5MB each)</p>
+                  <p className="text-[10px] text-gray-500 mb-3">Upload or update your documents (JPG, PNG, WEBP, PDF - Max 5MB each)</p>
                 </div>
 
                 {/* PAN Card Upload */}
@@ -1313,14 +1340,14 @@ const AdminProfile = () => {
                 <button
                   type="button"
                   onClick={closeEditPopup}
-                  className="px-6 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition-colors"
+                  className="px-6 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition-all duration-200 hover:shadow-md"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={editLoading}
-                  className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-medium text-sm rounded-xl hover:shadow-lg hover:shadow-indigo-500/25 transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-medium text-sm rounded-xl hover:shadow-lg hover:shadow-indigo-500/25 transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 >
                   {editLoading ? (
                     <>

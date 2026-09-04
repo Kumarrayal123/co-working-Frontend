@@ -262,55 +262,66 @@ export default function CabinDetails() {
 
   return (
     <div className="min-h-screen bg-white">
-      <main className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto py-8 pb-16">
-        {/* Back */}
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-xs uppercase tracking-widest font-bold text-slate-400 hover:text-indigo-600 mb-6 transition-colors"
-        >
-          <ArrowLeft size={14} /> Back
-        </button>
+      <main className="p-2 sm:p-4 lg:p-6">
+        {/* Header matching attendance list style */}
+        <div className="flex items-center justify-between gap-3 mb-6">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
+            >
+              <ArrowLeft size={18} className="text-gray-600" />
+            </button>
+            <div>
+              <h1 className="text-lg sm:text-xl font-bold text-gray-900">
+                {cabin.isChamber ? 'Chamber' : 'Space'} Details
+              </h1>
+              <p className="text-xs text-gray-500">View and book this workspace</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-full">
+            <BuildingIcon size={14} className="text-blue-600" />
+            <span className="text-xs font-semibold text-blue-700">{cabin.isChamber ? 'Chamber' : 'Workspace'}</span>
+          </div>
+        </div>
 
         {/* Main Section */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 p-6 lg:p-8">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 p-6">
 
           {/* Left - Images with Slider */}
           <div className="flex flex-col gap-4">
             {/* Main Image Slider */}
-            <div className="relative overflow-hidden rounded-2xl h-[300px] sm:h-[340px] lg:h-[420px] shadow-lg shadow-slate-200/50 group">
+            <div className="relative overflow-hidden rounded-xl h-[300px] sm:h-[340px] lg:h-[420px] shadow-sm group">
               <img
                 src={images[activeImage] || PLACEHOLDER_IMAGE}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 alt={cabin.name}
                 onError={(e) => {
                   e.target.src = PLACEHOLDER_IMAGE;
                 }}
               />
               
-              {/* Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 via-transparent to-transparent opacity-60" />
-              
               {/* Badges */}
-              <div className="absolute top-4 left-4 flex flex-col gap-1.5">
-                <span className="bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest text-indigo-700 shadow-sm">
-                  {cabin.isChamber ? '🏛️ Chamber' : 'Workspace'}
+              <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+                <span className="bg-white/95 backdrop-blur-sm px-2.5 py-1 rounded-full text-[10px] font-semibold text-blue-700 shadow-sm border border-blue-100">
+                  {cabin.isChamber ? 'Chamber' : 'Workspace'}
                 </span>
                 {cabin.cabinType === 'exclusive' && (
-                  <span className="bg-amber-500/95 backdrop-blur-sm px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest text-white shadow-sm flex items-center gap-1">
-                    <Crown size={12} /> Premium
+                  <span className="bg-amber-500/95 backdrop-blur-sm px-2.5 py-1 rounded-full text-[10px] font-semibold text-white shadow-sm flex items-center gap-1">
+                    <Crown size={10} /> Premium
                   </span>
                 )}
               </div>
               {cabin.seats && cabin.seats.length > 0 && (
-                <div className="absolute top-4 right-4 bg-indigo-600/95 backdrop-blur-sm px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest text-white shadow-sm flex items-center gap-1.5 z-10">
-                  <Armchair size={12} />
+                <div className="absolute top-3 right-3 bg-blue-600/95 backdrop-blur-sm px-2.5 py-1 rounded-full text-[10px] font-semibold text-white shadow-sm flex items-center gap-1.5 z-10">
+                  <Armchair size={10} />
                   {cabin.seats.length} Seats
                 </div>
               )}
 
               {/* Image Counter */}
               {images.length > 1 && (
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-bold text-white z-10">
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-sm px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-white z-10">
                   {activeImage + 1} / {images.length}
                 </div>
               )}
@@ -320,26 +331,26 @@ export default function CabinDetails() {
                 <>
                   <button
                     onClick={prevImage}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/70 transition-all z-10 opacity-0 group-hover:opacity-100"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/70 transition-all z-10 opacity-0 group-hover:opacity-100"
                   >
-                    <ChevronLeft size={20} />
+                    <ChevronLeft size={16} />
                   </button>
                   <button
                     onClick={nextImage}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/70 transition-all z-10 opacity-0 group-hover:opacity-100"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/70 transition-all z-10 opacity-0 group-hover:opacity-100"
                   >
-                    <ChevronRight size={20} />
+                    <ChevronRight size={16} />
                   </button>
 
                   {/* Dots */}
-                  <div className="absolute bottom-14 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+                  <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
                     {images.map((_, index) => (
                       <button
                         key={index}
                         onClick={() => handleImageChange(index)}
                         className={`w-2 h-2 rounded-full transition-all ${
                           index === activeImage 
-                            ? 'bg-white w-6' 
+                            ? 'bg-white w-5' 
                             : 'bg-white/40 hover:bg-white/60'
                         }`}
                       />
@@ -405,66 +416,49 @@ export default function CabinDetails() {
           </div>
 
           {/* Right Details */}
-          <div className="flex flex-col justify-center space-y-6">
+          <div className="flex flex-col justify-center space-y-5">
             <div>
-              <div className="flex items-center gap-2 mb-2 flex-wrap">
-                <span className="inline-block text-[10px] font-bold text-indigo-600 uppercase tracking-[0.2em]">
-                  {cabin.isChamber ? '🏛️ Chamber' : 'Workspace'} Details
-                </span>
-                {cabin.isChamber && (
-                  <span className="text-[10px] bg-rose-100 text-rose-600 px-2 py-0.5 rounded-full font-bold">
-                    Chamber
-                  </span>
-                )}
-                {cabin.cabinType === 'exclusive' && (
-                  <span className="text-[10px] bg-amber-100 text-amber-600 px-2 py-0.5 rounded-full font-bold flex items-center gap-0.5">
-                    <Crown size={10} /> Premium
-                  </span>
-                )}
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-black uppercase text-slate-900 leading-tight mb-3 tracking-tighter">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 leading-tight mb-2">
                 {cabin.name}
               </h1>
-              <div className="flex items-center gap-2 text-slate-500 text-sm font-semibold">
-                <div className="p-1.5 bg-indigo-50 rounded-lg">
-                  <MapPin size={16} className="text-indigo-500" />
-                </div>
+              <div className="flex items-center gap-2 text-gray-500 text-sm">
+                <MapPin size={14} className="text-gray-400" />
                 {cabin.address}
               </div>
             </div>
 
-            <p className="text-slate-500 text-sm leading-relaxed font-medium">
+            <p className="text-gray-600 text-sm leading-relaxed">
               {cabin.description || "Experience a premium workspace designed for maximum productivity and comfort, featuring modern architecture and essential business amenities."}
             </p>
 
             <div className="flex items-center gap-2">
-              <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tighter">₹{cabin.price}</span>
-              <span className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-2">/ Hour</span>
+              <span className="text-2xl sm:text-3xl font-bold text-gray-900">₹{cabin.price}</span>
+              <span className="text-xs text-gray-400 font-semibold mt-1">/ Hour</span>
             </div>
 
-            {/* ✅ Open/Close Time - SHOWING PROPERLY */}
-            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest flex items-center gap-2 mb-2">
-                <ClockIcon size={14} className="text-indigo-600" />
+            {/* Operating Hours */}
+            <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+              <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2 mb-2">
+                <ClockIcon size={14} className="text-blue-600" />
                 Operating Hours
               </h3>
               {cabin.is24x7 ? (
-                <div className="flex items-center gap-2 text-emerald-600 font-bold">
-                  <ClockIcon size={16} className="text-emerald-500" />
+                <div className="flex items-center gap-2 text-green-600 font-semibold">
+                  <ClockIcon size={16} className="text-green-500" />
                   24×7 Open
                 </div>
               ) : (
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-1.5">
                     <Sun size={14} className="text-amber-500" />
-                    <span className="text-sm font-semibold text-slate-700">
+                    <span className="text-sm font-semibold text-gray-700">
                       {formatTimeDisplay(cabin.openTime || '09:00')}
                     </span>
                   </div>
-                  <span className="text-slate-400">—</span>
+                  <span className="text-gray-400">—</span>
                   <div className="flex items-center gap-1.5">
-                    <Moon size={14} className="text-indigo-500" />
-                    <span className="text-sm font-semibold text-slate-700">
+                    <Moon size={14} className="text-blue-500" />
+                    <span className="text-sm font-semibold text-gray-700">
                       {formatTimeDisplay(cabin.closeTime || '21:00')}
                     </span>
                   </div>
@@ -474,10 +468,10 @@ export default function CabinDetails() {
 
             {/* Seats Display */}
             {cabin.seats && cabin.seats.length > 0 && (
-              <div className="pt-4 border-t border-slate-100">
+              <div className="pt-4 border-t border-gray-100">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest flex items-center gap-2">
-                    <Armchair size={14} className="text-indigo-600" />
+                  <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
+                    <Armchair size={14} className="text-blue-600" />
                     Available Seats ({cabin.seats.length})
                   </h3>
                 </div>
@@ -486,16 +480,16 @@ export default function CabinDetails() {
                   {cabin.seats.map((seat) => (
                     <div
                       key={seat._id}
-                      className="p-2 rounded-xl border-2 border-slate-200 text-center bg-slate-50/50"
+                      className="p-2 rounded-lg border border-gray-200 text-center bg-gray-50 hover:bg-gray-100 transition-colors"
                     >
                       <Armchair 
-                        size={16} 
-                        className="mx-auto mb-1 text-slate-400"
+                        size={14} 
+                        className="mx-auto mb-1 text-gray-400"
                       />
-                      <div className="text-[10px] font-bold text-slate-700 truncate">
+                      <div className="text-[10px] font-semibold text-gray-700 truncate">
                         {seat.name}
                       </div>
-                      <div className="text-[8px] text-slate-400 font-medium">
+                      <div className="text-[8px] text-gray-400 font-medium">
                         #{seat.number}
                       </div>
                     </div>
@@ -505,23 +499,23 @@ export default function CabinDetails() {
             )}
 
             {/* Amenities */}
-            <div className="pt-4 border-t border-slate-100">
-              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest mb-4">
+            <div className="pt-4 border-t border-gray-100">
+              <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-3">
                 Amenities
               </h3>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2">
                 {activeAmenities.map((key) => {
                   const Icon = amenityMap[key]?.icon;
                   return (
                     <div
                       key={key}
-                      className="flex items-center gap-3 p-3 rounded-xl bg-indigo-50/30 border border-indigo-100/50 hover:bg-indigo-50 hover:shadow-sm transition-all group"
+                      className="flex items-center gap-2 p-2.5 rounded-lg bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors"
                     >
-                      <div className="p-2 bg-white rounded-lg shadow-sm group-hover:text-indigo-600 transition-colors">
-                        {Icon && <Icon size={14} />}
+                      <div className="p-1.5 bg-white rounded-lg border border-gray-200">
+                        {Icon && <Icon size={12} className="text-gray-600" />}
                       </div>
-                      <span className="text-[11px] font-bold text-slate-600 uppercase tracking-tight">
+                      <span className="text-[11px] font-semibold text-gray-700">
                         {amenityMap[key]?.label || key}
                       </span>
                     </div>
@@ -532,21 +526,21 @@ export default function CabinDetails() {
 
             {/* Pricing Plans */}
             {cabin.pricingPlans && cabin.pricingPlans.length > 0 && (
-              <div className="pt-4 border-t border-slate-100">
-                <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest mb-3">
-                  Pricing Plans (Packages)
+              <div className="pt-4 border-t border-gray-100">
+                <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-3">
+                  Pricing Plans
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {cabin.pricingPlans.map((plan, idx) => (
-                    <div key={idx} className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col justify-center">
-                      <div className="text-[10px] uppercase tracking-[0.1em] text-indigo-700 font-bold mb-1">
+                    <div key={idx} className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                      <div className="text-[10px] uppercase tracking-wider text-blue-700 font-semibold mb-1">
                         {plan.label || "Package"}
                       </div>
-                      <div className="font-extrabold text-slate-900 text-sm">
-                        ₹{plan.cost.toLocaleString("en-IN")} <span className="text-[10px] text-slate-400 font-normal">/ {plan.validity} Days</span>
+                      <div className="font-bold text-gray-900 text-sm">
+                        ₹{plan.cost.toLocaleString("en-IN")} <span className="text-[10px] text-gray-400 font-normal">/ {plan.validity} Days</span>
                       </div>
-                      <div className="text-xs text-slate-500 mt-1 font-semibold">
-                        Included: {plan.hours} Hours
+                      <div className="text-xs text-gray-500 mt-1">
+                        {plan.hours} Hours included
                       </div>
                     </div>
                   ))}
@@ -555,36 +549,36 @@ export default function CabinDetails() {
             )}
 
             {/* Info & Book */}
-            <div className="pt-6 border-t border-slate-100 flex flex-col gap-6">
-              <div className="flex gap-6 sm:gap-8 text-[11px] font-bold text-slate-400 uppercase tracking-widest flex-wrap">
-                <div className="flex items-center gap-2">
-                  <Users size={14} className="text-indigo-500" /> {cabin.capacity} Seats
+            <div className="pt-4 border-t border-gray-100 flex flex-col gap-4">
+              <div className="flex gap-4 sm:gap-6 text-[11px] font-semibold text-gray-500 uppercase tracking-wider flex-wrap">
+                <div className="flex items-center gap-1.5">
+                  <Users size={12} className="text-blue-600" /> {cabin.capacity} Seats
                 </div>
-                <div className="flex items-center gap-2">
-                  <ShieldCheck size={14} className="text-indigo-500" /> Secured Space
+                <div className="flex items-center gap-1.5">
+                  <ShieldCheck size={12} className="text-blue-600" /> Secured
                 </div>
                 {cabin.seats && (
-                  <div className="flex items-center gap-2">
-                    <Armchair size={14} className="text-indigo-500" /> {cabin.seats.length} Available
+                  <div className="flex items-center gap-1.5">
+                    <Armchair size={12} className="text-blue-600" /> {cabin.seats.length} Available
                   </div>
                 )}
                 {cabin.isChamber && (
-                  <div className="flex items-center gap-2">
-                    <BuildingIcon size={14} className="text-rose-500" /> Chamber
+                  <div className="flex items-center gap-1.5">
+                    <BuildingIcon size={12} className="text-rose-500" /> Chamber
                   </div>
                 )}
               </div>
 
-              <div className="flex gap-4">
+              <div className="flex gap-3">
                 <button
                   onClick={() => navigate(`/book/${cabin._id}`)}
-                  className="flex-1 py-4 bg-[#007A52] text-white rounded-xl font-bold text-sm uppercase tracking-[0.1em] hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-500/20 active:scale-[0.98] flex items-center justify-center gap-3"
+                  className="flex-1 py-3 bg-blue-600 text-white rounded-lg font-semibold text-sm uppercase tracking-wider hover:bg-blue-700 transition-colors shadow-sm flex items-center justify-center gap-2"
                 >
                   {getBookButtonText()}
                 </button>
                 <button
                   onClick={() => navigate(`/site-visit/${cabin._id}`)}
-                  className="flex-1 py-4 bg-white border-2 border-emerald-600 text-emerald-700 rounded-xl font-bold text-sm uppercase tracking-[0.1em] hover:bg-emerald-50 transition-all shadow-md active:scale-[0.98] flex items-center justify-center gap-3"
+                  className="flex-1 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold text-sm uppercase tracking-wider hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
                 >
                   Site Visit
                 </button>
@@ -593,35 +587,35 @@ export default function CabinDetails() {
           </div>
         </div>
 
-        {/* Booked Slots Section - Only showing today and future bookings */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm p-6 mt-6">
-          <div className="flex items-center justify-between mb-5">
+        {/* Booked Slots Section */}
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5 mt-6">
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center border border-red-200">
-                <Clock size={20} color="#dc2626" />
+              <div className="w-9 h-9 rounded-lg bg-red-50 flex items-center justify-center border border-red-200">
+                <Clock size={18} className="text-red-600" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-slate-900">Already Booked Slots</h3>
-                <p className="text-xs text-slate-400">
+                <h3 className="text-sm font-bold text-gray-900">Booked Slots</h3>
+                <p className="text-xs text-gray-500">
                   {filteredBookedSlots.length > 0 
-                    ? "These time slots are unavailable (Today & Future)" 
+                    ? "Unavailable time slots" 
                     : "No upcoming bookings"}
                 </p>
               </div>
             </div>
             {filteredBookedSlots.length > 0 && (
-              <div className="bg-red-100 text-red-600 text-xs font-bold px-3 py-1 rounded-full border border-red-200">
+              <div className="bg-red-100 text-red-700 text-xs font-semibold px-3 py-1 rounded-full border border-red-200">
                 {filteredBookedSlots.length} Booking{filteredBookedSlots.length > 1 ? "s" : ""}
               </div>
             )}
           </div>
 
           {filteredBookedSlots.length === 0 ? (
-            <div className="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
-              <ShieldCheck size={22} color="#16a34a" />
+            <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <ShieldCheck size={20} className="text-green-600" />
               <div>
-                <p className="text-sm font-bold text-emerald-700">All Clear — Fully Available!</p>
-                <p className="text-xs text-emerald-500">No upcoming bookings. Go ahead and book your slot.</p>
+                <p className="text-sm font-semibold text-green-700">All Clear — Fully Available!</p>
+                <p className="text-xs text-green-600">No upcoming bookings. Go ahead and book your slot.</p>
               </div>
             </div>
           ) : (
@@ -629,36 +623,36 @@ export default function CabinDetails() {
               {filteredBookedSlots.map((slot, idx) => (
                 <div 
                   key={idx} 
-                  className={`flex items-center gap-4 p-3 rounded-xl flex-wrap ${
+                  className={`flex items-center gap-3 p-3 rounded-lg flex-wrap ${
                     isToday(slot.startDate) 
-                      ? 'bg-amber-50 border border-amber-300' 
+                      ? 'bg-amber-50 border border-amber-200' 
                       : 'bg-red-50 border border-red-200'
                   }`}
                 >
-                  <div className={`w-2.5 h-2.5 rounded-full shadow-sm ${
+                  <div className={`w-2 h-2 rounded-full ${
                     isToday(slot.startDate) 
-                      ? 'bg-amber-500 shadow-amber-200' 
-                      : 'bg-red-500 shadow-red-200'
+                      ? 'bg-amber-500' 
+                      : 'bg-red-500'
                   }`} />
                   <div className="min-w-[100px]">
-                    <div className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-2">
-                      <span className={isToday(slot.startDate) ? 'text-amber-500' : 'text-red-400'}>
-                        {isToday(slot.startDate) ? '🔴 TODAY' : '📅 DATE'}
+                    <div className="text-[10px] font-semibold uppercase tracking-wider flex items-center gap-2">
+                      <span className={isToday(slot.startDate) ? 'text-amber-600' : 'text-red-500'}>
+                        {isToday(slot.startDate) ? 'TODAY' : 'DATE'}
                       </span>
                     </div>
-                    <div className="text-sm font-bold text-slate-800">{formatDate(slot.startDate)}</div>
+                    <div className="text-sm font-semibold text-gray-800">{formatDate(slot.startDate)}</div>
                   </div>
-                  <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-full border border-red-300">
-                    <Clock size={13} color="#ef4444" />
-                    <span className="text-sm font-bold text-red-700">{formatTime(slot.startTime)}</span>
-                    <span className="text-red-300">→</span>
-                    <span className="text-sm font-bold text-red-700">{formatTime(slot.endTime)}</span>
+                  <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-full border border-gray-200">
+                    <Clock size={12} className="text-gray-500" />
+                    <span className="text-sm font-semibold text-gray-700">{formatTime(slot.startTime)}</span>
+                    <span className="text-gray-400">→</span>
+                    <span className="text-sm font-semibold text-gray-700">{formatTime(slot.endTime)}</span>
                   </div>
                   {(slot.name || slot.email) && (
                     <div className="ml-auto text-right">
-                      <div className="text-[10px] font-bold text-red-400 uppercase tracking-wider">Booked By</div>
-                      {slot.name && <div className="text-sm font-bold text-red-800">{slot.name}</div>}
-                      {slot.email && <div className="text-xs text-red-500">{slot.email}</div>}
+                      <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Booked By</div>
+                      {slot.name && <div className="text-sm font-semibold text-gray-800">{slot.name}</div>}
+                      {slot.email && <div className="text-xs text-gray-500">{slot.email}</div>}
                     </div>
                   )}
                 </div>
@@ -669,46 +663,46 @@ export default function CabinDetails() {
 
         {/* Related */}
         {relatedCabins.length > 0 && (
-          <div className="mt-16">
-            <h2 className="text-xl sm:text-2xl font-bold uppercase text-slate-900 mb-8 tracking-tight">
-              Related Chambers
+          <div className="mt-8">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">
+              Related Spaces
             </h2>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {relatedCabins.map((rc) => (
                 <div
                   key={rc._id}
                   onClick={() => navigate(`/cabin/${rc._id}`)}
-                  className="bg-white border border-slate-200/80 rounded-2xl shadow-sm cursor-pointer hover:shadow-lg transition-all duration-300 group overflow-hidden"
+                  className="bg-white border border-gray-200 rounded-xl shadow-sm cursor-pointer hover:shadow-md transition-all duration-300 group overflow-hidden"
                 >
-                  <div className="h-48 overflow-hidden relative">
+                  <div className="h-44 overflow-hidden relative">
                     <img
                       src={getImageUrl(rc.images?.[0])}
-                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
                       alt=""
                       onError={(e) => {
                         e.target.src = PLACEHOLDER_IMAGE;
                       }}
                     />
-                    <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest text-indigo-700 shadow-sm">
-                      {rc.isChamber ? '🏛️ Chamber' : 'Workspace'}
+                    <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-2 py-0.5 rounded-full text-[10px] font-semibold text-blue-700 shadow-sm border border-blue-100">
+                      {rc.isChamber ? 'Chamber' : 'Workspace'}
                     </div>
                     {rc.seats && rc.seats.length > 0 && (
-                      <div className="absolute top-3 right-3 bg-indigo-600/95 backdrop-blur-sm px-2 py-1 rounded-full text-[10px] font-bold text-white shadow-sm flex items-center gap-1">
+                      <div className="absolute top-3 right-3 bg-blue-600/95 backdrop-blur-sm px-2 py-0.5 rounded-full text-[10px] font-semibold text-white shadow-sm flex items-center gap-1">
                         <Armchair size={10} />
                         {rc.seats.length}
                       </div>
                     )}
                   </div>
-                  <div className="p-5 space-y-2">
-                    <h4 className="font-bold uppercase text-slate-900 text-base truncate">
+                  <div className="p-4 space-y-2">
+                    <h4 className="font-semibold text-gray-900 text-sm truncate">
                       {rc.name}
                     </h4>
-                    <p className="text-xs font-medium text-slate-500">
+                    <p className="text-xs text-gray-500">
                       {rc.address?.split(",")[0]}
                     </p>
-                    <p className="font-bold text-slate-900 pt-2 text-base">
-                      ₹{rc.price} <span className="text-xs font-medium text-slate-400">/ hr</span>
+                    <p className="font-semibold text-gray-900 pt-2 text-sm">
+                      ₹{rc.price} <span className="text-xs text-gray-400">/ hr</span>
                     </p>
                   </div>
                 </div>
@@ -718,8 +712,8 @@ export default function CabinDetails() {
         )}
 
         {/* Trust */}
-        <div className="mt-12 text-center text-xs font-semibold text-slate-400 uppercase tracking-widest flex justify-center items-center gap-2">
-          <ShieldCheck size={16} />
+        <div className="mt-8 text-center text-xs font-semibold text-gray-400 uppercase tracking-wider flex justify-center items-center gap-2">
+          <ShieldCheck size={14} />
           Verified professional workspace
         </div>
       </main>

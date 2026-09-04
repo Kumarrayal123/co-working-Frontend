@@ -26,3 +26,21 @@ export const isEmployeeHidden = (emp) => {
   // Default: don't hide any employees
   return false;
 };
+
+/**
+ * Filter attendance records to only include active employees
+ * @param {Array} records - Attendance records array
+ * @param {Array} employees - Employees array
+ * @returns {Array} - Filtered attendance records
+ */
+export const filterActiveRecords = (records, employees) => {
+  if (!records || !Array.isArray(records)) return [];
+  if (!employees || !Array.isArray(employees)) return records;
+  
+  return records.filter(record => {
+    const employee = employees.find(emp => 
+      emp.employeeId === record.employeeId || emp._id === record.employeeId
+    );
+    return employee && !isEmployeeHidden(employee);
+  });
+};

@@ -49,7 +49,8 @@ import {
   CreditCard,
   Loader2,
   Receipt,
-  AlertCircle
+  AlertCircle,
+  RefreshCw
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -268,6 +269,8 @@ const AdminCabins = () => {
   const [galleryModal, setGalleryModal] = useState({ isOpen: false, images: [], cabinName: "" });
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [newCabinData, setNewCabinData] = useState(null);
+  const [viewMode, setViewMode] = useState("table");
+  const [refreshing, setRefreshing] = useState(false);
   const navigate = useNavigate();
 
   // ─── SEAT MANAGEMENT ───
@@ -461,13 +464,18 @@ const AdminCabins = () => {
     return cabin.images.map(img => getImageUrl(img));
   };
 
-  const fetchCabins = async () => {
-    setLoading(true);
+  const fetchCabins = async (isRefresh = false) => {
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
     try {
       const adminId = getAdminId();
       if (!adminId) {
         console.warn("No admin ID found");
         setLoading(false);
+        setRefreshing(false);
         return;
       }
 
@@ -477,7 +485,7 @@ const AdminCabins = () => {
 
       // ✅ Filter cabins by admin ID from localStorage
       const adminCabins = allCabins.filter(cabin =>
-        cabin.owner === adminId
+        cabin.owner === adminId || cabin.user === adminId || cabin.adminId === adminId || cabin.createdBy === adminId
       );
 
       setCabins(adminCabins);
@@ -498,6 +506,7 @@ const AdminCabins = () => {
       console.error("Error fetching cabins:", err);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -1302,280 +1311,329 @@ const AdminCabins = () => {
   const gstAmount = baseFee * 0.18;
   const totalWithGST = baseFee + gstAmount;
 
+  const currentDateFormatted = new Date().toLocaleDateString("en-US", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric"
+  });
+
+  const statsCards = [
+    {
+      label: "Total Cabins",
+      value: cabins.length,
+      meta: "all registered cabins",
+      icon: Home,
+      color: "indigo",
+      onClick: clearAllFilters
+    },
+    {
+      label: "Active Cabins",
+      value: activeCount,
+      meta: "live & bookable",
+      icon: CheckCircle,
+      color: "emerald",
+      onClick: () => handleFilterChange('status', 'active')
+    },
+    {
+      label: "Inactive Cabins",
+      value: inactiveCount,
+      meta: "temporarily paused",
+      icon: XCircleIcon,
+      color: "rose",
+      onClick: () => handleFilterChange('status', 'inactive')
+    },
+    {
+      label: "Medical Chambers",
+      value: medicalCount,
+      meta: "doctor chambers",
+      icon: Stethoscope,
+      color: "purple",
+      onClick: () => handleFilterChange('spaceType', 'medical')
+    },
+    {
+      label: "Co-Working Desks",
+      value: coworkingCount,
+      meta: "shared workspaces",
+      icon: Briefcase,
+      color: "blue",
+      onClick: () => handleFilterChange('spaceType', 'coworking')
+    },
+    {
+      label: "Exclusive Tier",
+      value: exclusiveCount,
+      meta: "premium cabins",
+      icon: Crown,
+      color: "amber",
+      onClick: () => handleFilterChange('cabinType', 'exclusive')
+    }
+  ];
+
+  const isFilterActive = filters.search || filters.cabinType !== "all" || filters.status !== "all" || filters.spaceType !== "all" || filters.priceMin || filters.priceMax || filters.address;
+
   // ─── RENDER ───
   if (loading) {
     return (
-      <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
+      <div className="admin-dash">
         <AdminNavbar />
-        <div className="flex justify-center items-center h-64">
-          <Loader2 size={48} className="text-indigo-500 animate-spin" />
+        <div className="admin-dash__loading">
+          <div className="admin-dash__spinner" />
+          <p className="admin-dash__loading-text">Loading registered cabins...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
+    <div className="admin-dash">
       <AdminNavbar />
 
-      <div className="pt-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
-        {/* Header */}
+      <main className="pt-20 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
+        {/* Header - Matching Owner Dashboard reference */}
         <div className="admin-dash__header">
           <div>
             <h1 className="admin-dash__greeting">
               My <span>Cabins</span>
             </h1>
+            <p className="admin-dash__subtitle">
+              Manage, configure and monitor all registered cabins & workspace inventory
+            </p>
           </div>
-          <div className="flex items-center gap-2">
+
+          <div className="flex items-center flex-wrap gap-2.5">
+            <div className="admin-dash__date-pill">
+              <Calendar size={14} />
+              <span>{currentDateFormatted}</span>
+            </div>
+
+            <button
+              onClick={() => fetchCabins(true)}
+              className="admin-dash__btn hover:border-indigo-300"
+              title="Refresh cabins"
+              disabled={refreshing}
+            >
+              <RefreshCw size={14} className={refreshing ? "animate-spin text-indigo-600" : "text-gray-500"} />
+              <span className="text-xs font-medium">{refreshing ? "Refreshing..." : "Refresh"}</span>
+            </button>
+
             <button
               onClick={() => navigate("/adminbookings")}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+              className="admin-dash__btn hover:bg-gray-50"
             >
               <FileText size={14} className="text-indigo-600" />
-              <span>Bookings</span>
+              <span className="text-xs font-medium">Bookings</span>
             </button>
+
             <button
               onClick={() => setIsModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 bg-[length:200%_100%] text-white hover:bg-[position:100%_0] transition-all duration-500 shadow-md shadow-indigo-200 hover:shadow-lg hover:shadow-indigo-300 transform hover:scale-105 active:scale-95"
             >
-              <Plus size={14} />
-              <span>Add Space</span>
+              <Plus size={14} /> Add Space
             </button>
           </div>
         </div>
 
-        {/* Stats Cards - ENHANCED WITH INCREASED HEIGHT */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-3.5 shadow-sm hover:shadow-md transition-all" style={{ minHeight: '85px' }}>
-            <div className="flex items-center justify-between">
-              <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">Total Spaces</span>
-              <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
-                <Home size={16} />
+        {/* 6 KPI Stat Cards - Matching Owner Dashboard */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4 mb-6">
+          {statsCards.map((stat, index) => (
+            <div
+              key={index}
+              className="admin-dash__stat cursor-pointer hover:scale-105 transition-transform duration-200"
+              onClick={stat.onClick}
+              title="Click to filter by this category"
+            >
+              <div className="admin-dash__stat-top">
+                <span className="admin-dash__stat-label">{stat.label}</span>
+                <div className={`admin-dash__stat-icon admin-dash__stat-icon--${stat.color}`}>
+                  <stat.icon size={15} />
+                </div>
               </div>
+              <div className="admin-dash__stat-value">{stat.value}</div>
+              <div className="admin-dash__stat-meta truncate">{stat.meta}</div>
             </div>
-            <div className="mt-1.5">
-              <span className="text-2xl font-bold text-gray-800">{cabins.length}</span>
+          ))}
+        </div>
+
+        {/* Filters Section */}
+        <div className="admin-dash__filters mb-6">
+          <div className="admin-dash__filter-group">
+            {/* Search Input */}
+            <div className="flex-1 min-w-[200px] relative">
+              <SearchIcon size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                value={filters.search}
+                onChange={(e) => handleFilterChange('search', e.target.value)}
+                placeholder="Search by cabin name..."
+                className="admin-dash__filter-input w-full pl-9"
+              />
             </div>
-            <div className="text-[8px] text-gray-400 mt-0.5">{activeCount} active</div>
+
+            {/* Space Type Filter */}
+            <select
+              value={filters.spaceType}
+              onChange={(e) => handleFilterChange('spaceType', e.target.value)}
+              className="admin-dash__filter-select min-w-[140px]"
+            >
+              <option value="all">All Spaces</option>
+              <option value="medical">Medical Chamber</option>
+              <option value="coworking">Co-Working</option>
+            </select>
+
+            {/* Cabin Type Filter */}
+            <select
+              value={filters.cabinType}
+              onChange={(e) => handleFilterChange('cabinType', e.target.value)}
+              className="admin-dash__filter-select min-w-[130px]"
+            >
+              <option value="all">All Types</option>
+              <option value="normal">Normal</option>
+              <option value="exclusive">Exclusive</option>
+            </select>
+
+            {/* Status Filter */}
+            <select
+              value={filters.status}
+              onChange={(e) => handleFilterChange('status', e.target.value)}
+              className="admin-dash__filter-select min-w-[130px]"
+            >
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+
+            {/* Location / Address */}
+            <input
+              type="text"
+              value={filters.address}
+              onChange={(e) => handleFilterChange('address', e.target.value)}
+              placeholder="City / location..."
+              className="admin-dash__filter-input min-w-[140px]"
+            />
+
+            {/* Price Inputs */}
+            <div className="flex items-center gap-1">
+              <input
+                type="number"
+                value={filters.priceMin}
+                onChange={(e) => handleFilterChange('priceMin', e.target.value)}
+                placeholder="Min ₹"
+                className="admin-dash__filter-input w-20"
+              />
+              <span className="text-gray-400 text-xs">-</span>
+              <input
+                type="number"
+                value={filters.priceMax}
+                onChange={(e) => handleFilterChange('priceMax', e.target.value)}
+                placeholder="Max ₹"
+                className="admin-dash__filter-input w-20"
+              />
+            </div>
+
+            {isFilterActive && (
+              <button
+                onClick={clearAllFilters}
+                className="admin-dash__btn hover:bg-red-50 hover:text-red-600 hover:border-red-200"
+                title="Clear all filters"
+              >
+                <XCircleIcon size={15} /> Clear
+              </button>
+            )}
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-3.5 shadow-sm hover:shadow-md transition-all" style={{ minHeight: '85px' }}>
-            <div className="flex items-center justify-between">
-              <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">Active</span>
-              <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
-                <CheckCircle size={16} />
-              </div>
-            </div>
-            <div className="mt-1.5">
-              <span className="text-2xl font-bold text-gray-800">{activeCount}</span>
-            </div>
-            <div className="text-[8px] text-gray-400 mt-0.5">Available spaces</div>
-          </div>
-
-          <div className="bg-white rounded-xl border border-gray-200 p-3.5 shadow-sm hover:shadow-md transition-all" style={{ minHeight: '85px' }}>
-            <div className="flex items-center justify-between">
-              <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">Inactive</span>
-              <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-gray-600">
-                <XCircleIcon size={16} />
-              </div>
-            </div>
-            <div className="mt-1.5">
-              <span className="text-2xl font-bold text-gray-800">{inactiveCount}</span>
-            </div>
-            <div className="text-[8px] text-gray-400 mt-0.5">Unavailable</div>
-          </div>
-
-          <div className="bg-white rounded-xl border border-gray-200 p-3.5 shadow-sm hover:shadow-md transition-all" style={{ minHeight: '85px' }}>
-            <div className="flex items-center justify-between">
-              <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">Medical</span>
-              <div className="w-8 h-8 rounded-lg bg-rose-50 flex items-center justify-center text-rose-600">
-                <Stethoscope size={16} />
-              </div>
-            </div>
-            <div className="mt-1.5">
-              <span className="text-2xl font-bold text-gray-800">{medicalCount}</span>
-            </div>
-            <div className="text-[8px] text-gray-400 mt-0.5">Chamber spaces</div>
-          </div>
-
-          <div className="bg-white rounded-xl border border-gray-200 p-3.5 shadow-sm hover:shadow-md transition-all" style={{ minHeight: '85px' }}>
-            <div className="flex items-center justify-between">
-              <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">Co-Working</span>
-              <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
-                <Briefcase size={16} />
-              </div>
-            </div>
-            <div className="mt-1.5">
-              <span className="text-2xl font-bold text-gray-800">{coworkingCount}</span>
-            </div>
-            <div className="text-[8px] text-gray-400 mt-0.5">Shared workspaces</div>
+          <div className="flex flex-wrap items-center justify-between gap-2 mt-3 pt-3 border-t border-gray-100 text-xs text-gray-500 font-medium">
+            <span>Showing <strong>{filteredCabins.length}</strong> of {cabins.length} cabins</span>
+            {isFilterActive && (
+              <span className="text-indigo-600 font-semibold">• Filters Active</span>
+            )}
           </div>
         </div>
 
-        {/* ─── MINI STATS ─── */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
-          <div className="bg-amber-50/80 rounded-xl border border-amber-200/80 p-3 flex items-center justify-between shadow-sm" style={{ minHeight: '60px' }}>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600">
-                <Crown size={16} />
-              </div>
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700">Exclusive Cabins</p>
-                <p className="text-sm font-bold text-amber-900">{exclusiveCount} Premium</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-purple-50/80 rounded-xl border border-purple-200/80 p-3 flex items-center justify-between shadow-sm" style={{ minHeight: '60px' }}>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600">
-                <Clock size={16} />
-              </div>
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-purple-700">Expiring Cabins</p>
-                <p className="text-sm font-bold text-purple-900">{withExpiryCount} With Expiry</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Table Section */}
-        <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
-          <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
+        {/* Directory Card with Table / Grid View Switcher */}
+        <div className="admin-dash__card">
+          <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <h3 className="admin-dash__card-title">My Cabins</h3>
-              <span className="px-2.5 py-0.5 text-xs font-bold text-indigo-700 bg-indigo-100 rounded-full">
+              <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-md shadow-indigo-200 text-white">
+                <Building2 size={18} />
+              </div>
+              <div>
+                <h3 className="admin-dash__card-title">Registered Cabins Directory</h3>
+                <p className="admin-dash__card-desc">Detailed list of registered cabins, capacities, and pricing</p>
+              </div>
+              <span className="admin-dash__badge admin-dash__badge--info">
                 {filteredCabins.length}
               </span>
             </div>
-          </div>
 
-          {/* ─── MULTI FILTER PANEL ─── */}
-          <div className="px-4 pt-4 pb-3 border-b border-gray-100" style={{ backgroundColor: '#fafafa' }}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
-              <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Search</label>
-                <div className="relative">
-                  <SearchIcon size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    value={filters.search}
-                    onChange={(e) => handleFilterChange('search', e.target.value)}
-                    placeholder="Cabin name..."
-                    className="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Cabin Type</label>
-                <select
-                  value={filters.cabinType}
-                  onChange={(e) => handleFilterChange('cabinType', e.target.value)}
-                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                >
-                  <option value="all">All Types</option>
-                  <option value="normal">Normal</option>
-                  <option value="exclusive">Exclusive</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</label>
-                <select
-                  value={filters.status}
-                  onChange={(e) => handleFilterChange('status', e.target.value)}
-                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                >
-                  <option value="all">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              </div>
-
-              {/* ✅ NEW: Space Type Filter */}
-              <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Space Type</label>
-                <select
-                  value={filters.spaceType}
-                  onChange={(e) => handleFilterChange('spaceType', e.target.value)}
-                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                >
-                  <option value="all">All Spaces</option>
-                  <option value="medical">🏥 Medical Chamber</option>
-                  <option value="coworking">💼 Co-Working</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Min Price</label>
-                <input
-                  type="number"
-                  value={filters.priceMin}
-                  onChange={(e) => handleFilterChange('priceMin', e.target.value)}
-                  placeholder="0"
-                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                />
-              </div>
-
-              <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Max Price</label>
-                <input
-                  type="number"
-                  value={filters.priceMax}
-                  onChange={(e) => handleFilterChange('priceMax', e.target.value)}
-                  placeholder="999999"
-                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                />
-              </div>
-
-              <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Address</label>
-                <input
-                  type="text"
-                  value={filters.address}
-                  onChange={(e) => handleFilterChange('address', e.target.value)}
-                  placeholder="City/Location..."
-                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end mt-3">
-              <button 
-                onClick={clearAllFilters} 
-                className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-red-600 transition-colors"
+            {/* View Mode Switcher */}
+            <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl">
+              <button
+                onClick={() => setViewMode("table")}
+                className={`p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                  viewMode === "table"
+                    ? 'bg-white text-indigo-600 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-800'
+                }`}
+                title="Table View"
               >
-                <XCircleIcon size={14} /> Clear All Filters
+                <FileText size={14} />
+                <span className="hidden sm:inline">Table</span>
+              </button>
+              <button
+                onClick={() => setViewMode("grid")}
+                className={`p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                  viewMode === "grid"
+                    ? 'bg-white text-indigo-600 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-800'
+                }`}
+                title="Card Grid View"
+              >
+                <GridIcon size={14} />
+                <span className="hidden sm:inline">Grid</span>
               </button>
             </div>
           </div>
 
-          {/* Table Container */}
-          <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
-            {filteredCabins.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-3 py-20 text-gray-400">
-                <Building2 size={48} className="opacity-20" />
-                <p className="text-lg font-medium">No cabins found</p>
-                <p className="text-sm">Try adjusting your filters or add a new cabin.</p>
+          {/* Body: Table View vs Grid View */}
+          {filteredCabins.length === 0 ? (
+            <div className="flex flex-col items-center justify-center gap-3 py-16 text-gray-400">
+              <div className="p-3 bg-gray-100 rounded-2xl">
+                <Building2 size={40} className="text-gray-300" />
               </div>
-            ) : (
-              <table className="w-full min-w-[1400px] text-left">
+              <div className="text-center">
+                <p className="text-sm font-semibold text-gray-700">No cabins found</p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {isFilterActive ? "Try adjusting your filters" : "Add a new cabin to get started"}
+                </p>
+              </div>
+              {isFilterActive && (
+                <button
+                  onClick={clearAllFilters}
+                  className="mt-2 admin-dash__btn"
+                >
+                  Clear Filters
+                </button>
+              )}
+            </div>
+          ) : viewMode === "table" ? (
+            <div className="admin-dash__card-body p-0 overflow-x-auto">
+              <table className="admin-dash__table">
                 <thead>
-                  <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Images</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Address</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Type</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Space</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Price</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Capacity</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Expiry</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Actions</th>
+                  <tr>
+                    <th className="w-14 text-center">#</th>
+                    <th>Cabin / Space</th>
+                    <th>Photos</th>
+                    <th>Address</th>
+                    <th>Tier</th>
+                    <th>Space Category</th>
+                    <th>Hourly Price</th>
+                    <th>Capacity</th>
+                    <th>Status</th>
+                    <th>Expiry Timer</th>
+                    <th className="text-center">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody>
                   {filteredCabins.map((cabin, idx) => {
                     const isActive = cabin.isActive === true;
                     const isExclusive = cabin.cabinType === 'exclusive';
@@ -1586,135 +1644,131 @@ const AdminCabins = () => {
                     const cabinImages = getAllImageUrls(cabin);
                     
                     return (
-                      <tr key={cabin._id} className="transition-colors group hover:bg-gray-50/80">
-                        <td className="p-4">
-                          <span className="text-sm font-semibold text-gray-400">#{idx + 1}</span>
+                      <tr key={cabin._id} className="group hover:bg-indigo-50/40 transition-colors">
+                        <td className="text-center">
+                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 text-xs font-bold text-gray-500 group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors">
+                            {idx + 1}
+                          </span>
                         </td>
-                        <td className="p-4">
+                        <td>
                           <div>
-                            <p className="font-semibold text-gray-900 text-sm">{cabin.name || 'N/A'}</p>
-                            <p className="text-[10px] text-gray-400">{cabin.cabin || 'N/A'}</p>
+                            <p className="font-bold text-gray-900 text-xs sm:text-sm group-hover:text-indigo-600 transition-colors">
+                              {cabin.name || 'N/A'}
+                            </p>
+                            <p className="text-[11px] text-gray-400">{cabin.cabin || 'Space'}</p>
                           </div>
                         </td>
-                        <td className="p-4">
+                        <td>
                           <button
                             onClick={() => openGallery(cabin)}
-                            className="flex items-center gap-1 px-2 py-1 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors text-xs font-medium"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors text-xs font-bold border border-indigo-100 shadow-sm"
+                            title="Open Photo Gallery"
                           >
-                            <Images size={14} />
+                            <Images size={13} />
                             <span>{cabinImages.length}</span>
                           </button>
                         </td>
-                        <td className="p-4">
+                        <td>
                           <span 
-                            className="text-sm font-medium text-gray-700 flex items-center gap-1.5 cursor-pointer hover:text-indigo-600 transition-colors group"
+                            className="text-xs text-gray-600 flex items-center gap-1.5 cursor-pointer hover:text-indigo-600 transition-colors group/addr"
                             onClick={(e) => handleAddressClick(e, cabin.address)}
+                            title="Click for full address"
                           >
-                            <MapPin size={14} className="text-gray-400 flex-shrink-0 group-hover:text-indigo-500" />
-                            <span className="truncate max-w-[120px]">{cabin.address?.split(",")[0] || "N/A"}</span>
+                            <MapPin size={13} className="text-gray-400 flex-shrink-0 group-hover/addr:text-indigo-500" />
+                            <span className="truncate max-w-[140px]">{cabin.address?.split(",")[0] || "N/A"}</span>
                           </span>
                         </td>
-                        <td className="p-4">
-                          <span className={`px-3 py-1 text-xs font-bold rounded-full inline-flex items-center gap-1.5 ${
+                        <td>
+                          <span className={`px-2.5 py-1 text-[10px] font-bold rounded-lg inline-flex items-center gap-1 ${
                             isExclusive 
-                              ? 'bg-amber-100 text-amber-700' 
-                              : 'bg-blue-100 text-blue-700'
+                              ? 'bg-amber-50 text-amber-700 border border-amber-200' 
+                              : 'bg-blue-50 text-blue-700 border border-blue-200'
                           }`}>
-                            {isExclusive ? (
-                              <>
-                                <Crown size={12} />
-                                Exclusive
-                              </>
-                            ) : 'Normal'}
+                            {isExclusive ? <Crown size={11} /> : null}
+                            {isExclusive ? 'Exclusive' : 'Normal'}
                           </span>
                         </td>
-                        <td className="p-4">
-                          <span className={`px-3 py-1 text-xs font-bold rounded-full inline-flex items-center gap-1 ${
+                        <td>
+                          <span className={`px-2.5 py-1 text-[10px] font-bold rounded-lg inline-flex items-center gap-1 ${
                             isChamber 
-                              ? 'bg-emerald-100 text-emerald-700' 
-                              : 'bg-blue-100 text-blue-700'
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+                              : 'bg-blue-50 text-blue-700 border border-blue-200'
                           }`}>
-                            {isChamber ? (
-                              <>
-                                <Stethoscope size={12} /> Medical
-                              </>
-                            ) : (
-                              <>
-                                <Briefcase size={12} /> Co-Working
-                              </>
-                            )}
+                            {isChamber ? <Stethoscope size={11} /> : <Briefcase size={11} />}
+                            {isChamber ? 'Medical Chamber' : 'Co-Working'}
                           </span>
                         </td>
-                        <td className="p-4">
-                          <span className="text-sm font-bold text-gray-900">
-                            ₹{cabin.price || 0}
-                          </span>
-                          <span className="text-xs text-gray-400 ml-0.5">/hr</span>
+                        <td>
+                          <div className="flex items-baseline gap-0.5">
+                            <span className="text-sm font-bold text-gray-900">₹{cabin.price || 0}</span>
+                            <span className="text-[10px] text-gray-400">/hr</span>
+                          </div>
                         </td>
-                        <td className="p-4">
-                          <span className="text-sm text-gray-700 flex items-center gap-1.5">
-                            <Users size={14} className="text-gray-400" />
-                            {cabin.capacity || 0}
+                        <td>
+                          <span className="text-xs text-gray-700 font-semibold flex items-center gap-1">
+                            <Users size={12} className="text-gray-400" />
+                            {cabin.capacity || 0} Seats
                           </span>
                         </td>
-                        <td className="p-4">
-                          <span className={`px-3 py-1 text-xs font-bold rounded-full ${
+                        <td>
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold rounded-lg ${
                             isActive 
-                              ? 'bg-emerald-100 text-emerald-700' 
-                              : 'bg-gray-100 text-gray-600'
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+                              : 'bg-gray-100 text-gray-600 border border-gray-200'
                           }`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400'}`}></span>
                             {isActive ? 'Active' : 'Inactive'}
                           </span>
                         </td>
-                        <td className="p-4">
+                        <td>
                           {hasExpiry ? (
                             <div className="flex flex-col gap-0.5">
-                              <span className="text-sm text-gray-600">
+                              <span className="text-xs font-medium text-gray-600">
                                 {formatDate(cabin.expiryDate)}
                               </span>
                               {countdown > 0 && (
-                                <span className={`text-[10px] font-mono font-medium flex items-center gap-1 ${getCountdownColor(countdown)}`}>
+                                <span className={`text-[10px] font-mono font-bold flex items-center gap-1 ${getCountdownColor(countdown)}`}>
                                   <Timer size={10} />
                                   {formatCountdown(countdown)}
                                 </span>
                               )}
                               {isExpired && (
-                                <span className="text-[10px] text-red-500 font-medium">🔴 Expired</span>
+                                <span className="text-[10px] text-red-500 font-bold">🔴 Expired</span>
                               )}
                             </div>
                           ) : (
-                            <span className="text-sm text-gray-400">N/A</span>
+                            <span className="text-xs text-gray-400">—</span>
                           )}
                         </td>
-                        <td className="p-4">
-                          <div className="flex items-center gap-1 flex-nowrap">
+                        <td className="text-center" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center justify-center gap-1.5">
                             <button
                               onClick={() => openGallery(cabin)}
-                              className="p-1.5 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors"
-                              title="Gallery"
+                              className="w-8 h-8 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-600 hover:text-white transition-colors flex items-center justify-center shadow-sm"
+                              title="Photos"
                             >
-                              <Images size={14} />
+                              <Images size={13} />
                             </button>
                             <button
                               onClick={() => navigate(`/cabin/${cabin._id}`)}
-                              className="p-1.5 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors"
-                              title="View"
+                              className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white transition-colors flex items-center justify-center shadow-sm"
+                              title="View Details"
                             >
-                              <Eye size={14} />
+                              <Eye size={13} />
                             </button>
                             <button
                               onClick={() => openEditModal(cabin)}
-                              className="p-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors"
-                              title="Edit"
+                              className="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-600 hover:text-white transition-colors flex items-center justify-center shadow-sm"
+                              title="Edit Cabin"
                             >
-                              <Pencil size={14} />
+                              <Pencil size={13} />
                             </button>
                             <button
                               onClick={(e) => handleDelete(e, cabin._id)}
-                              className="p-1.5 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-colors"
-                              title="Delete"
+                              className="w-8 h-8 rounded-lg bg-red-50 text-red-700 hover:bg-red-600 hover:text-white transition-colors flex items-center justify-center shadow-sm"
+                              title="Delete Cabin"
                             >
-                              <Trash2 size={14} />
+                              <Trash2 size={13} />
                             </button>
                           </div>
                         </td>
@@ -1723,37 +1777,126 @@ const AdminCabins = () => {
                   })}
                 </tbody>
               </table>
-            )}
-          </div>
+            </div>
+          ) : (
+            /* ─── GRID CARD VIEW ─── */
+            <div className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+              {filteredCabins.map((cabin) => {
+                const isActive = cabin.isActive === true;
+                const isExclusive = cabin.cabinType === 'exclusive';
+                const isChamber = cabin.isChamber || false;
+                const cabinImages = getAllImageUrls(cabin);
 
-          {/* Footer */}
+                return (
+                  <div
+                    key={cabin._id}
+                    className="admin-dash__card flex flex-col h-full hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-200 hover:border-indigo-300"
+                  >
+                    {/* Top Slider */}
+                    <div className="relative h-44 bg-gray-100">
+                      <ImageSlider
+                        images={cabinImages}
+                        alt={cabin.name}
+                        onImageClick={() => openGallery(cabin)}
+                      />
+                      <div className="absolute top-2.5 right-2.5 flex flex-col gap-1 items-end z-10 pointer-events-none">
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold shadow ${
+                          isChamber ? 'bg-emerald-600 text-white' : 'bg-blue-600 text-white'
+                        }`}>
+                          {isChamber ? 'Medical' : 'Co-Working'}
+                        </span>
+                        {isExclusive && (
+                          <span className="bg-amber-500 text-white px-2 py-0.5 rounded-full text-[9px] font-bold shadow flex items-center gap-0.5">
+                            <Crown size={9} /> Exclusive
+                          </span>
+                        )}
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold shadow ${
+                          isActive ? 'bg-emerald-500 text-white' : 'bg-gray-600 text-white'
+                        }`}>
+                          {isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Card Content */}
+                    <div className="p-4 flex flex-col flex-1">
+                      <h3 className="font-bold text-gray-900 text-sm leading-snug line-clamp-1 mb-1">
+                        {cabin.name || 'N/A'}
+                      </h3>
+                      <div className="flex items-center gap-1 text-xs text-gray-500 mb-3">
+                        <MapPin size={12} className="text-gray-400 flex-shrink-0" />
+                        <span className="truncate">{cabin.address?.split(",")[0] || "Location"}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs text-gray-600 mb-4 bg-gray-50 p-2.5 rounded-xl">
+                        <span className="font-bold text-gray-900 text-sm">₹{cabin.price || 0}<span className="text-[10px] text-gray-400 font-normal">/hr</span></span>
+                        <span className="flex items-center gap-1 font-semibold text-gray-700">
+                          <Users size={12} className="text-gray-400" />
+                          {cabin.capacity || 0} Seats
+                        </span>
+                      </div>
+
+                      <div className="mt-auto pt-2 border-t border-gray-100 flex items-center justify-between gap-1.5">
+                        <button
+                          onClick={() => navigate(`/cabin/${cabin._id}`)}
+                          className="flex-1 py-1.5 rounded-lg text-xs font-bold bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-colors text-center"
+                        >
+                          View Details
+                        </button>
+                        <button
+                          onClick={() => openEditModal(cabin)}
+                          className="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-600 hover:text-white transition-colors flex items-center justify-center shadow-sm"
+                          title="Edit"
+                        >
+                          <Pencil size={13} />
+                        </button>
+                        <button
+                          onClick={(e) => handleDelete(e, cabin._id)}
+                          className="w-8 h-8 rounded-lg bg-red-50 text-red-700 hover:bg-red-600 hover:text-white transition-colors flex items-center justify-center shadow-sm"
+                          title="Delete"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Footer Summary */}
           {!loading && filteredCabins.length > 0 && (
-            <div className="px-4 py-3 border-t border-gray-100 rounded-b-2xl flex flex-wrap items-center justify-between gap-2" style={{ backgroundColor: '#fafafa' }}>
-              <span className="text-xs text-gray-500">
+            <div className="px-4 py-3 border-t border-gray-100 rounded-b-2xl flex flex-wrap items-center justify-between gap-2.5 bg-gray-50/60">
+              <span className="text-xs text-gray-500 font-medium">
                 Showing <strong>{filteredCabins.length}</strong> of <strong>{cabins.length}</strong> cabins
               </span>
-              <div className="flex items-center gap-3 text-xs text-gray-500">
-                <span className="flex items-center gap-1">
+              <div className="flex items-center flex-wrap gap-3 text-xs text-gray-600">
+                <span className="flex items-center gap-1.5 font-medium">
                   <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                  Active: {activeCount}
+                  Active: <strong className="text-gray-800">{activeCount}</strong>
                 </span>
-                <span className="flex items-center gap-1">
+                <span className="flex items-center gap-1.5 font-medium">
                   <span className="w-2 h-2 rounded-full bg-gray-400"></span>
-                  Inactive: {inactiveCount}
+                  Inactive: <strong className="text-gray-800">{inactiveCount}</strong>
                 </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                  Exclusive: {exclusiveCount}
+                <span className="flex items-center gap-1.5 font-medium">
+                  <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                  Medical: <strong className="text-gray-800">{medicalCount}</strong>
                 </span>
-                <span className="flex items-center gap-1">
+                <span className="flex items-center gap-1.5 font-medium">
                   <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                  Normal: {normalCount}
+                  Co-Working: <strong className="text-gray-800">{coworkingCount}</strong>
+                </span>
+                <span className="flex items-center gap-1.5 font-medium">
+                  <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                  Exclusive: <strong className="text-gray-800">{exclusiveCount}</strong>
                 </span>
               </div>
             </div>
           )}
         </div>
-      </div>
+      </main>
 
       {/* Address Popup */}
       {addressPopup.show && (

@@ -71,6 +71,7 @@ import CafeProfile from "./components/CafeProfile";
 import CafeRevenue from "./components/CafeRevenue";
 import CafeWallet from "./components/CafeWallet";
 import MyCafePayments from "./components/MyCafePayments";
+import AttendanceList from "./components/AttendanceList.jsx";
 
 function App() {
   return (
@@ -134,6 +135,7 @@ function App() {
         {/* <Route path="/doctorbookings" element={<UserRoute><CabinBookings /></UserRoute>}></Route> */}
         <Route path="/cabin-bookings" element={<UserRoute><CabinBookings /></UserRoute>}></Route>
         <Route path="/dashboard" element={<AdminRoute><Dashboard /></AdminRoute>}></Route>
+        <Route path ="/attendance" element={<UserRoute><AttendanceList /></UserRoute>}></Route>
         <Route path="/ownerdashboard" element={<UserRoute><UserDashboard /></UserRoute>}></Route>
         <Route path ="/admincabin" element={<AdminRoute><AdminCabins /></AdminRoute>}></Route>
         <Route path ="/cabinpayments" element={<AdminRoute><AllCabinPayments /></AdminRoute>}></Route>

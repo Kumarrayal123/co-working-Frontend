@@ -48,7 +48,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import DoctorNavbar from "./DoctorNavbar";
-import "./Dashboard.css";
+import "./DoctorProfile.css";
 
 const API_URL = "https://spaceapi.iryax.com";
 
@@ -594,25 +594,28 @@ const DoctorProfile = () => {
 
   if (loading) {
     return (
-      <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
+      <div className="doctor-profile">
         <DoctorNavbar />
-        <div className="flex justify-center items-center h-64">
-          <div className="w-12 h-12 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin" />
-        </div>
+        <main>
+          <div className="doctor-profile__loading">
+            <div className="doctor-profile__spinner" />
+            <p className="doctor-profile__loading-text">Loading profile...</p>
+          </div>
+        </main>
       </div>
     );
   }
 
   if (!profile) {
     return (
-      <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
+      <div className="doctor-profile">
         <DoctorNavbar />
-        <div className="pt-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
-          <div className="flex flex-col items-center justify-center gap-4 py-20 text-gray-400">
-            <User size={48} className="opacity-20" />
-            <p className="text-lg font-medium">No profile data found</p>
+        <main>
+          <div className="doctor-profile__empty">
+            <User size={48} className="doctor-profile__empty-icon" />
+            <p className="doctor-profile__empty-text">No profile data found</p>
           </div>
-        </div>
+        </main>
       </div>
     );
   }
@@ -640,23 +643,23 @@ const DoctorProfile = () => {
   ];
 
   return (
-    <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
+    <div className="doctor-profile">
       <DoctorNavbar />
 
-      <div className="pt-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
+      <main>
         {/* Header */}
-        <div className="admin-dash__header mb-6">
+        <div className="doctor-profile__header">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">
-              Doctor <span className="text-indigo-600">Profile</span>
+            <h1 className="doctor-profile__greeting">
+              Doctor <span>Profile</span>
             </h1>
           </div>
         </div>
 
         {/* Profile Completion Card */}
-        <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 rounded-2xl border border-indigo-200 shadow-sm p-4 sm:p-6 mb-6">
-          <div className="flex flex-col md:flex-row md:items-center gap-6">
-            <div className="flex-shrink-0 flex justify-center">
+        <div className="doctor-profile__completion">
+          <div className="doctor-profile__completion-content">
+            <div className="doctor-profile__completion-progress">
               <CircularProgress 
                 percentage={animatedPercentage || completionPercentage} 
                 size={140} 
@@ -664,36 +667,36 @@ const DoctorProfile = () => {
               />
             </div>
 
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
+            <div className="doctor-profile__completion-info">
+              <div className="doctor-profile__completion-title">
                 <span className="text-2xl">{getCompletionEmoji(completionPercentage)}</span>
-                <h3 className="text-base font-semibold text-gray-800">Profile Completion</h3>
+                <h3>Profile Completion</h3>
               </div>
               
-              <div className="flex flex-wrap items-center gap-3 mt-2">
-                <div className="flex items-center gap-2 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-xl border border-gray-200 shadow-sm">
-                  <span className="text-xs font-medium text-gray-500">Completed:</span>
-                  <span className="text-base font-bold text-indigo-600">{completionPercentage}%</span>
+              <div className="doctor-profile__completion-stats">
+                <div className="doctor-profile__completion-stat">
+                  <span className="doctor-profile__completion-stat-label">Completed:</span>
+                  <span className="doctor-profile__completion-stat-value">{completionPercentage}%</span>
                 </div>
-                <div className="flex items-center gap-2 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-xl border border-gray-200 shadow-sm">
-                  <span className="text-xs font-medium text-gray-500">Pending:</span>
-                  <span className="text-base font-bold text-amber-600">{missingFields.length}</span>
+                <div className="doctor-profile__completion-stat">
+                  <span className="doctor-profile__completion-stat-label">Pending:</span>
+                  <span className="doctor-profile__completion-stat-value--amber">{missingFields.length}</span>
                 </div>
-                <div className="flex items-center gap-2 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-xl border border-gray-200 shadow-sm">
-                  <span className="text-xs font-medium text-gray-500">Verified Docs:</span>
-                  <span className="text-base font-bold text-emerald-600">{verifiedDocs}/{totalDocs}</span>
+                <div className="doctor-profile__completion-stat">
+                  <span className="doctor-profile__completion-stat-label">Verified Docs:</span>
+                  <span className="doctor-profile__completion-stat-value--emerald">{verifiedDocs}/{totalDocs}</span>
                 </div>
               </div>
 
               {missingFields.length > 0 && (
-                <div className="mt-3 flex flex-wrap items-center gap-2 bg-white/60 backdrop-blur-sm px-3 py-2 rounded-xl border border-amber-200">
-                  <AlertTriangle size={16} className="text-amber-500 flex-shrink-0" />
-                  <p className="text-sm text-gray-700">
-                    <span className="font-semibold text-amber-600">{missingFields.length}</span> fields remaining to complete your profile
+                <div className="doctor-profile__completion-alert">
+                  <AlertTriangle size={16} className="text-amber-500" />
+                  <p className="doctor-profile__completion-alert-text">
+                    <strong>{missingFields.length}</strong> fields remaining to complete your profile
                   </p>
                   <button
                     onClick={openEditPopup}
-                    className="inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-800 transition-colors ml-2"
+                    className="doctor-profile__completion-link"
                   >
                     Complete Now <ArrowRight size={14} />
                   </button>
@@ -701,102 +704,93 @@ const DoctorProfile = () => {
               )}
               
               {missingFields.length === 0 && (
-                <div className="mt-3 flex items-center gap-2 bg-emerald-50 px-3 py-2 rounded-xl border border-emerald-200">
+                <div className="doctor-profile__completion-alert doctor-profile__completion-alert--success">
                   <CheckCircle size={16} className="text-emerald-500" />
-                  <p className="text-sm font-medium text-emerald-700">Your profile is 100% complete! 🎉</p>
+                  <p className="doctor-profile__completion-alert-text">Your profile is 100% complete! 🎉</p>
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* QUICK ACTION BUTTONS - ALAG DIV MEIN, PERCENTAGE KE NICHE */}
-        <div className="mb-6">
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
-                <ArrowRight size={16} className="text-indigo-600" />
-              </div>
-              <h3 className="text-sm font-semibold text-gray-700">Quick Actions</h3>
+        {/* QUICK ACTION BUTTONS */}
+        <div className="doctor-profile__quick-actions">
+          <div className="doctor-profile__quick-actions-header">
+            <div className="doctor-profile__quick-actions-icon">
+              <ArrowRight size={16} />
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-              <button
-                onClick={() => navigate("/chamberbookings")}
-                className="flex items-center justify-center gap-2 px-3 py-3 bg-indigo-50 text-indigo-700 rounded-xl text-sm font-medium hover:bg-indigo-100 transition-colors border border-indigo-200 hover:shadow-md"
-              >
-                <Calendar size={18} className="text-indigo-500" />
-                <span className="hidden sm:inline">Own Cabin Bookings</span>
-                <span className="sm:hidden">Bookings</span>
-              </button>
-              <button
-                onClick={() => navigate("/mychambers")}
-                className="flex items-center justify-center gap-2 px-3 py-3 bg-emerald-50 text-emerald-700 rounded-xl text-sm font-medium hover:bg-emerald-100 transition-colors border border-emerald-200 hover:shadow-md"
-              >
-                <Home size={18} className="text-emerald-500" />
-                <span className="hidden sm:inline">Own Cabins</span>
-                <span className="sm:hidden">Cabins</span>
-              </button>
-              <button
-                onClick={() => navigate("/myrevenue")}
-                className="flex items-center justify-center gap-2 px-3 py-3 bg-cyan-50 text-cyan-700 rounded-xl text-sm font-medium hover:bg-cyan-100 transition-colors border border-cyan-200 hover:shadow-md"
-              >
-                <BarChart3 size={18} className="text-cyan-500" />
-                <span className="hidden sm:inline">Revenue</span>
-                <span className="sm:hidden">Revenue</span>
-              </button>
-              <button
-                onClick={() => navigate("/doctorwallet")}
-                className="flex items-center justify-center gap-2 px-3 py-3 bg-amber-50 text-amber-700 rounded-xl text-sm font-medium hover:bg-amber-100 transition-colors border border-amber-200 hover:shadow-md"
-              >
-                <Wallet size={18} className="text-amber-500" />
-                <span className="hidden sm:inline">Wallet</span>
-                <span className="sm:hidden">Wallet</span>
-              </button>
-              <button
-                onClick={() => navigate("/mychamberpayments")}
-                className="flex items-center justify-center gap-2 px-3 py-3 bg-purple-50 text-purple-700 rounded-xl text-sm font-medium hover:bg-purple-100 transition-colors border border-purple-200 hover:shadow-md"
-              >
-                <CreditCard size={18} className="text-purple-500" />
-                <span className="hidden sm:inline">Cabin Billings</span>
-                <span className="sm:hidden">Payments</span>
-              </button>
-            </div>
+            <h3>Quick Actions</h3>
+          </div>
+          <div className="doctor-profile__quick-actions-grid">
+            <button
+              onClick={() => navigate("/chamberbookings")}
+              className="doctor-profile__quick-action-btn"
+            >
+              <Calendar size={18} />
+              <span>Own Cabin Bookings</span>
+            </button>
+            <button
+              onClick={() => navigate("/mychambers")}
+              className="doctor-profile__quick-action-btn doctor-profile__quick-action-btn--emerald"
+            >
+              <Home size={18} />
+              <span>Own Cabins</span>
+            </button>
+            <button
+              onClick={() => navigate("/myrevenue")}
+              className="doctor-profile__quick-action-btn doctor-profile__quick-action-btn--cyan"
+            >
+              <BarChart3 size={18} />
+              <span>Revenue</span>
+            </button>
+            <button
+              onClick={() => navigate("/doctorwallet")}
+              className="doctor-profile__quick-action-btn doctor-profile__quick-action-btn--amber"
+            >
+              <Wallet size={18} />
+              <span>Wallet</span>
+            </button>
+            <button
+              onClick={() => navigate("/mychamberpayments")}
+              className="doctor-profile__quick-action-btn doctor-profile__quick-action-btn--purple"
+            >
+              <CreditCard size={18} />
+              <span>Cabin Billings</span>
+            </button>
           </div>
         </div>
 
         {/* Profile Card */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-          <div className="h-32 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 relative">
-            <div className="absolute -bottom-12 left-6 sm:left-8">
-              <div className="w-24 h-24 rounded-full bg-white border-4 border-white shadow-lg flex items-center justify-center">
-                <span className="text-3xl font-bold text-indigo-600">
-                  {profile.name?.charAt(0)?.toUpperCase() || 'U'}
-                </span>
-              </div>
+        <div className="doctor-profile__card">
+          <div className="doctor-profile__card-header">
+            <div className="doctor-profile__avatar">
+              <span className="doctor-profile__avatar-text">
+                {profile.name?.charAt(0)?.toUpperCase() || 'U'}
+              </span>
             </div>
-            <div className="absolute bottom-4 right-4 flex flex-wrap items-center gap-2">
-              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border bg-white/90 backdrop-blur-sm ${statusBadge.color}`}>
+            <div className="doctor-profile__badges">
+              <span className={`doctor-profile__badge ${statusBadge.color}`}>
                 {statusBadge.icon}
                 {statusBadge.label}
               </span>
-              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border bg-white/90 backdrop-blur-sm ${roleBadge.color}`}>
+              <span className={`doctor-profile__badge ${roleBadge.color}`}>
                 {roleBadge.label}
               </span>
             </div>
           </div>
 
-          <div className="pt-14 px-4 sm:px-6 pb-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="doctor-profile__card-body">
+            <div className="doctor-profile__card-header-content">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">{profile.name}</h2>
-                <p className="text-sm text-gray-500 flex items-center gap-1.5 mt-0.5">
-                  <Mail size={14} className="text-gray-400" />
+                <h2 className="doctor-profile__name">{profile.name}</h2>
+                <p className="doctor-profile__email">
+                  <Mail size={14} />
                   {profile.email}
                 </p>
               </div>
               <button
                 onClick={openEditPopup}
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-sm font-medium hover:bg-indigo-100 transition-colors border border-indigo-200"
+                className="doctor-profile__edit-btn"
               >
                 <Edit size={14} />
                 Edit Profile
@@ -804,76 +798,76 @@ const DoctorProfile = () => {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Role</p>
-                <p className="text-lg font-bold text-gray-900 mt-1 capitalize">{profile.role}</p>
+            <div className="doctor-profile__stats">
+              <div className="doctor-profile__stat">
+                <p className="doctor-profile__stat-label">Role</p>
+                <p className="doctor-profile__stat-value capitalize">{profile.role}</p>
               </div>
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Status</p>
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-full border mt-1 ${statusBadge.color}`}>
+              <div className="doctor-profile__stat">
+                <p className="doctor-profile__stat-label">Status</p>
+                <span className={`doctor-profile__badge ${statusBadge.color} mt-1`}>
                   {statusBadge.icon}
                   {statusBadge.label}
                 </span>
               </div>
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Member Since</p>
-                <p className="text-sm font-medium text-gray-900 mt-1">{formatDate(profile.createdAt)}</p>
+              <div className="doctor-profile__stat">
+                <p className="doctor-profile__stat-label">Member Since</p>
+                <p className="doctor-profile__stat-value">{formatDate(profile.createdAt)}</p>
               </div>
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">User ID</p>
-                <p className="text-xs font-mono text-gray-600 mt-1">#{profile._id.slice(-8).toUpperCase()}</p>
+              <div className="doctor-profile__stat">
+                <p className="doctor-profile__stat-label">User ID</p>
+                <p className="doctor-profile__stat-value doctor-profile__stat-value--mono">#{profile._id.slice(-8).toUpperCase()}</p>
               </div>
             </div>
 
             {/* Profile Details */}
-            <div className="mt-6 border-t border-gray-200 pt-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
-                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2 pb-3 border-b border-gray-200">
-                    <User size={14} className="text-indigo-600" /> Personal Information
+            <div className="doctor-profile__details">
+              <div className="doctor-profile__details-grid">
+                <div className="doctor-profile__detail-section">
+                  <h3 className="doctor-profile__detail-header">
+                    <User size={14} className="doctor-profile__detail-icon" /> Personal Information
                   </h3>
                   <div className="space-y-3 mt-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0">
+                    <div className="doctor-profile__detail-item">
+                      <div className="doctor-profile__detail-item-icon bg-indigo-100">
                         <User size={14} className="text-indigo-600" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Full Name</p>
-                        <p className="font-medium text-gray-800 text-sm truncate">
+                        <p className="doctor-profile__detail-item-label">Full Name</p>
+                        <p className="doctor-profile__detail-item-value truncate">
                           {profile.name || '⚠️ Not provided'}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                    <div className="doctor-profile__detail-item">
+                      <div className="doctor-profile__detail-item-icon bg-blue-100">
                         <Mail size={14} className="text-blue-600" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Email</p>
-                        <p className="font-medium text-gray-800 text-sm truncate">
+                        <p className="doctor-profile__detail-item-label">Email</p>
+                        <p className="doctor-profile__detail-item-value truncate">
                           {profile.email || '⚠️ Not provided'}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                    <div className="doctor-profile__detail-item">
+                      <div className="doctor-profile__detail-item-icon bg-emerald-100">
                         <Phone size={14} className="text-emerald-600" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Mobile</p>
-                        <p className="font-medium text-gray-800 text-sm">
+                        <p className="doctor-profile__detail-item-label">Mobile</p>
+                        <p className="doctor-profile__detail-item-value">
                           {profile.mobile || '⚠️ Not provided'}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-yellow-100 flex items-center justify-center flex-shrink-0">
+                    <div className="doctor-profile__detail-item">
+                      <div className="doctor-profile__detail-item-icon bg-yellow-100">
                         <MapPin size={14} className="text-yellow-600" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Address</p>
-                        <p className="font-medium text-gray-800 text-sm">
+                        <p className="doctor-profile__detail-item-label">Address</p>
+                        <p className="doctor-profile__detail-item-value">
                           {profile.address || '⚠️ Not provided'}
                         </p>
                       </div>
@@ -881,51 +875,51 @@ const DoctorProfile = () => {
                   </div>
                 </div>
 
-                <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
-                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2 pb-3 border-b border-gray-200">
-                    <Building2 size={14} className="text-purple-600" /> Organization Details
+                <div className="doctor-profile__detail-section">
+                  <h3 className="doctor-profile__detail-header">
+                    <Building2 size={14} className="doctor-profile__detail-icon" /> Organization Details
                   </h3>
                   <div className="space-y-3 mt-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
+                    <div className="doctor-profile__detail-item">
+                      <div className="doctor-profile__detail-item-icon bg-purple-100">
                         <Building2 size={14} className="text-purple-600" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Organization</p>
-                        <p className="font-medium text-gray-800 text-sm truncate">
+                        <p className="doctor-profile__detail-item-label">Organization</p>
+                        <p className="doctor-profile__detail-item-value truncate">
                           {profile.organizationName || '⚠️ Not provided'}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center flex-shrink-0">
+                    <div className="doctor-profile__detail-item">
+                      <div className="doctor-profile__detail-item-icon bg-orange-100">
                         <FileText size={14} className="text-orange-600" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">GST Number</p>
-                        <p className="font-medium text-gray-800 text-sm">
+                        <p className="doctor-profile__detail-item-label">GST Number</p>
+                        <p className="doctor-profile__detail-item-value">
                           {profile.gstNumber || '⚠️ Not provided'}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
+                    <div className="doctor-profile__detail-item">
+                      <div className="doctor-profile__detail-item-icon bg-red-100">
                         <Clipboard size={14} className="text-red-600" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">DMHO Number</p>
-                        <p className="font-medium text-gray-800 text-sm">
+                        <p className="doctor-profile__detail-item-label">DMHO Number</p>
+                        <p className="doctor-profile__detail-item-value">
                           {profile.dmhoNumber || '⚠️ Not provided'}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0">
+                    <div className="doctor-profile__detail-item">
+                      <div className="doctor-profile__detail-item-icon bg-indigo-100">
                         <Clipboard size={14} className="text-indigo-600" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">PAN Number</p>
-                        <p className="font-medium text-gray-800 text-sm">
+                        <p className="doctor-profile__detail-item-label">PAN Number</p>
+                        <p className="doctor-profile__detail-item-value">
                           {profile.panNumber || '⚠️ Not provided'}
                         </p>
                       </div>
@@ -935,19 +929,19 @@ const DoctorProfile = () => {
               </div>
             </div>
 
-            {/* Document Verification - WITH VIEW & DOWNLOAD */}
+            {/* Document Verification */}
             {profile.role === 'doctor' && (
-              <div className="mt-6 border-t border-gray-200 pt-6">
-                <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
-                  <div className="flex items-center justify-between pb-3 border-b border-gray-200">
-                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                      <Upload size={14} className="text-indigo-600" /> Document Verification
+              <div className="doctor-profile__documents">
+                <div className="doctor-profile__documents-section">
+                  <div className="doctor-profile__documents-header">
+                    <h3 className="doctor-profile__documents-header">
+                      <Upload size={14} className="doctor-profile__detail-icon" /> Document Verification
                     </h3>
-                    <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+                    <span className="doctor-profile__documents-count">
                       {verifiedDocs}/{totalDocs} Verified
                     </span>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4">
+                  <div className="doctor-profile__documents-grid">
                     {docConfigs.map((doc) => {
                       const docKey = doc.key;
                       const docPath = profile[docKey];
@@ -955,39 +949,39 @@ const DoctorProfile = () => {
                       const statusBadge = getDocStatusBadge(docStatus);
                       
                       return (
-                        <div key={docKey} className="flex items-center justify-between p-3 bg-white rounded-xl border border-gray-100 hover:border-indigo-200 transition-colors">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <div className={`w-8 h-8 rounded-lg ${doc.bgColor} flex items-center justify-center flex-shrink-0`}>
+                        <div key={docKey} className="doctor-profile__document-item">
+                          <div className="doctor-profile__document-info">
+                            <div className={`doctor-profile__document-icon ${doc.bgColor}`}>
                               {doc.icon}
                             </div>
                             <div className="min-w-0">
-                              <p className="text-xs font-medium text-gray-700 truncate">{doc.label}</p>
-                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-medium border ${statusBadge.color}`}>
+                              <p className="doctor-profile__document-label truncate">{doc.label}</p>
+                              <span className={`doctor-profile__document-status ${statusBadge.color}`}>
                                 {statusBadge.icon}
                                 {statusBadge.label}
                               </span>
                             </div>
                           </div>
-                          <div className="flex items-center gap-1 flex-shrink-0">
+                          <div className="doctor-profile__document-actions">
                             {docPath ? (
                               <>
                                 <button
                                   onClick={() => openDocView(doc.label, docPath, docStatus, 'image')}
-                                  className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors border border-indigo-200"
+                                  className="doctor-profile__document-action-btn"
                                   title="View Document"
                                 >
                                   <EyeIcon size={14} />
                                 </button>
                                 <button
                                   onClick={() => downloadDocument(docPath, doc.label)}
-                                  className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors border border-emerald-200"
+                                  className="doctor-profile__document-action-btn doctor-profile__document-action-btn--download"
                                   title="Download Document"
                                 >
                                   <Download size={14} />
                                 </button>
                               </>
                             ) : (
-                              <span className="text-[8px] text-gray-400 font-medium">Not uploaded</span>
+                              <span className="doctor-profile__document-not-uploaded">Not uploaded</span>
                             )}
                           </div>
                         </div>
@@ -999,7 +993,7 @@ const DoctorProfile = () => {
             )}
           </div>
         </div>
-      </div>
+      </main>
 
       {/* ====================== */}
       {/* DOCUMENT VIEW POPUP WITH DOWNLOAD */}

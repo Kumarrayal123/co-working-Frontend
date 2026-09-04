@@ -46,10 +46,6 @@ import {
   Receipt,
   CreditCard,
   AlertCircle,
-  Percent,
-  Sparkles,
-  Zap,
-  Gift,
   Coffee,
   Dumbbell,
   Fan,
@@ -73,7 +69,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import DoctorNavbar from "./DoctorNavbar";
-import "./Dashboard.css";
+import "./UserDashboard.css";
 
 const API_URL = "https://spaceapi.iryax.com";
 const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
@@ -83,9 +79,6 @@ const ALL_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep
 const DoctorDashboard = () => {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
-  const [completionPercentage, setCompletionPercentage] = useState(0);
-  const [missingFields, setMissingFields] = useState([]);
-  const [animatedPercentage, setAnimatedPercentage] = useState(0);
   
   const [dashboardData, setDashboardData] = useState({
     totalBookings: 0,
@@ -165,86 +158,6 @@ const DoctorDashboard = () => {
     return userId;
   };
 
-  // Calculate profile completion percentage
-  const calculateCompletion = (userData) => {
-    const fields = [
-      { key: 'name', label: 'Full Name', required: true },
-      { key: 'email', label: 'Email Address', required: true },
-      { key: 'mobile', label: 'Mobile Number', required: true },
-      { key: 'address', label: 'Address', required: true },
-      { key: 'organizationName', label: 'Organization Name', required: false },
-      { key: 'gstNumber', label: 'GST Number', required: false },
-      { key: 'dmhoNumber', label: 'DMHO Number', required: false },
-      { key: 'panNumber', label: 'PAN Number', required: false },
-      { key: 'adharCardStatus', label: 'Aadhar Card', required: false, isDoc: true },
-      { key: 'panCardStatus', label: 'PAN Card', required: false, isDoc: true },
-      { key: 'mbbsCertificateStatus', label: 'MBBS Certificate', required: false, isDoc: true },
-      { key: 'pmcRegistrationStatus', label: 'PMC Registration', required: false, isDoc: true },
-      { key: 'nmrIdStatus', label: 'NMR ID', required: false, isDoc: true },
-    ];
-
-    let completed = 0;
-    let total = 0;
-    const missing = [];
-
-    fields.forEach(field => {
-      const value = userData[field.key];
-      
-      if (field.isDoc) {
-        if (value === 'approved') {
-          completed++;
-        }
-        total++;
-        if (value !== 'approved') {
-          missing.push(field.label);
-        }
-      } else {
-        if (field.required) {
-          total++;
-          if (value && value.toString().trim() !== '') {
-            completed++;
-          } else {
-            missing.push(field.label);
-          }
-        } else {
-          if (value && value.toString().trim() !== '') {
-            completed++;
-          }
-          total++;
-        }
-      }
-    });
-
-    let percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
-    
-    if (userData._id && percentage < 10) {
-      percentage = 10;
-    }
-
-    return { percentage, missing };
-  };
-
-  // Animate percentage on load
-  useEffect(() => {
-    if (completionPercentage > 0) {
-      let start = 0;
-      const duration = 1500;
-      const step = Math.max(1, Math.floor(completionPercentage / 60));
-      
-      const timer = setInterval(() => {
-        start += step;
-        if (start >= completionPercentage) {
-          setAnimatedPercentage(completionPercentage);
-          clearInterval(timer);
-        } else {
-          setAnimatedPercentage(start);
-        }
-      }, 20);
-      
-      return () => clearInterval(timer);
-    }
-  }, [completionPercentage]);
-
   // Fetch profile for completion
   const fetchProfile = async (userId) => {
     try {
@@ -258,9 +171,6 @@ const DoctorDashboard = () => {
 
       if (res.data.success && res.data.user) {
         setProfile(res.data.user);
-        const { percentage, missing } = calculateCompletion(res.data.user);
-        setCompletionPercentage(percentage);
-        setMissingFields(missing);
       }
     } catch (err) {
       console.error("Error fetching profile:", err);
@@ -550,7 +460,8 @@ const DoctorDashboard = () => {
   };
 
   const formatCurrency = (amount) => {
-    return `₹${amount.toLocaleString('en-IN')}`;
+    const value = Number(amount || 0);
+    return `₹${value.toLocaleString('en-IN')}`;
   };
 
   const formatDate = (dateStr) => {
@@ -588,78 +499,6 @@ const DoctorDashboard = () => {
     return { status: 'Inactive', color: 'gray' };
   };
 
-  // Circular Progress Component
-  const CircularProgress = ({ percentage, size = 100, strokeWidth = 8 }) => {
-    const radius = (size - strokeWidth) / 2;
-    const circumference = radius * 2 * Math.PI;
-    const offset = circumference - (percentage / 100) * circumference;
-    
-    const getColor = (p) => {
-      if (p >= 80) return '#10b981';
-      if (p >= 50) return '#f59e0b';
-      return '#ef4444';
-    };
-    const color = getColor(percentage);
-
-    return (
-      <div className="relative inline-flex items-center justify-center">
-        <svg
-          width={size}
-          height={size}
-          className="transform -rotate-90"
-        >
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            stroke="#e5e7eb"
-            strokeWidth={strokeWidth}
-            fill="none"
-          />
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            stroke={color}
-            strokeWidth={strokeWidth}
-            fill="none"
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            strokeDashoffset={offset}
-            className="transition-all duration-500 ease-in-out"
-          />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-xl font-bold" style={{ color: color }}>
-            {percentage}%
-          </span>
-          <span className="text-[7px] font-medium text-gray-500 uppercase tracking-wider">
-            Complete
-          </span>
-        </div>
-      </div>
-    );
-  };
-
-  const getCompletionColor = (percentage) => {
-    if (percentage >= 80) return 'text-emerald-600';
-    if (percentage >= 50) return 'text-yellow-600';
-    return 'text-red-500';
-  };
-
-  const getCompletionBgColor = (percentage) => {
-    if (percentage >= 80) return 'bg-emerald-500';
-    if (percentage >= 50) return 'bg-yellow-500';
-    return 'bg-red-500';
-  };
-
-  const getCompletionEmoji = (percentage) => {
-    if (percentage >= 80) return '🎉';
-    if (percentage >= 50) return '📈';
-    if (percentage >= 30) return '📝';
-    return '⚠️';
-  };
-
   // Handle mouse enter on bar
   const handleBarHover = (item, index, event) => {
     setHoveredBar({ item, index });
@@ -675,11 +514,11 @@ const DoctorDashboard = () => {
 
   if (loading) {
     return (
-      <div className="admin-dash">
+      <div className="user-dash">
         <DoctorNavbar />
-        <div className="admin-dash__loading">
-          <div className="admin-dash__spinner" />
-          <p className="admin-dash__loading-text">Loading dashboard analytics...</p>
+        <div className="user-dash__loading">
+          <div className="user-dash__spinner" />
+          <p className="user-dash__loading-text">Loading dashboard analytics...</p>
         </div>
       </div>
     );
@@ -687,11 +526,17 @@ const DoctorDashboard = () => {
 
   if (error) {
     return (
-      <div className="admin-dash">
+      <div className="user-dash">
         <DoctorNavbar />
-        <div className="admin-dash__error">
-          <p className="admin-dash__error-title">Oops!</p>
-          <p className="admin-dash__error-message">{error}</p>
+        <div className="user-dash__error">
+          <p className="user-dash__error-title">Oops!</p>
+          <p className="user-dash__error-message">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="user-dash__btn user-dash__btn--primary"
+          >
+            Retry
+          </button>
         </div>
       </div>
     );
@@ -749,7 +594,7 @@ const DoctorDashboard = () => {
     {
       label: "Total Spent",
       value: formatCurrency(totalSpent),
-      meta: `₹${monthlyStats?.spentThisMonth || 0} this month`,
+      meta: `${formatCurrency(monthlyStats?.spentThisMonth || 0)} this month`,
       icon: IndianRupee,
       color: "purple"
     },
@@ -777,23 +622,23 @@ const DoctorDashboard = () => {
   const profileName = profile?.name || user?.name || 'Doctor';
 
   return (
-    <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
+    <div className="user-dash">
       <DoctorNavbar />
 
-      <div className="pt-20 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
+      <main className="pt-20 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
         {/* Header */}
-        <div className="admin-dash__header" style={{ marginBottom: "8px" }}>
+        <div className="user-dash__header">
           <div>
-            <h1 className="admin-dash__greeting" style={{ fontSize: "1.25rem" }}>
+            <h1 className="user-dash__greeting">
               My <span>Dashboard</span>
             </h1>
-            <p className="admin-dash__subtitle" style={{ fontSize: "11px" }}>
+            <p className="user-dash__subtitle">
               Welcome back, <span className="font-semibold text-gray-700">{profileName}</span>
             </p>
           </div>
           <div className="flex items-center gap-2">
             {activeBookingsCount > 0 && (
-              <span className="admin-dash__date-pill">
+              <span className="user-dash__date-pill">
                 <Activity size={14} />
                 {activeBookingsCount} Active
               </span>
@@ -801,108 +646,58 @@ const DoctorDashboard = () => {
           </div>
         </div>
 
-        {/* Profile Completion Card */}
-        <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 rounded-xl border border-indigo-200 shadow-sm p-3 sm:p-4 mb-5">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <div className="flex-shrink-0 flex justify-center">
-              <CircularProgress 
-                percentage={animatedPercentage || completionPercentage} 
-                size={80}
-                strokeWidth={7}
-              />
-            </div>
-
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-0.5">
-                <span className="text-lg">{getCompletionEmoji(completionPercentage)}</span>
-                <h3 className="text-xs font-semibold text-gray-800">Profile Completion</h3>
-              </div>
-              
-              <div className="flex flex-wrap items-center gap-1.5">
-                <div className="flex items-center gap-1 bg-white/80 backdrop-blur-sm px-2 py-0.5 rounded-lg border border-gray-200">
-                  <span className="text-[8px] font-medium text-gray-500">Completed:</span>
-                  <span className={`text-xs font-bold ${getCompletionColor(completionPercentage)}`}>{completionPercentage}%</span>
-                </div>
-                <div className="flex items-center gap-1 bg-white/80 backdrop-blur-sm px-2 py-0.5 rounded-lg border border-gray-200">
-                  <span className="text-[8px] font-medium text-gray-500">Pending:</span>
-                  <span className="text-xs font-bold text-amber-600">{missingFields.length}</span>
-                </div>
-              </div>
-
-              {missingFields.length > 0 && (
-                <div className="mt-1 flex flex-wrap items-center gap-1 bg-white/60 backdrop-blur-sm px-2 py-1 rounded-lg border border-amber-200">
-                  <AlertTriangle size={10} className="text-amber-500 flex-shrink-0" />
-                  <p className="text-[8px] text-gray-700">
-                    <span className="font-semibold text-amber-600">{missingFields.length}</span> fields remaining
-                  </p>
-                  <button
-                    onClick={() => navigate("/doctorprofile")}
-                    className="inline-flex items-center gap-0.5 text-[8px] font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
-                  >
-                    Complete Now <ArrowRight size={8} />
-                  </button>
-                </div>
-              )}
-              
-              {missingFields.length === 0 && (
-                <div className="mt-1 flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
-                  <CheckCircle size={10} className="text-emerald-500" />
-                  <p className="text-[8px] font-medium text-emerald-700">100% complete! 🎉</p>
-                </div>
-              )}
-            </div>
-            
-            <button
-              onClick={() => navigate("/doctorprofile")}
-              className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1.5 bg-indigo-600 text-white rounded-lg text-[10px] font-medium hover:bg-indigo-700 transition-colors shadow-sm shadow-indigo-200"
-            >
-              <User size={12} />
-              View Profile
-            </button>
-          </div>
-        </div>
-
         {/* Stats Cards */}
-        <div className="admin-dash__stats admin-dash__stats--six" style={{ marginBottom: "16px" }}>
-          {statsCards.map((stat, index) => (
-            <div
-              key={index}
-              className="admin-dash__stat"
-              onClick={stat.onClick}
-              title={stat.onClick ? "Click to view" : undefined}
-            >
-              <div className="admin-dash__stat-top">
-                <span className="admin-dash__stat-label" style={{ fontSize: "11px" }}>
-                  {stat.label}
-                </span>
-                <div className={`admin-dash__stat-icon admin-dash__stat-icon--${stat.color}`}>
-                  <stat.icon size={14} />
+        <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 md:gap-4 mb-6">
+          {statsCards.map((stat, index) => {
+            const clickable = Boolean(stat.onClick);
+            return (
+              <div
+                key={index}
+                className={[
+                  "user-dash__stat",
+                  clickable
+                    ? "cursor-pointer hover:scale-105 transition-transform duration-200"
+                    : "cursor-default"
+                ].join(" ")}
+                onClick={clickable ? stat.onClick : undefined}
+                onKeyDown={(e) => {
+                  if (!clickable) return;
+                  if (e.key === "Enter" || e.key === " ") stat.onClick();
+                }}
+                role={clickable ? "button" : undefined}
+                tabIndex={clickable ? 0 : undefined}
+                title={clickable ? "Click to view" : undefined}
+              >
+                <div className="user-dash__stat-top">
+                  <span className="user-dash__stat-label">{stat.label}</span>
+                  <div className={`user-dash__stat-icon user-dash__stat-icon--${stat.color}`}>
+                    <stat.icon size={14} />
+                  </div>
                 </div>
+                <div className="user-dash__stat-value">{stat.value}</div>
+                <div className="user-dash__stat-meta">{stat.meta}</div>
               </div>
-              <div className="admin-dash__stat-value" style={{ fontSize: "18px", fontWeight: "700" }}>
-                {stat.value}
-              </div>
-              <div className="admin-dash__stat-meta" style={{ fontSize: "9px" }}>
-                {stat.meta}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Filter Section - Only for Chart */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-3 mb-4">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center text-indigo-600">
-                <Filter size={16} />
+        <div className="user-dash__card">
+          <div className="user-dash__card-header">
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl shadow-md shadow-indigo-200">
+                <Filter size={16} className="text-white" />
               </div>
               <div>
-                <h4 className="text-sm font-semibold text-gray-800">Chart Filters</h4>
-                <p className="text-[10px] text-gray-400">Filter cabin bookings chart</p>
+                <h3 className="user-dash__card-title">Chart Filters</h3>
+                <p className="user-dash__card-desc">Filter cabin bookings chart</p>
               </div>
             </div>
+          </div>
 
-            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          <div className="user-dash__card-body">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2 w-full">
               <select
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
@@ -972,17 +767,18 @@ const DoctorDashboard = () => {
             </div>
           </div>
         </div>
+        </div>
 
         {/* Cabin Bookings Chart - Full Width with Hover Tooltip */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6 mb-6">
+        <div className="user-dash__chart">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <div className="p-2 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl shadow-md shadow-amber-200">
                 <BarChart3 size={18} className="text-white" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-gray-800">Cabin Bookings</h3>
-                <p className="text-xs text-gray-500">Monthly booking trends with revenue</p>
+                <h3 className="user-dash__card-title">Cabin Bookings</h3>
+                <p className="user-dash__card-desc">Monthly booking trends with revenue</p>
               </div>
               <span className="px-2.5 py-1 text-xs font-bold text-amber-700 bg-amber-100 rounded-full">
                 {cabinChartData.reduce((sum, d) => sum + d.bookings, 0) || 0} total
@@ -1370,7 +1166,7 @@ const DoctorDashboard = () => {
             )}
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 };

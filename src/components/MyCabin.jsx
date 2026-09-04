@@ -2012,6 +2012,7 @@
 
 
 
+
 // MyCabins.jsx - Complete with Even More Increased Stats Card Height
 import axios from "axios";
 import {
@@ -2072,6 +2073,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import UsersNavbar from "./UsersNavbar";
 import "./Dashboard.css";
+import "./AttendanceList.css";
 
 // Load Razorpay script
 const loadRazorpayScript = () => {
@@ -2886,19 +2888,16 @@ const MyCabins = () => {
   // RETURN - JSX
   // ============================================================
   return (
-    <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
+    <div className="emp-dash">
       <UsersNavbar />
 
-      <div className="pt-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
+      <div className="p-2 sm:p-4 lg:p-6">
         {/* Header */}
-        <div className="admin-dash__header mb-4 flex items-center justify-between">
-          <div>
-            <h1 className="admin-dash__greeting">
+        <div className="emp-dash__header">
+          <div className="flex items-baseline gap-3 flex-wrap">
+            <h1 className="emp-dash__greeting text-lg sm:text-xl font-bold whitespace-nowrap">
               My <span>Cabins</span>
             </h1>
-            <p className="text-xs text-gray-500 mt-0.5">
-              Manage all your registered co-working cabins
-            </p>
           </div>
           <button
             onClick={() => {
@@ -2918,126 +2917,141 @@ const MyCabins = () => {
           </button>
         </div>
 
-        {/* Compact Stats Cards - SIGNIFICANTLY INCREASED HEIGHT */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+        {/* Stats Cards */}
+        <div className="emp-dash__stats grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6">
           {compactStats.map((stat, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-xl border border-gray-200 p-3.5 shadow-sm hover:shadow-md transition-all"
-              style={{ minHeight: '85px' }}
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">{stat.label}</span>
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center bg-${stat.color}-50`}>
-                  <stat.icon size={16} className={`text-${stat.color}-600`} />
+            <div key={index} className="emp-dash__stat">
+              <div className="emp-dash__stat-top">
+                <span className="emp-dash__stat-label">{stat.label}</span>
+                <div className={`emp-dash__stat-icon emp-dash__stat-icon--${stat.color === 'indigo' ? 'rate' : stat.color === 'emerald' ? 'present' : stat.color === 'gray' ? 'late' : 'present'}`}>
+                  <stat.icon size={16} />
                 </div>
               </div>
-              <div className="mt-1.5">
-                <span className="text-2xl font-bold text-gray-800">{stat.value}</span>
+              <div className="emp-dash__stat-value">{stat.value}</div>
+              <div className="emp-dash__stat-meta">
+                {stat.label === 'Total' ? 'registered cabins' : 
+                 stat.label === 'Active' ? 'currently active' :
+                 stat.label === 'Inactive' ? 'not active' : 'exclusive cabins'}
               </div>
             </div>
           ))}
         </div>
 
-        {/* Table Section */}
-        <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
-          {/* Header with Filters */}
-          <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-2 p-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
-            <div className="flex items-center gap-2">
-              <h3 className="text-xs font-bold text-gray-700">Registered Cabins</h3>
-              <span className="px-2 py-0.5 text-[9px] font-bold text-indigo-700 bg-indigo-100 rounded-full">
-                {filteredCabins.length}
-              </span>
-            </div>
-            <div className="flex flex-wrap items-center gap-1.5">
-              <input
-                type="text"
-                placeholder="Name..."
-                value={filters.name}
-                onChange={(e) => setFilters({...filters, name: e.target.value})}
-                className="w-20 sm:w-28 px-2 py-1 text-[10px] border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-              />
-              <input
-                type="text"
-                placeholder="Address..."
-                value={filters.address}
-                onChange={(e) => setFilters({...filters, address: e.target.value})}
-                className="w-20 sm:w-28 px-2 py-1 text-[10px] border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-              />
-              <input
-                type="number"
-                placeholder="Min"
-                value={filters.priceMin}
-                onChange={(e) => setFilters({...filters, priceMin: e.target.value})}
-                className="w-14 sm:w-16 px-1.5 py-1 text-[10px] border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-              />
-              <span className="text-[10px] text-gray-400">-</span>
-              <input
-                type="number"
-                placeholder="Max"
-                value={filters.priceMax}
-                onChange={(e) => setFilters({...filters, priceMax: e.target.value})}
-                className="w-14 sm:w-16 px-1.5 py-1 text-[10px] border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-              />
-              <select
-                value={filters.status}
-                onChange={(e) => setFilters({...filters, status: e.target.value})}
-                className="text-[10px] bg-white border border-gray-200 rounded-lg px-2 py-1 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium text-gray-700"
-              >
-                <option value="all">All</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
-              {(filters.name || filters.address || filters.priceMin || filters.priceMax || filters.status !== 'all') && (
-                <button
-                  onClick={clearFilters}
-                  className="flex items-center gap-0.5 px-2 py-1 text-[9px] font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+        {/* Filters Card */}
+        <div className="emp-dash__card mb-6">
+          <div className="hidden lg:block">
+            <div className="flex items-center justify-between gap-3 p-3 bg-white rounded-xl border border-gray-200">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                {/* Search Name */}
+                <div className="relative min-w-[140px] flex-1 max-w-[200px]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs" />
+                  <input
+                    type="text"
+                    placeholder="Search name..."
+                    value={filters.name}
+                    onChange={(e) => setFilters({...filters, name: e.target.value})}
+                    className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
+                  />
+                </div>
+
+                {/* Search Address */}
+                <div className="relative min-w-[140px] flex-1 max-w-[200px]">
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs" />
+                  <input
+                    type="text"
+                    placeholder="Search address..."
+                    value={filters.address}
+                    onChange={(e) => setFilters({...filters, address: e.target.value})}
+                    className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
+                  />
+                </div>
+
+                {/* Price Range */}
+                <div className="flex items-center gap-1">
+                  <input
+                    type="number"
+                    placeholder="Min"
+                    value={filters.priceMin}
+                    onChange={(e) => setFilters({...filters, priceMin: e.target.value})}
+                    className="w-16 px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
+                  />
+                  <span className="text-gray-400 text-xs">-</span>
+                  <input
+                    type="number"
+                    placeholder="Max"
+                    value={filters.priceMax}
+                    onChange={(e) => setFilters({...filters, priceMax: e.target.value})}
+                    className="w-16 px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
+                  />
+                </div>
+
+                {/* Status Filter */}
+                <select
+                  value={filters.status}
+                  onChange={(e) => setFilters({...filters, status: e.target.value})}
+                  className="text-xs bg-white border border-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-medium text-gray-700"
                 >
-                  <XCircle size={12} />
-                  Clear
+                  <option value="all">All Status</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+
+              {/* Right - Action Buttons */}
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                {(filters.name || filters.address || filters.priceMin || filters.priceMax || filters.status !== 'all') && (
+                  <button
+                    onClick={clearFilters}
+                    className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-all shadow-sm whitespace-nowrap"
+                  >
+                    <XCircle size={12} />
+                    Clear
+                  </button>
+                )}
+
+                <button
+                  onClick={() => navigate("/my-cabin-payments")}
+                  className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 transition-all shadow-md whitespace-nowrap"
+                >
+                  <CreditCard size={12} />
+                  Payments
                 </button>
-              )}
-              <button
-                onClick={() => navigate("/my-cabin-payments")}
-                className="flex items-center gap-1 px-2 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-[10px] font-medium hover:bg-indigo-100 transition-colors border border-indigo-200"
-              >
-                <CreditCard size={12} />
-                <span className="hidden sm:inline">Payments</span>
-              </button>
-              <button
-                onClick={() => navigate("/cabin-bookings")}
-                className="flex items-center gap-1 px-2 py-1 bg-white border border-gray-200 text-gray-700 rounded-lg text-[10px] font-medium hover:bg-gray-50 transition-colors"
-              >
-                <FileText size={12} className="text-indigo-600" />
-                <span className="hidden sm:inline">Bookings</span>
-              </button>
+
+                <button
+                  onClick={() => navigate("/cabin-bookings")}
+                  className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-all shadow-md whitespace-nowrap"
+                >
+                  <FileText size={12} />
+                  Bookings
+                </button>
+              </div>
             </div>
           </div>
 
           {/* Table */}
-          <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
+          <div className="emp-dash__card-body p-0 overflow-x-auto">
             {loading ? (
-              <div className="flex flex-col items-center justify-center gap-3 py-16">
-                <div className="w-10 h-10 border-3 border-indigo-500 rounded-full border-t-transparent animate-spin"></div>
-                <p className="text-xs text-gray-500">Loading cabins...</p>
+              <div className="emp-dash__loading">
+                <div className="emp-dash__spinner" />
+                <p className="emp-dash__loading-text">Loading cabins...</p>
               </div>
             ) : (
-              <table className="w-full min-w-[1000px] text-left">
+              <table className="emp-dash__table">
                 <thead>
-                  <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
-                    <th className="p-2.5 text-[8px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">S.No</th>
-                    <th className="p-2.5 text-[8px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
-                    <th className="p-2.5 text-[8px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Address</th>
-                    <th className="p-2.5 text-[8px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Type</th>
-                    <th className="p-2.5 text-[8px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Price</th>
-                    <th className="p-2.5 text-[8px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Seats</th>
-                    <th className="p-2.5 text-[8px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Timing</th>
-                    <th className="p-2.5 text-[8px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
-                    <th className="p-2.5 text-[8px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Expiry</th>
-                    <th className="p-2.5 text-[8px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap text-center">Actions</th>
+                  <tr>
+                    <th>S.No</th>
+                    <th>Cabin</th>
+                    <th>Address</th>
+                    <th>Type</th>
+                    <th>Price</th>
+                    <th>Seats</th>
+                    <th>Timing</th>
+                    <th>Status</th>
+                    <th>Expiry</th>
+                    <th className="text-center">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody>
                   {filteredCabins.length > 0 ? (
                     filteredCabins.map((cabin, index) => {
                       const cabinStatus = getCabinStatus(cabin);
@@ -3182,21 +3196,21 @@ const MyCabins = () => {
 
           {/* Footer */}
           {!loading && filteredCabins.length > 0 && (
-            <div className="px-3 py-2 border-t border-gray-100 rounded-b-2xl flex flex-wrap items-center justify-between gap-2" style={{ backgroundColor: '#fafafa' }}>
-              <span className="text-[9px] text-gray-500">
-                Showing <strong>{filteredCabins.length}</strong> of <strong>{cabins.length}</strong> cabins
+            <div className="px-4 py-3 border-t border-gray-100 flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs text-gray-500">
+                Showing <strong className="text-gray-900">{filteredCabins.length}</strong> of <strong className="text-gray-900">{cabins.length}</strong> cabins
               </span>
-              <div className="flex items-center gap-2 text-[9px] text-gray-500">
-                <span className="flex items-center gap-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              <div className="flex items-center gap-3 text-xs text-gray-500">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                   Active: {activeCount}
                 </span>
-                <span className="flex items-center gap-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-gray-400"></span>
                   Inactive: {inactiveCount}
                 </span>
-                <span className="flex items-center gap-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-amber-500"></span>
                   Premium: {exclusiveCount}
                 </span>
               </div>
@@ -4271,8 +4285,8 @@ const MyCabins = () => {
           </div>
         </div>
       )}
-
     </div>
+    
   );
 };
 

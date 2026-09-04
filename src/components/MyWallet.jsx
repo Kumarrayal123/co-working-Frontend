@@ -37,6 +37,7 @@ import UsersNavbar from "./UsersNavbar";
 import AdminNavbar from "./AdminNavbar";
 import * as XLSX from 'xlsx';
 import "./Dashboard.css";
+import "./UserSiteVisits.css";
 
 const API_URL = "https://spaceapi.iryax.com";
 
@@ -395,80 +396,84 @@ const MyWallet = () => {
 
   if (loading) {
     return (
-      <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
+      <div className="user-visits">
         {isAdmin ? <AdminNavbar /> : <UsersNavbar />}
-        <div className="flex justify-center items-center h-64">
-          <div className="w-12 h-12 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin" />
-        </div>
+        <main className="p-2 sm:p-4 lg:p-6">
+          <div className="user-visits__loading">
+            <div className="user-visits__spinner" />
+            <p className="user-visits__loading-text">Loading wallet...</p>
+          </div>
+        </main>
       </div>
     );
   }
 
   return (
-    <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
+    <div className="user-visits">
       {isAdmin ? <AdminNavbar /> : <UsersNavbar />}
 
-      <div className="pt-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
+      <main className="p-2 sm:p-4 lg:p-6">
         {/* Header */}
-        <div className="admin-dash__header">
+        <div className="user-visits__header">
           <div>
-            <h1 className="admin-dash__greeting" style={{ fontSize: '1.25rem' }}>
+            <h1 className="user-visits__greeting">
               My <span>Wallet</span>
             </h1>
+            <p className="user-visits__subtitle">Manage your earnings and withdrawals</p>
           </div>
         </div>
 
-        {/* Stats Cards - Small and Clean */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-          <div className="bg-white rounded-xl border border-gray-100 p-3 shadow-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Balance</span>
-              <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
+        {/* Stats Cards */}
+        <div className="user-visits__stats">
+          <div className="user-visits__stat">
+            <div className="user-visits__stat-top">
+              <span className="user-visits__stat-label">Balance</span>
+              <div className="user-visits__stat-icon user-visits__stat-icon--emerald">
                 <WalletIcon size={14} />
               </div>
             </div>
-            <div className="text-xl font-bold text-emerald-600 mt-1">{formatCurrency(wallet.balance)}</div>
-            <div className="text-[9px] text-gray-400">Earned: {formatCurrency(wallet.totalEarned)}</div>
+            <div className="user-visits__stat-value">{formatCurrency(wallet.balance)}</div>
+            <div className="user-visits__stat-meta">Earned: {formatCurrency(wallet.totalEarned)}</div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-100 p-3 shadow-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Earned</span>
-              <div className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+          <div className="user-visits__stat">
+            <div className="user-visits__stat-top">
+              <span className="user-visits__stat-label">Earned</span>
+              <div className="user-visits__stat-icon user-visits__stat-icon--indigo">
                 <TrendingUp size={14} />
               </div>
             </div>
-            <div className="text-xl font-bold text-indigo-600 mt-1">{formatCurrency(wallet.totalEarned)}</div>
-            <div className="text-[9px] text-gray-400">{transactions.length} transactions</div>
+            <div className="user-visits__stat-value">{formatCurrency(wallet.totalEarned)}</div>
+            <div className="user-visits__stat-meta">{transactions.length} transactions</div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-100 p-3 shadow-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Withdrawn</span>
-              <div className="w-7 h-7 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600">
+          <div className="user-visits__stat">
+            <div className="user-visits__stat-top">
+              <span className="user-visits__stat-label">Withdrawn</span>
+              <div className="user-visits__stat-icon user-visits__stat-icon--purple">
                 <History size={14} />
               </div>
             </div>
-            <div className="text-xl font-bold text-purple-600 mt-1">{formatCurrency(totalWithdrawn)}</div>
-            <div className="text-[9px] text-gray-400">{withdrawals.length} requests</div>
+            <div className="user-visits__stat-value">{formatCurrency(totalWithdrawn)}</div>
+            <div className="user-visits__stat-meta">{withdrawals.length} requests</div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-100 p-3 shadow-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Pending</span>
-              <div className="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600">
+          <div className="user-visits__stat">
+            <div className="user-visits__stat-top">
+              <span className="user-visits__stat-label">Pending</span>
+              <div className="user-visits__stat-icon user-visits__stat-icon--amber">
                 <Clock size={14} />
               </div>
             </div>
-            <div className="text-xl font-bold text-amber-600 mt-1">{withdrawStats.pending}</div>
-            <div className="text-[9px] text-gray-400">{withdrawStats.completed} completed</div>
+            <div className="user-visits__stat-value">{withdrawStats.pending}</div>
+            <div className="user-visits__stat-meta">{withdrawStats.completed} completed</div>
           </div>
         </div>
 
         <div className="space-y-6">
           {/* Wallet Transactions Table Section */}
-          <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden' }}>
-            <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-2 p-3" style={{ backgroundColor: '#fafafa', borderBottom: '1px solid #e5e7eb' }}>
+          <div className="user-visits__card">
+            <div className="flex flex-wrap items-center justify-between gap-2 p-3 border-b border-gray-100">
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-bold text-gray-700">Transaction History</h3>
                 <span className="px-2 py-0.5 text-[10px] font-bold text-indigo-700 bg-indigo-100 rounded-full">
@@ -477,21 +482,20 @@ const MyWallet = () => {
               </div>
               <div className="flex flex-wrap items-center gap-1.5">
                 {/* Search Bar */}
-                <div className="relative">
-                  <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                <div className="user-visits__search-input">
+                  <Search size={14} className="user-visits__search-icon" />
                   <input
                     type="text"
                     placeholder="Search..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="text-xs bg-white border border-gray-200 rounded-lg pl-8 pr-2.5 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 w-28 sm:w-36"
                   />
                 </div>
 
                 <select
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value)}
-                  className="text-xs bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  className="user-visits__filter-select"
                 >
                   <option value="all">All Types</option>
                   <option value="credit">Credit</option>
@@ -502,46 +506,47 @@ const MyWallet = () => {
                   type="date"
                   value={filterDate}
                   onChange={(e) => setFilterDate(e.target.value)}
-                  className="text-xs bg-white border border-gray-200 rounded-lg px-2 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 w-28"
+                  className="user-visits__filter-select"
                 />
 
                 {(searchTerm || filterType !== 'all' || filterDate) && (
                   <button
                     onClick={clearFilters}
-                    className="flex items-center gap-0.5 px-2 py-1.5 text-[10px] font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    className="user-visits__btn user-visits__btn--secondary"
+                    style={{ padding: "0.375rem 0.5rem" }}
                   >
-                    <XCircleIcon size={12} /> Clear
+                    <XCircleIcon size={14} /> Clear
                   </button>
                 )}
 
                 {wallet.balance > 0 && (
                   <button
                     onClick={() => setShowWithdrawModal(true)}
-                    className="flex items-center gap-1 px-2.5 py-1.5 bg-indigo-600 text-white rounded-lg text-[10px] font-medium hover:bg-indigo-700 transition-colors"
+                    className="user-visits__btn user-visits__btn--primary"
                   >
-                    <Banknote size={13} />
-                    <span>Withdraw</span>
+                    <Banknote size={14} />
+                    Withdraw
                   </button>
                 )}
 
                 {withdrawals.length > 0 && (
                   <button
                     onClick={toggleWithdrawals}
-                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-medium transition-colors ${
-                      showWithdrawals ? 'bg-purple-600 text-white' : 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200'
+                    className={`user-visits__btn ${
+                      showWithdrawals ? 'user-visits__btn--primary' : 'user-visits__btn--secondary'
                     }`}
                   >
-                    <History size={13} />
-                    <span>{showWithdrawals ? 'Hide' : 'Show'}</span>
+                    <History size={14} />
+                    {showWithdrawals ? 'Hide' : 'Show'}
                   </button>
                 )}
 
                 {filteredTransactions.length > 0 && (
                   <button
                     onClick={exportToExcel}
-                    className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-[10px] font-medium hover:bg-emerald-100 transition-colors border border-emerald-200"
+                    className="user-visits__btn user-visits__btn--secondary"
                   >
-                    <Download size={13} /> Export
+                    <Download size={14} /> Export
                   </button>
                 )}
               </div>
@@ -563,52 +568,50 @@ const MyWallet = () => {
                   </div>
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[650px]">
+                  <table className="user-visits__table">
                     <thead>
-                      <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
-                        <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">S.No</th>
-                        <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Amount</th>
-                        <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Bank</th>
-                        <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Status</th>
-                        <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Date</th>
-                        <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase text-center">Action</th>
+                      <tr>
+                        <th>S.No</th>
+                        <th>Amount</th>
+                        <th>Bank</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th className="text-center">Action</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody>
                       {withdrawals.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="px-3 py-8 text-center text-gray-400">
-                            <History size={28} className="mx-auto mb-1 opacity-20" />
-                            <p className="text-xs font-medium">No withdrawals yet</p>
-                          </td>
+                          <td colSpan={6}><div className="user-visits__empty"><History size={32} className="user-visits__empty-icon" /><p className="user-visits__empty-text">No withdrawals yet</p></div></td>
                         </tr>
                       ) : (
                         withdrawals.slice().reverse().map((w, idx) => {
                           const status = getWithdrawStatusBadge(w.status);
                           return (
-                            <tr key={w._id || idx} className="transition-colors hover:bg-gray-50/80">
-                              <td className="px-3 py-2">
+                            <tr key={w._id || idx}>
+                              <td>
                                 <span className="text-[10px] font-semibold text-gray-400">{idx + 1}</span>
                               </td>
-                              <td className="px-3 py-2">
+                              <td>
                                 <span className="text-xs font-bold text-red-600">{formatCurrency(w.amount)}</span>
                               </td>
-                              <td className="px-3 py-2">
+                              <td>
                                 <span className="text-xs text-gray-700">{w.bankName || 'N/A'}</span>
                               </td>
-                              <td className="px-3 py-2">
+                              <td>
                                 <span className={`px-2 py-0.5 text-[9px] font-bold rounded-full ${status.color}`}>{status.label}</span>
                               </td>
-                              <td className="px-3 py-2">
+                              <td>
                                 <span className="text-xs text-gray-500">{formatDate(w.createdAt)}</span>
                               </td>
-                              <td className="px-3 py-2 text-center">
+                              <td className="text-center">
                                 <button
                                   onClick={() => handleViewWithdrawalDetails(w)}
-                                  className="p-1 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors"
+                                  className="user-visits__btn user-visits__btn--secondary"
+                                  style={{ padding: "0.375rem 0.5rem" }}
                                   title="View Details"
                                 >
-                                  <Eye size={13} />
+                                  <Eye size={14} />
                                 </button>
                               </td>
                             </tr>
@@ -624,35 +627,35 @@ const MyWallet = () => {
             {/* ============================================= */}
             {/* TRANSACTIONS TABLE */}
             {/* ============================================= */}
-            <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
+            <div className="p-0 overflow-x-auto">
               {filteredTransactions.length === 0 ? (
-                <div className="flex flex-col items-center justify-center gap-2 py-16 text-gray-400">
-                  <WalletIcon size={40} className="opacity-20" />
-                  <p className="text-base font-medium">No transactions found</p>
-                  <p className="text-xs">Try adjusting your filters.</p>
+                <div className="user-visits__empty">
+                  <WalletIcon size={32} className="user-visits__empty-icon" />
+                  <p className="user-visits__empty-text">No transactions found</p>
+                  <p className="text-xs text-gray-400">Try adjusting your filters.</p>
                 </div>
               ) : (
-                <table className="w-full min-w-[900px] text-left text-sm">
+                <table className="user-visits__table">
                   <thead>
-                    <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
-                      <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">S.No</th>
-                      <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Cabin</th>
-                      <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Customer</th>
-                      <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Date</th>
-                      <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Amount</th>
-                      <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Payment</th>
-                      <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase text-center">Action</th>
+                    <tr>
+                      <th>S.No</th>
+                      <th>Cabin</th>
+                      <th>Customer</th>
+                      <th>Date</th>
+                      <th>Amount</th>
+                      <th>Payment</th>
+                      <th className="text-center">Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody>
                     {filteredTransactions.map((transaction, index) => {
                       const paymentBadge = getPaymentModeBadge(transaction.paymentMode);
                       return (
-                        <tr key={transaction._id || transaction.transactionId || index} className="transition-colors hover:bg-gray-50/80">
-                          <td className="px-3 py-2.5">
+                        <tr key={transaction._id || transaction.transactionId || index}>
+                          <td>
                             <span className="text-[10px] font-semibold text-gray-400">{index + 1}</span>
                           </td>
-                          <td className="px-3 py-2.5">
+                          <td>
                             <div>
                               <p className="font-semibold text-gray-900 text-xs">
                                 {transaction.cabinName || "Unknown Cabin"}
@@ -662,30 +665,31 @@ const MyWallet = () => {
                               </p>
                             </div>
                           </td>
-                          <td className="px-3 py-2.5">
+                          <td>
                             <p className="font-medium text-gray-800 text-xs">{transaction.customerName || "Unknown"}</p>
                             <p className="text-[9px] text-gray-400">{transaction.customerMobile || "N/A"}</p>
                           </td>
-                          <td className="px-3 py-2.5">
+                          <td>
                             <p className="text-xs text-gray-700">{formatDate(transaction.startDate)}</p>
                             <p className="text-[9px] text-gray-400">{formatDate(transaction.endDate)}</p>
                           </td>
-                          <td className="px-3 py-2.5">
+                          <td>
                             <span className="text-xs font-bold text-emerald-600">+{formatCurrency(transaction.amount)}</span>
                           </td>
-                          <td className="px-3 py-2.5">
+                          <td>
                             <span className={`px-2 py-0.5 text-[9px] font-bold rounded-full inline-flex items-center gap-1 ${paymentBadge.color}`}>
                               {getPaymentModeIcon(transaction.paymentMode)}
                               {paymentBadge.label}
                             </span>
                           </td>
-                          <td className="px-3 py-2.5 text-center">
+                          <td className="text-center">
                             <button
                               onClick={() => handleViewDetails(transaction)}
-                              className="p-1 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors"
+                              className="user-visits__btn user-visits__btn--secondary"
+                              style={{ padding: "0.375rem 0.5rem" }}
                               title="View Details"
                             >
-                              <Eye size={13} />
+                              <Eye size={14} />
                             </button>
                           </td>
                         </tr>
@@ -698,7 +702,7 @@ const MyWallet = () => {
 
             {/* Footer with stats */}
             {!loading && filteredTransactions.length > 0 && (
-              <div className="px-3 py-2 border-t border-gray-100 flex flex-wrap items-center justify-between gap-1" style={{ backgroundColor: '#fafafa' }}>
+              <div className="px-3 py-2 border-t border-gray-100 flex flex-wrap items-center justify-between gap-1 bg-gray-50">
                 <span className="text-[9px] text-gray-500">
                   Showing <strong>{filteredTransactions.length}</strong> of <strong>{transactions.length}</strong> transactions
                 </span>
@@ -716,7 +720,7 @@ const MyWallet = () => {
             )}
           </div>
         </div>
-      </div>
+      </main>
 
       {/* Withdraw Modal */}
       {showWithdrawModal && (

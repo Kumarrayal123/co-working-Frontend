@@ -47,14 +47,14 @@ import {
   QrCode,
   History,
   Timer,
-  Coffee // 👈 Cafe icon add kiya
+  Coffee
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import SimpleUserNavbar from "./SimpleUserNavbar";
 import * as XLSX from 'xlsx';
-import "./Dashboard.css";
+import "./SimpleUserBookings.css";
 
 const API_URL = "https://spaceapi.iryax.com";
 
@@ -183,7 +183,19 @@ const SimpleUserBookings = () => {
 
       // ✅ FILTER: Only Space Bookings, remove Site Visits
       const allBookings = res.data.bookings || [];
-      const spaceBookings = allBookings.filter(b => b.bookingType !== 'visit');
+      const isSiteVisitBooking = (b) => {
+        if (b.bookingType === "visit") return true;
+        if (b.bookingType === "booking") return false;
+        return (
+          b.startDate &&
+          b.startTime &&
+          !b.endDate &&
+          !b.endTime &&
+          (b.totalHours === 0 || !b.totalHours) &&
+          (b.totalPrice === 0 || !b.totalPrice)
+        );
+      };
+      const spaceBookings = allBookings.filter(b => !isSiteVisitBooking(b));
       setBookings(spaceBookings);
 
       if (spaceBookings.length === 0) {
@@ -924,13 +936,13 @@ const downloadInvoice = (booking) => {
   const renderBookingsTable = (bookingsList) => {
     if (bookingsList.length === 0) {
       return (
-        <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-          <div className="flex flex-col items-center text-gray-400">
-            <Building2 size={32} className="opacity-20 mb-2" />
-            <p className="text-sm font-medium">No space bookings found</p>
+        <div className="user-bookings__card">
+          <div className="user-bookings__empty">
+            <Building2 size={32} className="user-bookings__empty-icon" />
+            <p className="user-bookings__empty-text">No space bookings found</p>
             <button
               onClick={() => navigate("/spaceforusers")}
-              className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition"
+              className="user-bookings__btn user-bookings__btn--primary"
             >
               Browse Spaces
             </button>
@@ -940,34 +952,34 @@ const downloadInvoice = (booking) => {
     }
 
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-4 py-3 bg-indigo-50 border-b border-gray-200 flex items-center justify-between">
+      <div className="user-bookings__card">
+        <div className="user-bookings__card-header">
           <div className="flex items-center gap-2">
             <Building2 size={16} className="text-indigo-600" />
-            <h3 className="font-bold text-gray-800">Space Bookings</h3>
+            <h3 className="user-bookings__card-title">Space Bookings</h3>
             <span className="px-2 py-0.5 bg-white/60 rounded-full text-xs font-bold text-gray-600">{bookingsList.length}</span>
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm min-w-[1400px]">
+          <table className="user-bookings__table">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-100">
-                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">S. No</th>
-                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Cabin</th>
-                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Type</th>
-                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Start</th>
-                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">End</th>
-                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Hours</th>
-                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Days</th>
-                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Seats</th>
-                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Status</th>
-                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Payment</th>
-                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Amount</th>
-                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Created At</th>
-                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase text-center">Actions</th>
+              <tr>
+                <th>S. No</th>
+                <th>Cabin</th>
+                <th>Type</th>
+                <th>Start</th>
+                <th>End</th>
+                <th>Hours</th>
+                <th>Days</th>
+                <th>Seats</th>
+                <th>Status</th>
+                <th>Payment</th>
+                <th>Amount</th>
+                <th>Created At</th>
+                <th className="text-center">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody>
               {bookingsList.map((b, idx) => {
                 const status = getStatusBadge(b.status);
                 const pmtMethod = getPaymentMethodBadge(b.paymentMethod);
@@ -980,11 +992,11 @@ const downloadInvoice = (booking) => {
                 const spaceTypeBadge = getSpaceTypeBadge(b);
 
                 return (
-                  <tr key={b._id} className="hover:bg-gray-50/80 transition-colors">
-                    <td className="px-3 py-2">
+                  <tr key={b._id}>
+                    <td>
                       <span className="text-[10px] font-semibold text-gray-400">{idx + 1}</span>
                     </td>
-                    <td className="px-3 py-2">
+                    <td>
                       <div>
                         <p className="font-semibold text-gray-900 text-xs">
                           {b.cabin?.name || 'Unknown Cabin'}
@@ -995,64 +1007,66 @@ const downloadInvoice = (booking) => {
                         </p>
                       </div>
                     </td>
-                    <td className="px-3 py-2">
+                    <td>
                       <span className={`px-2 py-0.5 text-[9px] font-bold rounded-full inline-flex items-center gap-1 ${spaceTypeBadge.color}`}>
                         {spaceTypeBadge.icon}
                         {spaceTypeBadge.label}
                       </span>
                     </td>
-                    <td className="px-3 py-2">
+                    <td>
                       <div>
                         <span className="text-xs font-medium text-gray-700">{formatDateDDMMYYYY(b.startDate)}</span>
                         <p className="text-[9px] text-indigo-600 font-medium">{formatTime12(b.startTime)}</p>
                       </div>
                     </td>
-                    <td className="px-3 py-2">
+                    <td>
                       <div>
                         <span className="text-xs font-medium text-gray-700">{formatDateDDMMYYYY(b.endDate)}</span>
                         <p className="text-[9px] text-indigo-600 font-medium">{formatTime12(b.endTime)}</p>
                       </div>
                     </td>
-                    <td className="px-3 py-2">
+                    <td>
                       <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-full text-[9px] font-bold">{b.totalHours}h</span>
                     </td>
-                    <td className="px-3 py-2">
+                    <td>
                       <span className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded-full text-[9px] font-bold">{totalDays}d</span>
                     </td>
-                    <td className="px-3 py-2">
+                    <td>
                       <span className="flex items-center gap-1 text-xs font-medium text-gray-700">
                         <Armchair size={12} className="text-indigo-500" />
                         {seatCount}
                       </span>
                     </td>
-                    <td className="px-3 py-2">
+                    <td>
                       <span className={`px-2 py-0.5 text-[9px] font-bold rounded-full ${status.color}`}>{status.label}</span>
                     </td>
-                    <td className="px-3 py-2">
+                    <td>
                       <span className={`px-2 py-0.5 text-[9px] font-bold rounded-full ${pmtMethod.color}`}>{pmtMethod.label}</span>
                       <span className={`ml-1 px-2 py-0.5 text-[9px] font-bold rounded-full ${pmtStatus.color}`}>{pmtStatus.label}</span>
                     </td>
-                    <td className="px-3 py-2">
+                    <td>
                       <span className="text-xs font-bold text-indigo-600">₹{b.totalPrice}</span>
                       {b.extraCharge > 0 && (
                         <p className="text-[8px] text-amber-500">+₹{b.extraCharge} seat</p>
                       )}
                     </td>
-                    <td className="px-3 py-2">
+                    <td>
                       <span className="text-[10px] text-gray-500 font-medium">{formatDateTimeDDMMYYYY(b.createdAt)}</span>
                     </td>
-                    <td className="px-3 py-2 text-center">
+                    <td className="text-center">
                       <div className="flex items-center justify-center gap-1 flex-wrap">
                         <button
                           onClick={() => handleViewBooking(b)}
-                          className="p-1 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition"
+                          className="user-bookings__btn user-bookings__btn--secondary"
+                          style={{ padding: "0.25rem 0.5rem" }}
                           title="View"
                         >
                           <Eye size={13} />
                         </button>
                         <button
                           onClick={() => downloadInvoice(b)}
-                          className="p-1 bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition"
+                          className="user-bookings__btn user-bookings__btn--secondary"
+                          style={{ padding: "0.25rem 0.5rem" }}
                           title="Invoice"
                         >
                           <FileDown size={13} />
@@ -1065,7 +1079,8 @@ const downloadInvoice = (booking) => {
                               setSelectedCabinData(null);
                               setShowReplaceModal(true);
                             }}
-                            className="p-1 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition"
+                            className="user-bookings__btn user-bookings__btn--secondary"
+                            style={{ padding: "0.25rem 0.5rem" }}
                             title="Replace Space"
                           >
                             <RefreshCw size={13} />
@@ -1077,7 +1092,8 @@ const downloadInvoice = (booking) => {
                               setCancelBooking(b);
                               setShowCancelModal(true);
                             }}
-                            className="p-1 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition"
+                            className="user-bookings__btn user-bookings__btn--danger"
+                            style={{ padding: "0.25rem 0.5rem" }}
                             title="Cancel Booking"
                           >
                             <XIcon size={13} />
@@ -1097,16 +1113,14 @@ const downloadInvoice = (booking) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="user-bookings">
         <SimpleUserNavbar />
-        <div className="pt-24 px-4 max-w-full mx-auto">
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto"></div>
-              <p className="mt-4 text-gray-500 text-sm">Loading bookings...</p>
-            </div>
+        <main className="p-2 sm:p-4 lg:p-6">
+          <div className="user-bookings__loading">
+            <div className="user-bookings__spinner" />
+            <p className="user-bookings__loading-text">Loading bookings...</p>
           </div>
-        </div>
+        </main>
       </div>
     );
   }
@@ -1163,22 +1177,22 @@ const downloadInvoice = (booking) => {
   ];
 
   return (
-    <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
+    <div className="user-bookings">
       <SimpleUserNavbar />
 
-      <div className="pt-20 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
+      <main className="p-2 sm:p-4 lg:p-6" style={{ paddingTop: "1.5rem" }}>
         {/* Header */}
-        <div className="admin-dash__header" style={{ marginBottom: '8px' }}>
+        <div className="user-bookings__header">
           <div>
-            <h1 className="admin-dash__greeting" style={{ fontSize: '1.25rem' }}>
+            <h1 className="user-bookings__greeting">
               My <span>Space Bookings</span>
             </h1>
-            <p className="admin-dash__subtitle" style={{ fontSize: '11px' }}>Manage all your workspace bookings</p>
+            <p className="user-bookings__subtitle">Manage all your workspace bookings</p>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => navigate("/usersitevisits")}
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg text-xs font-medium hover:bg-purple-700 transition flex items-center gap-2 shadow-sm shadow-purple-200"
+              className="user-bookings__btn user-bookings__btn--primary"
             >
               <Calendar size={16} />
               View Site Visits
@@ -1187,41 +1201,35 @@ const downloadInvoice = (booking) => {
         </div>
 
         {/* Stats Cards */}
-        <div className="admin-dash__stats" style={{ marginBottom: '16px' }}>
+        <div className="user-bookings__stats">
           {bookingStatsCards.map((stat, index) => (
             <div
               key={index}
-              className="admin-dash__stat"
+              className="user-bookings__stat"
               onClick={stat.onClick}
-              style={{ 
-                cursor: stat.onClick ? 'pointer' : 'default',
-                padding: '12px 14px',
-                minHeight: '80px'
-              }}
             >
-              <div className="admin-dash__stat-top">
-                <span className="admin-dash__stat-label" style={{ fontSize: '11px' }}>{stat.label}</span>
-                <div className={`admin-dash__stat-icon admin-dash__stat-icon--${stat.color}`} style={{ width: '28px', height: '28px' }}>
+              <div className="user-bookings__stat-top">
+                <span className="user-bookings__stat-label">{stat.label}</span>
+                <div className={`user-bookings__stat-icon user-bookings__stat-icon--${stat.color}`}>
                   <stat.icon size={14} />
                 </div>
               </div>
-              <div className="admin-dash__stat-value" style={{ fontSize: '18px', fontWeight: '700' }}>{stat.value}</div>
-              <div className="admin-dash__stat-meta" style={{ fontSize: '9px' }}>{stat.meta}</div>
+              <div className="user-bookings__stat-value">{stat.value}</div>
+              <div className="user-bookings__stat-meta">{stat.meta}</div>
             </div>
           ))}
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-3 mb-4">
-          <div className="flex flex-col sm:flex-row gap-2">
-            <div className="flex-1 relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <div className="user-bookings__filters">
+          <div className="user-bookings__filter-row">
+            <div className="user-bookings__search-input">
+              <Search size={14} className="user-bookings__search-icon" />
               <input
                 type="text"
                 placeholder="Search bookings..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
               />
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -1229,13 +1237,13 @@ const downloadInvoice = (booking) => {
                 type="date"
                 value={filterDate}
                 onChange={(e) => setFilterDate(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                className="user-bookings__filter-select"
                 placeholder="Filter by date"
               />
               <select
                 value={filters.status}
                 onChange={(e) => setFilters({...filters, status: e.target.value})}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                className="user-bookings__filter-select"
               >
                 <option value="all">All Status</option>
                 <option value="pending">Pending</option>
@@ -1248,7 +1256,7 @@ const downloadInvoice = (booking) => {
               <select
                 value={filters.spaceType}
                 onChange={(e) => setFilters({...filters, spaceType: e.target.value})}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                className="user-bookings__filter-select"
               >
                 <option value="all">All Types</option>
                 <option value="medical">🏥 Medical Chamber</option>
@@ -1258,7 +1266,7 @@ const downloadInvoice = (booking) => {
               <select
                 value={filters.paymentStatus}
                 onChange={(e) => setFilters({...filters, paymentStatus: e.target.value})}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                className="user-bookings__filter-select"
               >
                 <option value="all">Payment Status</option>
                 <option value="pending">Pending</option>
@@ -1268,7 +1276,7 @@ const downloadInvoice = (booking) => {
               {(filters.status !== 'all' || filters.paymentStatus !== 'all' || filters.spaceType !== 'all' || filterDate || searchTerm) && (
                 <button
                   onClick={clearFilters}
-                  className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                  className="user-bookings__btn user-bookings__btn--secondary"
                   title="Clear filters"
                 >
                   <XIcon size={16} />
@@ -1277,7 +1285,7 @@ const downloadInvoice = (booking) => {
               {displayBookings.length > 0 && (
                 <button
                   onClick={exportToExcel}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition"
+                  className="user-bookings__btn user-bookings__btn--secondary"
                 >
                   <Download size={14} />
                   <span className="hidden xs:inline">Export</span>
@@ -1298,7 +1306,7 @@ const downloadInvoice = (booking) => {
         <div className="mt-6 text-center text-[9px] text-gray-400 font-medium tracking-wider">
           © IRYAX SPACE — All Rights Reserved
         </div>
-      </div>
+      </main>
 
       {/* ============================================================ */}
       {/* VIEW MODAL - All dates in dd/mm/yyyy format */}

@@ -3226,7 +3226,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import DoctorNavbar from "./DoctorNavbar";
 import * as XLSX from 'xlsx';
-import "./Dashboard.css";
+import "./SimpleUserBookings.css";
 
 const API_URL = "https://spaceapi.iryax.com";
 
@@ -4151,27 +4151,30 @@ const BookingDoctor = () => {
 
   if (loading) {
     return (
-      <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
+      <div className="user-bookings">
         <DoctorNavbar />
-        <div className="flex justify-center items-center h-64">
-          <div className="w-12 h-12 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin" />
-        </div>
+        <main className="p-2 sm:p-4 lg:p-6">
+          <div className="user-bookings__loading">
+            <div className="user-bookings__spinner" />
+            <p className="user-bookings__loading-text">Loading bookings...</p>
+          </div>
+        </main>
       </div>
     );
   }
 
   return (
-    <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
+    <div className="user-bookings">
       <DoctorNavbar />
 
-      <div className="pt-20 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
+      <main className="p-2 sm:p-4 lg:p-6">
         {/* Header */}
-        <div className="admin-dash__header" style={{ marginBottom: '8px' }}>
+        <div className="user-bookings__header">
           <div>
-            <h1 className="admin-dash__greeting" style={{ fontSize: '1.25rem' }}>
+            <h1 className="user-bookings__greeting">
               Doctor <span>Bookings</span>
             </h1>
-            <p className="admin-dash__subtitle" style={{ fontSize: '11px' }}>
+            <p className="user-bookings__subtitle">
               Manage all your medical cabin bookings
             </p>
           </div>
@@ -4179,7 +4182,7 @@ const BookingDoctor = () => {
             {displayBookings.length > 0 && (
               <button
                 onClick={exportToExcel}
-                className="flex items-center gap-1.5 px-3 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition border border-indigo-200"
+                className="user-bookings__btn user-bookings__btn--secondary"
               >
                 <Download size={14} />
                 Export
@@ -4187,7 +4190,7 @@ const BookingDoctor = () => {
             )}
             <button
               onClick={() => navigate("/mychambers")}
-              className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition shadow-sm shadow-indigo-200"
+              className="user-bookings__btn user-bookings__btn--primary"
             >
               <Building2 size={14} />
               My Chambers
@@ -4196,46 +4199,53 @@ const BookingDoctor = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 md:gap-3 mb-4">
+        <div className="user-bookings__stats">
           {bookingStatsCards.map((stat, index) => (
             <div
               key={index}
-              className="bg-white rounded-xl border border-gray-200 p-3 shadow-sm hover:shadow-md transition-all cursor-pointer hover:border-indigo-300"
+              className={`user-bookings__stat ${
+                (stat.label === "Total" && filters.status === 'all' && filters.paymentStatus === 'all') ||
+                (stat.label === "Pending" && filters.status === 'pending') ||
+                (stat.label === "Active" && filters.status === 'confirmed') ||
+                (stat.label === "Completed" && filters.status === 'completed') ||
+                (stat.label === "Cancelled" && filters.status === 'cancelled')
+                  ? "user-bookings__stat--active"
+                  : ""
+              }`}
               onClick={stat.onClick}
             >
-              <div className="flex items-center justify-between">
-                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">{stat.label}</span>
-                <div className={`w-7 h-7 rounded-lg flex items-center justify-center bg-${stat.color}-50`}>
-                  <stat.icon size={14} className={`text-${stat.color}-600`} />
+              <div className="user-bookings__stat-top">
+                <span className="user-bookings__stat-label">{stat.label}</span>
+                <div className={`user-bookings__stat-icon user-bookings__stat-icon--${stat.color}`}>
+                  <stat.icon size={16} />
                 </div>
               </div>
-              <div className="mt-1">
-                <span className="text-xl font-bold text-gray-800">{stat.value}</span>
-                <p className="text-[8px] text-gray-400 mt-0.5">{stat.meta}</p>
-              </div>
+              <div className="user-bookings__stat-value">{stat.value}</div>
+              <div className="user-bookings__stat-meta">{stat.meta}</div>
             </div>
           ))}
         </div>
 
       
         {/* Tabs - All Bookings | Site Visits | Chamber Bookings */}
-        <div className="flex items-center gap-2 mb-4 border-b border-gray-200">
+        <div className="user-bookings__card mb-6">
+          <div className="p-2 flex flex-wrap items-center gap-2 border-b border-gray-100">
           <button
             onClick={() => setActiveTab('all')}
-            className={`px-4 py-2.5 text-sm font-semibold border-b-2 transition ${
+            className={`px-4 py-2.5 text-sm font-semibold rounded-lg transition ${
               activeTab === 'all'
-                ? 'border-rose-600 text-rose-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'bg-indigo-50 text-indigo-700'
+                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
             }`}
           >
             All Bookings ({filteredBookings.length})
           </button>
           <button
             onClick={() => setActiveTab('visits')}
-            className={`px-4 py-2.5 text-sm font-semibold border-b-2 transition ${
+            className={`px-4 py-2.5 text-sm font-semibold rounded-lg transition ${
               activeTab === 'visits'
-                ? 'border-purple-600 text-purple-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'bg-purple-50 text-purple-700'
+                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
             }`}
           >
             <Calendar size={16} className="inline mr-2" />
@@ -4243,28 +4253,28 @@ const BookingDoctor = () => {
           </button>
           <button
             onClick={() => setActiveTab('chambers')}
-            className={`px-4 py-2.5 text-sm font-semibold border-b-2 transition ${
+            className={`px-4 py-2.5 text-sm font-semibold rounded-lg transition ${
               activeTab === 'chambers'
-                ? 'border-emerald-600 text-emerald-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'bg-rose-50 text-rose-700'
+                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
             }`}
           >
             <Building2 size={16} className="inline mr-2" />
             Cabin Bookings ({chamberCount})
           </button>
         </div>
+        </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-3 mb-4">
-          <div className="flex flex-col sm:flex-row gap-2">
-            <div className="flex-1 relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <div className="user-bookings__filters">
+          <div className="user-bookings__filter-row">
+            <div className="user-bookings__search-input">
+              <Search size={14} className="user-bookings__search-icon" />
               <input
                 type="text"
                 placeholder="Search bookings..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
               />
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -4272,13 +4282,13 @@ const BookingDoctor = () => {
                 type="date"
                 value={filterDate}
                 onChange={(e) => setFilterDate(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                className="user-bookings__filter-select"
                 placeholder="Filter by date"
               />
               <select
                 value={filters.status}
                 onChange={(e) => setFilters({...filters, status: e.target.value})}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                className="user-bookings__filter-select"
               >
                 <option value="all">All Status</option>
                 <option value="pending">Pending</option>
@@ -4290,7 +4300,7 @@ const BookingDoctor = () => {
               <select
                 value={filters.paymentStatus}
                 onChange={(e) => setFilters({...filters, paymentStatus: e.target.value})}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                className="user-bookings__filter-select"
               >
                 <option value="all">Payment Status</option>
                 <option value="pending">Pending</option>
@@ -4300,19 +4310,19 @@ const BookingDoctor = () => {
               {(filters.status !== 'all' || filters.paymentStatus !== 'all' || filterDate || searchTerm) && (
                 <button
                   onClick={clearFilters}
-                  className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition"
-                  title="Clear filters"
+                  className="user-bookings__btn user-bookings__btn--secondary"
                 >
-                  <XIcon size={16} />
+                  <XIcon size={14} />
+                  Clear
                 </button>
               )}
               {displayBookings.length > 0 && (
                 <button
                   onClick={exportToExcel}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition"
+                  className="user-bookings__btn user-bookings__btn--secondary"
                 >
                   <Download size={14} />
-                  <span className="hidden xs:inline">Export</span>
+                  Export
                 </button>
               )}
             </div>
@@ -4328,12 +4338,14 @@ const BookingDoctor = () => {
             {filteredVisitBookings.length > 0 && renderVisitTable(filteredVisitBookings)}
             {filteredChamberBookings.length > 0 && renderChamberTable(filteredChamberBookings)}
             {filteredBookings.length === 0 && (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-12 text-center">
-                <Calendar size={48} className="mx-auto text-gray-300 mb-4" />
-                <p className="text-gray-500 font-medium">No medical bookings found</p>
-                <p className="text-sm text-gray-400 mt-1">
-                  {bookings.length === 0 ? "You haven't made any bookings yet." : "Try adjusting your filters."}
-                </p>
+              <div className="user-bookings__card">
+                <div className="user-bookings__empty">
+                  <Calendar size={32} className="user-bookings__empty-icon" />
+                  <p className="user-bookings__empty-text">No medical bookings found</p>
+                  <p className="text-sm text-gray-400 mt-1">
+                    {bookings.length === 0 ? "You haven't made any bookings yet." : "Try adjusting your filters."}
+                  </p>
+                </div>
               </div>
             )}
           </>
@@ -4347,7 +4359,7 @@ const BookingDoctor = () => {
         <div className="mt-6 text-center text-[9px] text-gray-400 font-medium tracking-wider">
           © IRYAX SPACE — All Rights Reserved
         </div>
-      </div>
+      </main>
 
       {/* ============================================================ */}
       {/* VIEW MODAL */}
@@ -4810,39 +4822,40 @@ const BookingDoctor = () => {
   function renderVisitTable(bookingsList) {
     if (bookingsList.length === 0) {
       return (
-        <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-          <div className="flex flex-col items-center text-gray-400">
-            <Calendar size={32} className="opacity-20 mb-2" />
-            <p className="text-sm font-medium">No site visits found</p>
+        <div className="user-bookings__card">
+          <div className="user-bookings__empty">
+            <Calendar size={32} className="user-bookings__empty-icon" />
+            <p className="user-bookings__empty-text">No site visits found</p>
           </div>
         </div>
       );
     }
 
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-4 py-3 bg-purple-50 border-b border-gray-200 flex items-center justify-between">
+      <div className="user-bookings__card">
+        <div className="user-bookings__card-header bg-purple-50/60">
           <div className="flex items-center gap-2">
             <Calendar size={16} className="text-purple-600" />
-            <h3 className="font-bold text-gray-800">Site Visits</h3>
+            <h3 className="user-bookings__card-title">Site Visits</h3>
             <span className="px-2 py-0.5 bg-white/60 rounded-full text-xs font-bold text-gray-600">{bookingsList.length}</span>
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm min-w-[1000px]">
+          <table className="user-bookings__table min-w-[1000px]">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-100">
-                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">#</th>
-                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Cabin</th>
-                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Type</th>
-                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Visit Date</th>
-                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Visit Time</th>
-                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Status</th>
-                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Created At</th>
-                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase text-center">Actions</th>
+              <tr>
+                <th>#</th>
+                <th>Booking ID</th>
+                <th>Cabin</th>
+                <th>Type</th>
+                <th>Visit Date</th>
+                <th>Visit Time</th>
+                <th>Status</th>
+                <th>Created At</th>
+                <th className="text-center">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody>
               {bookingsList.map((b, idx) => {
                 const status = getStatusBadge(b.status);
                 const bookingId = b._id?.slice(-8).toUpperCase() || 'N/A';
@@ -4908,44 +4921,44 @@ const BookingDoctor = () => {
   function renderChamberTable(bookingsList) {
     if (bookingsList.length === 0) {
       return (
-        <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-          <div className="flex flex-col items-center text-gray-400">
-            <Building2 size={32} className="opacity-20 mb-2" />
-            <p className="text-sm font-medium">No cabin bookings found</p>
+        <div className="user-bookings__card">
+          <div className="user-bookings__empty">
+            <Building2 size={32} className="user-bookings__empty-icon" />
+            <p className="user-bookings__empty-text">No cabin bookings found</p>
           </div>
         </div>
       );
     }
 
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-4 py-3 bg-rose-50 border-b border-gray-200 flex items-center justify-between">
+      <div className="user-bookings__card">
+        <div className="user-bookings__card-header bg-rose-50/60">
           <div className="flex items-center gap-2">
             <Stethoscope size={16} className="text-rose-600" />
-            <h3 className="font-bold text-gray-800">Medical cabin Bookings</h3>
+            <h3 className="user-bookings__card-title">Medical Cabin Bookings</h3>
             <span className="px-2 py-0.5 bg-white/60 rounded-full text-xs font-bold text-gray-600">{bookingsList.length}</span>
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm min-w-[1300px]">
+          <table className="user-bookings__table min-w-[1300px]">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-100">
-                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">S. No</th>
-                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Cabin</th>
-                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Type</th>
-                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Start</th>
-                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">End</th>
-                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Hours</th>
-                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Days</th>
-                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Seats</th>
-                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Status</th>
-                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Payment</th>
-                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Amount</th>
-                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Created At</th>
-                <th className="px-3 py-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase text-center">Actions</th>
+              <tr>
+                <th>S. No</th>
+                <th>Cabin</th>
+                <th>Type</th>
+                <th>Start</th>
+                <th>End</th>
+                <th>Hours</th>
+                <th>Days</th>
+                <th>Seats</th>
+                <th>Status</th>
+                <th>Payment</th>
+                <th>Amount</th>
+                <th>Created At</th>
+                <th className="text-center">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody>
               {bookingsList.map((b, idx) => {
                 const status = getStatusBadge(b.status);
                 const pmtMethod = getPaymentMethodBadge(b.paymentMethod);

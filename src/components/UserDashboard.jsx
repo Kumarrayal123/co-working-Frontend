@@ -1369,7 +1369,7 @@
 
 
 
-// UserDashboard.jsx - With Profile Completion Circle
+// UserDashboard.jsx - Without Profile Completion Circle
 import axios from "axios";
 import {
   Calendar,
@@ -1381,12 +1381,10 @@ import {
   IndianRupee,
   TrendingUp,
   TrendingDown,
-  Clock,
   CheckCircle,
   XCircle,
   BarChart3,
   PieChart,
-  Activity,
   DollarSign,
   Users,
   ArrowUpRight,
@@ -1428,7 +1426,6 @@ import {
   Percent,
   Sun,
   Moon,
-  Clock as ClockIcon,
   Video,
   FileVideo,
   Play,
@@ -1441,7 +1438,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import UsersNavbar from "./UsersNavbar";
-import "./Dashboard.css";
+import "./UserDashboard.css";
 
 const API_URL = "https://spaceapi.iryax.com";
 const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
@@ -1473,9 +1470,6 @@ const EXCLUSIVE_AMENITIES = [
 const UserDashboard = () => {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
-  const [completionPercentage, setCompletionPercentage] = useState(0);
-  const [missingFields, setMissingFields] = useState([]);
-  const [animatedPercentage, setAnimatedPercentage] = useState(0);
   
   const [dashboardData, setDashboardData] = useState({
     totalBookings: 0,
@@ -1536,72 +1530,7 @@ const UserDashboard = () => {
   
   const navigate = useNavigate();
 
-  // Calculate profile completion percentage - FOR USER
-  const calculateCompletion = (userData) => {
-    const fields = [
-      { key: 'name', label: 'Full Name', required: true },
-      { key: 'email', label: 'Email Address', required: true },
-      { key: 'mobile', label: 'Mobile Number', required: true },
-      { key: 'address', label: 'Address', required: true },
-      { key: 'organizationName', label: 'Organization Name', required: false },
-      { key: 'gstNumber', label: 'GST Number', required: false }
-    ];
-
-    let completed = 0;
-    let total = 0;
-    const missing = [];
-
-    fields.forEach(field => {
-      const value = userData[field.key];
-      
-      if (field.required) {
-        total++;
-        if (value && value.toString().trim() !== '') {
-          completed++;
-        } else {
-          missing.push(field.label);
-        }
-      } else {
-        total++;
-        if (value && value.toString().trim() !== '') {
-          completed++;
-        } else {
-          missing.push(field.label);
-        }
-      }
-    });
-
-    let percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
-    
-    if (userData._id && percentage < 10) {
-      percentage = 10;
-    }
-
-    return { percentage, missing };
-  };
-
-  // Animate percentage on load
-  useEffect(() => {
-    if (completionPercentage > 0) {
-      let start = 0;
-      const duration = 1500;
-      const step = Math.max(1, Math.floor(completionPercentage / 60));
-      
-      const timer = setInterval(() => {
-        start += step;
-        if (start >= completionPercentage) {
-          setAnimatedPercentage(completionPercentage);
-          clearInterval(timer);
-        } else {
-          setAnimatedPercentage(start);
-        }
-      }, 20);
-      
-      return () => clearInterval(timer);
-    }
-  }, [completionPercentage]);
-
-  // Fetch profile for completion
+  // Fetch profile
   const fetchProfile = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -1617,9 +1546,6 @@ const UserDashboard = () => {
 
       if (res.data.success && res.data.user) {
         setProfile(res.data.user);
-        const { percentage, missing } = calculateCompletion(res.data.user);
-        setCompletionPercentage(percentage);
-        setMissingFields(missing);
       }
     } catch (err) {
       console.error("Error fetching profile:", err);
@@ -2032,72 +1958,6 @@ const UserDashboard = () => {
     return `${API_URL}/${cleanPath}`;
   };
 
-  // Circular Progress Component
-  const CircularProgress = ({ percentage, size = 100, strokeWidth = 8 }) => {
-    const radius = (size - strokeWidth) / 2;
-    const circumference = radius * 2 * Math.PI;
-    const offset = circumference - (percentage / 100) * circumference;
-    
-    const getColor = (p) => {
-      if (p >= 80) return '#10b981';
-      if (p >= 50) return '#f59e0b';
-      return '#ef4444';
-    };
-    const color = getColor(percentage);
-
-    return (
-      <div className="relative inline-flex items-center justify-center">
-        <svg
-          width={size}
-          height={size}
-          className="transform -rotate-90"
-        >
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            stroke="#e5e7eb"
-            strokeWidth={strokeWidth}
-            fill="none"
-          />
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            stroke={color}
-            strokeWidth={strokeWidth}
-            fill="none"
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            strokeDashoffset={offset}
-            className="transition-all duration-500 ease-in-out"
-          />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-xl font-bold" style={{ color: color }}>
-            {percentage}%
-          </span>
-          <span className="text-[7px] font-medium text-gray-500 uppercase tracking-wider">
-            Complete
-          </span>
-        </div>
-      </div>
-    );
-  };
-
-  const getCompletionColor = (percentage) => {
-    if (percentage >= 80) return 'text-emerald-600';
-    if (percentage >= 50) return 'text-yellow-600';
-    return 'text-red-500';
-  };
-
-  const getCompletionEmoji = (percentage) => {
-    if (percentage >= 80) return '🎉';
-    if (percentage >= 50) return '📈';
-    if (percentage >= 30) return '📝';
-    return '⚠️';
-  };
-
   const getProfileName = () => {
     return profile?.name || user?.name || 'User';
   };
@@ -2105,11 +1965,11 @@ const UserDashboard = () => {
   // Loading state
   if (loading) {
     return (
-      <div className="admin-dash">
+      <div className="user-dash">
         <UsersNavbar />
-        <div className="admin-dash__loading">
-          <div className="admin-dash__spinner" />
-          <p className="admin-dash__loading-text">Loading dashboard analytics...</p>
+        <div className="user-dash__loading">
+          <div className="user-dash__spinner" />
+          <p className="user-dash__loading-text">Loading dashboard analytics...</p>
         </div>
       </div>
     );
@@ -2118,14 +1978,14 @@ const UserDashboard = () => {
   // Error state
   if (error) {
     return (
-      <div className="admin-dash">
+      <div className="user-dash">
         <UsersNavbar />
-        <div className="admin-dash__error">
-          <p className="admin-dash__error-title">Oops!</p>
-          <p className="admin-dash__error-message">{error}</p>
-          <button 
+        <div className="user-dash__error">
+          <p className="user-dash__error-title">Oops!</p>
+          <p className="user-dash__error-message">{error}</p>
+          <button
             onClick={() => fetchAllData()}
-            className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+            className="user-dash__btn user-dash__btn--primary"
           >
             Retry
           </button>
@@ -2159,19 +2019,6 @@ const UserDashboard = () => {
       icon: Calendar,
       color: "indigo",
       onClick: () => navigate("/mybookings")
-    },
-    {
-      label: "Pending",
-      value: statusDistribution.pending || 0,
-      meta: "awaiting confirmation",
-      icon: Clock,
-      color: "amber",
-      onClick: () => {
-        setSelectedStatus("pending");
-        setTimeout(() => {
-          window.scrollTo({ top: 1000, behavior: 'smooth' });
-        }, 200);
-      }
     },
     {
       label: "My Cabins",
@@ -2208,7 +2055,6 @@ const UserDashboard = () => {
 
   const latestMyBookings = recentBookings.slice(0, 5);
   const latestCabinBookings = recentCabinBookings.slice(0, 5);
-  const activeBookingsCount = statusDistribution.active || 0;
 
   // Check if any filter is active
   const isFilterActive = selectedMonth !== "all" || 
@@ -2219,112 +2065,43 @@ const UserDashboard = () => {
                          filters.paymentStatus !== "all";
 
   return (
-    <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
+    <div className="user-dash">
       <UsersNavbar />
 
-      <div className="pt-20 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
-        {/* Header (match /userdashboard UI) */}
-        <div className="admin-dash__header" style={{ marginBottom: "8px" }}>
+      <main className="pt-20 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
+        {/* Header */}
+        <div className="user-dash__header">
           <div>
-            <h1 className="admin-dash__greeting" style={{ fontSize: "1.25rem" }}>
+            <h1 className="user-dash__greeting">
               My <span>Dashboard</span>
             </h1>
-            <p className="admin-dash__subtitle" style={{ fontSize: "11px" }}>
+            <p className="user-dash__subtitle">
               Welcome back, <span className="font-semibold text-gray-700">{getProfileName()}</span>
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            {activeBookingsCount > 0 && (
-              <span className="admin-dash__date-pill">
-                <Activity size={14} />
-                {activeBookingsCount} Active
-              </span>
-            )}
-          </div>
         </div>
 
-        {/* Profile Completion Card (compact to match /userdashboard) */}
-        <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 rounded-xl border border-indigo-200 shadow-sm p-3 sm:p-4 mb-5">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <div className="flex-shrink-0 flex justify-center">
-              <CircularProgress 
-                percentage={animatedPercentage || completionPercentage} 
-                size={80}
-                strokeWidth={7}
-              />
-            </div>
-
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-0.5">
-                <span className="text-lg">{getCompletionEmoji(completionPercentage)}</span>
-                <h3 className="text-xs font-semibold text-gray-800">Profile Completion</h3>
-              </div>
-              
-              <div className="flex flex-wrap items-center gap-1.5">
-                <div className="flex items-center gap-1 bg-white/80 backdrop-blur-sm px-2 py-0.5 rounded-lg border border-gray-200">
-                  <span className="text-[8px] font-medium text-gray-500">Completed:</span>
-                  <span className={`text-xs font-bold ${getCompletionColor(completionPercentage)}`}>{completionPercentage}%</span>
-                </div>
-                <div className="flex items-center gap-1 bg-white/80 backdrop-blur-sm px-2 py-0.5 rounded-lg border border-gray-200">
-                  <span className="text-[8px] font-medium text-gray-500">Pending:</span>
-                  <span className="text-xs font-bold text-amber-600">{missingFields.length}</span>
-                </div>
-              </div>
-
-              {missingFields.length > 0 && (
-                <div className="mt-1 flex flex-wrap items-center gap-1 bg-white/60 backdrop-blur-sm px-2 py-1 rounded-lg border border-amber-200">
-                  <AlertTriangle size={10} className="text-amber-500 flex-shrink-0" />
-                  <p className="text-[8px] text-gray-700">
-                    <span className="font-semibold text-amber-600">{missingFields.length}</span> fields remaining
-                  </p>
-                  <button
-                    onClick={() => navigate("/myprofile")}
-                    className="inline-flex items-center gap-0.5 text-[8px] font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
-                  >
-                    Complete Now <ArrowRight size={8} />
-                  </button>
-                </div>
-              )}
-              
-              {missingFields.length === 0 && (
-                <div className="mt-1 flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
-                  <CheckCircle size={10} className="text-emerald-500" />
-                  <p className="text-[8px] font-medium text-emerald-700">100% complete! 🎉</p>
-                </div>
-              )}
-            </div>
-            
-            <button
-              onClick={() => navigate("/myprofile")}
-              className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1.5 bg-indigo-600 text-white rounded-lg text-[10px] font-medium hover:bg-indigo-700 transition-colors shadow-sm shadow-indigo-200"
-            >
-              <User size={12} />
-              View Profile
-            </button>
-          </div>
-        </div>
-
-        {/* Stats Cards (match /userdashboard card style) */}
-        <div className="admin-dash__stats admin-dash__stats--six" style={{ marginBottom: "16px" }}>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4 mb-6">
           {statsCards.map((stat, index) => (
             <div
               key={index}
-              className="admin-dash__stat"
+              className="user-dash__stat cursor-pointer hover:scale-105 transition-transform duration-200"
               onClick={stat.onClick}
               title={stat.onClick ? "Click to view" : undefined}
             >
-              <div className="admin-dash__stat-top">
-                <span className="admin-dash__stat-label" style={{ fontSize: "11px" }}>
+              <div className="user-dash__stat-top">
+                <span className="user-dash__stat-label">
                   {stat.label}
                 </span>
-                <div className={`admin-dash__stat-icon admin-dash__stat-icon--${stat.color}`}>
+                <div className={`user-dash__stat-icon user-dash__stat-icon--${stat.color}`}>
                   <stat.icon size={14} />
                 </div>
               </div>
-              <div className="admin-dash__stat-value" style={{ fontSize: "18px", fontWeight: "700" }}>
+              <div className="user-dash__stat-value">
                 {stat.value}
               </div>
-              <div className="admin-dash__stat-meta" style={{ fontSize: "9px" }}>
+              <div className="user-dash__stat-meta">
                 {stat.meta}
               </div>
             </div>
@@ -2332,19 +2109,19 @@ const UserDashboard = () => {
         </div>
 
         {/* Row 4: Charts Section */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
+        <div className="user-dash__chart">
+          <div className="user-dash__chart-header">
             <div className="flex items-center gap-2">
               <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl shadow-md shadow-indigo-200">
                 <BarChart3 size={18} className="text-white" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-gray-800">Monthly Bookings</h3>
-                <p className="text-xs text-gray-500">Booking trends over time</p>
+                <h3 className="user-dash__card-title">Monthly Bookings</h3>
+                <p className="user-dash__card-desc">Booking trends over time</p>
               </div>
             </div>
           </div>
-          <div className="h-48 flex items-end justify-between gap-2 px-2">
+          <div className="user-dash__card-body h-48 flex items-end justify-between gap-2 px-2">
             {bookingChartData && bookingChartData.length > 0 ? (
               bookingChartData.map((item, idx) => {
                 const maxVal = Math.max(...bookingChartData.map(d => d.bookings), 1);
@@ -2371,7 +2148,7 @@ const UserDashboard = () => {
               </div>
             )}
           </div>
-          <div className="flex justify-between mt-4 text-xs text-gray-500 bg-gray-50 rounded-xl px-4 py-3">
+          <div className="flex justify-between mt-4 text-xs text-gray-500 bg-gray-50 rounded-xl px-4 py-3 user-dash__card-body">
             <span className="flex items-center gap-2 font-medium">
               <span className="w-3 h-3 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500"></span>
               Total: <span className="text-indigo-600 font-bold">{bookingChartData?.reduce((sum, d) => sum + d.bookings, 0) || 0}</span> bookings
@@ -2383,9 +2160,9 @@ const UserDashboard = () => {
           </div>
         </div>
 
-        {/* Filter Section - UPDATED to match SimpleUserDashboard style */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-3 mb-4">
-          <div className="flex flex-col sm:flex-row gap-2">
+        {/* Filter Section */}
+        <div className="user-dash__filters">
+          <div className="user-dash__filter-group">
             <div className="flex-1 relative">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
@@ -2393,71 +2170,69 @@ const UserDashboard = () => {
                 placeholder="Search bookings..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                className="user-dash__filter-input w-full pl-8"
               />
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
-              />
-              <input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
-              />
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="user-dash__filter-input"
+            />
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="user-dash__filter-input"
+            />
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="user-dash__filter-select"
+            >
+              <option value="all">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="active">Active</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="user-dash__filter-select"
+            >
+              <option value="all">All Months</option>
+              {availableMonths.map(month => {
+                const [year, monthNum] = month.split('-');
+                const date = new Date(parseInt(year), parseInt(monthNum) - 1);
+                return (
+                  <option key={month} value={month}>
+                    {date.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                  </option>
+                );
+              })}
+            </select>
+            <select
+              value={filters.paymentStatus}
+              onChange={(e) => setFilters(prev => ({ ...prev, paymentStatus: e.target.value }))}
+              className="user-dash__filter-select"
+            >
+              <option value="all">Payment Status</option>
+              <option value="pending">Pending</option>
+              <option value="paid">Paid</option>
+              <option value="failed">Failed</option>
+              <option value="refunded">Refunded</option>
+            </select>
+            {isFilterActive && (
+              <button
+                onClick={clearFilters}
+                className="user-dash__btn"
+                title="Clear filters"
               >
-                <option value="all">All Status</option>
-                <option value="pending">Pending</option>
-                <option value="confirmed">Confirmed</option>
-                <option value="active">Active</option>
-                <option value="completed">Completed</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-              <select
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
-              >
-                <option value="all">All Months</option>
-                {availableMonths.map(month => {
-                  const [year, monthNum] = month.split('-');
-                  const date = new Date(parseInt(year), parseInt(monthNum) - 1);
-                  return (
-                    <option key={month} value={month}>
-                      {date.toLocaleString('default', { month: 'long', year: 'numeric' })}
-                    </option>
-                  );
-                })}
-              </select>
-              <select
-                value={filters.paymentStatus}
-                onChange={(e) => setFilters(prev => ({ ...prev, paymentStatus: e.target.value }))}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
-              >
-                <option value="all">Payment Status</option>
-                <option value="pending">Pending</option>
-                <option value="paid">Paid</option>
-                <option value="failed">Failed</option>
-                <option value="refunded">Refunded</option>
-              </select>
-              {isFilterActive && (
-                <button
-                  onClick={clearFilters}
-                  className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition"
-                  title="Clear filters"
-                >
-                  <XIcon size={16} />
-                </button>
-              )}
-            </div>
+                <XIcon size={16} />
+              </button>
+            )}
           </div>
           <div className="mt-1.5 text-[10px] text-gray-400">
             Showing {filteredBookings.length} of {originalBookings.length} bookings
@@ -2465,28 +2240,28 @@ const UserDashboard = () => {
         </div>
 
         {/* Row 5: My Cabins Section */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-6">
-          <div className="flex flex-wrap items-center justify-between gap-3 p-5 border-b border-gray-100 bg-gray-50/50">
+        <div className="user-dash__card">
+          <div className="user-dash__card-header">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl shadow-md shadow-emerald-200">
                 <Home size={18} className="text-white" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-gray-800">My Cabins</h3>
-                <p className="text-xs text-gray-500">Manage your registered spaces</p>
+                <h3 className="user-dash__card-title">My Cabins</h3>
+                <p className="user-dash__card-desc">Manage your registered spaces</p>
               </div>
-              <span className="px-3 py-1 text-xs font-bold text-emerald-700 bg-emerald-100 rounded-full">
+              <span className="user-dash__badge user-dash__badge--success">
                 {cabins.length}
               </span>
             </div>
             <button
               onClick={() => navigate("/mycabin")}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+              className="user-dash__card-link"
             >
               View All <ArrowUpRight size={14} />
             </button>
           </div>
-          <div className="p-0 overflow-x-auto">
+          <div className="user-dash__card-body p-0 overflow-x-auto">
             {cabins.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-4 py-16 text-gray-400">
                 <div className="p-4 bg-gray-100 rounded-2xl">
@@ -2498,30 +2273,30 @@ const UserDashboard = () => {
                 </div>
               </div>
             ) : (
-              <table className="w-full min-w-[700px] text-left">
+              <table className="user-dash__table">
                 <thead>
-                  <tr className="border-b border-gray-100 bg-gray-50/50">
-                    <th className="p-4 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">S.No</th>
-                    <th className="p-4 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
-                    <th className="p-4 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Address</th>
-                    <th className="p-4 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Type</th>
-                    <th className="p-4 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Price</th>
-                    <th className="p-4 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
-                    <th className="p-4 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap text-center">Action</th>
+                  <tr>
+                    <th>S.No</th>
+                    <th>Cabin</th>
+                    <th>Address</th>
+                    <th>Type</th>
+                    <th>Price</th>
+                    <th>Status</th>
+                    <th className="text-center">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody>
                   {cabins.slice(0, 5).map((cabin, index) => {
                     const cabinStatus = getCabinStatus(cabin);
                     const isExclusive = cabin.cabinType === 'exclusive';
                     return (
-                      <tr key={cabin._id} className="transition-all hover:bg-gradient-to-r hover:from-gray-50 hover:to-indigo-50/30 cursor-pointer group" onClick={() => navigate(`/cabin/${cabin._id}`)}>
-                        <td className="p-4">
+                      <tr key={cabin._id} className="group cursor-pointer" onClick={() => navigate(`/cabin/${cabin._id}`)}>
+                        <td>
                           <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 text-xs font-bold text-gray-500 group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors">
                             {index + 1}
                           </span>
                         </td>
-                        <td className="p-4">
+                        <td>
                           <div className="flex items-center gap-3">
                             <div className="flex-shrink-0 w-12 h-12 rounded-xl overflow-hidden bg-gray-100 border border-gray-200 shadow-sm">
                               <img
@@ -2537,44 +2312,44 @@ const UserDashboard = () => {
                             </div>
                           </div>
                         </td>
-                        <td className="p-4">
+                        <td>
                           <div className="flex items-center gap-1.5 text-sm text-gray-600">
                             <MapPin size={14} className="text-gray-400 flex-shrink-0" />
                             <span className="truncate max-w-[140px]">{cabin.address || "N/A"}</span>
                           </div>
                         </td>
-                        <td className="p-4">
+                        <td>
                           <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold rounded-lg ${
-                            isExclusive 
-                              ? 'bg-gradient-to-r from-amber-100 to-amber-50 text-amber-700 border border-amber-200' 
+                            isExclusive
+                              ? 'bg-gradient-to-r from-amber-100 to-amber-50 text-amber-700 border border-amber-200'
                               : 'bg-gradient-to-r from-blue-100 to-blue-50 text-blue-700 border border-blue-200'
                           }`}>
                             {isExclusive ? <Crown size={11} /> : null}
                             {isExclusive ? 'Exclusive' : 'Normal'}
                           </span>
                         </td>
-                        <td className="p-4">
+                        <td>
                           <div className="flex items-baseline gap-1">
                             <span className="text-base font-bold text-gray-900">₹{cabin.price || 0}</span>
                             <span className="text-[10px] text-gray-400 font-medium">/hr</span>
                           </div>
                         </td>
-                        <td className="p-4">
+                        <td>
                           <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold rounded-lg ${
-                            cabinStatus.color === 'green' 
-                              ? 'bg-gradient-to-r from-emerald-100 to-emerald-50 text-emerald-700 border border-emerald-200' 
+                            cabinStatus.color === 'green'
+                              ? 'bg-gradient-to-r from-emerald-100 to-emerald-50 text-emerald-700 border border-emerald-200'
                               : 'bg-gradient-to-r from-gray-100 to-gray-50 text-gray-600 border border-gray-200'
                           }`}>
                             {cabinStatus.color === 'green' && <CheckCircle size={11} />}
                             {cabinStatus.status}
                           </span>
                         </td>
-                        <td className="p-4 text-center">
+                        <td className="text-center">
                           <button
                             onClick={(e) => { e.stopPropagation(); navigate(`/cabin/${cabin._id}`); }}
-                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-bold bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:from-indigo-600 hover:to-purple-600 transition-all shadow-md shadow-indigo-200/50 hover:shadow-indigo-300/50"
+                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-[11px] font-bold bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 bg-[length:200%_100%] text-white hover:bg-[position:100%_0] transition-all duration-500 shadow-lg shadow-indigo-300/50 hover:shadow-xl hover:shadow-indigo-400/60 transform hover:scale-105 active:scale-95"
                           >
-                            <Eye size={11} /> View
+                            <Eye size={12} /> View
                           </button>
                         </td>
                       </tr>
@@ -2587,28 +2362,28 @@ const UserDashboard = () => {
         </div>
 
         {/* Row 6: My Latest Bookings */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-6">
-          <div className="flex flex-wrap items-center justify-between gap-3 p-5 border-b border-gray-100 bg-gray-50/50">
+        <div className="user-dash__card">
+          <div className="user-dash__card-header">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl shadow-md shadow-indigo-200">
                 <Calendar size={18} className="text-white" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-gray-800">My Latest Bookings</h3>
-                <p className="text-xs text-gray-500">Recent space reservations</p>
+                <h3 className="user-dash__card-title">My Latest Bookings</h3>
+                <p className="user-dash__card-desc">Recent space reservations</p>
               </div>
-              <span className="px-3 py-1 text-xs font-bold text-indigo-700 bg-indigo-100 rounded-full">
+              <span className="user-dash__badge user-dash__badge--info">
                 {latestMyBookings.length}
               </span>
             </div>
             <button
               onClick={() => navigate("/mybookings")}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+              className="user-dash__card-link"
             >
               View All <ArrowUpRight size={14} />
             </button>
           </div>
-          <div className="p-0 overflow-x-auto">
+          <div className="user-dash__card-body p-0 overflow-x-auto">
             {latestMyBookings.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-4 py-16 text-gray-400">
                 <div className="p-4 bg-gray-100 rounded-2xl">
@@ -2620,27 +2395,28 @@ const UserDashboard = () => {
                 </div>
               </div>
             ) : (
-              <table className="w-full min-w-[700px] text-left">
+              <table className="user-dash__table">
                 <thead>
-                  <tr className="border-b border-gray-100 bg-gray-50/50">
-                    <th className="p-4 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">S.No</th>
-                    <th className="p-4 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
-                    <th className="p-4 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Date</th>
-                    <th className="p-4 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
-                    <th className="p-4 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Amount</th>
+                  <tr>
+                    <th>S.No</th>
+                    <th>Cabin</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Amount</th>
+                    <th className="text-center">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody>
                   {latestMyBookings.map((b, idx) => {
                     const status = getStatusBadgeSimple(b.status);
                     return (
-                      <tr key={b._id} className="transition-all hover:bg-gradient-to-r hover:from-gray-50 hover:to-indigo-50/30 cursor-pointer group" onClick={() => navigate("/mybookings")}>
-                        <td className="p-4">
+                      <tr key={b._id} className="group cursor-pointer" onClick={() => navigate("/mybookings")}>
+                        <td>
                           <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 text-xs font-bold text-gray-500 group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors">
                            {idx + 1}
                           </span>
                         </td>
-                        <td className="p-4">
+                        <td>
                           <div>
                             <p className="font-bold text-gray-900 text-sm">{b.cabinName || 'Unknown'}</p>
                             <p className="text-[10px] text-gray-500 font-medium flex items-center gap-1">
@@ -2648,15 +2424,23 @@ const UserDashboard = () => {
                             </p>
                           </div>
                         </td>
-                        <td className="p-4">
+                        <td>
                           <p className="text-sm font-semibold text-gray-700">{b.startDate || b.date}</p>
                           <p className="text-[10px] text-gray-500">{b.startTime || ''} {b.endTime ? `- ${b.endTime}` : ''}</p>
                         </td>
-                        <td className="p-4">
+                        <td>
                           <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold rounded-lg ${status.color}`}>{status.label}</span>
                         </td>
-                        <td className="p-4">
+                        <td>
                           <span className="text-base font-bold text-indigo-600">₹{b.amount || b.totalPrice || 0}</span>
+                        </td>
+                        <td className="text-center">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); navigate(`/booking/${b._id}`); }}
+                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-[11px] font-bold bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 bg-[length:200%_100%] text-white hover:bg-[position:100%_0] transition-all duration-500 shadow-lg shadow-indigo-300/50 hover:shadow-xl hover:shadow-indigo-400/60 transform hover:scale-105 active:scale-95"
+                          >
+                            <Eye size={12} /> View
+                          </button>
                         </td>
                       </tr>
                     );
@@ -2668,28 +2452,28 @@ const UserDashboard = () => {
         </div>
 
         {/* Row 7: My Cabin Bookings */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-6">
-          <div className="flex flex-wrap items-center justify-between gap-3 p-5 border-b border-gray-100 bg-gray-50/50">
+        <div className="user-dash__card">
+          <div className="user-dash__card-header">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-gradient-to-br from-rose-500 to-pink-500 rounded-xl shadow-md shadow-rose-200">
                 <Building2 size={18} className="text-white" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-gray-800">My Cabin Bookings</h3>
-                <p className="text-xs text-gray-500">Bookings received for your cabins</p>
+                <h3 className="user-dash__card-title">My Cabin Bookings</h3>
+                <p className="user-dash__card-desc">Bookings received for your cabins</p>
               </div>
-              <span className="px-3 py-1 text-xs font-bold text-rose-700 bg-rose-100 rounded-full">
+              <span className="user-dash__badge user-dash__badge--danger">
                 {recentCabinBookings.length}
               </span>
             </div>
             <button
               onClick={() => navigate("/cabin-bookings")}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+              className="user-dash__card-link"
             >
               View All <ArrowUpRight size={14} />
             </button>
           </div>
-          <div className="p-0 overflow-x-auto">
+          <div className="user-dash__card-body p-0 overflow-x-auto">
             {recentCabinBookings.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-4 py-16 text-gray-400">
                 <div className="p-4 bg-gray-100 rounded-2xl">
@@ -2701,28 +2485,29 @@ const UserDashboard = () => {
                 </div>
               </div>
             ) : (
-              <table className="w-full min-w-[700px] text-left">
+              <table className="user-dash__table">
                 <thead>
-                  <tr className="border-b border-gray-100 bg-gray-50/50">
-                    <th className="p-4 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">S.No</th>
-                    <th className="p-4 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
-                    <th className="p-4 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Customer</th>
-                    <th className="p-4 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Date</th>
-                    <th className="p-4 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
-                    <th className="p-4 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Amount</th>
+                  <tr>
+                    <th>S.No</th>
+                    <th>Cabin</th>
+                    <th>Customer</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Amount</th>
+                    <th className="text-center">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody>
                   {recentCabinBookings.slice(0, 5).map((b, idx) => {
                     const status = getStatusBadgeSimple(b.status);
                     return (
-                      <tr key={b._id} className="transition-all hover:bg-gradient-to-r hover:from-gray-50 hover:to-rose-50/30 cursor-pointer group" onClick={() => navigate("/cabin-bookings")}>
-                        <td className="p-4">
+                      <tr key={b._id} className="group cursor-pointer" onClick={() => navigate("/cabin-bookings")}>
+                        <td>
                           <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 text-xs font-bold text-gray-500 group-hover:bg-rose-100 group-hover:text-rose-600 transition-colors">
                            {idx + 1}
                           </span>
                         </td>
-                        <td className="p-4">
+                        <td>
                           <div>
                             <p className="font-bold text-gray-900 text-sm">{b.cabinName || 'Unknown Cabin'}</p>
                             <p className="text-[10px] text-gray-500 font-medium flex items-center gap-1">
@@ -2730,23 +2515,31 @@ const UserDashboard = () => {
                             </p>
                           </div>
                         </td>
-                        <td className="p-4">
+                        <td>
                           <p className="font-semibold text-gray-800 text-sm">{b.name || 'Unknown'}</p>
                           <p className="text-[10px] text-gray-500">{b.mobile || b.email || 'N/A'}</p>
                         </td>
-                        <td className="p-4">
+                        <td>
                           <p className="text-sm font-semibold text-gray-700">{b.startDate || 'N/A'}</p>
                           <p className="text-[10px] text-gray-500">
                             {b.startTime || ''} {b.endTime ? `- ${b.endTime}` : ''}
                           </p>
                         </td>
-                        <td className="p-4">
+                        <td>
                           <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold rounded-lg ${status.color}`}>
                             {status.label}
                           </span>
                         </td>
-                        <td className="p-4">
+                        <td>
                           <span className="text-base font-bold text-rose-600">₹{b.amount || b.totalPrice || 0}</span>
+                        </td>
+                        <td className="text-center">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); navigate(`/cabin-booking/${b._id}`); }}
+                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-[11px] font-bold bg-gradient-to-r from-rose-500 via-pink-500 to-rose-500 bg-[length:200%_100%] text-white hover:bg-[position:100%_0] transition-all duration-500 shadow-lg shadow-rose-300/50 hover:shadow-xl hover:shadow-rose-400/60 transform hover:scale-105 active:scale-95"
+                          >
+                            <Eye size={12} /> View
+                          </button>
                         </td>
                       </tr>
                     );
@@ -2756,7 +2549,7 @@ const UserDashboard = () => {
             )}
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 };

@@ -27,7 +27,8 @@ import {
   XCircle as XCircleIcon,
   Home,
   Users,
-  TrendingUp
+  TrendingUp,
+  Search
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
@@ -420,8 +421,12 @@ const AllWallets = () => {
     return (
       <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
         <AdminNavbar />
-        <div className="flex justify-center items-center h-64">
-          <div className="w-12 h-12 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin" />
+        <div className="flex flex-col justify-center items-center h-64 gap-4">
+          <div className="relative">
+            <div className="w-16 h-16 border-4 border-indigo-200 rounded-full"></div>
+            <div className="w-16 h-16 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin absolute top-0 left-0"></div>
+          </div>
+          <p className="text-sm font-medium text-gray-500">Loading wallet data...</p>
         </div>
       </div>
     );
@@ -433,141 +438,146 @@ const AllWallets = () => {
 
       <div className="pt-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
         {/* Header */}
-        <div className="admin-dash__header">
+        <div className="user-visits__header">
           <div>
-            <h1 className="admin-dash__greeting">
+            <h1 className="user-visits__greeting">
               All <span>Wallets</span>
             </h1>
+            <p className="user-visits__subtitle">Manage and monitor all user wallets</p>
           </div>
           <div className="flex items-center gap-2">
             {filteredWallets.length > 0 && (
-              <button onClick={exportToExcel} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200" title="Export to Excel">
+              <button
+                onClick={exportToExcel}
+                className="user-visits__btn user-visits__btn--primary"
+              >
                 <Download size={14} />
+                Export
               </button>
             )}
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="admin-dash__stats" style={{ marginBottom: '16px' }}>
-          {[
-            {
-              label: "Total Wallets",
-              value: stats.totalWallets,
-              meta: "registered user wallets",
-              icon: Wallet,
-              color: "indigo",
-              onClick: () => clearFilters()
-            },
-            {
-              label: "Total Balance",
-              value: formatCurrency(stats.totalBalance),
-              meta: "current wallet balance",
-              icon: CreditCard,
-              color: "emerald",
-              onClick: () => setFilterHasBalance("hasBalance")
-            },
-            {
-              label: "Active Wallets",
-              value: stats.activeWallets,
-              meta: "wallets with balance",
-              icon: CheckCircle,
-              color: "cyan",
-              onClick: () => setFilterHasBalance("hasBalance")
-            },
-            {
-              label: "Total Earned",
-              value: formatCurrency(stats.totalEarned),
-              meta: "lifetime total earnings",
-              icon: TrendingUp,
-              color: "amber"
-            },
-            {
-              label: "Transactions",
-              value: stats.totalTransactions,
-              meta: "credits & withdrawals",
-              icon: History,
-              color: "purple"
-            }
-          ].map((stat, index) => (
-            <div
-              key={index}
-              className="admin-dash__stat"
-              onClick={stat.onClick}
-              style={{ 
-                cursor: stat.onClick ? 'pointer' : 'default',
-                padding: '12px 14px',
-                minHeight: '80px'
-              }}
-            >
-              <div className="admin-dash__stat-top">
-                <span className="admin-dash__stat-label" style={{ fontSize: '11px' }}>{stat.label}</span>
-                <div className={`admin-dash__stat-icon admin-dash__stat-icon--${stat.color}`} style={{ width: '28px', height: '28px' }}>
-                  <stat.icon size={14} />
-                </div>
-              </div>
-              <div className="admin-dash__stat-value" style={{ fontSize: '18px', fontWeight: '700' }}>{stat.value}</div>
-              <div className="admin-dash__stat-meta" style={{ fontSize: '9px' }}>{stat.meta}</div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-6">
+          <div className="bg-gradient-to-br from-purple-600 to-indigo-600 rounded-2xl p-5 text-white shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 transition-all duration-300 hover:-translate-y-1 cursor-pointer" onClick={() => clearFilters()}>
+            <div className="flex items-center gap-2 mb-2">
+              <Wallet size={16} className="text-purple-200" />
+              <p className="text-[10px] font-bold uppercase tracking-wider text-purple-200">Total Wallets</p>
             </div>
-          ))}
+            <p className="text-2xl sm:text-3xl font-bold">{stats.totalWallets}</p>
+            <div className="mt-3 pt-2 border-t border-white/20 flex justify-between text-[10px]">
+              <span className="text-purple-200">Registered</span>
+              <span className="font-semibold">User Wallets</span>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-pointer" onClick={() => setFilterHasBalance("hasBalance")}>
+            <div className="flex items-center gap-2 mb-2">
+              <CreditCard size={16} className="text-emerald-500" />
+              <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Total Balance</p>
+            </div>
+            <p className="text-2xl sm:text-3xl font-bold text-emerald-600">{formatCurrency(stats.totalBalance)}</p>
+            <div className="mt-3 pt-2 border-t border-gray-100 flex justify-between text-[10px]">
+              <span className="text-gray-500">Current</span>
+              <span className="font-semibold text-gray-900">Balance</span>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-pointer" onClick={() => setFilterHasBalance("hasBalance")}>
+            <div className="flex items-center gap-2 mb-2">
+              <CheckCircle size={16} className="text-blue-500" />
+              <p className="text-[10px] font-bold uppercase tracking-wider text-blue-600">Active Wallets</p>
+            </div>
+            <p className="text-2xl sm:text-3xl font-bold text-blue-600">{stats.activeWallets}</p>
+            <div className="mt-3 pt-2 border-t border-gray-100 flex justify-between text-[10px]">
+              <span className="text-gray-500">With</span>
+              <span className="font-semibold text-gray-900">Balance</span>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp size={16} className="text-amber-500" />
+              <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Total Earned</p>
+            </div>
+            <p className="text-2xl sm:text-3xl font-bold text-amber-600">{formatCurrency(stats.totalEarned)}</p>
+            <div className="mt-3 pt-2 border-t border-gray-100 flex justify-between text-[10px]">
+              <span className="text-gray-500">Lifetime</span>
+              <span className="font-semibold text-gray-900">Earnings</span>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
+            <div className="flex items-center gap-2 mb-2">
+              <History size={16} className="text-violet-500" />
+              <p className="text-[10px] font-bold uppercase tracking-wider text-violet-600">Transactions</p>
+            </div>
+            <p className="text-2xl sm:text-3xl font-bold text-violet-600">{stats.totalTransactions}</p>
+            <div className="mt-3 pt-2 border-t border-gray-100 flex justify-between text-[10px]">
+              <span className="text-gray-500">Credits &</span>
+              <span className="font-semibold text-gray-900">Withdrawals</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="bg-gradient-to-r from-gray-50 to-gray-100/50 rounded-2xl p-4 mb-6 border border-gray-200 shadow-sm">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex-1 min-w-[200px]">
+              <div className="relative">
+                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search by owner or organization..."
+                  value={filterOwnerName}
+                  onChange={(e) => setFilterOwnerName(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 text-xs border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200 bg-white"
+                />
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="px-4 py-2.5 text-xs border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200 bg-white"
+              >
+                <option value="all">All Types</option>
+                <option value="hasBalance">Has Balance</option>
+                <option value="zeroBalance">Zero Balance</option>
+              </select>
+              {(filterOwnerName || filterType !== 'all') && (
+                <button
+                  onClick={clearFilters}
+                  className="flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all duration-200"
+                >
+                  <XCircleIcon size={14} /> Clear Filters
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Table Section */}
-        <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
-          <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+          {/* Table Header */}
+          <div className="px-5 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white flex justify-between items-center">
             <div className="flex items-center gap-3">
-              <h3 className="admin-dash__card-title">All Wallets</h3>
+              <h3 className="text-sm font-bold text-gray-800">Wallet List</h3>
               <span className="px-2.5 py-0.5 text-xs font-bold text-indigo-700 bg-indigo-100 rounded-full">
                 {filteredWallets.length}
               </span>
             </div>
-          </div>
-
-          {/* ─── FILTERS - ALWAYS VISIBLE ─── */}
-          <div className="px-4 pt-4 pb-3 border-b border-gray-100" style={{ backgroundColor: '#fafafa' }}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Owner Name</label>
-                <input
-                  type="text"
-                  placeholder="Filter by owner..."
-                  value={filterOwnerName}
-                  onChange={(e) => setFilterOwnerName(e.target.value)}
-                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                />
-              </div>
-              <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Organization</label>
-                <input
-                  type="text"
-                  placeholder="Filter by org..."
-                  value={filterOrganization}
-                  onChange={(e) => setFilterOrganization(e.target.value)}
-                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                />
-              </div>
-              <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Wallet Type</label>
-                <select
-                  value={filterType}
-                  onChange={(e) => setFilterType(e.target.value)}
-                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                >
-                  <option value="all">All Types</option>
-                  <option value="hasBalance">Has Balance</option>
-                  <option value="zeroBalance">Zero Balance</option>
-                </select>
-              </div>
-              <div className="flex items-end">
-                <button onClick={clearFilters} className="w-full px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-red-600 transition-colors border border-gray-200 rounded-lg hover:border-red-300 flex items-center justify-center gap-1">
-                  <XCircleIcon size={14} /> Clear All
+            <div className="flex items-center gap-2">
+              <button onClick={fetchWallets} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-all duration-200 hover:scale-105 active:scale-95">
+                <RefreshCw size={13} /> Refresh
+              </button>
+              {filteredWallets.length > 0 && (
+                <button onClick={exportToExcel} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm shadow-indigo-500/25">
+                  <Download size={13} /> Export Excel
                 </button>
-              </div>
+              )}
             </div>
           </div>
 
           {/* Table Container */}
-          <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
+          <div className="p-0 overflow-x-auto">
             {filteredWallets.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-3 py-20 text-gray-400">
                 <Wallet size={48} className="opacity-20" />
@@ -575,16 +585,16 @@ const AllWallets = () => {
                 <p className="text-sm">Try adjusting your filters.</p>
               </div>
             ) : (
-              <table className="w-full min-w-[1000px] text-left">
+              <table className="w-full min-w-[900px] text-left text-xs">
                 <thead>
                   <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Owner</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Contact</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Balance</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Earned</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Txns</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap text-center">Actions</th>
+                    <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
+                    <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Owner</th>
+                    <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Contact</th>
+                    <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Balance</th>
+                    <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Earned</th>
+                    <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Txns</th>
+                    <th className="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -597,78 +607,76 @@ const AllWallets = () => {
                     const hasBalance = (wallet.balance || 0) > 0;
                     
                     return (
-                      <tr key={wallet._id} className="transition-colors group hover:bg-gray-50/80">
-                        <td className="p-4">
-                          <span className="text-sm font-semibold text-gray-400">#{idx + 1}</span>
-                        </td>
-                        <td className="p-4">
+                      <tr key={wallet._id} className="transition-colors hover:bg-gray-50/80">
+                        <td className="p-3"><span className="text-xs font-semibold text-gray-400">#{idx + 1}</span></td>
+                        <td className="p-3">
                           <div>
-                            <p className="font-semibold text-gray-900 text-sm">{ownerName}</p>
+                            <p className="font-semibold text-gray-800 text-xs">{ownerName}</p>
                             {ownerOrganization && (
-                              <p className="text-[10px] text-indigo-600 font-medium flex items-center gap-1 mt-0.5">
-                                <Building2 size={12} />
+                              <p className="text-[10px] text-indigo-600 flex items-center gap-1 mt-0.5">
+                                <Building2 size={10} />
                                 {ownerOrganization}
                               </p>
                             )}
-                            <p className="text-[10px] text-gray-400 flex items-center gap-1 mt-0.5">
-                              <Mail size={10} className="text-gray-400" />
+                            <p className="text-[9px] text-gray-400 flex items-center gap-1 mt-0.5">
+                              <Mail size={8} className="text-gray-400" />
                               {ownerEmail}
                             </p>
                           </div>
                         </td>
-                        <td className="p-4">
+                        <td className="p-3">
                           <div>
-                            <p className="text-sm text-gray-700 flex items-center gap-1.5">
-                              <Phone size={14} className="text-gray-400" />
+                            <p className="text-xs text-gray-700 flex items-center gap-1.5">
+                              <Phone size={12} className="text-gray-400" />
                               {ownerMobile}
                             </p>
                             {wallet.ownerId?.address && (
-                              <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
-                                <MapPin size={10} className="text-gray-400" />
+                              <p className="text-[10px] text-gray-400 flex items-center gap-1 mt-0.5">
+                                <MapPin size={8} className="text-gray-400" />
                                 <span className="truncate max-w-[120px]">{wallet.ownerId.address}</span>
                               </p>
                             )}
                           </div>
                         </td>
-                        <td className="p-4">
-                          <span className={`text-sm font-bold ${hasBalance ? 'text-emerald-600' : 'text-gray-400'}`}>
+                        <td className="p-3">
+                          <span className={`text-xs font-bold ${hasBalance ? 'text-emerald-600' : 'text-gray-400'}`}>
                             {formatCurrency(wallet.balance || 0)}
                           </span>
                           {!hasBalance && (
-                            <span className="ml-1 text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">Zero</span>
+                            <span className="ml-1 text-[9px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">Zero</span>
                           )}
                         </td>
-                        <td className="p-4">
-                          <span className="text-sm font-bold text-indigo-600">{formatCurrency(wallet.totalEarned || 0)}</span>
+                        <td className="p-3">
+                          <span className="text-xs font-bold text-indigo-600">{formatCurrency(wallet.totalEarned || 0)}</span>
                         </td>
-                        <td className="p-4">
-                          <span className="text-sm font-semibold text-gray-700 flex items-center gap-1">
-                            <History size={14} className="text-purple-400" />
+                        <td className="p-3">
+                          <span className="text-xs font-semibold flex items-center gap-1 text-gray-700">
+                            <History size={12} className="text-purple-400" />
                             {totalTransactions}
                           </span>
                         </td>
-                        <td className="p-4 text-center">
-                          <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                        <td className="p-3 text-center">
+                          <div className="flex items-center justify-center gap-1.5">
                             <button
                               onClick={() => handleViewDetails(wallet)}
-                              className="p-2 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors"
+                              className="flex items-center gap-0.5 px-2 py-1 rounded-lg text-[10px] font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors"
                               title="View Details"
                             >
-                              <Eye size={15} />
+                              <Eye size={11} /> View
                             </button>
                             <button
                               onClick={() => downloadWalletStatement(wallet)}
-                              className="p-2 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
+                              className="flex items-center gap-0.5 px-2 py-1 rounded-lg text-[10px] font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
                               title="Download Statement"
                             >
-                              <FileDown size={15} />
+                              <FileDown size={11} /> Inv
                             </button>
                             <button
                               onClick={() => { setDeleteWallet(wallet); setShowDeleteModal(true); }}
-                              className="p-2 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-colors"
+                              className="flex items-center gap-0.5 px-2 py-1 rounded-lg text-[10px] font-medium bg-red-50 text-red-700 hover:bg-red-100 transition-colors"
                               title="Delete Wallet"
                             >
-                              <Trash2 size={15} />
+                              <Trash2 size={11} />
                             </button>
                           </div>
                         </td>
@@ -682,11 +690,11 @@ const AllWallets = () => {
 
           {/* Footer with stats */}
           {!loading && filteredWallets.length > 0 && (
-            <div className="px-4 py-3 border-t border-gray-100 rounded-b-2xl flex flex-wrap items-center justify-between gap-2" style={{ backgroundColor: '#fafafa' }}>
-              <span className="text-xs text-gray-500">
+            <div className="px-4 py-3 border-t border-gray-100 rounded-b-2xl flex flex-wrap items-center justify-between gap-2 bg-gray-50">
+              <span className="text-[10px] text-gray-500">
                 Showing <strong>{filteredWallets.length}</strong> of <strong>{wallets.length}</strong> wallets
               </span>
-              <div className="flex items-center gap-3 text-xs text-gray-500">
+              <div className="flex items-center gap-3 text-[10px] text-gray-500">
                 <span className="flex items-center gap-1">
                   <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                   Active: {stats.activeWallets}
@@ -709,87 +717,110 @@ const AllWallets = () => {
       {/* WALLET DETAIL MODAL */}
       {/* ====================== */}
       {showDetailModal && selectedWallet && (
-        <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setShowDetailModal(false); }}>
-          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="sticky top-0 bg-gradient-to-br from-indigo-600 to-purple-600 text-white p-6 rounded-t-3xl flex justify-between items-center">
+        <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={(e) => { if (e.target === e.currentTarget) setShowDetailModal(false); }}>
+          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+            <div className="sticky top-0 bg-gradient-to-br from-indigo-600 via-indigo-600 to-purple-600 text-white p-6 rounded-t-3xl flex justify-between items-center shadow-lg">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                  <Wallet size={20} className="text-white" />
+                <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                  <Wallet size={24} className="text-white" />
                 </div>
                 <div>
                   <h3 className="text-2xl font-bold">Wallet Details</h3>
-                  <p className="text-sm text-indigo-200">#{selectedWallet._id.slice(-6).toUpperCase()}</p>
+                  <p className="text-sm text-indigo-200 font-medium">#{selectedWallet._id.slice(-6).toUpperCase()}</p>
                 </div>
               </div>
-              <button onClick={() => setShowDetailModal(false)} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors">
+              <button onClick={() => setShowDetailModal(false)} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200 hover:scale-110">
                 <X size={20} />
               </button>
             </div>
-            <div className="p-6 space-y-4">
-              <div className="bg-gray-50 rounded-xl p-4">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Owner</p>
-                <p className="mt-1 font-semibold text-gray-800 text-lg">{selectedWallet.ownerId?.name || 'N/A'}</p>
-                {selectedWallet.ownerId?.organizationName && (
-                  <p className="text-sm text-indigo-600 font-medium flex items-center gap-1 mt-1">
-                    <Building2 size={14} /> {selectedWallet.ownerId.organizationName}
-                  </p>
-                )}
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                  <p className="text-sm text-gray-600 flex items-center gap-1">
-                    <Mail size={14} className="text-indigo-500" />
-                    {selectedWallet.ownerId?.email || 'N/A'}
-                  </p>
-                  <p className="text-sm text-gray-600 flex items-center gap-1">
-                    <Phone size={14} className="text-indigo-500" />
-                    {selectedWallet.ownerId?.mobile || 'N/A'}
-                  </p>
+            <div className="p-6 space-y-5">
+              {/* Owner Details */}
+              <div className="p-4 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-100 hover:border-indigo-200 transition-all duration-200">
+                <div className="flex items-center gap-2 mb-3">
+                  <User size={16} className="text-indigo-600" />
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Owner Details</p>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Name</span>
+                    <span className="font-semibold text-gray-800">{selectedWallet.ownerId?.name || 'N/A'}</span>
+                  </div>
+                  {selectedWallet.ownerId?.organizationName && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Organization</span>
+                      <span className="font-medium text-gray-800">{selectedWallet.ownerId.organizationName}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Email</span>
+                    <span className="font-medium text-gray-800">{selectedWallet.ownerId?.email || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Mobile</span>
+                    <span className="font-medium text-gray-800">{selectedWallet.ownerId?.mobile || 'N/A'}</span>
+                  </div>
                   {selectedWallet.ownerId?.address && (
-                    <p className="text-sm text-gray-600 flex items-center gap-1 col-span-2">
-                      <MapPin size={14} className="text-indigo-500" />
-                      {selectedWallet.ownerId.address}
-                    </p>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Address</span>
+                      <span className="font-medium text-gray-800 truncate max-w-[200px]">{selectedWallet.ownerId.address}</span>
+                    </div>
                   )}
                   {selectedWallet.ownerId?.gstNumber && (
-                    <p className="text-sm text-gray-600 flex items-center gap-1 col-span-2">
-                      <span className="font-medium">GST:</span> {selectedWallet.ownerId.gstNumber}
-                    </p>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">GST</span>
+                      <span className="font-medium text-gray-800">{selectedWallet.ownerId.gstNumber}</span>
+                    </div>
                   )}
                 </div>
               </div>
 
+              {/* Stats */}
               <div className="grid grid-cols-3 gap-3">
-                <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-200 text-center">
-                  <p className="text-[10px] font-bold text-emerald-600 uppercase">Balance</p>
-                  <p className="text-2xl font-bold text-emerald-600">{formatCurrency(selectedWallet.balance || 0)}</p>
+                <div className="p-4 bg-gradient-to-br from-emerald-50 to-emerald-100/50 rounded-xl border border-emerald-200 text-center hover:shadow-md transition-all duration-200">
+                  <div className="flex items-center justify-center gap-1 mb-2">
+                    <Wallet size={14} className="text-emerald-600" />
+                    <p className="text-[10px] font-bold text-emerald-600 uppercase">Balance</p>
+                  </div>
+                  <p className="text-xl font-bold text-emerald-600">{formatCurrency(selectedWallet.balance || 0)}</p>
                 </div>
-                <div className="bg-blue-50 rounded-xl p-4 border border-blue-200 text-center">
-                  <p className="text-[10px] font-bold text-blue-600 uppercase">Earned</p>
-                  <p className="text-2xl font-bold text-blue-600">{formatCurrency(selectedWallet.totalEarned || 0)}</p>
+                <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl border border-blue-200 text-center hover:shadow-md transition-all duration-200">
+                  <div className="flex items-center justify-center gap-1 mb-2">
+                    <TrendingUp size={14} className="text-blue-600" />
+                    <p className="text-[10px] font-bold text-blue-600 uppercase">Earned</p>
+                  </div>
+                  <p className="text-xl font-bold text-blue-600">{formatCurrency(selectedWallet.totalEarned || 0)}</p>
                 </div>
-                <div className="bg-purple-50 rounded-xl p-4 border border-purple-200 text-center">
-                  <p className="text-[10px] font-bold text-purple-600 uppercase">Txns</p>
-                  <p className="text-2xl font-bold text-purple-600">
+                <div className="p-4 bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-xl border border-purple-200 text-center hover:shadow-md transition-all duration-200">
+                  <div className="flex items-center justify-center gap-1 mb-2">
+                    <History size={14} className="text-purple-600" />
+                    <p className="text-[10px] font-bold text-purple-600 uppercase">Txns</p>
+                  </div>
+                  <p className="text-xl font-bold text-purple-600">
                     {(selectedWallet.transactions || []).length + (selectedWallet.withdrawals || []).length}
                   </p>
                 </div>
               </div>
 
               {/* Transactions */}
-              <div className="bg-gray-50 rounded-xl p-4">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
-                  <History size={14} /> Transaction History
-                </p>
+              <div className="p-4 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-100">
+                <div className="flex items-center gap-2 mb-3">
+                  <History size={16} className="text-purple-600" />
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Transaction History</p>
+                </div>
                 {(selectedWallet.transactions || []).length === 0 && (selectedWallet.withdrawals || []).length === 0 ? (
-                  <p className="text-center py-4 text-gray-400 text-sm">No transactions found</p>
+                  <div className="flex flex-col items-center justify-center py-8 text-gray-400">
+                    <History size={32} className="opacity-20 mb-2" />
+                    <p className="text-sm">No transactions found</p>
+                  </div>
                 ) : (
                   <div className="space-y-2 mt-3 max-h-60 overflow-y-auto">
                     {(selectedWallet.transactions || []).map((t, idx) => (
-                      <div key={idx} className="flex items-center justify-between bg-white rounded-lg p-3 border border-gray-200">
-                        <div className="min-w-0">
+                      <div key={idx} className="flex items-center justify-between bg-white rounded-xl p-3 border border-gray-200 hover:border-emerald-200 hover:shadow-sm transition-all duration-200">
+                        <div className="min-w-0 flex-1">
                           <p className="font-medium text-gray-800 text-sm truncate">{t.description || 'Transaction'}</p>
-                          {t.cabinName && <p className="text-xs text-gray-500">🏢 {t.cabinName}</p>}
+                          {t.cabinName && <p className="text-xs text-gray-500 flex items-center gap-1"><Building2 size={10} /> {t.cabinName}</p>}
                         </div>
-                        <div className="text-right">
+                        <div className="text-right ml-3">
                           <span className="text-sm font-bold text-emerald-600">+{formatCurrency(t.amount)}</span>
                           <p className="text-[10px] text-gray-400">{formatDateDDMMYYYY(t.createdAt)}</p>
                         </div>
@@ -798,12 +829,12 @@ const AllWallets = () => {
                     {(selectedWallet.withdrawals || []).map((w, idx) => {
                       const statusBadge = getWithdrawalStatusBadge(w.status);
                       return (
-                        <div key={`wd-${idx}`} className="flex items-center justify-between bg-red-50 rounded-lg p-3 border border-red-200">
-                          <div className="min-w-0">
+                        <div key={`wd-${idx}`} className="flex items-center justify-between bg-gradient-to-r from-red-50 to-red-100/30 rounded-xl p-3 border border-red-200 hover:border-red-300 hover:shadow-sm transition-all duration-200">
+                          <div className="min-w-0 flex-1">
                             <p className="font-medium text-gray-800 text-sm truncate">{w.description || 'Withdrawal'}</p>
-                            {w.bankName && <p className="text-xs text-gray-500">🏦 {w.bankName}</p>}
+                            {w.bankName && <p className="text-xs text-gray-500 flex items-center gap-1"><Building2 size={10} /> {w.bankName}</p>}
                           </div>
-                          <div className="text-right">
+                          <div className="text-right ml-3">
                             <span className="text-sm font-bold text-red-600">-{formatCurrency(w.amount)}</span>
                             <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full ${statusBadge.color}`}>
                               {statusBadge.icon} {statusBadge.label}
@@ -816,7 +847,12 @@ const AllWallets = () => {
                 )}
               </div>
 
-              <button onClick={() => setShowDetailModal(false)} className="w-full py-3 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition">Close</button>
+              <div className="flex flex-col gap-3 pt-2">
+                <button onClick={() => { setShowDetailModal(false); downloadWalletStatement(selectedWallet); }} className="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-bold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg shadow-indigo-500/25 active:scale-[0.98] flex items-center justify-center gap-2">
+                  <FileDown size={18} /> Download Statement
+                </button>
+                <button onClick={() => setShowDetailModal(false)} className="w-full py-3.5 border-2 border-gray-200 rounded-xl text-gray-600 font-bold hover:bg-gray-50 hover:border-gray-300 transition-all duration-200">Close</button>
+              </div>
             </div>
           </div>
         </div>
@@ -828,15 +864,19 @@ const AllWallets = () => {
       {showDeleteModal && deleteWallet && (
         <div className="fixed inset-0 z-[1300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) { setShowDeleteModal(false); setDeleteWallet(null); } }}>
           <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden">
-            <div className="bg-gradient-to-br from-red-500 to-red-600 p-5 text-white rounded-t-3xl flex justify-between items-center">
+            <div className="bg-red-50 p-5 text-red-900 rounded-t-3xl flex justify-between items-center border-b border-red-200">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center"><Trash2 size={20} className="text-white" /></div>
-                <div><h3 className="text-xl font-bold">Delete Wallet</h3><p className="text-sm text-red-200">{deleteWallet.ownerId?.name}</p></div>
+                <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
+                  <Trash2 size={20} className="text-red-600" />
+                </div>
+                <div><h3 className="text-xl font-bold">Delete Wallet</h3><p className="text-sm text-red-700">{deleteWallet.ownerId?.name}</p></div>
               </div>
-              <button onClick={() => { setShowDeleteModal(false); setDeleteWallet(null); }} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"><X size={20} /></button>
+              <button onClick={() => { setShowDeleteModal(false); setDeleteWallet(null); }} className="w-10 h-10 flex items-center justify-center rounded-full bg-red-100 hover:bg-red-200 transition-colors">
+                <X size={20} />
+              </button>
             </div>
             <div className="p-5 space-y-4">
-              <div className="bg-red-50 rounded-xl p-4 space-y-2 text-sm">
+              <div className="bg-red-50 rounded-xl p-4 space-y-2 text-sm border border-red-200">
                 <p className="font-bold text-red-800">Are you sure you want to delete this wallet?</p>
                 <div className="space-y-1 text-gray-600">
                   <p><span className="text-gray-500">Wallet:</span> #{deleteWallet._id.slice(-6)}</p>
@@ -849,7 +889,7 @@ const AllWallets = () => {
                 <span>This action cannot be undone. All associated data will be permanently removed.</span>
               </div>
               <div className="flex gap-3">
-                <button onClick={handleDeleteWallet} disabled={deleting} className={`flex-1 py-3 rounded-xl text-white font-bold transition ${deleting ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-red-500 to-red-600 hover:shadow-lg'}`}>
+                <button onClick={handleDeleteWallet} disabled={deleting} className={`flex-1 py-3 rounded-xl text-white font-bold transition ${deleting ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}>
                   {deleting ? 'Deleting...' : 'Confirm Delete'}
                 </button>
                 <button onClick={() => { setShowDeleteModal(false); setDeleteWallet(null); }} className="px-5 py-3 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition">Cancel</button>

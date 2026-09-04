@@ -2123,7 +2123,7 @@ import {
   Calculator,
   Info,
   Ticket,
-  Coffee // ✅ Cafe icon add kiya
+  Coffee
 } from "lucide-react";
 import { toast } from "react-toastify";
 import * as XLSX from 'xlsx';
@@ -2140,7 +2140,7 @@ const AllBookings = () => {
   const [filterOwner, setFilterOwner] = useState("");
   const [filterSpaceType, setFilterSpaceType] = useState("all");
   const [filterSearch, setFilterSearch] = useState("");
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTab, setActiveTab] = useState('spaces');
   const [showFilters, setShowFilters] = useState(true);
   const [filters, setFilters] = useState({
     status: 'all',
@@ -2248,7 +2248,7 @@ const AllBookings = () => {
     return { label: 'Pending', color: 'bg-yellow-100 text-yellow-700', icon: <ClockIcon size={12} className="text-yellow-500" /> };
   };
 
-  // ✅ GET SPACE TYPE BADGE - with Cafe support
+  // GET SPACE TYPE BADGE - with Cafe support using React Icons
   const getSpaceTypeBadge = (booking) => {
     const cabin = booking?.cabin || {};
     if (cabin.isChamber) {
@@ -2561,7 +2561,7 @@ const AllBookings = () => {
     }
   };
 
-  // ✅ PROFESSIONAL BLACK & GRAY INVOICE - with Cafe support
+  // PROFESSIONAL BLACK & GRAY INVOICE - with Cafe support
   const downloadInvoice = (booking) => {
     try {
       const cabin = booking.cabin || {};
@@ -2594,10 +2594,10 @@ const AllBookings = () => {
       const ownerName = owner.name || owner.organizationName || 'IRYAX SPACE';
       const ownerAddress = owner.address || 'Premium Workspaces';
       
-      // ✅ Space type label for invoice
+      // Space type label for invoice
       let spaceTypeLabel = 'CO-WORKING SPACE';
-      if (cabin.isChamber) spaceTypeLabel = '🏥 MEDICAL CHAMBER';
-      else if (cabin.isCafe) spaceTypeLabel = '☕ CAFE';
+      if (cabin.isChamber) spaceTypeLabel = 'MEDICAL CHAMBER';
+      else if (cabin.isCafe) spaceTypeLabel = 'CAFE';
 
       win.document.write(`
         <html><head><title>Invoice</title>
@@ -3117,10 +3117,11 @@ const AllBookings = () => {
 
   if (loading) {
     return (
-      <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
+      <div className="admin-dash">
         <AdminNavbar />
-        <div className="flex justify-center items-center h-64">
-          <div className="w-12 h-12 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin" />
+        <div className="admin-dash__loading">
+          <div className="admin-dash__spinner" />
+          <p className="admin-dash__loading-text">Loading bookings data...</p>
         </div>
       </div>
     );
@@ -3128,274 +3129,277 @@ const AllBookings = () => {
 
   const hasActiveFilters = filters.status !== 'all' || filters.paymentStatus !== 'all' || filters.paymentMethod !== 'all' || filterDateFrom || filterDateTo || filterCabinName || filterOwner || filterSpaceType !== 'all' || filterSearch;
 
+  const currentDateFormatted = new Date().toLocaleDateString("en-US", {
+    weekday: "short", day: "numeric", month: "short", year: "numeric"
+  });
+
+  // Cafe count
+  const cafeCount = bookings.filter(b => b.cabin?.isCafe === true).length;
+
   return (
-    <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
+    <div className="admin-dash">
       <AdminNavbar />
 
-      <div className="pt-20 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
-        {/* Header */}
-        <div className="admin-dash__header" style={{ marginBottom: '8px' }}>
+      <main className="pt-20 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
+        {/* ─── Header ─── */}
+        <div className="admin-dash__header">
           <div>
-            <h1 className="admin-dash__greeting" style={{ fontSize: '1.25rem' }}>
-              All <span>Bookings</span>
+            <h1 className="admin-dash__greeting">
+              {activeTab === 'visits' ? (
+                <>Site <span>Visits</span></>
+              ) : (
+                <>Space <span>Bookings</span></>
+              )}
             </h1>
-            <p className="admin-dash__subtitle" style={{ fontSize: '11px' }}>Manage and monitor all workspace bookings</p>
+            <p className="admin-dash__subtitle">
+              {activeTab === 'visits'
+                ? `Monitor and manage all scheduled site visit appointments · ${visitCount} total visits`
+                : `Manage all workspace bookings, payments and reservations · ${spaceCount} total bookings`}
+            </p>
           </div>
-          <div className="flex items-center gap-2">
+
+          <div className="flex items-center flex-wrap gap-2.5">
+            <div className="admin-dash__date-pill">
+              <Calendar size={14} />
+              <span>{currentDateFormatted}</span>
+            </div>
+
             {displayBookings.length > 0 && (
               <button
                 onClick={exportToExcel}
-                className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition shadow-sm shadow-indigo-200"
+                className="admin-dash__btn hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200"
               >
-                <Download size={14} /> Export
+                <Download size={14} />
+                <span className="text-xs font-medium">Export Excel</span>
               </button>
             )}
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="admin-dash__stats" style={{ marginBottom: '16px' }}>
+        {/* ─── 6 KPI Stat Cards ─── */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4 mb-5">
           {[
-            {
-              label: "Total Bookings",
-              value: stats.totalBookings,
-              meta: "all reservations",
-              icon: Hash,
-              color: "indigo"
-            },
-            {
-              label: "Confirmed",
-              value: stats.confirmed,
-              meta: "confirmed bookings",
-              icon: CheckCircle,
-              color: "emerald"
-            },
-            {
-              label: "Active",
-              value: stats.active,
-              meta: "currently active",
-              icon: Timer,
-              color: "indigo"
-            },
-            {
-              label: "Completed",
-              value: stats.completed,
-              meta: "finished reservations",
-              icon: CheckCircle,
-              color: "blue"
-            },
-            {
-              label: "Pending",
-              value: stats.pending,
-              meta: "awaiting confirmation",
-              icon: ClockIcon,
-              color: "amber"
-            },
-            {
-              label: "Cancelled",
-              value: stats.cancelled,
-              meta: "cancelled bookings",
-              icon: XCircle,
-              color: "red"
-            }
+            { label: "Total", value: stats.totalBookings, meta: "all reservations", icon: Hash, color: "indigo", onClick: () => setFilters({...filters, status: 'all'}) },
+            { label: "Confirmed", value: stats.confirmed, meta: "confirmed bookings", icon: CheckCircle, color: "emerald", onClick: () => setFilters({...filters, status: 'confirmed'}) },
+            { label: "Active Now", value: stats.active, meta: "currently running", icon: Timer, color: "blue", onClick: () => setFilters({...filters, status: 'active'}) },
+            { label: "Completed", value: stats.completed, meta: "finished stays", icon: CheckCircle, color: "cyan", onClick: () => setFilters({...filters, status: 'completed'}) },
+            { label: "Pending", value: stats.pending, meta: "awaiting confirm", icon: ClockIcon, color: "amber", onClick: () => setFilters({...filters, status: 'pending'}) },
+            { label: "Cancelled", value: stats.cancelled, meta: "cancelled bookings", icon: XCircle, color: "rose", onClick: () => setFilters({...filters, status: 'cancelled'}) }
           ].map((stat, index) => (
             <div
               key={index}
-              className="admin-dash__stat"
-              style={{ 
-                padding: '12px 14px',
-                minHeight: '80px'
-              }}
+              className="admin-dash__stat cursor-pointer hover:scale-105 transition-transform duration-200"
+              onClick={stat.onClick}
+              title="Click to filter"
             >
               <div className="admin-dash__stat-top">
-                <span className="admin-dash__stat-label" style={{ fontSize: '11px' }}>{stat.label}</span>
-                <div className={`admin-dash__stat-icon admin-dash__stat-icon--${stat.color}`} style={{ width: '28px', height: '28px' }}>
-                  <stat.icon size={14} />
+                <span className="admin-dash__stat-label">{stat.label}</span>
+                <div className={`admin-dash__stat-icon admin-dash__stat-icon--${stat.color}`}>
+                  <stat.icon size={15} />
                 </div>
               </div>
-              <div className="admin-dash__stat-value" style={{ fontSize: '18px', fontWeight: '700' }}>{stat.value}</div>
-              <div className="admin-dash__stat-meta" style={{ fontSize: '9px' }}>{stat.meta}</div>
+              <div className="admin-dash__stat-value">{stat.value}</div>
+              <div className="admin-dash__stat-meta truncate">{stat.meta}</div>
             </div>
           ))}
         </div>
 
-        {/* Filters */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-3 mb-4">
-          {/* Search Row */}
-          <div className="flex flex-col sm:flex-row gap-2 mb-2">
-            <div className="flex-1 relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        {/* ─── TAB SWITCHER: Space Bookings & Site Visits only ─── */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-2 mb-5 shadow-sm flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-1.5">
+            {/* Space Bookings Tab */}
+            <button
+              onClick={() => setActiveTab('spaces')}
+              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                activeTab === 'spaces'
+                  ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-md shadow-indigo-200'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <Building2 size={14} />
+              <span>Space Bookings</span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                activeTab === 'spaces' ? 'bg-white/20 text-white' : 'bg-indigo-100 text-indigo-700'
+              }`}>
+                {spaceCount}
+              </span>
+            </button>
+
+            {/* Site Visits Tab */}
+            <button
+              onClick={() => setActiveTab('visits')}
+              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                activeTab === 'visits'
+                  ? 'bg-gradient-to-r from-purple-600 to-purple-500 text-white shadow-md shadow-purple-200'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <Calendar size={14} />
+              <span>Site Visits</span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                activeTab === 'visits' ? 'bg-white/20 text-white' : 'bg-purple-100 text-purple-700'
+              }`}>
+                {visitCount}
+              </span>
+            </button>
+
+            {/* Cafe Filter Indicator */}
+            {filterSpaceType === 'cafe' && (
+              <span className="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200 flex items-center gap-1.5">
+                <Coffee size={14} /> Cafe Filtered
+              </span>
+            )}
+          </div>
+
+          {/* Quick Stats Pill */}
+          <div className="flex items-center gap-3 text-[10px] text-gray-500 font-semibold flex-wrap">
+            <span className="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg font-bold border border-emerald-100">
+              Rev: {formatCurrency(stats.totalRevenue)}
+            </span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span>{stats.confirmed} confirmed</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-indigo-500"></span>{stats.active} active</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-400"></span>{stats.cancelled} cancelled</span>
+            {cafeCount > 0 && (
+              <span className="flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-[9px] font-bold border border-amber-200">
+                <Coffee size={10} /> {cafeCount} Cafes
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* ─── Filters Bar ─── */}
+        <div className="admin-dash__filters mb-5">
+          <div className="admin-dash__filter-group">
+            {/* Search */}
+            <div className="flex-1 min-w-[220px] relative">
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search by cabin, customer, mobile or booking ID..."
+                placeholder="Search cabin, customer, mobile, booking ID..."
                 value={filterSearch}
                 onChange={(e) => setFilterSearch(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                className="admin-dash__filter-input w-full pl-9"
               />
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              {hasActiveFilters && (
-                <button
-                  onClick={clearFilters}
-                  className="p-1.5 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
-                  title="Clear all filters"
-                >
-                  <X size={16} />
-                </button>
-              )}
+
+            {/* Date Range */}
+            <div className="flex items-center gap-1.5">
+              <input
+                type="date"
+                value={filterDateFrom}
+                onChange={(e) => setFilterDateFrom(e.target.value)}
+                className="admin-dash__filter-input text-xs w-36"
+                title="From Date"
+              />
+              <span className="text-gray-400 text-xs font-bold">→</span>
+              <input
+                type="date"
+                value={filterDateTo}
+                onChange={(e) => setFilterDateTo(e.target.value)}
+                className="admin-dash__filter-input text-xs w-36"
+                title="To Date"
+              />
             </div>
+
+            {/* Cabin */}
+            <select value={filterCabinName} onChange={(e) => setFilterCabinName(e.target.value)} className="admin-dash__filter-select min-w-[150px]">
+              <option value="">All Cabins</option>
+              {cabinNames.map((name, i) => <option key={i} value={name}>{name}</option>)}
+            </select>
+
+            {/* Owner */}
+            <select value={filterOwner} onChange={(e) => setFilterOwner(e.target.value)} className="admin-dash__filter-select min-w-[140px]">
+              <option value="">All Owners</option>
+              {owners.map((owner, i) => <option key={i} value={owner}>{owner}</option>)}
+            </select>
+
+            {/* Space Type with Cafe */}
+            <select value={filterSpaceType} onChange={(e) => setFilterSpaceType(e.target.value)} className="admin-dash__filter-select min-w-[140px]">
+              <option value="all">All Spaces</option>
+              <option value="medical">Medical Chamber</option>
+              <option value="coworking">Co-Working</option>
+              <option value="cafe">Cafe</option>
+            </select>
+
+            {/* Status */}
+            <select value={filters.status} onChange={(e) => setFilters({...filters, status: e.target.value})} className="admin-dash__filter-select min-w-[120px]">
+              <option value="all">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="active">Active</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+
+            {/* Payment Status */}
+            <select value={filters.paymentStatus} onChange={(e) => setFilters({...filters, paymentStatus: e.target.value})} className="admin-dash__filter-select min-w-[120px]">
+              <option value="all">Pmt Status</option>
+              <option value="pending">Unpaid</option>
+              <option value="paid">Paid</option>
+              <option value="failed">Failed</option>
+              <option value="refunded">Refunded</option>
+            </select>
+
+            {/* Payment Method */}
+            <select value={filters.paymentMethod} onChange={(e) => setFilters({...filters, paymentMethod: e.target.value})} className="admin-dash__filter-select min-w-[110px]">
+              <option value="all">Pmt Method</option>
+              <option value="online">Online</option>
+              <option value="cash">Cash</option>
+              <option value="counter">Counter</option>
+              <option value="upi">UPI</option>
+              <option value="card">Card</option>
+            </select>
+
+            {/* Clear Filters */}
+            {hasActiveFilters && (
+              <button onClick={clearFilters} className="admin-dash__btn hover:bg-red-50 hover:text-red-600 hover:border-red-200" title="Clear all filters">
+                <X size={15} /> Clear
+              </button>
+            )}
           </div>
-          {/* Filter Dropdowns Row */}
-          <div className="flex flex-wrap items-end gap-2">
-            <div className="min-w-[120px]">
-              <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">From Date</label>
-              <input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white" />
-            </div>
-            <div className="min-w-[120px]">
-              <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">To Date</label>
-              <input type="date" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white" />
-            </div>
-            <div className="min-w-[140px]">
-              <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Cabin</label>
-              <select value={filterCabinName} onChange={(e) => setFilterCabinName(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white">
-                <option value="">All Cabins</option>
-                {cabinNames.map((name, i) => (
-                  <option key={i} value={name}>{name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="min-w-[140px]">
-              <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Owner</label>
-              <select value={filterOwner} onChange={(e) => setFilterOwner(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white">
-                <option value="">All Owners</option>
-                {owners.map((owner, i) => (
-                  <option key={i} value={owner}>{owner}</option>
-                ))}
-              </select>
-            </div>
-            {/* ✅ UPDATED: Space Type filter with Cafe */}
-            <div className="min-w-[140px]">
-              <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Space Type</label>
-              <select value={filterSpaceType} onChange={(e) => setFilterSpaceType(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white">
-                <option value="all">All Spaces</option>
-                <option value="medical">🏥 Medical</option>
-                <option value="cafe">☕ Cafe</option>
-                <option value="coworking">💼 Co-Working</option>
-              </select>
-            </div>
-            <div className="min-w-[110px]">
-              <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Status</label>
-              <select value={filters.status} onChange={(e) => setFilters({...filters, status: e.target.value})} className="w-full px-2 py-1.5 text-xs border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white">
-                <option value="all">All Status</option>
-                <option value="pending">Pending</option>
-                <option value="confirmed">Confirmed</option>
-                <option value="active">Active</option>
-                <option value="completed">Completed</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-            </div>
-            <div className="min-w-[110px]">
-              <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Pmt Status</label>
-              <select value={filters.paymentStatus} onChange={(e) => setFilters({...filters, paymentStatus: e.target.value})} className="w-full px-2 py-1.5 text-xs border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white">
-                <option value="all">All</option>
-                <option value="pending">Pending</option>
-                <option value="paid">Paid</option>
-                <option value="failed">Failed</option>
-                <option value="refunded">Refunded</option>
-              </select>
-            </div>
-            <div className="min-w-[110px]">
-              <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Pmt Method</label>
-              <select value={filters.paymentMethod} onChange={(e) => setFilters({...filters, paymentMethod: e.target.value})} className="w-full px-2 py-1.5 text-xs border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white">
-                <option value="all">All</option>
-                <option value="online">Online</option>
-                <option value="cash">Cash</option>
-                <option value="counter">Counter</option>
-                <option value="upi">UPI</option>
-                <option value="card">Card</option>
-              </select>
-            </div>
-          </div>
-          <div className="mt-1.5 text-[10px] text-gray-400">
-            Showing <strong>{displayBookings.length}</strong> of <strong>{bookings.length}</strong> bookings
+
+          {/* Filter count summary */}
+          <div className="flex flex-wrap items-center justify-between gap-2 mt-3 pt-3 border-t border-gray-100 text-xs text-gray-500 font-medium">
+            <span>Showing <strong>{displayBookings.length}</strong> of <strong>{bookings.length}</strong> {activeTab === 'visits' ? 'site visits' : 'space bookings'}</span>
+            {hasActiveFilters && <span className="text-indigo-600 font-semibold">• Filters Active</span>}
           </div>
         </div>
 
-        {/* TAB SWITCHER */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-1 mb-4 flex gap-1">
-          <button
-            onClick={() => setActiveTab('all')}
-            className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
-              activeTab === 'all'
-                ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200'
-                : 'text-gray-500 hover:bg-gray-50'
-            }`}
-          >
-            <Ticket size={13} />
-            All Bookings
-            <span className={`px-1.5 py-0.5 text-[9px] rounded-full ${
-              activeTab === 'all' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600'
-            }`}>
-              {totalCount}
-            </span>
-          </button>
-          <button
-            onClick={() => setActiveTab('visits')}
-            className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
-              activeTab === 'visits'
-                ? 'bg-purple-600 text-white shadow-sm shadow-purple-200'
-                : 'text-gray-500 hover:bg-gray-50'
-            }`}
-          >
-            <Calendar size={13} />
-            Site Visits
-            <span className={`px-1.5 py-0.5 text-[9px] rounded-full ${
-              activeTab === 'visits' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600'
-            }`}>
-              {visitCount}
-            </span>
-          </button>
-          <button
-            onClick={() => setActiveTab('spaces')}
-            className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
-              activeTab === 'spaces'
-                ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-200'
-                : 'text-gray-500 hover:bg-gray-50'
-            }`}
-          >
-            <Building2 size={13} />
-            Space Bookings
-            <span className={`px-1.5 py-0.5 text-[9px] rounded-full ${
-              activeTab === 'spaces' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600'
-            }`}>
-              {spaceCount}
-            </span>
-          </button>
-        </div>
-
-        {/* Table Section */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+        {/* ─── Table Card ─── */}
+        <div className="admin-dash__card overflow-hidden">
           {/* Table Header Band */}
-          <div className={`px-4 py-3 border-b border-gray-100 flex items-center justify-between ${
-            activeTab === 'visits' ? 'bg-purple-50' : activeTab === 'spaces' ? 'bg-indigo-50' : 'bg-indigo-50'
+          <div className={`px-5 py-3.5 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3 ${
+            activeTab === 'visits' ? 'bg-gradient-to-r from-purple-50 to-white' : 'bg-gradient-to-r from-indigo-50 to-white'
           }`}>
-            <div className="flex items-center gap-2">
-              {activeTab === 'visits'
-                ? <Calendar size={16} className="text-purple-600" />
-                : <Building2 size={16} className="text-indigo-600" />}
-              <h3 className="font-bold text-gray-800 text-sm">
-                {activeTab === 'all' ? 'All Bookings' : activeTab === 'visits' ? 'Site Visits' : 'Space Bookings'}
-              </h3>
-              <span className="px-2 py-0.5 bg-white/60 rounded-full text-xs font-bold text-gray-600">
-                {displayBookings.length}
-              </span>
+            <div className="flex items-center gap-3">
+              <div className={`p-2.5 rounded-xl shadow-sm text-white ${
+                activeTab === 'visits'
+                  ? 'bg-gradient-to-br from-purple-500 to-purple-600'
+                  : 'bg-gradient-to-br from-indigo-500 to-indigo-600'
+              }`}>
+                {activeTab === 'visits' ? <Calendar size={16} /> : <Building2 size={16} />}
+              </div>
+              <div>
+                <h3 className="admin-dash__card-title">
+                  {activeTab === 'visits' ? 'Site Visit Appointments' : 'Space Booking Records'}
+                </h3>
+                <p className="admin-dash__card-desc">
+                  {activeTab === 'visits'
+                    ? 'Scheduled visits, statuses and appointment management'
+                    : 'Full booking history with payment tracking and status management'}
+                </p>
+              </div>
+              <span className="admin-dash__badge admin-dash__badge--info">{displayBookings.length}</span>
             </div>
-            <div className="flex items-center gap-2 text-[10px] text-gray-500">
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span>{stats.confirmed} conf.</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-indigo-500"></span>{stats.active} active</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-400"></span>{stats.pending} pend.</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-400"></span>{stats.cancelled} canc.</span>
-              <span className="font-semibold text-gray-700 ml-1">Rev: {formatCurrency(stats.totalRevenue)}</span>
+
+            <div className="flex items-center gap-2 text-[10px] text-gray-600 flex-wrap">
+              <span className="flex items-center gap-1 font-semibold"><span className="w-2 h-2 rounded-full bg-emerald-500"></span>{stats.confirmed} conf.</span>
+              <span className="flex items-center gap-1 font-semibold"><span className="w-2 h-2 rounded-full bg-indigo-500"></span>{stats.active} active</span>
+              <span className="flex items-center gap-1 font-semibold"><span className="w-2 h-2 rounded-full bg-yellow-400"></span>{stats.pending} pend.</span>
+              <span className="flex items-center gap-1 font-semibold"><span className="w-2 h-2 rounded-full bg-red-400"></span>{stats.cancelled} canc.</span>
+              {activeTab !== 'visits' && (
+                <span className="font-bold text-indigo-600 ml-1 border-l border-gray-200 pl-2">Rev: {formatCurrency(stats.totalRevenue)}</span>
+              )}
             </div>
           </div>
 
@@ -3455,7 +3459,6 @@ const AllBookings = () => {
                     const isVisit = booking.bookingType === 'visit';
                     const totalDays = booking.totalDays || 0;
                     const isCashPending = (booking.paymentMethod === 'cash' || booking.paymentMethod === 'counter') && booking.paymentStatus === 'pending';
-                    // ✅ Get space type badge with Cafe support
                     const spaceTypeBadge = getSpaceTypeBadge(booking);
 
                     return (
@@ -3470,7 +3473,6 @@ const AllBookings = () => {
                             </p>
                           </div>
                         </td>
-                        {/* ✅ Space Type with Cafe support */}
                         <td className="px-3 py-2">
                           <span className={`px-2 py-0.5 text-[9px] font-bold rounded-full inline-flex items-center gap-1 ${spaceTypeBadge.color}`}>
                             {spaceTypeBadge.icon}
@@ -3632,7 +3634,7 @@ const AllBookings = () => {
         <div className="mt-6 text-center text-[9px] text-gray-400 font-medium tracking-wider">
           © IRYAX SPACE — All Rights Reserved
         </div>
-      </div>
+      </main>
 
       {/* VIEW BOOKING MODAL - with Cafe support */}
       {showViewModal && viewBooking && (

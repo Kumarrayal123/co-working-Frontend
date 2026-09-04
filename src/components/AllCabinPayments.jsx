@@ -29,7 +29,8 @@ import {
   History,
   XCircle as XCircleIcon,
   Crown,
-  CalendarDays
+  CalendarDays,
+  Search
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
@@ -444,7 +445,7 @@ const AllCabinPayments = () => {
 
   if (loading) {
     return (
-      <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
+      <div className="admin-dash" style={{ backgroundColor: '#f8fafc' }}>
         <AdminNavbar />
         <div className="flex justify-center items-center h-64">
           <div className="w-12 h-12 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin" />
@@ -454,7 +455,7 @@ const AllCabinPayments = () => {
   }
 
   return (
-    <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
+    <div className="admin-dash" style={{ backgroundColor: '#f8fafc' }}>
       <AdminNavbar />
 
       <div className="pt-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
@@ -464,11 +465,22 @@ const AllCabinPayments = () => {
             <h1 className="admin-dash__greeting">
               Cabin <span>Billings</span>
             </h1>
+            <p className="admin-dash__subtitle">Manage and monitor all cabin payment transactions</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={fetchPayments}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-50 transition-all duration-200 border border-gray-200 shadow-sm hover:shadow-md"
+              title="Refresh"
+            >
+              <RefreshCw size={14} />
+              Refresh
+            </button>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="admin-dash__stats" style={{ marginBottom: '16px' }}>
+        <div className="admin-dash__stats" style={{ marginBottom: '20px' }}>
           {[
             {
               label: "Total Orders",
@@ -510,59 +522,69 @@ const AllCabinPayments = () => {
               key={index}
               className="admin-dash__stat"
               style={{ 
-                padding: '12px 14px',
-                minHeight: '80px'
+                padding: '16px',
+                minHeight: '95px',
+                transition: 'all 0.3s ease'
               }}
             >
               <div className="admin-dash__stat-top">
-                <span className="admin-dash__stat-label" style={{ fontSize: '11px' }}>{stat.label}</span>
-                <div className={`admin-dash__stat-icon admin-dash__stat-icon--${stat.color}`} style={{ width: '28px', height: '28px' }}>
-                  <stat.icon size={14} />
+                <span className="admin-dash__stat-label" style={{ fontSize: '12px', fontWeight: '600' }}>{stat.label}</span>
+                <div className={`admin-dash__stat-icon admin-dash__stat-icon--${stat.color}`} style={{ width: '32px', height: '32px' }}>
+                  <stat.icon size={16} />
                 </div>
               </div>
-              <div className="admin-dash__stat-value" style={{ fontSize: '18px', fontWeight: '700' }}>{stat.value}</div>
-              <div className="admin-dash__stat-meta" style={{ fontSize: '9px' }}>{stat.meta}</div>
+              <div className="admin-dash__stat-value" style={{ fontSize: '24px', fontWeight: '700', letterSpacing: '-0.02em' }}>{stat.value}</div>
+              <div className="admin-dash__stat-meta" style={{ fontSize: '11px', fontWeight: '500' }}>{stat.meta}</div>
             </div>
           ))}
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-3 mb-4">
-          <div className="flex flex-col sm:flex-row gap-2">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4">
+          <div className="flex flex-col lg:flex-row gap-3">
             <div className="flex-1 relative">
-              <CreditCard size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search cabin..."
                 value={filterCabinName}
                 onChange={(e) => setFilterCabinName(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200"
               />
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <input
-                type="text"
-                placeholder="Owner name..."
-                value={filterOwnerName}
-                onChange={(e) => setFilterOwnerName(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 w-36"
-              />
-              <input
-                type="date"
-                value={filterDateFrom}
-                onChange={(e) => setFilterDateFrom(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
-              />
-              <input
-                type="date"
-                value={filterDateTo}
-                onChange={(e) => setFilterDateTo(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
-              />
+              <div className="relative">
+                <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Owner name..."
+                  value={filterOwnerName}
+                  onChange={(e) => setFilterOwnerName(e.target.value)}
+                  className="pl-9 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 w-40 transition-all duration-200"
+                />
+              </div>
+              <div className="relative">
+                <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="date"
+                  value={filterDateFrom}
+                  onChange={(e) => setFilterDateFrom(e.target.value)}
+                  className="pl-9 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white transition-all duration-200"
+                />
+              </div>
+              <div className="relative">
+                <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="date"
+                  value={filterDateTo}
+                  onChange={(e) => setFilterDateTo(e.target.value)}
+                  className="pl-9 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white transition-all duration-200"
+                />
+              </div>
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                className="px-4 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white transition-all duration-200 cursor-pointer"
               >
                 <option value="all">All Status</option>
                 <option value="active">Active</option>
@@ -573,51 +595,54 @@ const AllCabinPayments = () => {
               {(filterStatus !== "all" || filterCabinName || filterOwnerName || filterDateFrom || filterDateTo) && (
                 <button
                   onClick={clearFilters}
-                  className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                  className="p-2.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all duration-200"
                   title="Clear filters"
                 >
-                  <XCircleIcon size={16} />
+                  <XCircleIcon size={18} />
                 </button>
               )}
               {filteredOrders.length > 0 && (
                 <button
                   onClick={exportToExcel}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition"
+                  className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-all duration-200 shadow-sm hover:shadow-md"
                   title="Export to Excel"
                 >
-                  <Download size={14} />
+                  <Download size={16} />
+                  Export
                 </button>
               )}
             </div>
           </div>
-          <div className="mt-1.5 text-[10px] text-gray-400">
-            Showing {filteredOrders.length} of {orders.length} payments
+          <div className="mt-3 text-xs text-gray-500 font-medium">
+            Showing <span className="text-indigo-600 font-bold">{filteredOrders.length}</span> of <span className="text-gray-700 font-bold">{orders.length}</span> payments
           </div>
         </div>
 
         {/* Table Section */}
-        <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
+        <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
             {filteredOrders.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-3 py-20 text-gray-400">
-                <CreditCard size={48} className="opacity-20" />
-                <p className="text-lg font-medium">No payments found</p>
-                <p className="text-sm">Try adjusting your filters.</p>
+              <div className="flex flex-col items-center justify-center gap-4 py-24 text-gray-400">
+                <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center">
+                  <CreditCard size={40} className="text-gray-400" />
+                </div>
+                <p className="text-lg font-semibold text-gray-600">No payments found</p>
+                <p className="text-sm text-gray-500">Try adjusting your filters.</p>
               </div>
             ) : (
               <table className="w-full min-w-[1300px] text-left">
                 <thead>
-                  <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">S.No</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Owner</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Amount</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">GST</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Payments</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Order Date</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Expiry</th>
-                    <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap text-center">Actions</th>
+                  <tr className="border-b border-gray-200" style={{ backgroundColor: '#f8fafc' }}>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-600 uppercase whitespace-nowrap">S.No</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-600 uppercase whitespace-nowrap">Cabin</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-600 uppercase whitespace-nowrap">Owner</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-600 uppercase whitespace-nowrap">Amount</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-600 uppercase whitespace-nowrap">GST</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-600 uppercase whitespace-nowrap">Payments</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-600 uppercase whitespace-nowrap">Status</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-600 uppercase whitespace-nowrap">Order Date</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-600 uppercase whitespace-nowrap">Expiry</th>
+                    <th className="p-4 text-xs font-bold tracking-wider text-gray-600 uppercase whitespace-nowrap text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -631,33 +656,33 @@ const AllCabinPayments = () => {
                     const isFirstCabin = order.isFirstCabin || false;
                     
                     return (
-                      <tr key={order._id} className="transition-colors group hover:bg-gray-50/80">
+                      <tr key={order._id} className="transition-all duration-200 group hover:bg-indigo-50/50 hover:shadow-sm">
                         <td className="p-4">
-                          <span className="text-sm font-semibold text-gray-400">{idx + 1}</span>
+                          <span className="text-sm font-bold text-gray-400 group-hover:text-indigo-600 transition-colors">{idx + 1}</span>
                         </td>
                         <td className="p-4">
                           <div>
-                            <p className="font-semibold text-gray-900 text-sm flex items-center gap-1">
+                            <p className="font-bold text-gray-900 text-sm flex items-center gap-1">
                               {cabinName}
                               {isFirstCabin && (
                                 <span className="text-[10px] text-indigo-600 font-bold">⭐</span>
                               )}
                             </p>
                             {order.cabin?.address && (
-                              <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                              <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
                                 <MapPin size={12} className="text-gray-400" />
                                 {order.cabin.address.split(',')[0]}
                               </p>
                             )}
                             {!order.cabin && (
-                              <p className="text-xs text-red-500">⚠️ Deleted</p>
+                              <p className="text-xs text-red-500 font-medium">⚠️ Deleted</p>
                             )}
                           </div>
                         </td>
                         <td className="p-4">
                           <div>
-                            <p className="font-medium text-gray-800 text-sm">{ownerName}</p>
-                            <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
+                            <p className="font-semibold text-gray-800 text-sm">{ownerName}</p>
+                            <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
                               <Phone size={12} className="text-gray-400" />
                               {ownerMobile}
                             </p>
@@ -689,50 +714,50 @@ const AllCabinPayments = () => {
                         </td>
                         <td className="p-4">
                           <div className="flex flex-col gap-1">
-                            <span className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-bold rounded-full ${statusBadge.color}`}>
+                            <span className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-bold rounded-full shadow-sm ${statusBadge.color}`}>
                               {statusBadge.icon} {statusBadge.label}
                             </span>
-                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full ${paymentBadge.color}`}>
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full shadow-sm ${paymentBadge.color}`}>
                               {paymentBadge.icon} {paymentBadge.label}
                             </span>
                           </div>
                         </td>
                         <td className="p-4">
-                          <div className="text-sm text-gray-600">
+                          <div className="text-sm text-gray-600 font-medium">
                             {formatDateDDMMYYYY(order.createdAt)}
                           </div>
                         </td>
                         <td className="p-4">
-                          <div className="text-sm text-gray-600">
+                          <div className="text-sm text-gray-600 font-medium">
                             {formatDateDDMMYYYY(order.expiryDate)}
                           </div>
                         </td>
                         <td className="p-4 text-center">
-                          <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                          <div className="flex items-center justify-center gap-2 flex-wrap">
                             <button
                               onClick={() => handleViewDetails(order)}
-                              className="p-2 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors"
+                              className="p-2.5 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-all duration-200 shadow-sm hover:shadow-md"
                               title="View Details"
                             >
                               <Eye size={15} />
                             </button>
                             <button
                               onClick={() => downloadInvoice(order)}
-                              className="p-2 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
+                              className="p-2.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all duration-200 shadow-sm hover:shadow-md"
                               title="Download Invoice"
                             >
                               <FileDown size={15} />
                             </button>
                             <button
                               onClick={() => { setEditOrder(order); setEditStatus(order.status || 'active'); setShowEditModal(true); }}
-                              className="p-2 rounded-lg bg-orange-50 text-orange-700 hover:bg-orange-100 transition-colors"
+                              className="p-2.5 rounded-lg bg-orange-50 text-orange-700 hover:bg-orange-100 transition-all duration-200 shadow-sm hover:shadow-md"
                               title="Update Status"
                             >
                               <Edit size={15} />
                             </button>
                             <button
                               onClick={() => { setDeleteOrder(order); setShowDeleteModal(true); }}
-                              className="p-2 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-colors"
+                              className="p-2.5 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-all duration-200 shadow-sm hover:shadow-md"
                               title="Delete Order"
                             >
                               <Trash2 size={15} />
@@ -749,14 +774,23 @@ const AllCabinPayments = () => {
 
           {/* Footer with stats */}
           {!loading && filteredOrders.length > 0 && (
-            <div className="px-4 py-3 border-t border-gray-100 rounded-b-2xl flex flex-wrap items-center justify-between gap-2" style={{ backgroundColor: '#fafafa' }}>
-              <span className="text-xs text-gray-500">
-                Showing <strong>{filteredOrders.length}</strong> of <strong>{orders.length}</strong> payments
+            <div className="px-5 py-4 border-t border-gray-200 rounded-b-2xl flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#f8fafc' }}>
+              <span className="text-sm text-gray-600 font-medium">
+                Showing <strong className="text-indigo-600">{filteredOrders.length}</strong> of <strong className="text-gray-800">{orders.length}</strong> payments
               </span>
-              <div className="flex items-center gap-3 text-xs text-gray-500">
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> Active: {stats.active}</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500"></span> Expired: {stats.expired}</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-indigo-500"></span> Total: {stats.total}</span>
+              <div className="flex items-center gap-4 text-sm text-gray-600">
+                <span className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm"></span>
+                  <span className="font-medium">Active: {stats.active}</span>
+                </span>
+                <span className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-sm"></span>
+                  <span className="font-medium">Expired: {stats.expired}</span>
+                </span>
+                <span className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 shadow-sm"></span>
+                  <span className="font-medium">Total: {stats.total}</span>
+                </span>
               </div>
             </div>
           )}
@@ -767,54 +801,62 @@ const AllCabinPayments = () => {
       {/* ORDER DETAIL MODAL */}
       {/* ====================== */}
       {showDetailModal && selectedOrder && (
-        <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setShowDetailModal(false); }}>
-          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="sticky top-0 bg-gradient-to-br from-indigo-600 to-purple-600 text-white p-6 rounded-t-3xl flex justify-between items-center">
+        <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={(e) => { if (e.target === e.currentTarget) setShowDetailModal(false); }}>
+          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+            <div className="sticky top-0 bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-700 text-white p-6 rounded-t-3xl flex justify-between items-center shadow-lg">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                  <Receipt size={20} className="text-white" />
+                <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center shadow-inner backdrop-blur-sm">
+                  <Receipt size={24} className="text-white" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold">Payment Details</h3>
+                  <h3 className="text-2xl font-bold tracking-tight">Payment Details</h3>
                   <p className="text-sm text-indigo-200">#{selectedOrder._id.slice(-6).toUpperCase()}</p>
                 </div>
               </div>
-              <button onClick={() => setShowDetailModal(false)} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors">
+              <button onClick={() => setShowDetailModal(false)} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200 hover:scale-110">
                 <X size={20} />
               </button>
             </div>
-            <div className="p-6 space-y-4">
+            <div className="p-6 overflow-y-auto flex-1 space-y-4 custom-scrollbar">
               {/* Order Date */}
-              <div className="bg-gray-50 rounded-xl p-3">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Order Date</p>
-                <p className="mt-1 font-semibold text-gray-800">{formatDateTimeDDMMYYYY(selectedOrder.createdAt)}</p>
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200">
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                  <Calendar size={12} className="text-indigo-500" /> Order Date
+                </p>
+                <p className="font-semibold text-gray-800">{formatDateTimeDDMMYYYY(selectedOrder.createdAt)}</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Cabin</p>
-                  <p className="mt-1 font-semibold text-gray-800">{selectedOrder.cabin?.name || 'Cabin Deleted'}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200">
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                    <Building2 size={12} className="text-indigo-500" /> Cabin
+                  </p>
+                  <p className="font-semibold text-gray-800">{selectedOrder.cabin?.name || 'Cabin Deleted'}</p>
                   {selectedOrder.cabin?.address && (
-                    <p className="text-sm text-gray-600 flex items-center gap-1 mt-0.5">
+                    <p className="text-sm text-gray-600 flex items-center gap-1 mt-1">
                       <MapPin size={14} /> {selectedOrder.cabin.address}
                     </p>
                   )}
                   {selectedOrder.isFirstCabin && (
-                    <p className="text-xs text-indigo-600 font-medium mt-1">⭐ First Cabin</p>
+                    <p className="text-xs text-indigo-600 font-bold mt-1">⭐ First Cabin</p>
                   )}
                 </div>
-                <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Owner</p>
-                  <p className="mt-1 font-semibold text-gray-800">{selectedOrder.cabin?.owner?.name || selectedOrder.owner?.name || 'N/A'}</p>
-                  <p className="text-sm text-gray-600 flex items-center gap-1 mt-0.5">
+                <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200">
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                    <User size={12} className="text-indigo-500" /> Owner
+                  </p>
+                  <p className="font-semibold text-gray-800">{selectedOrder.cabin?.owner?.name || selectedOrder.owner?.name || 'N/A'}</p>
+                  <p className="text-sm text-gray-600 flex items-center gap-1 mt-1">
                     <Phone size={14} /> {selectedOrder.cabin?.owner?.mobile || selectedOrder.owner?.mobile || 'N/A'}
                   </p>
                 </div>
               </div>
 
-              <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-100">
-                <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider">Amount Breakdown</p>
-                <div className="mt-2 space-y-1.5">
+              <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl p-4 border border-indigo-200 shadow-sm">
+                <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider flex items-center gap-1.5 mb-3">
+                  <IndianRupee size={12} /> Amount Breakdown
+                </p>
+                <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Base Amount</span>
                     <span className="font-semibold">₹{selectedOrder.baseAmount?.toFixed(2) || selectedOrder.amount}</span>
@@ -823,7 +865,7 @@ const AllCabinPayments = () => {
                     <span className="text-gray-600">GST ({(selectedOrder.gstRate * 100).toFixed(0)}%)</span>
                     <span className="font-semibold">₹{selectedOrder.gstAmount?.toFixed(2) || '0.00'}</span>
                   </div>
-                  <div className="border-t border-indigo-200 pt-1.5 flex justify-between text-sm font-bold">
+                  <div className="border-t border-indigo-300 pt-2 flex justify-between text-sm font-bold">
                     <span>Total</span>
                     <span className="text-indigo-600">₹{selectedOrder.amount.toFixed(2)}</span>
                   </div>
@@ -831,11 +873,11 @@ const AllCabinPayments = () => {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 bg-purple-50 rounded-xl border border-purple-100 text-center">
+                <div className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border border-purple-200 text-center shadow-sm hover:shadow-md transition-shadow">
                   <p className="text-[10px] font-bold text-purple-600 uppercase">Payments</p>
                   <p className="text-2xl font-bold text-purple-600">{selectedOrder.paymentCount || 1}</p>
                 </div>
-                <div className={`p-3 rounded-xl border text-center ${selectedOrder.isFirstCabin ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-200'}`}>
+                <div className={`p-4 rounded-xl border text-center shadow-sm hover:shadow-md transition-shadow ${selectedOrder.isFirstCabin ? 'bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200' : 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200'}`}>
                   <p className={`text-[10px] font-bold uppercase ${selectedOrder.isFirstCabin ? 'text-amber-600' : 'text-gray-500'}`}>Type</p>
                   <p className={`text-lg font-bold ${selectedOrder.isFirstCabin ? 'text-amber-700' : 'text-gray-700'}`}>
                     {selectedOrder.isFirstCabin ? '⭐ First' : 'Standard'}
@@ -844,43 +886,49 @@ const AllCabinPayments = () => {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Order Status</p>
-                  <span className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-bold rounded-full mt-1 ${getStatusBadge(selectedOrder.status).color}`}>
+                <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200">
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Order Status</p>
+                  <span className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-bold rounded-full mt-2 shadow-sm ${getStatusBadge(selectedOrder.status).color}`}>
                     {getStatusBadge(selectedOrder.status).icon} {getStatusBadge(selectedOrder.status).label}
                   </span>
                 </div>
-                <div className="p-3 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Payment Status</p>
-                  <span className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-bold rounded-full mt-1 ${getPaymentStatusBadge(selectedOrder.paymentStatus).color}`}>
+                <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200">
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Payment Status</p>
+                  <span className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-bold rounded-full mt-2 shadow-sm ${getPaymentStatusBadge(selectedOrder.paymentStatus).color}`}>
                     {getPaymentStatusBadge(selectedOrder.paymentStatus).icon} {getPaymentStatusBadge(selectedOrder.paymentStatus).label}
                   </span>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Start Date</p>
-                  <p className="mt-1 font-medium text-gray-800 text-sm">{formatDateDDMMYYYY(selectedOrder.startDate)}</p>
+                <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200">
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                    <Calendar size={12} className="text-indigo-500" /> Start Date
+                  </p>
+                  <p className="font-medium text-gray-800 text-sm">{formatDateDDMMYYYY(selectedOrder.startDate)}</p>
                 </div>
-                <div className="p-3 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Expiry Date</p>
-                  <p className="mt-1 font-medium text-gray-800 text-sm">{formatDateDDMMYYYY(selectedOrder.expiryDate)}</p>
+                <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200">
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                    <Calendar size={12} className="text-indigo-500" /> Expiry Date
+                  </p>
+                  <p className="font-medium text-gray-800 text-sm">{formatDateDDMMYYYY(selectedOrder.expiryDate)}</p>
                 </div>
               </div>
 
               {selectedOrder.transactionId && (
-                <div className="p-3 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Transaction ID</p>
-                  <p className="mt-1 font-mono text-xs text-gray-700 break-all">{selectedOrder.transactionId}</p>
+                <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200">
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                    <Hash size={12} className="text-indigo-500" /> Transaction ID
+                  </p>
+                  <p className="font-mono text-xs text-gray-700 break-all">{selectedOrder.transactionId}</p>
                 </div>
               )}
 
-              <div className="flex flex-col gap-3">
-                <button onClick={() => { setShowDetailModal(false); downloadInvoice(selectedOrder); }} className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-sm active:scale-[0.98] flex items-center justify-center gap-2">
+              <div className="flex flex-col gap-3 pt-2">
+                <button onClick={() => { setShowDetailModal(false); downloadInvoice(selectedOrder); }} className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.98] flex items-center justify-center gap-2">
                   <FileDown size={16} /> Download Invoice
                 </button>
-                <button onClick={() => setShowDetailModal(false)} className="w-full py-3 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition">Close</button>
+                <button onClick={() => setShowDetailModal(false)} className="w-full py-3 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition-all duration-200">Close</button>
               </div>
             </div>
           </div>
@@ -891,19 +939,19 @@ const AllCabinPayments = () => {
       {/* EDIT STATUS MODAL */}
       {/* ====================== */}
       {showEditModal && editOrder && (
-        <div className="fixed inset-0 z-[1300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) { setShowEditModal(false); setEditOrder(null); setEditStatus(""); } }}>
-          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden">
-            <div className="bg-gradient-to-br from-amber-500 to-amber-600 p-5 text-white rounded-t-3xl flex justify-between items-center">
+        <div className="fixed inset-0 z-[1300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={(e) => { if (e.target === e.currentTarget) { setShowEditModal(false); setEditOrder(null); setEditStatus(""); } }}>
+          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="bg-gradient-to-br from-amber-500 to-amber-600 p-5 text-white rounded-t-3xl flex justify-between items-center shadow-lg">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center"><Edit size={20} className="text-white" /></div>
-                <div><h3 className="text-xl font-bold">Update Status</h3><p className="text-sm text-amber-100">{editOrder.cabin?.name}</p></div>
+                <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center shadow-inner backdrop-blur-sm"><Edit size={24} className="text-white" /></div>
+                <div><h3 className="text-xl font-bold tracking-tight">Update Status</h3><p className="text-sm text-amber-100">{editOrder.cabin?.name}</p></div>
               </div>
-              <button onClick={() => { setShowEditModal(false); setEditOrder(null); setEditStatus(""); }} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"><X size={20} /></button>
+              <button onClick={() => { setShowEditModal(false); setEditOrder(null); setEditStatus(""); }} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200 hover:scale-110"><X size={20} /></button>
             </div>
             <div className="p-5 space-y-4">
-              <div className="bg-gray-50 rounded-xl p-4 flex justify-between items-center">
-                <span className="text-sm text-gray-500">Current Status</span>
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-full ${getStatusBadge(editOrder.status).color}`}>
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 flex justify-between items-center border border-gray-200">
+                <span className="text-sm text-gray-600 font-medium">Current Status</span>
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-full shadow-sm ${getStatusBadge(editOrder.status).color}`}>
                   {getStatusBadge(editOrder.status).icon} {getStatusBadge(editOrder.status).label}
                 </span>
               </div>
@@ -914,7 +962,7 @@ const AllCabinPayments = () => {
                     const badge = getStatusBadge(status);
                     const isSelected = editStatus === status;
                     return (
-                      <button key={status} onClick={() => setEditStatus(status)} className={`py-2.5 rounded-xl text-xs font-bold border transition ${isSelected ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-200 hover:bg-gray-50 text-gray-700'}`}>
+                      <button key={status} onClick={() => setEditStatus(status)} className={`py-2.5 rounded-xl text-xs font-bold border transition-all duration-200 ${isSelected ? 'border-indigo-500 bg-indigo-50 text-indigo-700 shadow-sm' : 'border-gray-200 hover:bg-gray-50 text-gray-700'}`}>
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${badge.color}`}>{badge.label}</span>
                       </button>
                     );
@@ -922,10 +970,10 @@ const AllCabinPayments = () => {
                 </div>
               </div>
               <div className="flex gap-3">
-                <button onClick={handleUpdateStatus} disabled={updating || !editStatus} className={`flex-1 py-3 rounded-xl text-white font-bold transition ${(updating || !editStatus) ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:shadow-lg'}`}>
+                <button onClick={handleUpdateStatus} disabled={updating || !editStatus} className={`flex-1 py-3 rounded-xl text-white font-bold transition-all duration-200 ${(updating || !editStatus) ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:shadow-lg'}`}>
                   {updating ? 'Updating...' : 'Update Status'}
                 </button>
-                <button onClick={() => { setShowEditModal(false); setEditOrder(null); setEditStatus(""); }} className="px-5 py-3 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition">Cancel</button>
+                <button onClick={() => { setShowEditModal(false); setEditOrder(null); setEditStatus(""); }} className="px-5 py-3 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition-all duration-200">Cancel</button>
               </div>
             </div>
           </div>
@@ -936,17 +984,17 @@ const AllCabinPayments = () => {
       {/* DELETE CONFIRMATION MODAL */}
       {/* ====================== */}
       {showDeleteModal && deleteOrder && (
-        <div className="fixed inset-0 z-[1300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) { setShowDeleteModal(false); setDeleteOrder(null); } }}>
-          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden">
-            <div className="bg-gradient-to-br from-red-500 to-red-600 p-5 text-white rounded-t-3xl flex justify-between items-center">
+        <div className="fixed inset-0 z-[1300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={(e) => { if (e.target === e.currentTarget) { setShowDeleteModal(false); setDeleteOrder(null); } }}>
+          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="bg-gradient-to-br from-red-500 to-red-600 p-5 text-white rounded-t-3xl flex justify-between items-center shadow-lg">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center"><Trash2 size={20} className="text-white" /></div>
-                <div><h3 className="text-xl font-bold">Delete Order</h3><p className="text-sm text-red-200">{deleteOrder.cabin?.name}</p></div>
+                <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center shadow-inner backdrop-blur-sm"><Trash2 size={24} className="text-white" /></div>
+                <div><h3 className="text-xl font-bold tracking-tight">Delete Order</h3><p className="text-sm text-red-200">{deleteOrder.cabin?.name}</p></div>
               </div>
-              <button onClick={() => { setShowDeleteModal(false); setDeleteOrder(null); }} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"><X size={20} /></button>
+              <button onClick={() => { setShowDeleteModal(false); setDeleteOrder(null); }} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200 hover:scale-110"><X size={20} /></button>
             </div>
             <div className="p-5 space-y-4">
-              <div className="bg-red-50 rounded-xl p-4 space-y-2 text-sm">
+              <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-4 space-y-2 text-sm border border-red-200">
                 <p className="font-bold text-red-800">Are you sure you want to delete this order?</p>
                 <div className="space-y-1 text-gray-600">
                   <p><span className="text-gray-500">Order:</span> #{deleteOrder._id.slice(-6)}</p>
@@ -954,15 +1002,15 @@ const AllCabinPayments = () => {
                   <p><span className="text-gray-500">Amount:</span> {formatCurrency(deleteOrder.amount)}</p>
                 </div>
               </div>
-              <div className="bg-amber-50 rounded-xl p-3 text-xs text-amber-700 flex items-start gap-2 border border-amber-200">
+              <div className="bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl p-3 text-xs text-amber-700 flex items-start gap-2 border border-amber-200">
                 <AlertCircle size={16} className="shrink-0 mt-0.5" />
-                <span>This action cannot be undone. All associated data will be permanently removed.</span>
+                <span className="font-medium">This action cannot be undone. All associated data will be permanently removed.</span>
               </div>
               <div className="flex gap-3">
-                <button onClick={handleDeleteOrder} disabled={deleting} className={`flex-1 py-3 rounded-xl text-white font-bold transition ${deleting ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-red-500 to-red-600 hover:shadow-lg'}`}>
+                <button onClick={handleDeleteOrder} disabled={deleting} className={`flex-1 py-3 rounded-xl text-white font-bold transition-all duration-200 ${deleting ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-red-500 to-red-600 hover:shadow-lg'}`}>
                   {deleting ? 'Deleting...' : 'Confirm Delete'}
                 </button>
-                <button onClick={() => { setShowDeleteModal(false); setDeleteOrder(null); }} className="px-5 py-3 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition">Cancel</button>
+                <button onClick={() => { setShowDeleteModal(false); setDeleteOrder(null); }} className="px-5 py-3 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition-all duration-200">Cancel</button>
               </div>
             </div>
           </div>

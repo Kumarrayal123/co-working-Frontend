@@ -1,3 +1,4 @@
+// AdminSpaces.jsx - Polished UI matching Owner Dashboard design language
 import axios from "axios";
 import { 
   ArrowRight, 
@@ -33,8 +34,15 @@ import {
   CreditCard,
   Clock,
   Info,
+  Search,
+  LayoutGrid,
+  List,
+  CheckCircle,
+  RefreshCw,
+  ExternalLink,
+  Coffee as CoffeeIcon
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminNavbar from "./AdminNavbar";
 import { toast } from "react-toastify";
@@ -60,9 +68,13 @@ const ALL_AMENITIES = [
 ];
 
 const AdminSpaces = () => {
+  const navigate = useNavigate();
   const [cabins, setCabins] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
+  const [viewMode, setViewMode] = useState("grid"); // 'grid' or 'table'
+  const [searchTerm, setSearchTerm] = useState("");
   const [filterLocation, setFilterLocation] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -160,25 +172,32 @@ const AdminSpaces = () => {
     return error;
   };
 
-  const navigate = useNavigate();
-
   // ─── FETCH CABINS ───
+  const fetchCabins = async (isRefresh = false) => {
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+    try {
+      const res = await axios.get(`${API_URL}/api/cabins`);
+      setCabins(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      console.error("Failed to load spaces:", err);
+      toast.error("Failed to fetch spaces list");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
   useEffect(() => {
-    axios
-      .get(`${API_URL}/api/cabins`)
-      .then((res) => {
-        setCabins(res.data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error(err);
-        setLoading(false);
-      });
+    fetchCabins();
   }, []);
 
   // ─── DELETE ───
-  const handleDelete = async (cabinId) => {
-    if (!window.confirm("Are you sure you want to delete this space?")) {
+  const handleDelete = async (cabinId, cabinName = "Space") => {
+    if (!window.confirm(`Are you sure you want to delete "${cabinName}"? This action cannot be undone.`)) {
       return;
     }
 
@@ -188,7 +207,10 @@ const AdminSpaces = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       toast.success("Space deleted successfully");
-      setCabins(cabins.filter(c => c._id !== cabinId));
+      setCabins(prev => prev.filter(c => c._id !== cabinId));
+      if (selectedCabin && selectedCabin._id === cabinId) {
+        setShowPopup(false);
+      }
     } catch (err) {
       console.error(err);
       toast.error("Failed to delete space");
@@ -203,7 +225,7 @@ const AdminSpaces = () => {
   };
 
   const nextImage = () => {
-    if (selectedCabin && selectedCabin.images) {
+    if (selectedCabin && selectedCabin.images && selectedCabin.images.length > 0) {
       setCurrentImageIndex((prev) => 
         prev === selectedCabin.images.length - 1 ? 0 : prev + 1
       );
@@ -211,76 +233,85 @@ const AdminSpaces = () => {
   };
 
   const prevImage = () => {
-    if (selectedCabin && selectedCabin.images) {
+    if (selectedCabin && selectedCabin.images && selectedCabin.images.length > 0) {
       setCurrentImageIndex((prev) => 
         prev === 0 ? selectedCabin.images.length - 1 : prev - 1
       );
     }
   };
 
-  // ─── GET SPACE TYPE ───
-  const getSpaceType = (cabin) => {
-    if (cabin.isChamber) return 'chamber';
-    if (cabin.isCafe) return 'cafe';
-    return 'coworking';
-  };
+  // ─── STAT COUNTS ───
+  const chamberCount = useMemo(() => cabins.filter(c => c.isChamber === true).length, [cabins]);
+  const coworkingCount = useMemo(() => cabins.filter(c => c.isChamber !== true && c.isCafe !== true).length, [cabins]);
+  const cafeCount = useMemo(() => cabins.filter(c => c.isCafe === true).length, [cabins]);
+  const activeCount = useMemo(() => cabins.filter(c => c.isActive === true).length, [cabins]);
+  const exclusiveCount = useMemo(() => cabins.filter(c => c.cabinType === 'exclusive').length, [cabins]);
 
-  const getSpaceTypeLabel = (cabin) => {
-    if (cabin.isChamber) return 'Medical Chamber';
-    if (cabin.isCafe) return 'Cafe';
-    return 'Co-Working Space';
-  };
+  // ─── LOCATIONS LIST ───
+  const locations = useMemo(() => {
+    const locSet = new Set();
+    cabins.forEach(c => {
+      if (c.address) {
+        const primary = c.address.split(',')[0]?.trim();
+        if (primary) locSet.add(primary);
+      }
+    });
+    return Array.from(locSet).sort();
+  }, [cabins]);
 
-  const getSpaceTypeIcon = (cabin) => {
-    if (cabin.isChamber) return Stethoscope;
-    if (cabin.isCafe) return Coffee;
-    return Briefcase;
-  };
+  // ─── CLEAR FILTERS ───
+  const clearFilters = useCallback(() => {
+    setSearchTerm("");
+    setFilterLocation("");
+    setFilterType("all");
+    setFilterStatus("all");
+  }, []);
 
-  const getSpaceTypeColor = (cabin) => {
-    if (cabin.isChamber) return 'emerald';
-    if (cabin.isCafe) return 'amber';
-    return 'blue';
-  };
+  const isFilterActive = searchTerm || filterLocation || filterType !== "all" || filterStatus !== "all";
 
-  // ─── FILTERS ───
-  const getFilteredByTab = () => {
+  // ─── TAB FILTERING ───
+  const tabFilteredCabins = useMemo(() => {
     if (activeTab === "chambers") {
       return cabins.filter(c => c.isChamber === true);
     } else if (activeTab === "coworking") {
-      return cabins.filter(c => c.isChamber === false && c.isCafe !== true);
+      return cabins.filter(c => c.isChamber !== true && c.isCafe !== true);
     } else if (activeTab === "cafe") {
       return cabins.filter(c => c.isCafe === true);
     }
     return cabins;
-  };
+  }, [cabins, activeTab]);
 
-  const tabFilteredCabins = getFilteredByTab();
+  // ─── FINAL FILTERED CABINS ───
+  const filteredCabins = useMemo(() => {
+    return tabFilteredCabins.filter(cabin => {
+      // Search term (name, address, spec)
+      if (searchTerm.trim()) {
+        const term = searchTerm.toLowerCase().trim();
+        const name = (cabin.name || "").toLowerCase();
+        const addr = (cabin.address || "").toLowerCase();
+        const spec = (cabin.cabin || "").toLowerCase();
+        if (!name.includes(term) && !addr.includes(term) && !spec.includes(term)) {
+          return false;
+        }
+      }
 
-  const getLocations = () => {
-    const locations = tabFilteredCabins
-      .filter(c => c.address)
-      .map(c => c.address.split(',')[0]?.trim())
-      .filter((loc, index, self) => loc && self.indexOf(loc) === index);
-    return locations;
-  };
+      // Location
+      if (filterLocation && !cabin.address?.toLowerCase().includes(filterLocation.toLowerCase())) {
+        return false;
+      }
 
-  const locations = getLocations();
+      // Cabin Type
+      if (filterType !== "all" && cabin.cabinType !== filterType) {
+        return false;
+      }
 
-  const clearFilters = () => {
-    setFilterLocation("");
-    setFilterType("all");
-    setFilterStatus("all");
-  };
+      // Status
+      if (filterStatus === "active" && cabin.isActive !== true) return false;
+      if (filterStatus === "inactive" && cabin.isActive === true) return false;
 
-  const filteredCabins = tabFilteredCabins.filter(cabin => {
-    const matchLocation = filterLocation ? cabin.address?.toLowerCase().includes(filterLocation.toLowerCase()) : true;
-    const matchType = filterType === 'all' || cabin.cabinType === filterType;
-    const matchStatus = filterStatus === 'all' || 
-                       (filterStatus === 'active' && cabin.isActive === true) ||
-                       (filterStatus === 'inactive' && cabin.isActive === false);
-    return matchLocation && matchType && matchStatus;
-  });
+      return true;
+    });
+  }, [tabFilteredCabins, searchTerm, filterLocation, filterType, filterStatus]);
 
   // ─── HELPERS ───
   const getImageUrl = (img) => {
@@ -291,7 +322,7 @@ const AdminSpaces = () => {
   };
 
   const formatDate = (dateStr) => {
-    if (!dateStr) return "N/A";
+    if (!dateStr) return "—";
     return new Date(dateStr).toLocaleDateString("en-US", {
       year: 'numeric',
       month: 'short',
@@ -314,11 +345,7 @@ const AdminSpaces = () => {
     phone: { icon: Phone, label: "Phone" }
   };
 
-  const chamberCount = cabins.filter(c => c.isChamber === true).length;
-  const coworkingCount = cabins.filter(c => c.isChamber === false && c.isCafe !== true).length;
-  const cafeCount = cabins.filter(c => c.isCafe === true).length;
-
-  // ─── ADD SPACE FUNCTIONS ───
+  // ─── ADD SPACE FORM HANDLERS ───
   const handleAddChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -480,8 +507,8 @@ const AdminSpaces = () => {
       setImages([]);
       setPricingPlans([]);
       
-      const res = await axios.get(`${API_URL}/api/cabins`);
-      setCabins(res.data);
+      // Refresh list
+      fetchCabins(true);
     } catch (err) {
       console.error("Add Space Error:", err);
       toast.error("Failed to add space");
@@ -490,13 +517,92 @@ const AdminSpaces = () => {
     }
   };
 
+  // ─── 6 KPI STAT CARDS (Added Cafe) ───
+  const statsCards = [
+    {
+      label: "Total Spaces",
+      value: cabins.length,
+      meta: "all listed properties",
+      icon: Home,
+      color: "indigo",
+      tab: "all",
+      onClick: () => {
+        setActiveTab("all");
+        clearFilters();
+      }
+    },
+    {
+      label: "Medical Chambers",
+      value: chamberCount,
+      meta: "doctor consultation cabins",
+      icon: Stethoscope,
+      color: "emerald",
+      tab: "chambers",
+      onClick: () => {
+        setActiveTab("chambers");
+        clearFilters();
+      }
+    },
+    {
+      label: "Co-Working Spaces",
+      value: coworkingCount,
+      meta: "shared & private desks",
+      icon: Briefcase,
+      color: "blue",
+      tab: "coworking",
+      onClick: () => {
+        setActiveTab("coworking");
+        clearFilters();
+      }
+    },
+    {
+      label: "Cafes",
+      value: cafeCount,
+      meta: "coffee & dining spaces",
+      icon: CoffeeIcon,
+      color: "amber",
+      tab: "cafe",
+      onClick: () => {
+        setActiveTab("cafe");
+        clearFilters();
+      }
+    },
+    {
+      label: "Active Spaces",
+      value: activeCount,
+      meta: "live & bookable",
+      icon: CheckCircle,
+      color: "cyan",
+      onClick: () => {
+        setFilterStatus(prev => prev === "active" ? "all" : "active");
+      }
+    },
+    {
+      label: "Exclusive Spaces",
+      value: exclusiveCount,
+      meta: "premium cabins",
+      icon: Crown,
+      color: "purple",
+      onClick: () => {
+        setFilterType(prev => prev === "exclusive" ? "all" : "exclusive");
+      }
+    }
+  ];
+
+  const currentDateFormatted = new Date().toLocaleDateString("en-US", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric"
+  });
+
   if (loading) {
     return (
       <div className="admin-dash">
         <AdminNavbar />
         <div className="admin-dash__loading">
           <div className="admin-dash__spinner" />
-          <p className="admin-dash__loading-text">Loading spaces...</p>
+          <p className="admin-dash__loading-text">Loading workspace spaces...</p>
         </div>
       </div>
     );
@@ -506,354 +612,461 @@ const AdminSpaces = () => {
     <div className="admin-dash">
       <AdminNavbar />
 
-      <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        {/* Header with Add Button */}
-        <div className="admin-dash__header mb-4 flex flex-wrap items-start justify-between gap-3">
+      <main className="pt-20 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
+        {/* Header - Matching Owner Dashboard reference */}
+        <div className="admin-dash__header">
           <div>
             <h1 className="admin-dash__greeting">
               All <span>Spaces</span>
             </h1>
-            <p className="text-sm text-slate-500 mt-1">
-              Manage all your medical chambers, co-working spaces and cafes
+            <p className="admin-dash__subtitle">
+              Manage and monitor medical chambers, co-working workspaces & cafes across all locations
             </p>
           </div>
-          <button
-            onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors shadow-sm hover:shadow-md whitespace-nowrap"
-          >
-            <Plus size={18} />
-            Add Space
-          </button>
-        </div>
 
-        {/* Tab Navigation - Cafe LAST MEIN */}
-        <div className="flex flex-wrap gap-2 mb-6 border-b border-slate-200 pb-0">
-          <button
-            onClick={() => {
-              setActiveTab("all");
-              clearFilters();
-            }}
-            className={`
-              px-5 py-2.5 rounded-t-lg text-sm font-medium transition-all flex items-center gap-2
-              ${activeTab === "all" 
-                ? 'bg-indigo-50 text-indigo-600 border-b-2 border-indigo-600' 
-                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
-              }
-            `}
-          >
-            <Building2 size={16} />
-            All Spaces
-            <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
-              {cabins.length}
-            </span>
-          </button>
-
-          <button
-            onClick={() => {
-              setActiveTab("chambers");
-              clearFilters();
-            }}
-            className={`
-              px-5 py-2.5 rounded-t-lg text-sm font-medium transition-all flex items-center gap-2
-              ${activeTab === "chambers" 
-                ? 'bg-emerald-50 text-emerald-600 border-b-2 border-emerald-600' 
-                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
-              }
-            `}
-          >
-            <Stethoscope size={16} />
-            Medical Chambers
-            <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
-              {chamberCount}
-            </span>
-          </button>
-
-          <button
-            onClick={() => {
-              setActiveTab("coworking");
-              clearFilters();
-            }}
-            className={`
-              px-5 py-2.5 rounded-t-lg text-sm font-medium transition-all flex items-center gap-2
-              ${activeTab === "coworking" 
-                ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600' 
-                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
-              }
-            `}
-          >
-            <Briefcase size={16} />
-            Co-Working Spaces
-            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
-              {coworkingCount}
-            </span>
-          </button>
-
-          {/* ✅ CAFE TAB - LAST MEIN */}
-          <button
-            onClick={() => {
-              setActiveTab("cafe");
-              clearFilters();
-            }}
-            className={`
-              px-5 py-2.5 rounded-t-lg text-sm font-medium transition-all flex items-center gap-2
-              ${activeTab === "cafe" 
-                ? 'bg-amber-50 text-amber-600 border-b-2 border-amber-600' 
-                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
-              }
-            `}
-          >
-            <Coffee size={16} />
-            Cafes
-            <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
-              {cafeCount}
-            </span>
-          </button>
-        </div>
-
-        {/* Filters Panel */}
-        {tabFilteredCabins.length > 0 && (
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 mb-6 shadow-sm">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
-                  Location
-                </label>
-                <select
-                  value={filterLocation}
-                  onChange={(e) => setFilterLocation(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                >
-                  <option value="">All Locations</option>
-                  {locations.map((loc, idx) => (
-                    <option key={idx} value={loc}>{loc}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
-                  Type
-                </label>
-                <select
-                  value={filterType}
-                  onChange={(e) => setFilterType(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                >
-                  <option value="all">All Types</option>
-                  <option value="normal">Normal</option>
-                  <option value="exclusive">Exclusive</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
-                  Status
-                </label>
-                <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                >
-                  <option value="all">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              </div>
-
-              <div className="flex items-end gap-2">
-                <button
-                  onClick={clearFilters}
-                  className="flex-1 px-3 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors flex items-center justify-center gap-1.5"
-                >
-                  <XCircle size={16} />
-                  Clear All
-                </button>
-              </div>
+          <div className="flex items-center flex-wrap gap-2.5">
+            <div className="admin-dash__date-pill">
+              <Calendar size={14} />
+              <span>{currentDateFormatted}</span>
             </div>
 
-            {(filterLocation || filterType !== 'all' || filterStatus !== 'all') && (
-              <div className="flex flex-wrap gap-1.5 mt-4 pt-4 border-t border-slate-100">
-                {filterLocation && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-full text-[10px] font-medium">
-                    Location: {filterLocation}
-                    <button onClick={() => setFilterLocation("")} className="hover:text-indigo-900">
-                      <XCircle size={10} />
-                    </button>
-                  </span>
-                )}
-                {filterType !== 'all' && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-full text-[10px] font-medium">
-                    Type: {filterType.charAt(0).toUpperCase() + filterType.slice(1)}
-                    <button onClick={() => setFilterType("all")} className="hover:text-indigo-900">
-                      <XCircle size={10} />
-                    </button>
-                  </span>
-                )}
-                {filterStatus !== 'all' && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-full text-[10px] font-medium">
-                    Status: {filterStatus.charAt(0).toUpperCase() + filterStatus.slice(1)}
-                    <button onClick={() => setFilterStatus("all")} className="hover:text-indigo-900">
-                      <XCircle size={10} />
-                    </button>
-                  </span>
-                )}
+            <button
+              onClick={() => fetchCabins(true)}
+              className="admin-dash__btn hover:border-indigo-300"
+              title="Refresh spaces"
+              disabled={refreshing}
+            >
+              <RefreshCw size={14} className={refreshing ? "animate-spin text-indigo-600" : "text-gray-500"} />
+              <span className="text-xs font-medium">{refreshing ? "Refreshing..." : "Refresh"}</span>
+            </button>
+
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 bg-[length:200%_100%] text-white hover:bg-[position:100%_0] transition-all duration-500 shadow-md shadow-indigo-200 hover:shadow-lg hover:shadow-indigo-300 transform hover:scale-105 active:scale-95"
+            >
+              <Plus size={14} /> Add Space
+            </button>
+          </div>
+        </div>
+
+        {/* 6 KPI Stat Summary Cards (Added Cafe) */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4 mb-6">
+          {statsCards.map((stat, index) => (
+            <div
+              key={index}
+              className={`admin-dash__stat cursor-pointer hover:scale-105 transition-transform duration-200 ${
+                activeTab === stat.tab ? 'ring-2 ring-indigo-500/80 shadow-md' : ''
+              }`}
+              onClick={stat.onClick}
+              title="Click to filter by this category"
+            >
+              <div className="admin-dash__stat-top">
+                <span className="admin-dash__stat-label">{stat.label}</span>
+                <div className={`admin-dash__stat-icon admin-dash__stat-icon--${stat.color}`}>
+                  <stat.icon size={15} />
+                </div>
               </div>
+              <div className="admin-dash__stat-value">{stat.value}</div>
+              <div className="admin-dash__stat-meta">{stat.meta}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Tab Navigation and View Mode Bar */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-2 sm:p-2.5 mb-5 shadow-sm flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center flex-wrap gap-1.5 sm:gap-2">
+            <button
+              onClick={() => {
+                setActiveTab("all");
+                clearFilters();
+              }}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                activeTab === "all"
+                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-200'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <Building2 size={14} />
+              <span>All Spaces</span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                activeTab === "all" ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700'
+              }`}>
+                {cabins.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => {
+                setActiveTab("chambers");
+                clearFilters();
+              }}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                activeTab === "chambers"
+                  ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-200'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <Stethoscope size={14} />
+              <span>Medical Chambers</span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                activeTab === "chambers" ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-700'
+              }`}>
+                {chamberCount}
+              </span>
+            </button>
+
+            <button
+              onClick={() => {
+                setActiveTab("coworking");
+                clearFilters();
+              }}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                activeTab === "coworking"
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-200'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <Briefcase size={14} />
+              <span>Co-Working</span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                activeTab === "coworking" ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-700'
+              }`}>
+                {coworkingCount}
+              </span>
+            </button>
+
+            <button
+              onClick={() => {
+                setActiveTab("cafe");
+                clearFilters();
+              }}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                activeTab === "cafe"
+                  ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-md shadow-amber-200'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <CoffeeIcon size={14} />
+              <span>Cafes</span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                activeTab === "cafe" ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-700'
+              }`}>
+                {cafeCount}
+              </span>
+            </button>
+          </div>
+
+          {/* View Toggle (Grid vs Table) */}
+          <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl">
+            <button
+              onClick={() => setViewMode("grid")}
+              className={`p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                viewMode === "grid"
+                  ? 'bg-white text-indigo-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-800'
+              }`}
+              title="Grid View"
+            >
+              <LayoutGrid size={15} />
+              <span className="hidden sm:inline">Grid</span>
+            </button>
+            <button
+              onClick={() => setViewMode("table")}
+              className={`p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                viewMode === "table"
+                  ? 'bg-white text-indigo-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-800'
+              }`}
+              title="Table View"
+            >
+              <List size={15} />
+              <span className="hidden sm:inline">Table</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Enhanced Filters Bar */}
+        <div className="admin-dash__filters mb-6">
+          <div className="admin-dash__filter-group">
+            {/* Search Box */}
+            <div className="flex-1 min-w-[220px] relative">
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search by space name, spec, address..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="admin-dash__filter-input w-full pl-9"
+              />
+            </div>
+
+            {/* Location Filter */}
+            <select
+              value={filterLocation}
+              onChange={(e) => setFilterLocation(e.target.value)}
+              className="admin-dash__filter-select min-w-[140px]"
+            >
+              <option value="">All Locations</option>
+              {locations.map((loc, idx) => (
+                <option key={idx} value={loc}>{loc}</option>
+              ))}
+            </select>
+
+            {/* Cabin Type Filter */}
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="admin-dash__filter-select min-w-[130px]"
+            >
+              <option value="all">All Types</option>
+              <option value="normal">Normal</option>
+              <option value="exclusive">Exclusive</option>
+            </select>
+
+            {/* Status Filter */}
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="admin-dash__filter-select min-w-[130px]"
+            >
+              <option value="all">All Status</option>
+              <option value="active">Active Only</option>
+              <option value="inactive">Inactive Only</option>
+            </select>
+
+            {/* Clear All */}
+            {isFilterActive && (
+              <button
+                onClick={clearFilters}
+                className="admin-dash__btn hover:bg-red-50 hover:text-red-600 hover:border-red-200"
+                title="Clear all filters"
+              >
+                <XCircle size={15} /> Clear
+              </button>
             )}
           </div>
-        )}
 
-        {/* Results Count */}
-        {(filterLocation || filterType !== 'all' || filterStatus !== 'all') && (
-          <div className="flex items-center justify-between mb-4 px-1">
-            <p className="text-sm text-slate-500">
-              Showing <strong className="text-slate-900">{filteredCabins.length}</strong> results
-            </p>
-            <span className="text-xs text-slate-400">
-              {filteredCabins.length} of {tabFilteredCabins.length} total spaces
-            </span>
+          {/* Active Filter Tags */}
+          <div className="flex flex-wrap items-center justify-between gap-2 mt-3 pt-3 border-t border-gray-100 text-xs text-gray-500">
+            <div className="flex items-center flex-wrap gap-1.5">
+              <span>Showing <strong>{filteredCabins.length}</strong> of {tabFilteredCabins.length} spaces</span>
+              {filterLocation && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-[10px] font-semibold border border-indigo-200">
+                  Location: {filterLocation}
+                  <button onClick={() => setFilterLocation("")} className="hover:text-indigo-900">×</button>
+                </span>
+              )}
+              {filterType !== "all" && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-[10px] font-semibold border border-indigo-200">
+                  Type: {filterType}
+                  <button onClick={() => setFilterType("all")} className="hover:text-indigo-900">×</button>
+                </span>
+              )}
+              {filterStatus !== "all" && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-[10px] font-semibold border border-indigo-200">
+                  Status: {filterStatus}
+                  <button onClick={() => setFilterStatus("all")} className="hover:text-indigo-900">×</button>
+                </span>
+              )}
+            </div>
+
+            {isFilterActive && (
+              <span className="text-indigo-600 font-semibold">• Filters Active</span>
+            )}
           </div>
-        )}
+        </div>
 
-        {/* Main Content */}
+        {/* Main Spaces List */}
         {filteredCabins.length === 0 ? (
-          <div className="admin-dash__error" style={{ background: '#f8fafc', borderColor: '#e2e8f0' }}>
-            {activeTab === "chambers" ? (
-              <Stethoscope size={48} className="text-slate-300 mb-4" />
-            ) : activeTab === "coworking" ? (
-              <Briefcase size={48} className="text-slate-300 mb-4" />
-            ) : activeTab === "cafe" ? (
-              <Coffee size={48} className="text-slate-300 mb-4" />
+          <div className="admin-dash__card p-12 text-center flex flex-col items-center justify-center gap-3">
+            <div className="p-4 bg-gray-100 rounded-2xl text-gray-400">
+              {activeTab === "chambers" ? (
+                <Stethoscope size={40} />
+              ) : activeTab === "coworking" ? (
+                <Briefcase size={40} />
+              ) : activeTab === "cafe" ? (
+                <CoffeeIcon size={40} />
+              ) : (
+                <Building2 size={40} />
+              )}
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-gray-800">No spaces found</h3>
+              <p className="text-xs text-gray-400 mt-1">
+                {isFilterActive ? "Try clearing your filters or changing search query" : "Get started by adding your first space"}
+              </p>
+            </div>
+            {isFilterActive ? (
+              <button
+                onClick={clearFilters}
+                className="mt-2 admin-dash__btn"
+              >
+                Clear Filters
+              </button>
             ) : (
-              <Building2 size={48} className="text-slate-300 mb-4" />
+              <button
+                onClick={() => setIsAddModalOpen(true)}
+                className="mt-2 admin-dash__btn admin-dash__btn--primary"
+              >
+                <Plus size={14} /> Add First Space
+              </button>
             )}
-            <p className="admin-dash__error-title" style={{ color: '#475569' }}>
-              No {activeTab === "chambers" ? "medical chambers" : activeTab === "coworking" ? "co-working spaces" : activeTab === "cafe" ? "cafes" : "spaces"} found
-            </p>
-            <p className="admin-dash__error-message">Try adjusting your filters.</p>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        ) : viewMode === "grid" ? (
+          /* ─── GRID VIEW ─── */
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {filteredCabins.map((cabin) => {
               const isActive = cabin.isActive === true;
               const isExclusive = cabin.cabinType === 'exclusive';
               const isNew = new Date(cabin.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-              const spaceType = getSpaceType(cabin);
-              const spaceLabel = getSpaceTypeLabel(cabin);
-              const SpaceIcon = getSpaceTypeIcon(cabin);
-              const color = getSpaceTypeColor(cabin);
-              
-              const colorMap = {
-                emerald: 'bg-emerald-500 text-white',
-                amber: 'bg-amber-500 text-white',
-                blue: 'bg-blue-500 text-white'
-              };
-              
+              const isChamber = cabin.isChamber === true;
+              const isCafe = cabin.isCafe === true;
+
+              let typeLabel = 'Co-Working';
+              let typeIcon = Briefcase;
+              let typeColor = 'bg-blue-600/90';
+              if (isChamber) {
+                typeLabel = 'Chamber';
+                typeIcon = Stethoscope;
+                typeColor = 'bg-emerald-600/90';
+              } else if (isCafe) {
+                typeLabel = 'Cafe';
+                typeIcon = CoffeeIcon;
+                typeColor = 'bg-amber-600/90';
+              }
+              const TypeIcon = typeIcon;
+
               return (
                 <div
                   key={cabin._id}
-                  className="admin-dash__card group flex flex-col h-full hover:shadow-lg transition-all duration-300 cursor-pointer"
                   onClick={() => handleViewDetails(cabin)}
+                  className="admin-dash__card group flex flex-col h-full hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden border border-gray-200 hover:border-indigo-300"
                 >
-                  <div className="relative h-48 overflow-hidden rounded-t-2xl">
-                    <div className="absolute inset-0 bg-slate-200 animate-pulse" />
+                  {/* Image Container */}
+                  <div className="relative h-48 overflow-hidden bg-gray-100">
                     <img
                       src={cabin.images?.[0] ? getImageUrl(cabin.images[0]) : PLACEHOLDER_IMAGE}
                       alt={cabin.name}
-                      className="w-full h-full object-cover relative z-10 group-hover:scale-105 transition-transform duration-500"
-                      onError={(e) => {
-                        e.target.src = PLACEHOLDER_IMAGE;
-                      }}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/50 via-transparent to-transparent z-20 opacity-40" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-gray-950/70 via-gray-900/20 to-transparent" />
 
-                    <div className="absolute top-3 right-3 z-30 flex flex-col gap-1.5">
-                      <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold shadow-lg flex items-center gap-1 ${colorMap[color]}`}>
-                        <SpaceIcon size={10} />
-                        {spaceLabel}
+                    {/* Top Badges */}
+                    <div className="absolute top-3 right-3 z-10 flex flex-col gap-1.5 items-end">
+                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold shadow-md flex items-center gap-1 backdrop-blur-md ${typeColor} text-white`}>
+                        <TypeIcon size={10} />
+                        {typeLabel}
                       </span>
 
-                      {isExclusive && isActive && (
-                        <span className="bg-gradient-to-r from-amber-500 to-yellow-500 text-white px-2.5 py-0.5 rounded-full text-[9px] font-bold flex items-center gap-1 shadow-lg">
-                          <Crown size={11} />
-                          Premium
+                      {isExclusive && (
+                        <span className="bg-gradient-to-r from-amber-500 to-yellow-500 text-white px-2.5 py-0.5 rounded-full text-[9px] font-bold flex items-center gap-1 shadow-md">
+                          <Crown size={10} /> Exclusive
                         </span>
                       )}
-                      <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold shadow-lg flex items-center gap-1 ${
-                        isActive ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'
+
+                      <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold shadow-md flex items-center gap-1.5 ${
+                        isActive ? 'bg-emerald-500 text-white' : 'bg-gray-600 text-white'
                       }`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-white animate-pulse' : 'bg-white/70'}`}></span>
+                        <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-white animate-pulse' : 'bg-gray-300'}`}></span>
                         {isActive ? 'Active' : 'Inactive'}
                       </span>
                     </div>
 
-                    {isNew && isActive && (
-                      <div className="absolute top-3 left-3 z-30">
-                        <span className="bg-blue-500 text-white px-2.5 py-0.5 rounded-full text-[8px] font-bold shadow-lg flex items-center gap-1">
-                          <Sparkles size={10} />
-                          New
+                    {isNew && (
+                      <div className="absolute top-3 left-3 z-10">
+                        <span className="bg-indigo-600 text-white px-2.5 py-0.5 rounded-full text-[9px] font-bold shadow-md flex items-center gap-1">
+                          <Sparkles size={10} /> New
                         </span>
                       </div>
                     )}
+
+                    {/* Quick Capacity on Image Bottom */}
+                    <div className="absolute bottom-3 left-3 z-10 flex items-center gap-1.5 text-white/90 text-[11px] font-medium drop-shadow">
+                      <Users size={12} />
+                      <span>{cabin.capacity || 1} Seats</span>
+                    </div>
                   </div>
 
-                  <div className="p-5 flex flex-col flex-grow">
-                    <div className="mb-4">
-                      <p className="text-[10px] font-bold uppercase tracking-widest mb-1 flex items-center gap-1.5">
-                        <span className={cabin.isChamber ? 'text-emerald-600' : cabin.isCafe ? 'text-amber-600' : 'text-blue-600'}>
-                          {spaceLabel}
-                        </span>
-                        {cabin.isChamber && (
-                          <span className="text-[8px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">
-                            Doctor's Cabin
-                          </span>
-                        )}
+                  {/* Card Body */}
+                  <div className="p-4 sm:p-5 flex flex-col flex-1">
+                    <div className="mb-2.5">
+                      <p className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${
+                        isChamber ? 'text-emerald-600' : isCafe ? 'text-amber-600' : 'text-indigo-600'
+                      }`}>
+                        {isChamber ? 'Medical Chamber' : isCafe ? 'Cafe' : 'Workspace'}
                       </p>
-                      <h3 className="text-base font-bold text-slate-900 leading-tight line-clamp-1">{cabin.name}</h3>
-                    </div>
-                    <div className="flex items-start gap-3 mb-3">
-                      <div className="p-2 bg-indigo-50 rounded-lg shrink-0 text-indigo-600">
-                        <MapPin size={16} />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-900 line-clamp-1">{cabin.address?.split(',')[0] || "Location"}</p>
-                        <p className="text-xs text-slate-500 line-clamp-1">{cabin.address}</p>
-                      </div>
+                      <h3 className="text-sm sm:text-base font-bold text-gray-900 group-hover:text-indigo-600 transition-colors line-clamp-1 leading-snug">
+                        {cabin.name}
+                      </h3>
                     </div>
 
-                    <p className="text-slate-500 text-xs leading-relaxed mb-4 line-clamp-2">
-                      {cabin.description || (cabin.isChamber 
-                        ? "Professional medical chamber designed for consultations and patient care." 
-                        : cabin.isCafe
-                        ? "A cozy cafe perfect for work, meetings, and networking."
-                        : "Experience a premium workspace designed for focus and collaboration.")}
+                    {/* Address */}
+                    <div className="flex items-start gap-1.5 text-xs text-gray-500 mb-3">
+                      <MapPin size={13} className="text-gray-400 mt-0.5 flex-shrink-0" />
+                      <span className="line-clamp-1">{cabin.address || "No address provided"}</span>
+                    </div>
+
+                    {/* Description preview */}
+                    <p className="text-gray-500 text-xs line-clamp-2 leading-relaxed mb-4">
+                      {cabin.description || (isChamber
+                        ? "Specialized clinical chamber equipped for medical consultations."
+                        : isCafe
+                        ? "Cozy cafe with premium coffee and comfortable seating."
+                        : "Premium co-working desk space with modern amenities and high-speed Wi-Fi.")}
                     </p>
 
-                    <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
+                    {/* Amenities Preview Icons */}
+                    {cabin.amenities && (
+                      <div className="flex items-center gap-1 mb-4 flex-wrap">
+                        {Object.entries(cabin.amenities)
+                          .filter(([_, val]) => val === true)
+                          .slice(0, 4)
+                          .map(([key]) => {
+                            const item = amenityIcons[key];
+                            if (!item) return null;
+                            const Icon = item.icon;
+                            return (
+                              <span
+                                key={key}
+                                className="w-6 h-6 rounded-md bg-gray-100 flex items-center justify-center text-gray-600 text-xs"
+                                title={item.label}
+                              >
+                                <Icon size={12} />
+                              </span>
+                            );
+                          })}
+                        {Object.values(cabin.amenities).filter(v => v === true).length > 4 && (
+                          <span className="text-[10px] font-semibold text-gray-400 px-1">
+                            +{Object.values(cabin.amenities).filter(v => v === true).length - 4} more
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Card Footer: Price + Action Buttons */}
+                    <div className="mt-auto pt-3 border-t border-gray-100 flex items-center justify-between gap-2">
                       <div>
                         <div className="flex items-baseline gap-0.5">
-                          <span className="text-xl font-bold text-slate-900">₹{cabin.price || '0'}</span>
-                          <span className="text-[10px] text-slate-400 font-bold uppercase">/ Hour</span>
-                        </div>
-                        <div className="flex items-center gap-1 text-[10px] font-medium text-slate-500 mt-0.5">
-                          <Users size={10} />
-                          {cabin.capacity} Seats
+                          <span className="text-base sm:text-lg font-bold text-gray-900">₹{cabin.price || '0'}</span>
+                          <span className="text-[10px] text-gray-400 font-bold uppercase">/hr</span>
                         </div>
                       </div>
 
-                      <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={() => handleViewDetails(cabin)}
-                          className="h-10 w-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center hover:bg-indigo-600 hover:text-white transition-colors"
-                          title="View Details"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all duration-200"
+                          title="Quick View"
                         >
-                          <Eye size={16} />
+                          <Eye size={12} /> Details
                         </button>
                         <button
-                          onClick={() => handleDelete(cabin._id)}
-                          className="h-10 w-10 rounded-full bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-600 hover:text-white transition-colors"
+                          onClick={() => handleDelete(cabin._id, cabin.name)}
+                          className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-600 hover:text-white transition-colors"
                           title="Delete Space"
                         >
-                          <Trash2 size={16} />
+                          <Trash2 size={13} />
                         </button>
                       </div>
                     </div>
@@ -862,167 +1075,294 @@ const AdminSpaces = () => {
               );
             })}
           </div>
+        ) : (
+          /* ─── TABLE VIEW ─── */
+          <div className="admin-dash__card overflow-hidden">
+            <div className="admin-dash__card-body p-0 overflow-x-auto">
+              <table className="admin-dash__table">
+                <thead>
+                  <tr>
+                    <th className="w-14 text-center">#</th>
+                    <th>Space / Cabin</th>
+                    <th>Type</th>
+                    <th>Location / Address</th>
+                    <th>Capacity</th>
+                    <th>Hourly Rate</th>
+                    <th>Status</th>
+                    <th className="text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredCabins.map((cabin, idx) => {
+                    const isChamber = cabin.isChamber === true;
+                    const isCafe = cabin.isCafe === true;
+                    const isActive = cabin.isActive === true;
+                    const isExclusive = cabin.cabinType === 'exclusive';
+
+                    let typeLabel = 'Co-Working';
+                    let typeIcon = Briefcase;
+                    let typeColor = 'bg-blue-50 text-blue-700 border-blue-200';
+                    if (isChamber) {
+                      typeLabel = 'Medical Chamber';
+                      typeIcon = Stethoscope;
+                      typeColor = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                    } else if (isCafe) {
+                      typeLabel = 'Cafe';
+                      typeIcon = CoffeeIcon;
+                      typeColor = 'bg-amber-50 text-amber-700 border-amber-200';
+                    }
+                    const TypeIcon = typeIcon;
+
+                    return (
+                      <tr
+                        key={cabin._id}
+                        className="group cursor-pointer hover:bg-indigo-50/40 transition-colors"
+                        onClick={() => handleViewDetails(cabin)}
+                      >
+                        <td className="text-center">
+                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 text-xs font-bold text-gray-500 group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors">
+                            {idx + 1}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="flex items-center gap-3">
+                            <div className="flex-shrink-0 w-11 h-11 rounded-xl overflow-hidden bg-gray-100 border border-gray-200 shadow-sm">
+                              <img
+                                src={cabin.images?.[0] ? getImageUrl(cabin.images[0]) : PLACEHOLDER_IMAGE}
+                                alt={cabin.name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
+                              />
+                            </div>
+                            <div>
+                              <p className="font-bold text-gray-900 text-xs sm:text-sm group-hover:text-indigo-600 transition-colors">
+                                {cabin.name}
+                              </p>
+                              <p className="text-[11px] text-gray-400">{cabin.cabin || "Space"}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold rounded-lg border ${typeColor}`}>
+                            <TypeIcon size={10} />
+                            {typeLabel}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="flex items-center gap-1.5 text-xs text-gray-600">
+                            <MapPin size={12} className="text-gray-400 flex-shrink-0" />
+                            <span className="truncate max-w-[200px]">{cabin.address || "—"}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <span className="text-xs font-semibold text-gray-700 flex items-center gap-1">
+                            <Users size={12} className="text-gray-400" />
+                            {cabin.capacity || 1} Seats
+                          </span>
+                        </td>
+                        <td>
+                          <div className="flex items-baseline gap-0.5">
+                            <span className="text-sm font-bold text-gray-900">₹{cabin.price || 0}</span>
+                            <span className="text-[10px] text-gray-400">/hr</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="flex flex-col gap-1 items-start">
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-bold rounded-lg ${
+                              isActive
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                : 'bg-gray-100 text-gray-600 border border-gray-200'
+                            }`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-500' : 'bg-gray-400'}`}></span>
+                              {isActive ? 'Active' : 'Inactive'}
+                            </span>
+                            {isExclusive && (
+                              <span className="text-[9px] font-bold text-amber-600 flex items-center gap-0.5">
+                                <Crown size={9} /> Exclusive
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="text-center" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              onClick={() => handleViewDetails(cabin)}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all"
+                              title="View Details"
+                            >
+                              <Eye size={12} /> View
+                            </button>
+                            <button
+                              onClick={() => handleDelete(cabin._id, cabin.name)}
+                              className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-600 hover:text-white transition-colors"
+                              title="Delete Space"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
         )}
       </main>
 
-      {/* ─── DETAIL POPUP ─── */}
+      {/* ─── DETAIL POPUP (POLISHED) ─── */}
       {showPopup && selectedCabin && (
         <div 
-          className="fixed inset-0 z-[9999] flex items-start justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto"
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-slate-950/60 backdrop-blur-sm overflow-y-auto"
           onClick={(e) => {
             if (e.target === e.currentTarget) setShowPopup(false);
           }}
         >
-          <div className="bg-white rounded-2xl max-w-3xl w-full mt-16 mb-8 shadow-2xl relative overflow-y-auto max-h-[85vh]">
+          <div className="bg-white rounded-2xl max-w-3xl w-full shadow-2xl relative overflow-hidden max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
+            {/* Close Button Floating */}
             <button
               onClick={() => setShowPopup(false)}
-              className="sticky top-4 right-4 z-10 float-right p-2 bg-white/90 backdrop-blur-sm rounded-full hover:bg-white transition-colors shadow-lg border border-slate-200"
+              className="absolute top-4 right-4 z-20 p-2 bg-black/40 hover:bg-black/60 text-white rounded-full backdrop-blur-md transition-colors"
             >
-              <X size={20} className="text-slate-600" />
+              <X size={18} />
             </button>
 
-            <div className="relative h-80 md:h-96 overflow-hidden -mt-12 bg-slate-900">
-              <div className="flex h-full">
-                <img
-                  src={selectedCabin.images && selectedCabin.images.length > 0 
-                    ? getImageUrl(selectedCabin.images[currentImageIndex]) 
-                    : PLACEHOLDER_IMAGE}
-                  alt={`${selectedCabin.name}`}
-                  className="w-full h-full object-contain"
-                  onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
-                />
-              </div>
-              
+            {/* Modal Hero Image Carousel */}
+            <div className="relative h-72 sm:h-80 bg-slate-900 flex-shrink-0">
+              <img
+                src={selectedCabin.images && selectedCabin.images.length > 0 
+                  ? getImageUrl(selectedCabin.images[currentImageIndex]) 
+                  : PLACEHOLDER_IMAGE}
+                alt={selectedCabin.name}
+                className="w-full h-full object-cover"
+                onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none" />
+
+              {/* Prev / Next Controls */}
               {selectedCabin.images && selectedCabin.images.length > 1 && (
                 <>
                   <button
                     onClick={prevImage}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-black/50 hover:bg-black/70 rounded-full text-white transition-colors"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 p-2 bg-black/40 hover:bg-black/70 text-white rounded-full transition-colors backdrop-blur-sm"
                   >
-                    <ChevronLeft size={24} />
+                    <ChevronLeft size={20} />
                   </button>
                   <button
                     onClick={nextImage}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-black/50 hover:bg-black/70 rounded-full text-white transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-black/40 hover:bg-black/70 text-white rounded-full transition-colors backdrop-blur-sm"
                   >
-                    <ChevronRight size={24} />
+                    <ChevronRight size={20} />
                   </button>
                 </>
               )}
 
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent pointer-events-none" />
-              
-              <div className="absolute bottom-4 left-4 flex gap-2 pointer-events-none flex-wrap">
-                <span className={`px-3 py-1 rounded-full text-xs font-bold shadow-lg flex items-center gap-1.5 ${
-                  selectedCabin.isActive ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'
-                }`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${selectedCabin.isActive ? 'bg-white animate-pulse' : 'bg-white/70'}`}></span>
-                  {selectedCabin.isActive ? 'Active' : 'Inactive'}
-                </span>
-                {selectedCabin.isChamber && (
-                  <span className="bg-emerald-600 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-lg">
-                    <Stethoscope size={14} />
-                    Medical Chamber
+              {/* Floating Hero Badges */}
+              <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between gap-2 flex-wrap pointer-events-none">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold shadow-md flex items-center gap-1.5 ${
+                    selectedCabin.isActive ? 'bg-emerald-500 text-white' : 'bg-gray-600 text-white'
+                  }`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${selectedCabin.isActive ? 'bg-white animate-pulse' : 'bg-gray-300'}`}></span>
+                    {selectedCabin.isActive ? 'Active' : 'Inactive'}
                   </span>
-                )}
-                {!selectedCabin.isChamber && !selectedCabin.isCafe && (
-                  <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-lg">
-                    <Briefcase size={14} />
-                    Co-Working
+
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold shadow-md flex items-center gap-1.5 ${
+                    selectedCabin.isChamber ? 'bg-emerald-600 text-white' : 
+                    selectedCabin.isCafe ? 'bg-amber-600 text-white' : 
+                    'bg-blue-600 text-white'
+                  }`}>
+                    {selectedCabin.isChamber ? <Stethoscope size={13} /> : 
+                     selectedCabin.isCafe ? <CoffeeIcon size={13} /> : 
+                     <Briefcase size={13} />}
+                    {selectedCabin.isChamber ? 'Medical Chamber' : 
+                     selectedCabin.isCafe ? 'Cafe' : 
+                     'Co-Working Space'}
                   </span>
-                )}
-                {selectedCabin.isCafe && (
-                  <span className="bg-amber-600 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-lg">
-                    <Coffee size={14} />
-                    Cafe
-                  </span>
-                )}
-                {selectedCabin.cabinType === 'exclusive' && (
-                  <span className="bg-gradient-to-r from-amber-500 to-yellow-500 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-lg">
-                    <Crown size={14} />
-                    Premium
-                  </span>
-                )}
+
+                  {selectedCabin.cabinType === 'exclusive' && (
+                    <span className="bg-gradient-to-r from-amber-500 to-yellow-500 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-md">
+                      <Crown size={13} /> Premium Exclusive
+                    </span>
+                  )}
+                </div>
+
+                <div className="bg-white/90 backdrop-blur-md px-3 py-1 rounded-xl text-xs font-bold text-gray-900 shadow">
+                  ₹{selectedCabin.price || '0'} <span className="text-[10px] text-gray-500 font-normal">/hr</span>
+                </div>
               </div>
             </div>
 
+            {/* Thumbnail Strip */}
             {selectedCabin.images && selectedCabin.images.length > 1 && (
-              <div className="px-6 pt-4 pb-2">
-                <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-                  {selectedCabin.images.map((img, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setCurrentImageIndex(idx)}
-                      className={`flex-shrink-0 w-20 h-16 rounded-lg overflow-hidden border-2 transition-all ${
-                        idx === currentImageIndex 
-                          ? 'border-indigo-600 ring-2 ring-indigo-200' 
-                          : 'border-transparent hover:border-slate-300'
-                      }`}
-                    >
-                      <img
-                        src={getImageUrl(img)}
-                        alt={`Thumbnail ${idx + 1}`}
-                        className="w-full h-full object-cover"
-                        onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
-                      />
-                    </button>
-                  ))}
-                </div>
+              <div className="px-5 py-2.5 bg-gray-50 border-b border-gray-100 flex gap-2 overflow-x-auto">
+                {selectedCabin.images.map((img, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setCurrentImageIndex(idx)}
+                    className={`w-14 h-11 rounded-lg overflow-hidden border-2 transition-all flex-shrink-0 ${
+                      idx === currentImageIndex ? 'border-indigo-600 ring-2 ring-indigo-200' : 'border-transparent opacity-70 hover:opacity-100'
+                    }`}
+                  >
+                    <img src={getImageUrl(img)} alt="" className="w-full h-full object-cover" />
+                  </button>
+                ))}
               </div>
             )}
 
-            <div className="p-6 md:p-8 pt-4">
-              <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest mb-1 flex items-center gap-1.5">
-                    <span className={selectedCabin.isChamber ? 'text-emerald-600' : selectedCabin.isCafe ? 'text-amber-600' : 'text-blue-600'}>
-                      {selectedCabin.isChamber ? 'Medical Chamber' : selectedCabin.isCafe ? 'Cafe' : 'Co-Working Space'}
-                    </span>
-                    {selectedCabin.isChamber && (
-                      <span className="text-[8px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded">
-                        Doctor's Cabin
-                      </span>
-                    )}
-                  </p>
-                  <h2 className="text-2xl font-bold text-slate-900">{selectedCabin.name}</h2>
-                </div>
-                <div className="text-right bg-indigo-50 px-4 py-2 rounded-xl">
-                  <div className="flex items-baseline gap-0.5">
-                    <span className="text-2xl font-bold text-indigo-600">₹{selectedCabin.price || '0'}</span>
-                    <span className="text-xs text-slate-400 font-bold uppercase">/ Hour</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-xs font-medium text-slate-500 mt-0.5 justify-end">
-                    <Users size={12} />
-                    {selectedCabin.capacity} Seats
-                  </div>
+            {/* Modal Body */}
+            <div className="p-5 sm:p-6 overflow-y-auto flex-1 space-y-4">
+              <div>
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">{selectedCabin.name}</h2>
+                <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-1">
+                  <MapPin size={13} className="text-indigo-600 flex-shrink-0" />
+                  <span>{selectedCabin.address || "Address not provided"}</span>
                 </div>
               </div>
 
-              <div className="flex items-start gap-2 mb-4 p-3 bg-slate-50 rounded-xl">
-                <MapPin size={16} className="text-indigo-600 mt-0.5 shrink-0" />
-                <p className="text-sm text-slate-600">{selectedCabin.address}</p>
+              {/* Specs Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <div className="p-3 bg-gray-50 rounded-xl">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase">Capacity</p>
+                  <p className="text-sm font-bold text-gray-800">{selectedCabin.capacity} Seats</p>
+                </div>
+                <div className="p-3 bg-gray-50 rounded-xl">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase">Rate</p>
+                  <p className="text-sm font-bold text-indigo-600">₹{selectedCabin.price}/hr</p>
+                </div>
+                <div className="p-3 bg-gray-50 rounded-xl">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase">Type</p>
+                  <p className="text-sm font-bold text-gray-800 capitalize">{selectedCabin.cabinType || 'Normal'}</p>
+                </div>
+                <div className="p-3 bg-gray-50 rounded-xl">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase">Listed</p>
+                  <p className="text-sm font-bold text-gray-800">{formatDate(selectedCabin.createdAt)}</p>
+                </div>
               </div>
 
+              {/* Description */}
               {selectedCabin.description && (
-                <div className="mb-4">
-                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Description</h4>
-                  <p className="text-sm text-slate-600 leading-relaxed">
+                <div>
+                  <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Description</h4>
+                  <p className="text-xs sm:text-sm text-gray-600 leading-relaxed bg-gray-50 p-3.5 rounded-xl border border-gray-100">
                     {selectedCabin.description}
                   </p>
                 </div>
               )}
 
+              {/* Amenities */}
               {selectedCabin.amenities && Object.values(selectedCabin.amenities).some(v => v === true) && (
-                <div className="mb-4">
-                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Amenities</h4>
+                <div>
+                  <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Available Amenities</h4>
                   <div className="flex flex-wrap gap-1.5">
                     {Object.entries(selectedCabin.amenities).map(([key, value]) => {
                       const amenity = amenityIcons[key];
                       if (!amenity || !value) return null;
                       const Icon = amenity.icon;
                       return (
-                        <span key={key} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 rounded-full text-xs font-medium text-slate-700 border border-slate-100">
-                          <Icon size={14} className="text-indigo-500" />
+                        <span key={key} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 rounded-lg text-xs font-semibold text-gray-700 border border-gray-100">
+                          <Icon size={14} className="text-indigo-600" />
                           {amenity.label}
                         </span>
                       );
@@ -1031,44 +1371,44 @@ const AdminSpaces = () => {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
-                <div className="p-3 bg-slate-50 rounded-xl">
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Type</p>
-                  <p className="text-sm font-semibold text-slate-900 capitalize">
-                    {selectedCabin.isChamber ? 'Medical Chamber' : selectedCabin.isCafe ? 'Cafe' : 'Co-Working'}
-                  </p>
+              {/* Pricing Plans */}
+              {selectedCabin.pricingPlans && selectedCabin.pricingPlans.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Pricing Plans</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {selectedCabin.pricingPlans.map((plan, i) => (
+                      <div key={i} className="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100 flex items-center justify-between">
+                        <div>
+                          <p className="font-bold text-gray-800 text-xs">{plan.label || "Plan"}</p>
+                          <p className="text-[11px] text-gray-500">{plan.hours} Hours · {plan.validity} Days Validity</p>
+                        </div>
+                        <span className="text-sm font-bold text-indigo-600">₹{plan.cost}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="p-3 bg-slate-50 rounded-xl">
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Capacity</p>
-                  <p className="text-sm font-semibold text-slate-900">{selectedCabin.capacity} Seats</p>
-                </div>
-                <div className="p-3 bg-slate-50 rounded-xl">
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Created</p>
-                  <p className="text-sm font-semibold text-slate-900">{formatDate(selectedCabin.createdAt)}</p>
-                </div>
-              </div>
+              )}
+            </div>
 
-              <div className="flex flex-wrap gap-3 pt-4 border-t border-slate-100">
+            {/* Modal Actions */}
+            <div className="p-4 sm:p-5 bg-gray-50 border-t border-gray-100 flex items-center justify-between gap-2.5 flex-wrap">
+              <button
+                onClick={() => navigate(`/cabin/${selectedCabin._id}`)}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shadow-sm"
+              >
+                <ExternalLink size={14} /> Open Public Page
+              </button>
+
+              <div className="flex items-center gap-2">
                 <button
-                  onClick={() => navigate(`/cabin/${selectedCabin._id}`)}
-                  className="flex-1 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
+                  onClick={() => handleDelete(selectedCabin._id, selectedCabin.name)}
+                  className="px-3.5 py-2.5 rounded-xl text-xs font-bold bg-red-50 text-red-600 hover:bg-red-100 transition-colors flex items-center gap-1.5"
                 >
-                  <Eye size={16} />
-                  View Full Details
-                </button>
-                <button
-                  onClick={() => {
-                    setShowPopup(false);
-                    handleDelete(selectedCabin._id);
-                  }}
-                  className="px-4 py-2.5 bg-red-50 text-red-600 rounded-xl text-sm font-medium hover:bg-red-100 transition-colors flex items-center gap-2"
-                >
-                  <Trash2 size={16} />
-                  Delete
+                  <Trash2 size={14} /> Delete
                 </button>
                 <button
                   onClick={() => setShowPopup(false)}
-                  className="px-4 py-2.5 bg-slate-100 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-200 transition-colors"
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold bg-white text-gray-700 border border-gray-200 hover:bg-gray-100 transition-colors"
                 >
                   Close
                 </button>
@@ -1081,11 +1421,9 @@ const AdminSpaces = () => {
       {/* ─── ADD SPACE MODAL ─── */}
       {isAddModalOpen && (
         <div 
-          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-slate-950/60 backdrop-blur-sm"
           onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setIsAddModalOpen(false);
-            }
+            if (e.target === e.currentTarget) setIsAddModalOpen(false);
           }}
         >
           <div 
@@ -1093,15 +1431,15 @@ const AdminSpaces = () => {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 sm:p-5 flex items-center justify-between flex-shrink-0">
+            <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 p-4 sm:p-5 flex items-center justify-between flex-shrink-0 text-white">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-white/20 flex items-center justify-center">
-                  <Plus size={18} className="text-white sm:w-5 sm:h-5" />
+                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                  <Plus size={20} className="text-white" />
                 </div>
                 <div>
-                  <h2 className="text-base sm:text-lg font-bold text-white">Add New Space</h2>
-                  <p className="text-[10px] sm:text-xs text-white/75">
-                    {formData.isChamber ? 'Medical Chamber' : formData.isCafe ? 'Cafe' : 'Co-Working Space'}
+                  <h2 className="text-base sm:text-lg font-bold text-white">Add New Workspace</h2>
+                  <p className="text-xs text-white/80">
+                    Register a new space - Chamber, Co-Working or Cafe
                   </p>
                 </div>
               </div>
@@ -1113,46 +1451,46 @@ const AdminSpaces = () => {
               </button>
             </div>
 
-            <div className="overflow-y-auto p-4 sm:p-6 flex-1">
+            <div className="overflow-y-auto p-4 sm:p-6 flex-1 space-y-4">
               <form onSubmit={handleAddSubmit} className="space-y-4">
-                {/* ─── SPACE TYPE SELECTION ─── */}
+                {/* Space Type Picker - 3 Options */}
                 <div>
-                  <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Space Type *</label>
-                  <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-1">
-                    <button
-                      type="button"
-                      onClick={() => setFormData({...formData, isChamber: true, isCafe: false})}
-                      className={`py-2.5 sm:py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold border-2 transition-all flex items-center justify-center gap-2 ${
-                        formData.isChamber === true
-                          ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
-                      }`}
-                    >
-                      <Stethoscope size={16} className={formData.isChamber ? 'text-emerald-500' : 'text-slate-400'} />
-                      Medical
-                    </button>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Space Category *</label>
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-1.5">
                     <button
                       type="button"
                       onClick={() => setFormData({...formData, isChamber: false, isCafe: false})}
-                      className={`py-2.5 sm:py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold border-2 transition-all flex items-center justify-center gap-2 ${
+                      className={`py-2.5 sm:py-3 px-3 rounded-xl text-xs sm:text-sm font-bold border-2 transition-all flex items-center justify-center gap-2 ${
                         formData.isChamber === false && formData.isCafe === false
-                          ? 'border-blue-500 bg-blue-50 text-blue-700'
-                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                          ? 'border-indigo-600 bg-indigo-50 text-indigo-700 shadow-sm'
+                          : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                       }`}
                     >
-                      <Briefcase size={16} className={formData.isChamber === false && formData.isCafe === false ? 'text-blue-500' : 'text-slate-400'} />
+                      <Briefcase size={16} className={formData.isChamber === false && formData.isCafe === false ? 'text-indigo-600' : 'text-gray-400'} />
                       Co-Working
                     </button>
                     <button
                       type="button"
-                      onClick={() => setFormData({...formData, isChamber: false, isCafe: true})}
-                      className={`py-2.5 sm:py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold border-2 transition-all flex items-center justify-center gap-2 ${
-                        formData.isCafe === true
-                          ? 'border-amber-500 bg-amber-50 text-amber-700'
-                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                      onClick={() => setFormData({...formData, isChamber: true, isCafe: false})}
+                      className={`py-2.5 sm:py-3 px-3 rounded-xl text-xs sm:text-sm font-bold border-2 transition-all flex items-center justify-center gap-2 ${
+                        formData.isChamber === true
+                          ? 'border-emerald-600 bg-emerald-50 text-emerald-700 shadow-sm'
+                          : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                       }`}
                     >
-                      <Coffee size={16} className={formData.isCafe ? 'text-amber-500' : 'text-slate-400'} />
+                      <Stethoscope size={16} className={formData.isChamber ? 'text-emerald-600' : 'text-gray-400'} />
+                      Chamber
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({...formData, isChamber: false, isCafe: true})}
+                      className={`py-2.5 sm:py-3 px-3 rounded-xl text-xs sm:text-sm font-bold border-2 transition-all flex items-center justify-center gap-2 ${
+                        formData.isCafe === true
+                          ? 'border-amber-600 bg-amber-50 text-amber-700 shadow-sm'
+                          : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      <CoffeeIcon size={16} className={formData.isCafe ? 'text-amber-600' : 'text-gray-400'} />
                       Cafe
                     </button>
                   </div>
@@ -1160,11 +1498,14 @@ const AdminSpaces = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
-                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Building Name *</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Building Name *</label>
                     <input
-                      className={`w-full mt-1 px-3 py-2.5 sm:py-3 border rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all ${errors.name ? 'border-red-500 focus:border-red-500' : 'border-slate-200 focus:border-indigo-500'}`}
-                      type="text" name="name"
-                      placeholder="e.g. Tech Hub"
+                      className={`w-full mt-1 px-3 py-2.5 border rounded-xl text-sm outline-none transition-all ${
+                        errors.name ? 'border-red-500 focus:ring-2 focus:ring-red-200' : 'border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'
+                      }`}
+                      type="text" 
+                      name="name"
+                      placeholder="e.g. Prestige Tech Park"
                       value={formData.name}
                       onChange={handleAddChange}
                       required
@@ -1172,11 +1513,14 @@ const AdminSpaces = () => {
                     {errors.name && <p className="text-[10px] text-red-500 mt-1">{errors.name}</p>}
                   </div>
                   <div>
-                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Address *</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Address *</label>
                     <input
-                      className={`w-full mt-1 px-3 py-2.5 sm:py-3 border rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all ${errors.address ? 'border-red-500 focus:border-red-500' : 'border-slate-200 focus:border-indigo-500'}`}
-                      type="text" name="address"
-                      placeholder="e.g. Bangalore, Karnataka"
+                      className={`w-full mt-1 px-3 py-2.5 border rounded-xl text-sm outline-none transition-all ${
+                        errors.address ? 'border-red-500 focus:ring-2 focus:ring-red-200' : 'border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'
+                      }`}
+                      type="text" 
+                      name="address"
+                      placeholder="e.g. Marathahalli, Bangalore, Karnataka"
                       value={formData.address}
                       onChange={handleAddChange}
                       required
@@ -1185,13 +1529,16 @@ const AdminSpaces = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 xs:grid-cols-3 gap-3 sm:gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                   <div>
-                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Cabin Spec *</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Cabin Spec *</label>
                     <input
-                      className={`w-full mt-1 px-3 py-2.5 sm:py-3 border rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all ${errors.cabin ? 'border-red-500 focus:border-red-500' : 'border-slate-200 focus:border-indigo-500'}`}
-                      type="text" name="cabin"
-                      placeholder="e.g. Office B"
+                      className={`w-full mt-1 px-3 py-2.5 border rounded-xl text-sm outline-none transition-all ${
+                        errors.cabin ? 'border-red-500 focus:ring-2 focus:ring-red-200' : 'border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'
+                      }`}
+                      type="text" 
+                      name="cabin"
+                      placeholder="e.g. Suite-204"
                       value={formData.cabin}
                       onChange={handleAddChange}
                       required
@@ -1199,10 +1546,12 @@ const AdminSpaces = () => {
                     {errors.cabin && <p className="text-[10px] text-red-500 mt-1">{errors.cabin}</p>}
                   </div>
                   <div>
-                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Capacity *</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Capacity (Seats) *</label>
                     <input
-                      className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
-                      type="number" name="capacity" min="1"
+                      className="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all"
+                      type="number" 
+                      name="capacity" 
+                      min="1"
                       placeholder="10"
                       value={formData.capacity}
                       onChange={handleAddChange}
@@ -1210,11 +1559,13 @@ const AdminSpaces = () => {
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Price/hr *</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Price / hr (₹) *</label>
                     <input
-                      className="w-full mt-1 px-3 py-2.5 sm:py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
-                      type="number" name="price" min="0"
-                      placeholder="25000"
+                      className="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all"
+                      type="number" 
+                      name="price" 
+                      min="0"
+                      placeholder="500"
                       value={formData.price}
                       onChange={handleAddChange}
                       required
@@ -1223,38 +1574,39 @@ const AdminSpaces = () => {
                 </div>
 
                 <div>
-                  <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Cabin Type</label>
-                  <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-1">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Cabin Tier</label>
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-1.5">
                     <button
                       type="button"
                       onClick={() => setFormData({...formData, cabinType: "normal"})}
-                      className={`py-2.5 sm:py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold border-2 transition-all ${
+                      className={`py-2.5 px-3 rounded-xl text-xs font-bold border-2 transition-all ${
                         formData.cabinType === 'normal'
                           ? 'border-indigo-600 bg-indigo-50 text-indigo-600'
-                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                          : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                       }`}
                     >
                       <Building2 size={14} className="inline mr-1.5" />
-                      Normal
+                      Normal Space
                     </button>
                     <button
                       type="button"
                       onClick={() => setFormData({...formData, cabinType: "exclusive"})}
-                      className={`py-2.5 sm:py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold border-2 transition-all ${
+                      className={`py-2.5 px-3 rounded-xl text-xs font-bold border-2 transition-all ${
                         formData.cabinType === 'exclusive'
-                          ? 'border-amber-500 bg-amber-50 text-amber-600'
-                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                          ? 'border-amber-500 bg-amber-50 text-amber-700'
+                          : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                       }`}
                     >
                       <Crown size={14} className="inline mr-1.5 text-amber-500" />
-                      Exclusive
+                      Exclusive Tier
                     </button>
                   </div>
                 </div>
 
+                {/* Amenities Selection */}
                 <div>
-                  <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Amenities</label>
-                  <div className="grid grid-cols-2 xs:grid-cols-3 gap-1.5 mt-1">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Amenities</label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-1.5">
                     {ALL_AMENITIES.map(item => {
                       const isActive = formData.amenities[item.key] || false;
                       const Icon = item.icon;
@@ -1263,56 +1615,55 @@ const AdminSpaces = () => {
                           key={item.key}
                           type="button"
                           onClick={() => toggleAddAmenity(item.key)}
-                          className={`flex items-center gap-1.5 p-2 rounded-lg text-[10px] sm:text-xs font-semibold border transition-all ${
+                          className={`flex items-center gap-2 p-2.5 rounded-xl text-xs font-semibold border transition-all ${
                             isActive
-                              ? 'border-indigo-500 bg-indigo-50 text-indigo-600'
-                              : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                              ? 'border-indigo-500 bg-indigo-50 text-indigo-700 shadow-sm'
+                              : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                           }`}
                         >
-                          <Icon size={14} className={isActive ? 'text-indigo-500' : 'text-gray-400'} />
-                          {item.label}
+                          <Icon size={14} className={isActive ? 'text-indigo-600' : 'text-gray-400'} />
+                          <span className="truncate">{item.label}</span>
                         </button>
                       );
                     })}
                   </div>
                 </div>
 
+                {/* Pricing Plans */}
                 <div>
                   <div className="flex justify-between items-center mb-1.5">
-                    <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
                       Pricing Plans ({pricingPlans.length})
                     </label>
                     <button
                       type="button"
                       onClick={openPlanModal}
-                      className="text-[10px] sm:text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 sm:px-3 py-1 rounded-lg hover:bg-indigo-100 transition-colors flex items-center gap-1 cursor-pointer"
+                      className="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-lg hover:bg-indigo-100 transition-colors flex items-center gap-1 cursor-pointer"
                     >
-                      <Plus size={12} /> Add Manual
+                      <Plus size={12} /> Add Custom Plan
                     </button>
                   </div>
                   {pricingPlans.length > 0 ? (
-                    <div className="grid grid-cols-1 xs:grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {pricingPlans.map((plan, idx) => (
-                        <div key={idx} className="p-2.5 bg-slate-50 rounded-xl text-xs border border-slate-200 relative group flex justify-between items-center">
+                        <div key={idx} className="p-3 bg-gray-50 rounded-xl text-xs border border-gray-200 relative group flex justify-between items-center">
                           <div>
-                            <div className="font-bold text-slate-800">{plan.label || "Plan"}</div>
-                            <div className="text-indigo-600 font-semibold">{plan.hours}h · ₹{plan.cost}</div>
-                            <div className="text-[10px] text-slate-400">{plan.validity} days validity</div>
+                            <div className="font-bold text-gray-800">{plan.label || "Plan"}</div>
+                            <div className="text-indigo-600 font-bold">{plan.hours}h · ₹{plan.cost}</div>
+                            <div className="text-[10px] text-gray-400">{plan.validity} days validity</div>
                           </div>
-                          <div className="flex items-center gap-1 opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex items-center gap-1">
                             <button
                               type="button"
                               onClick={() => openEditPlanModal(idx)}
-                              className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs hover:bg-indigo-200 transition-colors cursor-pointer"
-                              title="Edit Plan"
+                              className="w-6 h-6 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs hover:bg-indigo-200"
                             >
                               ✎
                             </button>
                             <button
                               type="button"
                               onClick={() => removePlan(idx)}
-                              className="w-6 h-6 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-xs hover:bg-red-200 transition-colors cursor-pointer"
-                              title="Delete Plan"
+                              className="w-6 h-6 rounded-lg bg-red-100 text-red-600 flex items-center justify-center text-xs hover:bg-red-200"
                             >
                               ×
                             </button>
@@ -1321,49 +1672,53 @@ const AdminSpaces = () => {
                       ))}
                     </div>
                   ) : (
-                    <div className="border-2 border-dashed border-slate-200 rounded-xl p-3 text-center">
-                      <p className="text-xs text-slate-400">No custom plans added. Click <strong>"+ Add Manual"</strong> to add plan details.</p>
+                    <div className="border-2 border-dashed border-gray-200 rounded-xl p-3 text-center">
+                      <p className="text-xs text-gray-400">No custom packages added. Standard hourly rate applies.</p>
                     </div>
                   )}
                 </div>
 
+                {/* Description */}
                 <div>
-                  <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Description</label>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Description</label>
                   <textarea
-                    className={`w-full mt-1 px-3 py-2.5 sm:py-3 border rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all resize-none ${errors.description ? 'border-red-500 focus:border-red-500' : 'border-slate-200 focus:border-indigo-500'}`}
+                    className={`w-full mt-1 px-3 py-2.5 border rounded-xl text-sm outline-none transition-all resize-none ${
+                      errors.description ? 'border-red-500 focus:ring-2 focus:ring-red-200' : 'border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'
+                    }`}
                     name="description"
-                    placeholder="Describe your space (150-200 characters)..."
+                    placeholder="Describe the workspace (150-200 characters)..."
                     value={formData.description}
                     onChange={handleAddChange}
                     rows={2}
                   />
                   {errors.description && <p className="text-[10px] text-red-500 mt-1">{errors.description}</p>}
                   {!errors.description && formData.description && (
-                    <p className="text-[10px] text-slate-400 mt-1">{formData.description.length}/200 characters</p>
+                    <p className="text-[10px] text-gray-400 mt-1">{formData.description.length}/200 characters</p>
                   )}
                 </div>
 
+                {/* Photos Dropzone */}
                 <div>
-                  <label className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Photos</label>
-                  <div className="mt-1 border-2 border-dashed border-indigo-200 rounded-xl p-4 sm:p-6 text-center hover:border-indigo-400 transition-colors relative">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Workspace Photos</label>
+                  <div className="mt-1 border-2 border-dashed border-indigo-200 rounded-xl p-5 text-center hover:border-indigo-400 transition-colors relative bg-indigo-50/20">
                     <input
                       type="file" multiple accept="image/*"
                       onChange={handleAddImageChange}
                       className="absolute inset-0 opacity-0 cursor-pointer"
                     />
-                    <Upload size={20} className="mx-auto text-indigo-400 sm:w-6 sm:h-6" />
-                    <p className="text-[10px] sm:text-xs text-slate-500 mt-1">Click to upload photos</p>
-                    <p className="text-[8px] sm:text-[10px] text-slate-400">PNG, JPG, WEBP</p>
+                    <Upload size={24} className="mx-auto text-indigo-500" />
+                    <p className="text-xs font-semibold text-gray-700 mt-1.5">Click or drag images to upload</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">PNG, JPG, WEBP formats</p>
                   </div>
                   {images.length > 0 && (
-                    <div className="grid grid-cols-3 xs:grid-cols-4 sm:grid-cols-5 gap-2 mt-2">
+                    <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 mt-2.5">
                       {images.map((file, index) => (
-                        <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-slate-200">
+                        <div key={index} className="relative aspect-square rounded-xl overflow-hidden border border-gray-200 shadow-sm">
                           <img src={URL.createObjectURL(file)} alt="preview" className="w-full h-full object-cover" />
                           <button
                             type="button"
                             onClick={() => removeAddImage(index)}
-                            className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs"
+                            className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs"
                           >
                             ×
                           </button>
@@ -1373,25 +1728,25 @@ const AdminSpaces = () => {
                   )}
                 </div>
 
-                {/* ─── FORM ACTIONS ─── */}
-                <div className="grid grid-cols-2 gap-2 sm:gap-3 pt-2">
+                {/* Modal Submit Actions */}
+                <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100">
                   <button
                     type="button"
                     onClick={() => setIsAddModalOpen(false)}
-                    className="py-2.5 sm:py-3 rounded-xl border border-slate-200 text-slate-600 font-semibold text-xs sm:text-sm hover:bg-slate-50 transition-colors"
+                    className="py-2.5 rounded-xl border border-gray-200 text-gray-700 font-semibold text-xs sm:text-sm hover:bg-gray-50 transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={submitting}
-                    className={`py-2.5 sm:py-3 rounded-xl text-white font-bold text-xs sm:text-sm transition-all ${
+                    className={`py-2.5 rounded-xl text-white font-bold text-xs sm:text-sm transition-all shadow-md ${
                       submitting
-                        ? 'bg-slate-400 cursor-not-allowed'
-                        : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:shadow-lg'
+                        ? 'bg-gray-400 cursor-not-allowed'
+                        : 'bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 hover:shadow-lg'
                     }`}
                   >
-                    {submitting ? 'Adding...' : 'Add Space'}
+                    {submitting ? 'Creating Space...' : 'Create Space'}
                   </button>
                 </div>
               </form>
@@ -1400,13 +1755,13 @@ const AdminSpaces = () => {
         </div>
       )}
 
-      {/* ─── ADD/EDIT PLAN MODAL ─── */}
+      {/* ─── ADD/EDIT PRICING PLAN MODAL ─── */}
       {showPlanModal && (
-        <div className="fixed inset-0 z-[10500] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[10500] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
           <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="p-5">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-slate-900">
+                <h3 className="text-base font-bold text-gray-900">
                   {editingPlanIndex !== null ? 'Edit Pricing Plan' : 'Add Pricing Plan'}
                 </h3>
                 <button
@@ -1416,65 +1771,64 @@ const AdminSpaces = () => {
                     setPlanInput({ label: '', hours: '', cost: '', validity: '' });
                     setEditingPlanIndex(null);
                   }}
-                  className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors flex items-center justify-center text-slate-600 cursor-pointer"
+                  className="w-7 h-7 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center text-gray-600"
                 >
-                  <X size={16} />
+                  <X size={15} />
                 </button>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3.5">
                 <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Plan Label</label>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Plan Name</label>
                   <input
                     type="text"
-                    placeholder="e.g. Weekly Flexi, Dedicated Desk, Monthly 50h"
+                    placeholder="e.g. Weekly Pass, 50h Pack"
                     value={planInput.label}
                     onChange={(e) => setPlanInput({ ...planInput, label: e.target.value })}
-                    className="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                    className="w-full mt-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none"
                     autoFocus
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2.5">
                   <div>
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Included Hours *</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Hours *</label>
                     <input
                       type="number"
                       min="1"
-                      placeholder="e.g. 40"
+                      placeholder="40"
                       value={planInput.hours}
                       onChange={(e) => setPlanInput({ ...planInput, hours: e.target.value })}
-                      className="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                      className="w-full mt-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none"
                     />
                   </div>
 
                   <div>
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Cost (₹) *</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Cost (₹) *</label>
                     <input
                       type="number"
                       min="1"
-                      placeholder="e.g. 5000"
+                      placeholder="4500"
                       value={planInput.cost}
                       onChange={(e) => setPlanInput({ ...planInput, cost: e.target.value })}
-                      className="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                      className="w-full mt-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Validity (Days) *</label>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Validity (Days) *</label>
                   <input
                     type="number"
                     min="1"
-                    placeholder="e.g. 30"
+                    placeholder="30"
                     value={planInput.validity}
                     onChange={(e) => setPlanInput({ ...planInput, validity: e.target.value })}
-                    className="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                    className="w-full mt-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none"
                   />
-                  <p className="text-[10px] text-slate-400 mt-0.5">Number of days plan stays valid after purchase</p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 pt-2">
+                <div className="grid grid-cols-2 gap-2.5 pt-2">
                   <button
                     type="button"
                     onClick={() => {
@@ -1482,16 +1836,16 @@ const AdminSpaces = () => {
                       setPlanInput({ label: '', hours: '', cost: '', validity: '' });
                       setEditingPlanIndex(null);
                     }}
-                    className="py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold text-sm hover:bg-slate-50 transition-colors cursor-pointer"
+                    className="py-2.5 rounded-xl border border-gray-200 text-gray-600 font-semibold text-xs hover:bg-gray-50"
                   >
                     Cancel
                   </button>
                   <button
                     type="button"
                     onClick={savePlanModal}
-                    className="py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition-colors shadow-sm cursor-pointer"
+                    className="py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-xs hover:bg-indigo-700 shadow-sm"
                   >
-                    {editingPlanIndex !== null ? 'Update Plan' : 'Add Plan'}
+                    {editingPlanIndex !== null ? 'Update' : 'Add'}
                   </button>
                 </div>
               </div>

@@ -1,0 +1,560 @@
+/* MyChamberPayments Component Styles - Matching SimpleUserBookings Design */
+
+.my-chamber-payments {
+  --mcp-bg: #f0f2f5;
+  --mcp-surface: #ffffff;
+  --mcp-border: #e4e7ec;
+  --mcp-border-light: #f0f1f3;
+  --mcp-text: #101828;
+  --mcp-text-secondary: #667085;
+  --mcp-text-muted: #98a2b3;
+  --mcp-primary: #175cd3;
+  --mcp-primary-soft: #eff4ff;
+  --mcp-primary-hover: #1849a9;
+  --mcp-success: #039855;
+  --mcp-success-soft: #ecfdf3;
+  --mcp-warning: #dc6803;
+  --mcp-warning-soft: #fffaeb;
+  --mcp-danger: #d92d20;
+  --mcp-danger-soft: #fef3f2;
+  --mcp-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --mcp-shadow-md: 0 4px 12px rgba(16, 24, 40, 0.06);
+  --mcp-radius: 12px;
+  --mcp-radius-lg: 16px;
+
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: var(--mcp-text);
+  background: var(--mcp-bg);
+  min-height: 100vh;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  padding-top: 80px;
+  padding-bottom: 2rem;
+}
+
+.my-chamber-payments main {
+  width: 100%;
+  max-width: 100%;
+  padding: 0 1rem;
+}
+
+@media (min-width: 640px) {
+  .my-chamber-payments main {
+    padding: 0 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .my-chamber-payments main {
+    padding: 0 2rem;
+  }
+}
+
+.my-chamber-payments__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.my-chamber-payments__greeting {
+  font-size: 1.375rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--mcp-text);
+  line-height: 1.3;
+}
+
+.my-chamber-payments__greeting span {
+  color: var(--mcp-primary);
+}
+
+.my-chamber-payments__subtitle {
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  color: var(--mcp-text-secondary);
+  font-weight: 400;
+}
+
+/* Stats Grid */
+.my-chamber-payments__stats {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+@media (min-width: 640px) {
+  .my-chamber-payments__stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .my-chamber-payments__stats {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.25rem;
+  }
+}
+
+.my-chamber-payments__stat {
+  background: var(--mcp-surface);
+  border: 1px solid var(--mcp-border);
+  border-radius: var(--mcp-radius);
+  padding: 1.25rem 1.5rem;
+  box-shadow: var(--mcp-shadow);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  cursor: pointer;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.my-chamber-payments__stat:hover {
+  box-shadow: var(--mcp-shadow-md);
+  border-color: #d0d5dd;
+  transform: translateY(-2px);
+}
+
+.my-chamber-payments__stat-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.my-chamber-payments__stat-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.125rem;
+}
+
+.my-chamber-payments__stat-icon--indigo {
+  background: var(--mcp-primary-soft);
+  color: var(--mcp-primary);
+}
+
+.my-chamber-payments__stat-icon--emerald {
+  background: var(--mcp-success-soft);
+  color: var(--mcp-success);
+}
+
+.my-chamber-payments__stat-icon--rose {
+  background: var(--mcp-danger-soft);
+  color: var(--mcp-danger);
+}
+
+.my-chamber-payments__stat-icon--purple {
+  background: #f3e8ff;
+  color: #9333ea;
+}
+
+.my-chamber-payments__stat-icon--amber {
+  background: var(--mcp-warning-soft);
+  color: var(--mcp-warning);
+}
+
+.my-chamber-payments__stat-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--mcp-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.my-chamber-payments__stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--mcp-text);
+}
+
+.my-chamber-payments__stat-meta {
+  margin-top: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--mcp-text-muted);
+}
+
+/* Cards */
+.my-chamber-payments__card {
+  background: var(--mcp-surface);
+  border: 1px solid var(--mcp-border);
+  border-radius: var(--mcp-radius-lg);
+  box-shadow: var(--mcp-shadow);
+  overflow: hidden;
+}
+
+.my-chamber-payments__card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--mcp-border-light);
+  background: var(--mcp-bg);
+}
+
+.my-chamber-payments__card-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--mcp-text);
+  letter-spacing: -0.01em;
+}
+
+.my-chamber-payments__card-body {
+  padding: 1.25rem;
+}
+
+/* Filters Section */
+.my-chamber-payments__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.my-chamber-payments__search-input {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+}
+
+.my-chamber-payments__search-input input {
+  width: 100%;
+  padding: 0.625rem 0.875rem 0.625rem 2.5rem;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: var(--mcp-text);
+  border: 1px solid var(--mcp-border);
+  border-radius: 8px;
+  background: var(--mcp-surface);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.my-chamber-payments__search-input input:focus {
+  border-color: var(--mcp-primary);
+  box-shadow: 0 0 0 3px rgba(23, 92, 211, 0.12);
+}
+
+.my-chamber-payments__search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--mcp-text-muted);
+  pointer-events: none;
+}
+
+.my-chamber-payments__filter-select {
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: var(--mcp-text);
+  border: 1px solid var(--mcp-border);
+  border-radius: 8px;
+  background: var(--mcp-surface);
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.my-chamber-payments__filter-select:focus {
+  border-color: var(--mcp-primary);
+  box-shadow: 0 0 0 3px rgba(23, 92, 211, 0.12);
+}
+
+.my-chamber-payments__btn {
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.my-chamber-payments__btn--primary {
+  background: var(--mcp-primary);
+  color: white;
+}
+
+.my-chamber-payments__btn--primary:hover {
+  background: var(--mcp-primary-hover);
+}
+
+.my-chamber-payments__btn--secondary {
+  background: var(--mcp-surface);
+  color: var(--mcp-text);
+  border: 1px solid var(--mcp-border);
+}
+
+.my-chamber-payments__btn--secondary:hover {
+  background: var(--mcp-bg);
+  border-color: #d0d5dd;
+}
+
+.my-chamber-payments__btn--danger {
+  background: var(--mcp-danger);
+  color: white;
+}
+
+.my-chamber-payments__btn--danger:hover {
+  background: #b91c1c;
+}
+
+.my-chamber-payments__btn--success {
+  background: var(--mcp-success);
+  color: white;
+}
+
+.my-chamber-payments__btn--success:hover {
+  background: #047857;
+}
+
+/* Table */
+.my-chamber-payments__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.my-chamber-payments__table th,
+.my-chamber-payments__table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--mcp-border-light);
+}
+
+.my-chamber-payments__table th {
+  font-weight: 600;
+  color: var(--mcp-text-secondary);
+  background: var(--mcp-bg);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.my-chamber-payments__table tbody tr:hover {
+  background: var(--mcp-primary-soft);
+}
+
+/* Loading */
+.my-chamber-payments__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 420px;
+  gap: 1rem;
+}
+
+.my-chamber-payments__spinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid var(--mcp-border);
+  border-top-color: var(--mcp-primary);
+  border-radius: 50%;
+  animation: my-chamber-payments-spin 0.7s linear infinite;
+}
+
+@keyframes my-chamber-payments-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.my-chamber-payments__loading-text {
+  font-size: 0.875rem;
+  color: var(--mcp-text-secondary);
+  font-weight: 500;
+}
+
+/* Empty State */
+.my-chamber-payments__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--mcp-text-muted);
+}
+
+.my-chamber-payments__empty-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.3;
+}
+
+.my-chamber-payments__empty-text {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--mcp-text-secondary);
+}
+
+/* Badge Styles */
+.my-chamber-payments__badge {
+  display: inline-block;
+  padding: 0.25rem 0.625rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.my-chamber-payments__badge--pending {
+  background: var(--mcp-warning-soft);
+  color: var(--mcp-warning);
+}
+
+.my-chamber-payments__badge--confirmed {
+  background: var(--mcp-success-soft);
+  color: var(--mcp-success);
+}
+
+.my-chamber-payments__badge--active {
+  background: var(--mcp-success-soft);
+  color: var(--mcp-success);
+}
+
+.my-chamber-payments__badge--completed {
+  background: #e0f2fe;
+  color: #0891b2;
+}
+
+.my-chamber-payments__badge--cancelled {
+  background: var(--mcp-danger-soft);
+  color: var(--mcp-danger);
+}
+
+.my-chamber-payments__badge--expired {
+  background: var(--mcp-danger-soft);
+  color: var(--mcp-danger);
+}
+
+/* Pagination */
+.my-chamber-payments__pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid var(--mcp-border-light);
+  background: var(--mcp-bg);
+}
+
+.my-chamber-payments__pagination-info {
+  font-size: 0.75rem;
+  color: var(--mcp-text-muted);
+}
+
+.my-chamber-payments__pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.my-chamber-payments__pagination-btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 6px;
+  border: 1px solid var(--mcp-border);
+  background: var(--mcp-surface);
+  color: var(--mcp-text);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.my-chamber-payments__pagination-btn:hover:not(:disabled) {
+  background: var(--mcp-bg);
+  border-color: #d0d5dd;
+}
+
+.my-chamber-payments__pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 639px) {
+  .my-chamber-payments__header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .my-chamber-payments__greeting {
+    font-size: 1.125rem;
+  }
+
+  .my-chamber-payments__subtitle {
+    font-size: 0.8125rem;
+    line-height: 1.45;
+  }
+
+  .my-chamber-payments__stats {
+    gap: 0.625rem;
+    margin-bottom: 1rem;
+  }
+
+  .my-chamber-payments__stat {
+    padding: 0.875rem;
+  }
+
+  .my-chamber-payments__stat-value {
+    font-size: 1.5rem;
+  }
+
+  .my-chamber-payments__stat-icon {
+    width: 2rem;
+    height: 2rem;
+    font-size: 0.875rem;
+  }
+
+  .my-chamber-payments__card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.625rem;
+    padding: 0.875rem 1rem;
+  }
+
+  .my-chamber-payments__card-body {
+    padding: 1rem;
+  }
+
+  .my-chamber-payments__card-title {
+    font-size: 0.875rem;
+  }
+
+  .my-chamber-payments__filters {
+    flex-direction: column;
+  }
+
+  .my-chamber-payments__table {
+    font-size: 0.75rem;
+  }
+
+  .my-chamber-payments__table th,
+  .my-chamber-payments__table td {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .my-chamber-payments__pagination {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+}

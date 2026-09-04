@@ -55,6 +55,7 @@ import {
 import { toast } from "react-toastify";
 import * as XLSX from 'xlsx';
 import "./Dashboard.css";
+import "./UserSiteVisits.css";
 
 const API_URL = "https://spaceapi.iryax.com";
 
@@ -64,7 +65,7 @@ const AdminBookings = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDateFrom, setFilterDateFrom] = useState("");
   const [filterDateTo, setFilterDateTo] = useState("");
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTab, setActiveTab] = useState('spaces');
   const [filters, setFilters] = useState({
     status: 'all',
     paymentStatus: 'all',
@@ -962,9 +963,8 @@ const AdminBookings = () => {
       return filteredBookings.filter(b => b.bookingType === 'visit');
     } else if (activeTab === 'spaces') {
       return filteredBookings.filter(b => b.bookingType !== 'visit');
-    } else {
-      return filteredBookings;
     }
+    return filteredBookings;
   };
 
   const displayBookings = getFilteredByTab();
@@ -976,99 +976,118 @@ const AdminBookings = () => {
 
   if (loading) {
     return (
-      <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
+      <div className="user-visits">
         <AdminNavbar />
-        <div className="flex justify-center items-center h-64">
-          <div className="w-12 h-12 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin" />
-        </div>
+        <main className="p-2 sm:p-4 lg:p-6">
+          <div className="user-visits__loading">
+            <div className="user-visits__spinner" />
+            <p className="user-visits__loading-text">Loading bookings...</p>
+          </div>
+        </main>
       </div>
     );
   }
 
+  // Stats cards configuration
+  const bookingStatsCards = [
+    {
+      label: "Total",
+      value: stats.totalBookings,
+      meta: `Revenue: ${formatCurrency(stats.totalRevenue)}`,
+      icon: Hash,
+      color: "purple",
+      onClick: () => setFilters({ status: 'all', paymentStatus: 'all', paymentMethod: 'all' })
+    },
+    {
+      label: "Confirmed",
+      value: stats.confirmed,
+      meta: "confirmed bookings",
+      icon: CheckCircle,
+      color: "emerald",
+      onClick: () => setFilters(prev => ({ ...prev, status: 'confirmed' }))
+    },
+    {
+      label: "Active",
+      value: stats.active,
+      meta: "active bookings",
+      icon: Timer,
+      color: "blue",
+      onClick: () => setFilters(prev => ({ ...prev, status: 'active' }))
+    },
+    {
+      label: "Completed",
+      value: stats.completed,
+      meta: "completed bookings",
+      icon: CheckCircle,
+      color: "cyan",
+      onClick: () => setFilters(prev => ({ ...prev, status: 'completed' }))
+    },
+    {
+      label: "Visits",
+      value: visitCount,
+      meta: "site visits",
+      icon: Calendar,
+      color: "violet",
+      onClick: () => setActiveTab('visits')
+    }
+  ];
+
   return (
-    <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
+    <div className="user-visits">
       <AdminNavbar />
 
-      <div className="pt-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
-        <div className="admin-dash__header">
+      <main className="p-2 sm:p-4 lg:p-6">
+        {/* Header */}
+        <div className="user-visits__header">
           <div>
-            <h1 className="admin-dash__greeting">
+            <h1 className="user-visits__greeting">
               Admin <span>Bookings</span>
             </h1>
+            <p className="user-visits__subtitle">Manage all space bookings and site visits</p>
+          </div>
+          <div className="flex items-center gap-2">
+            {displayBookings.length > 0 && (
+              <button
+                onClick={exportToExcel}
+                className="user-visits__btn user-visits__btn--primary"
+              >
+                <Download size={14} />
+                Export
+              </button>
+            )}
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4 mb-6">
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-4 sm:p-5 text-white shadow-lg shadow-indigo-500/25">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-200">Total</p>
-            <p className="text-2xl sm:text-3xl font-bold mt-1">{stats.totalBookings}</p>
-            <div className="mt-2 pt-2 border-t border-white/20 flex justify-between text-[10px]">
-              <span className="text-indigo-200">Revenue</span>
-              <span className="font-semibold">{formatCurrency(stats.totalRevenue)}</span>
+        <div className="user-visits__stats">
+          {bookingStatsCards.map((stat, index) => (
+            <div
+              key={index}
+              className="user-visits__stat"
+              onClick={stat.onClick}
+            >
+              <div className="user-visits__stat-top">
+                <span className="user-visits__stat-label">{stat.label}</span>
+                <div className={`user-visits__stat-icon user-visits__stat-icon--${stat.color}`}>
+                  <stat.icon size={14} />
+                </div>
+              </div>
+              <div className="user-visits__stat-value">{stat.value}</div>
+              <div className="user-visits__stat-meta">{stat.meta}</div>
             </div>
-          </div>
-
-          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Confirmed</p>
-                <p className="text-2xl font-bold text-emerald-600 mt-1">{stats.confirmed}</p>
-              </div>
-              <div className="bg-emerald-100 p-2.5 rounded-xl">
-                <CheckCircle size={20} className="text-emerald-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Active</p>
-                <p className="text-2xl font-bold text-indigo-600 mt-1">{stats.active}</p>
-              </div>
-              <div className="bg-indigo-100 p-2.5 rounded-xl">
-                <Timer size={20} className="text-indigo-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-blue-600">Completed</p>
-                <p className="text-2xl font-bold text-blue-600 mt-1">{stats.completed}</p>
-              </div>
-              <div className="bg-blue-100 p-2.5 rounded-xl">
-                <CheckCircle size={20} className="text-blue-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-purple-600">Visits</p>
-                <p className="text-2xl font-bold text-purple-600 mt-1">{visitCount}</p>
-              </div>
-              <div className="bg-purple-100 p-2.5 rounded-xl">
-                <Calendar size={20} className="text-purple-600" />
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-3 mb-4">
-          <div className="flex flex-col sm:flex-row gap-2">
-            <div className="flex-1 relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <div className="user-visits__filters">
+          <div className="user-visits__filter-row">
+            <div className="user-visits__search-input">
+              <Search size={14} className="user-visits__search-icon" />
               <input
                 type="text"
                 placeholder="Search bookings..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
               />
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -1076,20 +1095,18 @@ const AdminBookings = () => {
                 type="date"
                 value={filterDateFrom}
                 onChange={(e) => setFilterDateFrom(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
-                placeholder="From date"
+                className="user-visits__filter-select"
               />
               <input
                 type="date"
                 value={filterDateTo}
                 onChange={(e) => setFilterDateTo(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
-                placeholder="To date"
+                className="user-visits__filter-select"
               />
               <select
                 value={filters.status}
                 onChange={(e) => setFilters({...filters, status: e.target.value})}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                className="user-visits__filter-select"
               >
                 <option value="all">All Status</option>
                 <option value="pending">Pending</option>
@@ -1101,16 +1118,15 @@ const AdminBookings = () => {
               <select
                 value={activeTab}
                 onChange={(e) => setActiveTab(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                className="user-visits__filter-select"
               >
-                <option value="all">All Bookings ({totalCount})</option>
                 <option value="visits">Site Visits ({visitCount})</option>
                 <option value="spaces">Space Bookings ({spaceCount})</option>
               </select>
               <select
                 value={filters.paymentStatus}
                 onChange={(e) => setFilters({...filters, paymentStatus: e.target.value})}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                className="user-visits__filter-select"
               >
                 <option value="all">Payment Status</option>
                 <option value="pending">Pending</option>
@@ -1121,7 +1137,7 @@ const AdminBookings = () => {
               <select
                 value={filters.paymentMethod}
                 onChange={(e) => setFilters({...filters, paymentMethod: e.target.value})}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                className="user-visits__filter-select"
               >
                 <option value="all">Payment Method</option>
                 <option value="online">Online</option>
@@ -1133,19 +1149,10 @@ const AdminBookings = () => {
               {(filters.status !== 'all' || filters.paymentStatus !== 'all' || filters.paymentMethod !== 'all' || filterDateFrom || filterDateTo || searchTerm) && (
                 <button
                   onClick={clearFilters}
-                  className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                  className="user-visits__btn user-visits__btn--secondary"
                   title="Clear filters"
                 >
                   <XCircleIcon size={16} />
-                </button>
-              )}
-              {displayBookings.length > 0 && (
-                <button
-                  onClick={exportToExcel}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition"
-                  title="Export to Excel"
-                >
-                  <Download size={14} />
                 </button>
               )}
             </div>
@@ -1155,52 +1162,29 @@ const AdminBookings = () => {
           </div>
         </div>
 
-        {/* TAB SWITCHER */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-1 mt-4 mb-4 flex">
-          <button
-            onClick={() => setActiveTab('all')}
-            className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
-              activeTab === 'all'
-                ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200'
-                : 'text-gray-500 hover:bg-gray-50'
-            }`}
-          >
-            All Bookings
-            <span className={`ml-1.5 px-1.5 py-0.5 text-[9px] rounded-full ${
-              activeTab === 'all' ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-600'
-            }`}>
-              {totalCount}
-            </span>
-          </button>
+        {/* Tabs - Site Visits | Space Bookings */}
+        <div className="flex items-center gap-2 mb-4 border-b border-gray-200">
           <button
             onClick={() => setActiveTab('visits')}
-            className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
+            className={`px-4 py-2.5 text-sm font-semibold border-b-2 transition ${
               activeTab === 'visits'
-                ? 'bg-purple-600 text-white shadow-sm shadow-purple-200'
-                : 'text-gray-500 hover:bg-gray-50'
+                ? 'border-purple-600 text-purple-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
           >
-            Site Visits
-            <span className={`ml-1.5 px-1.5 py-0.5 text-[9px] rounded-full ${
-              activeTab === 'visits' ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-600'
-            }`}>
-              {visitCount}
-            </span>
+            <Calendar size={16} className="inline mr-2" />
+            Site Visits ({visitCount})
           </button>
           <button
             onClick={() => setActiveTab('spaces')}
-            className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
+            className={`px-4 py-2.5 text-sm font-semibold border-b-2 transition ${
               activeTab === 'spaces'
-                ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-200'
-                : 'text-gray-500 hover:bg-gray-50'
+                ? 'border-emerald-600 text-emerald-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
           >
-            Space Bookings
-            <span className={`ml-1.5 px-1.5 py-0.5 text-[9px] rounded-full ${
-              activeTab === 'spaces' ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-600'
-            }`}>
-              {spaceCount}
-            </span>
+            <Building2 size={16} className="inline mr-2" />
+            Space Bookings ({spaceCount})
           </button>
         </div>
 
@@ -1445,7 +1429,7 @@ const AdminBookings = () => {
             </div>
           )}
         </div>
-      </div>
+      </main>
 
       {/* VIEW BOOKING MODAL */}
       {showViewModal && viewBooking && (

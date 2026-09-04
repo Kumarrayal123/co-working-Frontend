@@ -1,7 +1,7 @@
-// AdminDashboard.jsx - Complete with Latest Tables and Curve Chart
+// AdminDashboard.jsx - Polished UI matching Owner Dashboard reference
 import axios from "axios";
 import {
-  Building,
+  Building2,
   Calendar,
   Ticket,
   Users,
@@ -17,9 +17,16 @@ import {
   User,
   Phone,
   Mail,
-  MapPin
+  MapPin,
+  RefreshCw,
+  Search,
+  X as XIcon,
+  Plus,
+  XCircle,
+  Sparkles,
+  ShieldCheck
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import {
   CartesianGrid,
   ResponsiveContainer,
@@ -35,6 +42,7 @@ import { useNavigate } from "react-router-dom";
 import "./Dashboard.css";
 
 const API_URL = "https://spaceapi.iryax.com";
+const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -52,17 +60,26 @@ const AdminDashboard = () => {
     recentUsers: []
   });
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+
+  // Filter States
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [paymentStatus, setPaymentStatus] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
   const adminString = localStorage.getItem("admin");
   const adminUser = adminString ? JSON.parse(adminString) : { name: "Admin" };
 
   const formatCurrency = (amount) => {
-    return `₹${amount.toLocaleString('en-IN')}`;
+    if (amount === undefined || amount === null) return "₹0";
+    return `₹${Number(amount).toLocaleString('en-IN')}`;
   };
 
   const formatDate = (dateStr) => {
-    if (!dateStr) return "N/A";
+    if (!dateStr) return "—";
     return new Date(dateStr).toLocaleDateString("en-US", {
       year: 'numeric',
       month: 'short',
@@ -70,8 +87,19 @@ const AdminDashboard = () => {
     });
   };
 
-  const fetchDashboard = async () => {
-    setLoading(true);
+  const getImageUrl = (img) => {
+    if (!img) return PLACEHOLDER_IMAGE;
+    if (img.startsWith("http")) return img;
+    const cleanPath = img.replace(/\\/g, "/").replace(/^\/+/, "");
+    return `${API_URL}/${cleanPath}`;
+  };
+
+  const fetchDashboard = async (isRefresh = false) => {
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
     setError(null);
     try {
       const res = await axios.get(`${API_URL}/api/admin/dashboard`);
@@ -98,6 +126,7 @@ const AdminDashboard = () => {
       setError("Failed to fetch dashboard data. Please try again.");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -105,31 +134,111 @@ const AdminDashboard = () => {
     fetchDashboard();
   }, []);
 
+  const clearFilters = useCallback(() => {
+    setSearchTerm("");
+    setSelectedStatus("all");
+    setPaymentStatus("all");
+    setDateFrom("");
+    setDateTo("");
+  }, []);
+
+  const isFilterActive = searchTerm || selectedStatus !== "all" || paymentStatus !== "all" || dateFrom || dateTo;
+
+  // Filtered recent bookings
+  const filteredBookings = useMemo(() => {
+    let list = [...(dashboardData.recentBookings || [])];
+
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase().trim();
+      list = list.filter(b => {
+        const name = (b.name || "").toLowerCase();
+        const cabin = (b.cabinName || "").toLowerCase();
+        const mobile = (b.mobile || "").toLowerCase();
+        return name.includes(term) || cabin.includes(term) || mobile.includes(term);
+      });
+    }
+
+    if (selectedStatus !== "all") {
+      list = list.filter(b => (b.status || "").toLowerCase() === selectedStatus.toLowerCase());
+    }
+
+    if (paymentStatus !== "all") {
+      list = list.filter(b => (b.paymentStatus || "").toLowerCase() === paymentStatus.toLowerCase());
+    }
+
+    if (dateFrom) {
+      const from = new Date(dateFrom);
+      list = list.filter(b => b.createdAt && new Date(b.createdAt) >= from);
+    }
+
+    if (dateTo) {
+      const to = new Date(dateTo);
+      to.setHours(23, 59, 59, 999);
+      list = list.filter(b => b.createdAt && new Date(b.createdAt) <= to);
+    }
+
+    return list;
+  }, [dashboardData.recentBookings, searchTerm, selectedStatus, paymentStatus, dateFrom, dateTo]);
+
+  // Filtered cabins
+  const filteredCabins = useMemo(() => {
+    let list = [...(dashboardData.recentCabins || [])];
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase().trim();
+      list = list.filter(c => {
+        const name = (c.name || "").toLowerCase();
+        const addr = (c.address || "").toLowerCase();
+        const cabinType = (c.cabin || "").toLowerCase();
+        return name.includes(term) || addr.includes(term) || cabinType.includes(term);
+      });
+    }
+    return list;
+  }, [dashboardData.recentCabins, searchTerm]);
+
+  // Filtered users
+  const filteredUsers = useMemo(() => {
+    let list = [...(dashboardData.recentUsers || [])];
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase().trim();
+      list = list.filter(u => {
+        const name = (u.name || "").toLowerCase();
+        const email = (u.email || "").toLowerCase();
+        const mobile = (u.mobile || "").toLowerCase();
+        const role = (u.role || "").toLowerCase();
+        return name.includes(term) || email.includes(term) || mobile.includes(term) || role.includes(term);
+      });
+    }
+    return list;
+  }, [dashboardData.recentUsers, searchTerm]);
+
   const ChartTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="admin-dash__tooltip" style={{ 
-          backgroundColor: 'white', 
-          padding: '10px 14px', 
-          borderRadius: '8px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          border: '1px solid #e5e7eb'
-        }}>
-          <p className="admin-dash__tooltip-title" style={{ fontWeight: 700, color: '#0a1628', marginBottom: '4px' }}>
-            {data.month}
+        <div className="bg-white p-3 rounded-xl shadow-xl border border-gray-100 text-xs min-w-[140px]">
+          <p className="font-bold text-gray-900 mb-1 border-b border-gray-100 pb-1 flex items-center justify-between">
+            <span>{data.month}</span>
+            <span className="text-[10px] text-gray-400 font-normal">Analytics</span>
           </p>
-          {payload.map((item, idx) => (
-            <p key={idx} className="admin-dash__tooltip-value" style={{ fontSize: '11px', color: item.color }}>
-              {item.name}: {item.value}
-            </p>
-          ))}
+          <div className="space-y-1 mt-1.5">
+            {payload.map((item, idx) => (
+              <div key={idx} className="flex items-center justify-between gap-3">
+                <span className="flex items-center gap-1.5" style={{ color: item.color }}>
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
+                  {item.name}:
+                </span>
+                <span className="font-bold text-gray-800">{item.value}</span>
+              </div>
+            ))}
+          </div>
           {data.cabinNames && data.cabinNames.length > 0 && (
-            <div style={{ marginTop: '4px', paddingTop: '4px', borderTop: '1px solid #e5e7eb' }}>
-              <p style={{ fontSize: '9px', color: '#6b7280', fontWeight: 600 }}>Cabins:</p>
-              {data.cabinNames.map((name, idx) => (
-                <p key={idx} style={{ fontSize: '9px', color: '#374151' }}>• {name}</p>
-              ))}
+            <div className="mt-2 pt-2 border-t border-gray-100">
+              <p className="text-[10px] text-gray-400 font-semibold mb-1">Spaces:</p>
+              <div className="space-y-0.5 max-h-24 overflow-y-auto">
+                {data.cabinNames.map((name, idx) => (
+                  <p key={idx} className="text-[10px] text-gray-600 truncate">• {name}</p>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -138,97 +247,111 @@ const AdminDashboard = () => {
     return null;
   };
 
-  const getStatusBadge = (status, paymentStatus) => {
-    if (status === 'confirmed' && paymentStatus === 'paid') {
+  const getStatusBadge = (status, payStatus) => {
+    const s = (status || "").toLowerCase();
+    const p = (payStatus || "").toLowerCase();
+
+    if (s === 'confirmed' && p === 'paid') {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">
-          <CheckCircle size={10} /> Completed
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <CheckCircle size={11} /> Completed
         </span>
       );
     }
-    if (status === 'confirmed') {
+    if (s === 'confirmed') {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700">
-          <Clock size={10} /> Confirmed
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold rounded-lg bg-blue-50 text-blue-700 border border-blue-200">
+          <Clock size={11} /> Confirmed
         </span>
       );
     }
-    if (status === 'cancelled') {
+    if (s === 'cancelled' || s === 'rejected') {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-red-100 text-red-700">
-          ✕ Cancelled
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold rounded-lg bg-red-50 text-red-700 border border-red-200">
+          <XCircle size={11} /> Cancelled
         </span>
       );
     }
-    if (status === 'active') {
+    if (s === 'active') {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-700">
-          <Clock size={10} /> Active
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200">
+          <Clock size={11} /> Active
         </span>
       );
     }
-    if (status === 'completed') {
+    if (s === 'completed') {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">
-          <CheckCircle size={10} /> Completed
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <CheckCircle size={11} /> Completed
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-yellow-100 text-yellow-700">
-        <Clock size={10} /> Pending
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold rounded-lg bg-amber-50 text-amber-700 border border-amber-200">
+        <Clock size={11} /> Pending
       </span>
     );
   };
 
   const getCabinStatus = (cabin) => {
     if (cabin && cabin.isActive === true) {
-      return { status: 'Active', color: 'bg-emerald-100 text-emerald-700' };
+      return { 
+        status: 'Active', 
+        badgeClass: 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+      };
     }
-    return { status: 'Inactive', color: 'bg-gray-100 text-gray-600' };
+    return { 
+      status: 'Inactive', 
+      badgeClass: 'bg-gray-100 text-gray-600 border border-gray-200' 
+    };
   };
 
   const getRoleBadge = (role) => {
     const roleMap = {
-      'doctor': { label: 'Doctor', color: 'bg-purple-100 text-purple-700' },
-      'admin': { label: 'Admin', color: 'bg-amber-100 text-amber-700' },
-      'user': { label: 'User', color: 'bg-blue-100 text-blue-700' }
+      'doctor': { label: 'Doctor', color: 'bg-purple-50 text-purple-700 border border-purple-200' },
+      'admin': { label: 'Admin', color: 'bg-amber-50 text-amber-700 border border-amber-200' },
+      'user': { label: 'User', color: 'bg-blue-50 text-blue-700 border border-blue-200' }
     };
-    return roleMap[role] || roleMap.user;
+    return roleMap[role?.toLowerCase()] || roleMap.user;
   };
 
   const getStatusUserBadge = (status) => {
     const statusMap = {
-      'active': { label: 'Active', color: 'bg-emerald-100 text-emerald-700' },
-      'approved': { label: 'Approved', color: 'bg-emerald-100 text-emerald-700' },
-      'pending': { label: 'Pending', color: 'bg-yellow-100 text-yellow-700' },
-      'rejected': { label: 'Rejected', color: 'bg-red-100 text-red-700' }
+      'active': { label: 'Active', color: 'bg-emerald-50 text-emerald-700 border border-emerald-200' },
+      'approved': { label: 'Approved', color: 'bg-emerald-50 text-emerald-700 border border-emerald-200' },
+      'pending': { label: 'Pending', color: 'bg-yellow-50 text-yellow-700 border border-yellow-200' },
+      'rejected': { label: 'Rejected', color: 'bg-red-50 text-red-700 border border-red-200' }
     };
-    return statusMap[status] || statusMap.pending;
+    return statusMap[status?.toLowerCase()] || statusMap.pending;
   };
 
+  // Loading state
   if (loading) {
     return (
-      <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
+      <div className="admin-dash">
         <AdminNavbar />
-        <div className="flex justify-center items-center h-64">
-          <div className="w-12 h-12 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin" />
+        <div className="admin-dash__loading">
+          <div className="admin-dash__spinner" />
+          <p className="admin-dash__loading-text">Loading admin dashboard analytics...</p>
         </div>
       </div>
     );
   }
 
+  // Error state
   if (error) {
     return (
-      <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
+      <div className="admin-dash">
         <AdminNavbar />
-        <div className="flex flex-col items-center justify-center gap-4 py-20 text-gray-400">
-          <p className="text-lg font-medium text-red-500">{error}</p>
+        <div className="admin-dash__error">
+          <XCircle size={48} className="text-red-500" />
+          <p className="admin-dash__error-title">Failed to load dashboard</p>
+          <p className="admin-dash__error-message">{error}</p>
           <button
-            onClick={fetchDashboard}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors"
+            onClick={() => fetchDashboard()}
+            className="admin-dash__btn admin-dash__btn--primary"
           >
-            Try Again
+            <RefreshCw size={14} /> Retry
           </button>
         </div>
       </div>
@@ -243,25 +366,23 @@ const AdminDashboard = () => {
     totalCabinRevenue,
     bookingRevenue,
     confirmedPaidCount,
-    recentBookings,
-    bookingChartData,
-    recentCabins,
-    recentUsers
+    bookingChartData
   } = dashboardData;
 
+  // 7 KPI Stat Cards - styled identically to Owner Dashboard
   const statsCards = [
     {
       label: "Total Cabins",
       value: totalCabins,
-      meta: "all workspaces",
-      icon: Building,
+      meta: "all registered workspaces",
+      icon: Home,
       color: "emerald",
       onClick: () => navigate("/adminspaces")
     },
     {
       label: "Total Bookings",
       value: totalBookings,
-      meta: "all reservations",
+      meta: "all reservations made",
       icon: Ticket,
       color: "indigo",
       onClick: () => navigate("/allbookings")
@@ -277,13 +398,13 @@ const AdminDashboard = () => {
     {
       label: "Total Payments",
       value: totalPayments,
-      meta: "transactions",
+      meta: "cabin order transactions",
       icon: CreditCard,
       color: "cyan",
       onClick: () => navigate("/cabinpayments")
     },
     {
-      label: "Completed Bookings",
+      label: "Completed",
       value: confirmedPaidCount,
       meta: "confirmed & paid",
       icon: CheckCircle,
@@ -293,294 +414,453 @@ const AdminDashboard = () => {
     {
       label: "Cabin Revenue",
       value: formatCurrency(totalCabinRevenue),
-      meta: "from cabin creation",
+      meta: "from space registrations",
       icon: Wallet,
-      color: "orange"
+      color: "orange",
+      onClick: () => navigate("/space-revenue")
     },
     {
       label: "Booking Revenue",
       value: formatCurrency(bookingRevenue),
       meta: "from confirmed bookings",
       icon: IndianRupee,
-      color: "amber"
+      color: "amber",
+      onClick: () => navigate("/booking-revenue")
     }
   ];
 
+  const currentDateFormatted = new Date().toLocaleDateString("en-US", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric"
+  });
+
   return (
-    <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
+    <div className="admin-dash">
       <AdminNavbar />
 
-      <div className="pt-20 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
-        {/* Header */}
-        <div className="admin-dash__header" style={{ marginBottom: '8px' }}>
+      <main className="pt-20 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
+        {/* Header - Matching Owner Dashboard */}
+        <div className="admin-dash__header">
           <div>
-            <h1 className="admin-dash__greeting" style={{ fontSize: '1.25rem' }}>
+            <h1 className="admin-dash__greeting">
               Admin <span>Dashboard</span>
             </h1>
+            <p className="admin-dash__subtitle">
+              Welcome back, <span className="font-semibold text-gray-700">{adminUser?.name || "Administrator"}</span> • System overview & real-time analytics
+            </p>
+          </div>
+
+          <div className="flex items-center flex-wrap gap-2.5">
+            <div className="admin-dash__date-pill">
+              <Calendar size={14} />
+              <span>{currentDateFormatted}</span>
+            </div>
+
+            <button
+              onClick={() => fetchDashboard(true)}
+              className="admin-dash__btn hover:border-indigo-300"
+              title="Refresh dashboard data"
+              disabled={refreshing}
+            >
+              <RefreshCw size={14} className={refreshing ? "animate-spin text-indigo-600" : "text-gray-500"} />
+              <span className="text-xs font-medium">{refreshing ? "Refreshing..." : "Refresh"}</span>
+            </button>
+
+            <button
+              onClick={() => navigate("/adminaddcabin")}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 bg-[length:200%_100%] text-white hover:bg-[position:100%_0] transition-all duration-500 shadow-md shadow-indigo-200 hover:shadow-lg hover:shadow-indigo-300 transform hover:scale-105 active:scale-95"
+            >
+              <Plus size={14} /> Add Space
+            </button>
           </div>
         </div>
 
-        {/* Stats Cards - 7 cards */}
-        <div className="admin-dash__stats" style={{ marginBottom: '16px' }}>
+        {/* Stats Cards - Responsive 7-card grid matching Owner Dashboard */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 md:gap-4 mb-6">
           {statsCards.map((stat, index) => (
             <div
               key={index}
-              className="admin-dash__stat"
+              className="admin-dash__stat cursor-pointer hover:scale-105 transition-transform duration-200"
               onClick={stat.onClick}
-              style={{ 
-                cursor: stat.onClick ? 'pointer' : 'default',
-                padding: '12px 14px',
-                minHeight: '80px'
-              }}
+              title={stat.onClick ? "Click to view" : undefined}
             >
               <div className="admin-dash__stat-top">
-                <span className="admin-dash__stat-label" style={{ fontSize: '11px' }}>{stat.label}</span>
-                <div className={`admin-dash__stat-icon admin-dash__stat-icon--${stat.color}`} style={{ width: '28px', height: '28px' }}>
-                  <stat.icon size={14} />
+                <span className="admin-dash__stat-label">
+                  {stat.label}
+                </span>
+                <div className={`admin-dash__stat-icon admin-dash__stat-icon--${stat.color}`}>
+                  <stat.icon size={15} />
                 </div>
               </div>
-              <div className="admin-dash__stat-value" style={{ fontSize: '18px', fontWeight: '700' }}>{stat.value}</div>
-              <div className="admin-dash__stat-meta" style={{ fontSize: '9px' }}>{stat.meta}</div>
+              <div className="admin-dash__stat-value truncate" title={String(stat.value)}>
+                {stat.value}
+              </div>
+              <div className="admin-dash__stat-meta truncate">
+                {stat.meta}
+              </div>
             </div>
           ))}
         </div>
 
-        {/* Charts Grid - 2 columns */}
-        <div className="admin-dash__charts-grid" style={{ marginBottom: '16px' }}>
-          {/* Booking Trends Chart */}
-          <div className="admin-dash__card admin-dash__chart-wrap" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', height: '370px' }}>
-            <div className="admin-dash__card-header py-2 px-4" style={{ borderBottom: '1px solid #e5e7eb' }}>
-              <div>
-                <h3 className="admin-dash__card-title" style={{ fontSize: '13px' }}>Booking Trends</h3>
-                <p className="admin-dash__card-desc text-[9px] text-gray-400">Monthly booking hours & statistics</p>
+        {/* Charts & Quick Activity Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-6">
+          {/* Left Column (7 cols): Booking Trends Curve Chart */}
+          <div className="lg:col-span-7 admin-dash__card flex flex-col">
+            <div className="admin-dash__card-header">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-md shadow-indigo-200">
+                  <TrendingUp size={18} className="text-white" />
+                </div>
+                <div>
+                  <h3 className="admin-dash__card-title">Booking Trends</h3>
+                  <p className="admin-dash__card-desc">Monthly booking hours, reservations & cabins registered</p>
+                </div>
               </div>
+              <span className="admin-dash__badge admin-dash__badge--info">
+                {bookingChartData?.length || 0} Months
+              </span>
             </div>
-            <div className="admin-dash__card-body flex-1 p-2" style={{ height: 'calc(100% - 50px)' }}>
-              {bookingChartData && Array.isArray(bookingChartData) && bookingChartData.some(d => d.hours > 0 || d.bookings > 0) ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={bookingChartData} margin={{ top: 20, right: 10, left: -10, bottom: 5 }}>
-                    <defs>
-                      <linearGradient id="colorHours" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
-                      </linearGradient>
-                      <linearGradient id="colorBookings" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                      </linearGradient>
-                      <linearGradient id="colorCabins" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis
-                      dataKey="month"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: '#64748b', fontSize: 10, fontWeight: 600 }}
-                      interval={0}
-                    />
-                    <YAxis
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: '#64748b', fontSize: 10 }}
-                      label={{ 
-                        value: 'Hours', 
-                        angle: -90, 
-                        position: 'insideLeft', 
-                        style: { fontSize: '10px', fill: '#64748b', fontWeight: 600 }
-                      }}
-                    />
-                    <Tooltip content={<ChartTooltip />} cursor={{ fill: '#f8fafc' }} />
-                    <Legend 
-                      verticalAlign="top" 
-                      height={30}
-                      iconType="circle"
-                      iconSize={8}
-                      wrapperStyle={{ fontSize: '10px', color: '#64748b', paddingBottom: '5px' }}
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="hours" 
-                      stroke="#6366f1" 
-                      strokeWidth={2.5}
-                      fill="url(#colorHours)"
-                      dot={{ r: 4, fill: "#6366f1" }}
-                      activeDot={{ r: 6, fill: "#6366f1" }}
-                      name="Total Hours"
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="bookings" 
-                      stroke="#10b981" 
-                      strokeWidth={2.5}
-                      fill="url(#colorBookings)"
-                      dot={{ r: 4, fill: "#10b981" }}
-                      activeDot={{ r: 6, fill: "#10b981" }}
-                      name="Bookings"
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="cabins" 
-                      stroke="#f59e0b" 
-                      strokeWidth={2.5}
-                      fill="url(#colorCabins)"
-                      dot={{ r: 4, fill: "#f59e0b" }}
-                      activeDot={{ r: 6, fill: "#f59e0b" }}
-                      name="Cabins"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
+
+            <div className="admin-dash__card-body flex-1 p-3">
+              {bookingChartData && Array.isArray(bookingChartData) && bookingChartData.some(d => (d.hours || 0) > 0 || (d.bookings || 0) > 0 || (d.cabins || 0) > 0) ? (
+                <div className="h-72 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={bookingChartData} margin={{ top: 15, right: 15, left: -15, bottom: 5 }}>
+                      <defs>
+                        <linearGradient id="adminColorHours" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#6366f1" stopOpacity={0.35}/>
+                          <stop offset="95%" stopColor="#6366f1" stopOpacity={0.02}/>
+                        </linearGradient>
+                        <linearGradient id="adminColorBookings" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.35}/>
+                          <stop offset="95%" stopColor="#10b981" stopOpacity={0.02}/>
+                        </linearGradient>
+                        <linearGradient id="adminColorCabins" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.35}/>
+                          <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.02}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                      <XAxis
+                        dataKey="month"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: '#64748b', fontSize: 11, fontWeight: 600 }}
+                        interval={0}
+                      />
+                      <YAxis
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: '#64748b', fontSize: 11 }}
+                      />
+                      <Tooltip content={<ChartTooltip />} cursor={{ stroke: '#cbd5e1', strokeDasharray: '3 3' }} />
+                      <Legend 
+                        verticalAlign="top" 
+                        height={32}
+                        iconType="circle"
+                        iconSize={8}
+                        wrapperStyle={{ fontSize: '11px', color: '#475467', paddingBottom: '8px' }}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="hours" 
+                        stroke="#6366f1" 
+                        strokeWidth={2.5}
+                        fill="url(#adminColorHours)"
+                        dot={{ r: 3.5, fill: "#6366f1", strokeWidth: 1.5, stroke: "#fff" }}
+                        activeDot={{ r: 6, fill: "#6366f1" }}
+                        name="Total Hours"
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="bookings" 
+                        stroke="#10b981" 
+                        strokeWidth={2.5}
+                        fill="url(#adminColorBookings)"
+                        dot={{ r: 3.5, fill: "#10b981", strokeWidth: 1.5, stroke: "#fff" }}
+                        activeDot={{ r: 6, fill: "#10b981" }}
+                        name="Bookings"
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="cabins" 
+                        stroke="#f59e0b" 
+                        strokeWidth={2.5}
+                        fill="url(#adminColorCabins)"
+                        dot={{ r: 3.5, fill: "#f59e0b", strokeWidth: 1.5, stroke: "#fff" }}
+                        activeDot={{ r: 6, fill: "#f59e0b" }}
+                        name="Cabins"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
               ) : (
-                <div className="flex flex-col items-center justify-center h-32 text-gray-400">
-                  <Calendar size={28} className="text-gray-300 mb-1" />
-                  <p className="text-xs">No data available</p>
+                <div className="flex flex-col items-center justify-center h-64 text-gray-400 gap-2">
+                  <div className="p-3 bg-gray-50 rounded-2xl">
+                    <Calendar size={36} className="text-gray-300" />
+                  </div>
+                  <p className="text-xs font-semibold text-gray-500">No chart data available yet</p>
+                  <p className="text-[10px] text-gray-400">Monthly booking hours and stats will appear here</p>
                 </div>
               )}
+
+              {/* Chart footer metrics matching ownerdashboard */}
+              <div className="flex flex-wrap items-center justify-between gap-2 mt-3 pt-3 border-t border-gray-100 text-xs text-gray-600 bg-gray-50/60 rounded-xl px-4 py-2.5">
+                <span className="flex items-center gap-2 font-medium">
+                  <span className="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+                  Total Hours: <span className="text-indigo-600 font-bold">{bookingChartData?.reduce((sum, d) => sum + (d.hours || 0), 0) || 0} hrs</span>
+                </span>
+                <span className="flex items-center gap-2 font-medium">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                  Total Bookings: <span className="text-emerald-600 font-bold">{bookingChartData?.reduce((sum, d) => sum + (d.bookings || 0), 0) || 0}</span>
+                </span>
+                <span className="flex items-center gap-2 font-medium">
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                  Active Months: <span className="text-amber-600 font-bold">{bookingChartData?.filter(d => (d.bookings || 0) > 0 || (d.hours || 0) > 0).length || 0}</span>
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* Recent Bookings - RIGHT SIDE (Name changed from Recent Activity) */}
-          <div className="admin-dash__card admin-dash__chart-wrap" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', height: '370px', display: 'flex', flexDirection: 'column' }}>
-            <div className="admin-dash__card-header py-2 px-4" style={{ borderBottom: '1px solid #e5e7eb', flexShrink: 0 }}>
-              <div>
-                <h3 className="admin-dash__card-title" style={{ fontSize: '13px' }}>Recent Bookings</h3>
-                <p className="admin-dash__card-desc text-[9px] text-gray-400">Latest workspace reservations</p>
+          {/* Right Column (5 cols): Recent Bookings Quick Stream */}
+          <div className="lg:col-span-5 admin-dash__card flex flex-col">
+            <div className="admin-dash__card-header">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-md shadow-blue-200">
+                  <Calendar size={18} className="text-white" />
+                </div>
+                <div>
+                  <h3 className="admin-dash__card-title">Recent Activity</h3>
+                  <p className="admin-dash__card-desc">Latest workspace bookings</p>
+                </div>
               </div>
+              <button
+                onClick={() => navigate("/allbookings")}
+                className="user-dash__card-link text-xs font-semibold text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
+              >
+                View All <ArrowUpRight size={13} />
+              </button>
             </div>
-            <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ flex: 1, overflowY: 'auto' }}>
-              {(recentBookings || []).length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                  <Calendar size={28} className="text-gray-300 mb-1" />
-                  <p className="text-xs">No recent bookings</p>
+
+            <div className="admin-dash__card-body p-0 flex-1 overflow-y-auto max-h-[360px]">
+              {(dashboardData.recentBookings || []).length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-56 text-gray-400 gap-2">
+                  <Ticket size={32} className="opacity-20" />
+                  <p className="text-xs font-medium">No recent bookings</p>
                 </div>
               ) : (
-                <table className="w-full min-w-[500px] text-left">
-                  <thead>
-                    <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb', position: 'sticky', top: 0, zIndex: 1 }}>
-                      <th className="p-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">User</th>
-                      <th className="p-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
-                      <th className="p-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Amount</th>
-                      <th className="p-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
-                      <th className="p-2 text-[9px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Date</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {(recentBookings || []).slice(0, 7).map((b) => (
-                      <tr 
-                        key={b._id} 
-                        className="transition-colors hover:bg-gray-50/80 cursor-pointer" 
-                        onClick={() => navigate("/allbookings")}
-                      >
-                        <td className="p-2">
-                          <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0">
-                              {b.name?.charAt(0)?.toUpperCase() || "U"}
-                            </div>
-                            <div>
-                              <p className="font-semibold text-gray-900 text-xs truncate max-w-[100px]">
-                                {b.name || "User"}
-                              </p>
-                              <p className="text-[9px] text-gray-400 truncate max-w-[80px]">
-                                {b.mobile || "—"}
-                              </p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="p-2">
-                          <p className="text-xs font-medium text-gray-700 truncate max-w-[130px]">
-                            {b.cabinName || "—"}
+                <div className="divide-y divide-gray-100">
+                  {(dashboardData.recentBookings || []).slice(0, 6).map((b) => (
+                    <div
+                      key={b._id}
+                      onClick={() => navigate("/allbookings")}
+                      className="p-3 sm:px-4 flex items-center justify-between gap-3 hover:bg-gray-50/80 transition-colors cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs shadow-sm flex-shrink-0">
+                          {b.name?.charAt(0)?.toUpperCase() || "U"}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-gray-900 text-xs truncate group-hover:text-indigo-600 transition-colors">
+                            {b.name || "User"}
                           </p>
-                        </td>
-                        <td className="p-2">
-                          {b.amount > 0 ? (
-                            <span className="text-xs font-bold text-indigo-600">
-                              {formatCurrency(b.amount)}
-                            </span>
-                          ) : (
-                            <span className="text-xs text-gray-400">—</span>
-                          )}
-                        </td>
-                        <td className="p-2">
-                          {getStatusBadge(b.status, b.paymentStatus)}
-                        </td>
-                        <td className="p-2">
-                          <span className="text-[10px] text-gray-500">
-                            {formatDate(b.createdAt)}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                          <p className="text-[11px] text-gray-500 truncate">
+                            {b.cabinName || "Workspace"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="text-right flex-shrink-0 flex flex-col items-end gap-1">
+                        <span className="text-xs font-bold text-indigo-600">
+                          {b.amount > 0 ? formatCurrency(b.amount) : "—"}
+                        </span>
+                        {getStatusBadge(b.status, b.paymentStatus)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* Latest Bookings Table - Full Width */}
-        <div className="admin-dash__card mt-4" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
-          <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3 py-2 px-4" style={{ borderBottom: '1px solid #e5e7eb' }}>
+        {/* Filter Section - Matching Owner Dashboard filter bar */}
+        <div className="admin-dash__filters">
+          <div className="admin-dash__filter-group">
+            <div className="flex-1 min-w-[200px] relative">
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search by customer, space, phone, address..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="admin-dash__filter-input w-full pl-9"
+              />
+            </div>
+
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="admin-dash__filter-input"
+              title="From date"
+            />
+
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="admin-dash__filter-input"
+              title="To date"
+            />
+
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="admin-dash__filter-select"
+            >
+              <option value="all">All Booking Status</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="active">Active</option>
+              <option value="completed">Completed</option>
+              <option value="pending">Pending</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+
+            <select
+              value={paymentStatus}
+              onChange={(e) => setPaymentStatus(e.target.value)}
+              className="admin-dash__filter-select"
+            >
+              <option value="all">All Payment Status</option>
+              <option value="paid">Paid</option>
+              <option value="pending">Pending</option>
+              <option value="failed">Failed</option>
+            </select>
+
+            {isFilterActive && (
+              <button
+                onClick={clearFilters}
+                className="admin-dash__btn hover:bg-red-50 hover:text-red-600 hover:border-red-200"
+                title="Clear filters"
+              >
+                <XIcon size={15} /> Clear
+              </button>
+            )}
+          </div>
+
+          <div className="mt-2 text-[11px] text-gray-500 font-medium flex items-center justify-between">
+            <span>Showing {filteredBookings.length} of {(dashboardData.recentBookings || []).length} bookings</span>
+            {isFilterActive && (
+              <span className="text-indigo-600 font-semibold">• Filters Active</span>
+            )}
+          </div>
+        </div>
+
+        {/* Section: All Recent Bookings Table */}
+        <div className="admin-dash__card mb-6">
+          <div className="admin-dash__card-header">
             <div className="flex items-center gap-3">
-              <h3 className="admin-dash__card-title" style={{ fontSize: '13px' }}>All Recent Bookings</h3>
-              <span className="px-2 py-0.5 text-[10px] font-bold text-indigo-700 bg-indigo-100 rounded-full">
-                {(recentBookings || []).length}
+              <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl shadow-md shadow-indigo-200">
+                <Ticket size={18} className="text-white" />
+              </div>
+              <div>
+                <h3 className="admin-dash__card-title">All Recent Bookings</h3>
+                <p className="admin-dash__card-desc">Reservations across all workspaces</p>
+              </div>
+              <span className="admin-dash__badge admin-dash__badge--info">
+                {filteredBookings.length}
               </span>
             </div>
             <button
               onClick={() => navigate("/allbookings")}
-              className="flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-[10px] font-medium hover:bg-indigo-100 transition-colors border border-indigo-200"
+              className="user-dash__card-link"
             >
-              View All <ArrowUpRight size={10} />
+              View All <ArrowUpRight size={14} />
             </button>
           </div>
+
           <div className="admin-dash__card-body p-0 overflow-x-auto">
-            {(recentBookings || []).length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-3 py-8 text-gray-400">
-                <Ticket size={28} className="opacity-20" />
-                <p className="text-xs font-medium">No bookings found</p>
+            {filteredBookings.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-3 py-14 text-gray-400">
+                <div className="p-3 bg-gray-100 rounded-2xl">
+                  <Ticket size={40} className="text-gray-300" />
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-semibold text-gray-600">No bookings found</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Try adjusting your search or filters</p>
+                </div>
               </div>
             ) : (
-              <table className="w-full min-w-[800px] text-left">
+              <table className="admin-dash__table">
                 <thead>
-                  <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
-                    <th className="p-3 text-[9px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
-                    <th className="p-3 text-[9px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Customer</th>
-                    <th className="p-3 text-[9px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
-                    <th className="p-3 text-[9px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Date</th>
-                    <th className="p-3 text-[9px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Amount</th>
-                    <th className="p-3 text-[9px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
+                  <tr>
+                    <th className="w-14 text-center">#</th>
+                    <th>Customer</th>
+                    <th>Cabin / Space</th>
+                    <th>Date</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th className="text-center">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {(recentBookings || []).slice(0, 5).map((b, idx) => (
-                    <tr key={b._id} className="transition-colors hover:bg-gray-50/80 cursor-pointer" onClick={() => navigate("/allbookings")}>
-                      <td className="p-3">
-                        <span className="text-xs font-semibold text-gray-400">#{idx + 1}</span>
+                <tbody>
+                  {filteredBookings.slice(0, 7).map((b, idx) => (
+                    <tr
+                      key={b._id}
+                      className="group cursor-pointer hover:bg-indigo-50/40 transition-colors"
+                      onClick={() => navigate("/allbookings")}
+                    >
+                      <td className="text-center">
+                        <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 text-xs font-bold text-gray-500 group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors">
+                          {idx + 1}
+                        </span>
                       </td>
-                      <td className="p-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-[10px]">
+                      <td>
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs shadow-sm flex-shrink-0">
                             {b.name?.charAt(0)?.toUpperCase() || "U"}
                           </div>
                           <div>
-                            <p className="font-semibold text-gray-900 text-xs">{b.name || "—"}</p>
-                            <p className="text-[9px] text-gray-400">{b.mobile || "—"}</p>
+                            <p className="font-bold text-gray-900 text-xs sm:text-sm group-hover:text-indigo-600 transition-colors">
+                              {b.name || "—"}
+                            </p>
+                            <p className="text-[11px] text-gray-400 flex items-center gap-1">
+                              <Phone size={10} /> {b.mobile || "—"}
+                            </p>
                           </div>
                         </div>
                       </td>
-                      <td className="p-3">
-                        <p className="font-medium text-gray-800 text-xs">{b.cabinName || "—"}</p>
+                      <td>
+                        <div>
+                          <p className="font-semibold text-gray-800 text-xs sm:text-sm">{b.cabinName || "—"}</p>
+                          {b.address && (
+                            <p className="text-[10px] text-gray-400 flex items-center gap-1 truncate max-w-[180px]">
+                              <MapPin size={10} /> {b.address}
+                            </p>
+                          )}
+                        </div>
                       </td>
-                      <td className="p-3">
-                        <span className="text-xs text-gray-600">{formatDate(b.createdAt)}</span>
+                      <td>
+                        <span className="text-xs font-medium text-gray-600">{formatDate(b.createdAt)}</span>
                       </td>
-                      <td className="p-3">
-                        <span className="text-xs font-bold text-indigo-600">{formatCurrency(b.amount)}</span>
+                      <td>
+                        <span className="text-sm font-bold text-indigo-600">
+                          {b.amount > 0 ? formatCurrency(b.amount) : "—"}
+                        </span>
                       </td>
-                      <td className="p-3">
+                      <td>
                         {getStatusBadge(b.status, b.paymentStatus)}
+                      </td>
+                      <td className="text-center">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); navigate("/allbookings"); }}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 bg-[length:200%_100%] text-white hover:bg-[position:100%_0] transition-all duration-500 shadow-sm shadow-indigo-300/50 hover:shadow-md hover:shadow-indigo-400/60 transform hover:scale-105 active:scale-95"
+                        >
+                          <Eye size={12} /> View
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -590,87 +870,113 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Latest Cabins Table */}
-        <div className="admin-dash__card mt-3" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
-          <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3 py-2 px-4" style={{ borderBottom: '1px solid #e5e7eb' }}>
+        {/* Section: Latest Cabins Table */}
+        <div className="admin-dash__card mb-6">
+          <div className="admin-dash__card-header">
             <div className="flex items-center gap-3">
-              <h3 className="admin-dash__card-title" style={{ fontSize: '13px' }}>Latest Cabins</h3>
-              <span className="px-2 py-0.5 text-[10px] font-bold text-emerald-700 bg-emerald-100 rounded-full">
-                {(recentCabins || []).length}
+              <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl shadow-md shadow-emerald-200">
+                <Home size={18} className="text-white" />
+              </div>
+              <div>
+                <h3 className="admin-dash__card-title">Latest Cabins</h3>
+                <p className="admin-dash__card-desc">Registered workspaces on IRYAX</p>
+              </div>
+              <span className="admin-dash__badge admin-dash__badge--success">
+                {filteredCabins.length}
               </span>
             </div>
             <button
               onClick={() => navigate("/adminspaces")}
-              className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-[10px] font-medium hover:bg-emerald-100 transition-colors border border-emerald-200"
+              className="user-dash__card-link"
             >
-              View All <ArrowUpRight size={10} />
+              View All <ArrowUpRight size={14} />
             </button>
           </div>
+
           <div className="admin-dash__card-body p-0 overflow-x-auto">
-            {(recentCabins || []).length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-3 py-8 text-gray-400">
-                <Home size={28} className="opacity-20" />
-                <p className="text-xs font-medium">No cabins found</p>
+            {filteredCabins.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-3 py-14 text-gray-400">
+                <div className="p-3 bg-gray-100 rounded-2xl">
+                  <Home size={40} className="text-gray-300" />
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-semibold text-gray-600">No cabins found</p>
+                  <p className="text-xs text-gray-400 mt-0.5">No spaces registered yet</p>
+                </div>
               </div>
             ) : (
-              <table className="w-full min-w-[800px] text-left">
+              <table className="admin-dash__table">
                 <thead>
-                  <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
-                    <th className="p-3 text-[9px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
-                    <th className="p-3 text-[9px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Cabin</th>
-                    <th className="p-3 text-[9px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Address</th>
-                    <th className="p-3 text-[9px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Price</th>
-                    <th className="p-3 text-[9px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
-                    <th className="p-3 text-[9px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Joined</th>
+                  <tr>
+                    <th className="w-14 text-center">#</th>
+                    <th>Cabin / Space</th>
+                    <th>Location / Address</th>
+                    <th>Price / Hr</th>
+                    <th>Status</th>
+                    <th>Joined</th>
+                    <th className="text-center">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {(recentCabins || []).slice(0, 5).map((cabin, idx) => {
+                <tbody>
+                  {filteredCabins.slice(0, 6).map((cabin, idx) => {
                     const status = getCabinStatus(cabin);
                     return (
-                      <tr key={cabin._id} className="transition-colors hover:bg-gray-50/80 cursor-pointer" onClick={() => navigate("/adminspaces")}>
-                        <td className="p-3">
-                          <span className="text-xs font-semibold text-gray-400">#{idx + 1}</span>
+                      <tr
+                        key={cabin._id}
+                        className="group cursor-pointer hover:bg-emerald-50/40 transition-colors"
+                        onClick={() => navigate(`/cabin/${cabin._id}`)}
+                      >
+                        <td className="text-center">
+                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 text-xs font-bold text-gray-500 group-hover:bg-emerald-100 group-hover:text-emerald-700 transition-colors">
+                            {idx + 1}
+                          </span>
                         </td>
-                        <td className="p-3">
-                          <div className="flex items-center gap-2">
-                            <div className="flex-shrink-0 w-7 h-7 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
-                              {cabin.images && cabin.images[0] ? (
-                                <img
-                                  src={`${API_URL}/${cabin.images[0].replace(/\\/g, "/")}`}
-                                  alt={cabin.name}
-                                  className="w-full h-full object-cover"
-                                  onError={(e) => { e.target.src = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000"; }}
-                                />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                                  <Home size={14} className="text-gray-400" />
-                                </div>
-                              )}
+                        <td>
+                          <div className="flex items-center gap-3">
+                            <div className="flex-shrink-0 w-11 h-11 rounded-xl overflow-hidden bg-gray-100 border border-gray-200 shadow-sm">
+                              <img
+                                src={cabin.images && cabin.images[0] ? getImageUrl(cabin.images[0]) : PLACEHOLDER_IMAGE}
+                                alt={cabin.name || "Cabin"}
+                                className="w-full h-full object-cover"
+                                onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
+                              />
                             </div>
                             <div>
-                              <p className="font-semibold text-gray-900 text-xs">{cabin.name || "—"}</p>
-                              <p className="text-[9px] text-gray-400">{cabin.cabin || "—"}</p>
+                              <p className="font-bold text-gray-900 text-xs sm:text-sm group-hover:text-emerald-700 transition-colors">
+                                {cabin.name || "—"}
+                              </p>
+                              <p className="text-[11px] text-gray-400">{cabin.cabin || "Space"}</p>
                             </div>
                           </div>
                         </td>
-                        <td className="p-3">
-                          <span className="text-xs text-gray-600 flex items-center gap-1">
-                            <MapPin size={10} className="text-gray-400" />
-                            {cabin.address || "—"}
-                          </span>
+                        <td>
+                          <div className="flex items-center gap-1.5 text-xs text-gray-600">
+                            <MapPin size={12} className="text-gray-400 flex-shrink-0" />
+                            <span className="truncate max-w-[220px]">{cabin.address || "—"}</span>
+                          </div>
                         </td>
-                        <td className="p-3">
-                          <span className="text-xs font-bold text-gray-900">₹{cabin.price || 0}</span>
-                          <span className="text-[9px] text-gray-400">/hr</span>
+                        <td>
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-sm font-bold text-gray-900">₹{cabin.price || 0}</span>
+                            <span className="text-[10px] text-gray-400 font-medium">/hr</span>
+                          </div>
                         </td>
-                        <td className="p-3">
-                          <span className={`px-2 py-0.5 text-[9px] font-bold rounded-full ${status.color}`}>
+                        <td>
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold rounded-lg ${status.badgeClass}`}>
+                            {status.status === 'Active' && <CheckCircle size={10} />}
                             {status.status}
                           </span>
                         </td>
-                        <td className="p-3">
+                        <td>
                           <span className="text-xs text-gray-500">{formatDate(cabin.createdAt)}</span>
+                        </td>
+                        <td className="text-center">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); navigate(`/cabin/${cabin._id}`); }}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500 bg-[length:200%_100%] text-white hover:bg-[position:100%_0] transition-all duration-500 shadow-sm shadow-emerald-300/50 hover:shadow-md hover:shadow-emerald-400/60 transform hover:scale-105 active:scale-95"
+                          >
+                            <Eye size={12} /> View
+                          </button>
                         </td>
                       </tr>
                     );
@@ -681,81 +987,109 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Latest Users Table */}
-        <div className="admin-dash__card mt-3" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
-          <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3 py-2 px-4" style={{ borderBottom: '1px solid #e5e7eb' }}>
+        {/* Section: Latest Users Table */}
+        <div className="admin-dash__card">
+          <div className="admin-dash__card-header">
             <div className="flex items-center gap-3">
-              <h3 className="admin-dash__card-title" style={{ fontSize: '13px' }}>Latest Users</h3>
-              <span className="px-2 py-0.5 text-[10px] font-bold text-rose-700 bg-rose-100 rounded-full">
-                {(recentUsers || []).length}
+              <div className="p-2 bg-gradient-to-br from-rose-500 to-pink-500 rounded-xl shadow-md shadow-rose-200">
+                <Users size={18} className="text-white" />
+              </div>
+              <div>
+                <h3 className="admin-dash__card-title">Latest Users</h3>
+                <p className="admin-dash__card-desc">Registered platform members & clients</p>
+              </div>
+              <span className="admin-dash__badge admin-dash__badge--danger">
+                {filteredUsers.length}
               </span>
             </div>
             <button
               onClick={() => navigate("/allusers")}
-              className="flex items-center gap-1.5 px-2.5 py-1 bg-rose-50 text-rose-700 rounded-lg text-[10px] font-medium hover:bg-rose-100 transition-colors border border-rose-200"
+              className="user-dash__card-link"
             >
-              View All <ArrowUpRight size={10} />
+              View All <ArrowUpRight size={14} />
             </button>
           </div>
+
           <div className="admin-dash__card-body p-0 overflow-x-auto">
-            {(recentUsers || []).length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-3 py-8 text-gray-400">
-                <Users size={28} className="opacity-20" />
-                <p className="text-xs font-medium">No users found</p>
+            {filteredUsers.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-3 py-14 text-gray-400">
+                <div className="p-3 bg-gray-100 rounded-2xl">
+                  <Users size={40} className="text-gray-300" />
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-semibold text-gray-600">No users found</p>
+                  <p className="text-xs text-gray-400 mt-0.5">No registered users matching filters</p>
+                </div>
               </div>
             ) : (
-              <table className="w-full min-w-[800px] text-left">
+              <table className="admin-dash__table">
                 <thead>
-                  <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
-                    <th className="p-3 text-[9px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
-                    <th className="p-3 text-[9px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">User</th>
-                    <th className="p-3 text-[9px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Contact</th>
-                    <th className="p-3 text-[9px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Role</th>
-                    <th className="p-3 text-[9px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Status</th>
-                    <th className="p-3 text-[9px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Joined</th>
+                  <tr>
+                    <th className="w-14 text-center">#</th>
+                    <th>User</th>
+                    <th>Contact</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Joined</th>
+                    <th className="text-center">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {(recentUsers || []).slice(0, 5).map((user, idx) => {
+                <tbody>
+                  {filteredUsers.slice(0, 6).map((user, idx) => {
                     const role = getRoleBadge(user.role);
                     const status = getStatusUserBadge(user.status);
                     return (
-                      <tr key={user._id} className="transition-colors hover:bg-gray-50/80 cursor-pointer" onClick={() => navigate("/allusers")}>
-                        <td className="p-3">
-                          <span className="text-xs font-semibold text-gray-400">#{idx + 1}</span>
+                      <tr
+                        key={user._id}
+                        className="group cursor-pointer hover:bg-rose-50/40 transition-colors"
+                        onClick={() => navigate("/allusers")}
+                      >
+                        <td className="text-center">
+                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 text-xs font-bold text-gray-500 group-hover:bg-rose-100 group-hover:text-rose-700 transition-colors">
+                            {idx + 1}
+                          </span>
                         </td>
-                        <td className="p-3">
-                          <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-[10px]">
+                        <td>
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center text-white font-bold text-xs shadow-sm flex-shrink-0">
                               {user.name?.charAt(0)?.toUpperCase() || "U"}
                             </div>
                             <div>
-                              <p className="font-semibold text-gray-900 text-xs">{user.name || "—"}</p>
-                              <p className="text-[9px] text-gray-400 flex items-center gap-1">
-                                <Mail size={8} className="text-gray-400" />
-                                {user.email || "—"}
+                              <p className="font-bold text-gray-900 text-xs sm:text-sm group-hover:text-rose-700 transition-colors">
+                                {user.name || "—"}
+                              </p>
+                              <p className="text-[11px] text-gray-400 flex items-center gap-1">
+                                <Mail size={10} /> {user.email || "—"}
                               </p>
                             </div>
                           </div>
                         </td>
-                        <td className="p-3">
-                          <p className="text-xs text-gray-700 flex items-center gap-1.5">
+                        <td>
+                          <p className="text-xs font-medium text-gray-700 flex items-center gap-1.5">
                             <Phone size={12} className="text-gray-400" />
                             {user.mobile || "—"}
                           </p>
                         </td>
-                        <td className="p-3">
-                          <span className={`px-2 py-0.5 text-[9px] font-bold rounded-full ${role.color}`}>
+                        <td>
+                          <span className={`inline-flex items-center px-2.5 py-1 text-[10px] font-bold rounded-lg ${role.color}`}>
                             {role.label}
                           </span>
                         </td>
-                        <td className="p-3">
-                          <span className={`px-2 py-0.5 text-[9px] font-bold rounded-full ${status.color}`}>
+                        <td>
+                          <span className={`inline-flex items-center px-2.5 py-1 text-[10px] font-bold rounded-lg ${status.color}`}>
                             {status.label}
                           </span>
                         </td>
-                        <td className="p-3">
+                        <td>
                           <span className="text-xs text-gray-500">{formatDate(user.createdAt)}</span>
+                        </td>
+                        <td className="text-center">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); navigate("/allusers"); }}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold bg-gradient-to-r from-rose-500 via-pink-500 to-rose-500 bg-[length:200%_100%] text-white hover:bg-[position:100%_0] transition-all duration-500 shadow-sm shadow-rose-300/50 hover:shadow-md hover:shadow-rose-400/60 transform hover:scale-105 active:scale-95"
+                          >
+                            <Eye size={12} /> View
+                          </button>
                         </td>
                       </tr>
                     );
@@ -765,7 +1099,7 @@ const AdminDashboard = () => {
             )}
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 };

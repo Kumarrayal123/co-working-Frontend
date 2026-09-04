@@ -460,22 +460,22 @@ const SimpleUserProfile = () => {
     <div className="min-h-screen bg-gray-50">
       <SimpleUserNavbar />
 
-      <div className="pt-24 px-4 sm:px-6 md:px-8 max-w-full mx-auto pb-16">
+      <div className="p-2 sm:p-4 lg:p-6">
         
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+        {/* Header matching attendance list style */}
+        <div className="flex items-center justify-between gap-3 mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
-            <p className="text-sm text-gray-500">View your profile information</p>
+            <h1 className="text-lg sm:text-xl font-bold text-gray-900">My Profile</h1>
+            <p className="text-xs text-gray-500">View your profile information</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full ${roleInfo.bg} ${roleInfo.color} border`}>
-              <RoleIcon size={14} />
-              <span className="text-[10px] font-bold uppercase tracking-wider">{roleInfo.label}</span>
+            <div className={`flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-full`}>
+              <User size={14} className="text-blue-600" />
+              <span className="text-xs font-semibold text-blue-700">{roleInfo.label}</span>
             </div>
             <button
               onClick={openEditPopup}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition shadow-sm shadow-indigo-200"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition"
             >
               <Edit size={16} />
               Edit Profile
@@ -484,7 +484,7 @@ const SimpleUserProfile = () => {
         </div>
 
         {/* Profile Completion Card */}
-        <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 rounded-xl border border-indigo-200 shadow-sm p-4 sm:p-5 mb-6 max-w-2xl mx-auto">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5 mb-6 max-w-2xl mx-auto">
           <div className="flex flex-col sm:flex-row sm:items-center gap-5">
             <div className="flex-shrink-0 flex justify-center">
               <CircularProgress 
@@ -501,25 +501,25 @@ const SimpleUserProfile = () => {
               </div>
               
               <div className="flex flex-wrap items-center gap-2 mt-1">
-                <div className="flex items-center gap-1.5 bg-white/80 backdrop-blur-sm px-3 py-1 rounded-lg border border-gray-200">
+                <div className="flex items-center gap-1.5 bg-gray-50 px-3 py-1 rounded-lg border border-gray-200">
                   <span className="text-[9px] font-medium text-gray-500">Completed:</span>
-                  <span className={`text-sm font-bold ${getCompletionColor(completionPercentage)}`}>{completionPercentage}%</span>
+                  <span className={`text-sm font-semibold ${getCompletionColor(completionPercentage)}`}>{completionPercentage}%</span>
                 </div>
-                <div className="flex items-center gap-1.5 bg-white/80 backdrop-blur-sm px-3 py-1 rounded-lg border border-gray-200">
+                <div className="flex items-center gap-1.5 bg-gray-50 px-3 py-1 rounded-lg border border-gray-200">
                   <span className="text-[9px] font-medium text-gray-500">Pending:</span>
-                  <span className="text-sm font-bold text-amber-600">{missingFields.length}</span>
+                  <span className="text-sm font-semibold text-amber-600">{missingFields.length}</span>
                 </div>
               </div>
 
               {missingFields.length > 0 && (
-                <div className="mt-2 flex flex-wrap items-center gap-1.5 bg-white/60 backdrop-blur-sm px-2.5 py-1.5 rounded-lg border border-amber-200">
+                <div className="mt-2 flex flex-wrap items-center gap-1.5 bg-amber-50 px-2.5 py-1.5 rounded-lg border border-amber-200">
                   <AlertTriangle size={13} className="text-amber-500 flex-shrink-0" />
                   <p className="text-[10px] text-gray-700">
                     <span className="font-semibold text-amber-600">{missingFields.length}</span> fields remaining
                   </p>
                   <button
                     onClick={openEditPopup}
-                    className="inline-flex items-center gap-0.5 text-[10px] font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
+                    className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-blue-600 hover:text-blue-800 transition-colors"
                   >
                     Complete Now <ArrowRight size={10} />
                   </button>
@@ -527,16 +527,16 @@ const SimpleUserProfile = () => {
               )}
               
               {missingFields.length === 0 && (
-                <div className="mt-2 flex items-center gap-1.5 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
-                  <CheckCircle size={13} className="text-emerald-500" />
-                  <p className="text-[10px] font-medium text-emerald-700">Your profile is 100% complete! 🎉</p>
+                <div className="mt-2 flex items-center gap-1.5 bg-green-50 px-2.5 py-1 rounded-lg border border-green-200">
+                  <CheckCircle size={13} className="text-green-500" />
+                  <p className="text-[10px] font-semibold text-green-700">Your profile is 100% complete! 🎉</p>
                 </div>
               )}
 
               {missingFields.length > 0 && (
                 <div className="mt-1.5 flex flex-wrap gap-1">
                   {missingFields.slice(0, 6).map((field, index) => (
-                    <span key={index} className="inline-flex items-center gap-0.5 bg-white/70 backdrop-blur-sm px-1.5 py-0.5 rounded border border-red-200 text-[7px] font-medium text-gray-700">
+                    <span key={index} className="inline-flex items-center gap-0.5 bg-gray-50 px-1.5 py-0.5 rounded border border-red-200 text-[7px] font-medium text-gray-700">
                       <AlertCircle size={8} className="text-red-400" />
                       {field}
                     </span>
@@ -553,12 +553,12 @@ const SimpleUserProfile = () => {
         </div>
 
         {/* Profile Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden max-w-2xl mx-auto">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden max-w-2xl mx-auto">
           {/* Cover */}
-          <div className="h-20 bg-gradient-to-r from-indigo-500 to-purple-500 relative">
+          <div className="h-20 bg-gradient-to-r from-blue-500 to-blue-600 relative">
             <div className="absolute -bottom-10 left-6">
               <div className="w-20 h-20 rounded-full bg-white border-4 border-white shadow-lg flex items-center justify-center">
-                <span className="text-2xl font-bold text-indigo-600">
+                <span className="text-2xl font-bold text-blue-600">
                   {profile.name?.charAt(0)?.toUpperCase() || 'U'}
                 </span>
               </div>
@@ -580,75 +580,75 @@ const SimpleUserProfile = () => {
             {/* Details */}
             <div className="mt-5 border-t border-gray-200 pt-5">
               <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2 mb-4">
-                <User size={14} className="text-indigo-600" /> Personal Information
+                <User size={14} className="text-blue-600" /> Personal Information
               </h3>
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0">
-                    <User size={14} className="text-indigo-600" />
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                    <User size={14} className="text-blue-600" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Full Name</p>
-                    <p className="font-medium text-gray-800 text-sm truncate">{profile.name}</p>
+                    <p className="font-semibold text-gray-800 text-sm truncate">{profile.name}</p>
                   </div>
                   {profile.name && (
-                    <CheckCircle size={14} className="text-emerald-500 flex-shrink-0" />
+                    <CheckCircle size={14} className="text-green-500 flex-shrink-0" />
                   )}
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
                     <Mail size={14} className="text-blue-600" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Email</p>
-                    <p className="font-medium text-gray-800 text-sm truncate">{profile.email}</p>
+                    <p className="font-semibold text-gray-800 text-sm truncate">{profile.email}</p>
                   </div>
                   {profile.email && (
-                    <CheckCircle size={14} className="text-emerald-500 flex-shrink-0" />
+                    <CheckCircle size={14} className="text-green-500 flex-shrink-0" />
                   )}
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                    <Phone size={14} className="text-emerald-600" />
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                    <Phone size={14} className="text-blue-600" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Mobile</p>
-                    <p className="font-medium text-gray-800 text-sm">{profile.mobile}</p>
+                    <p className="font-semibold text-gray-800 text-sm">{profile.mobile}</p>
                   </div>
                   {profile.mobile && (
-                    <CheckCircle size={14} className="text-emerald-500 flex-shrink-0" />
+                    <CheckCircle size={14} className="text-green-500 flex-shrink-0" />
                   )}
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-yellow-100 flex items-center justify-center flex-shrink-0">
-                    <MapPin size={14} className="text-yellow-600" />
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                    <MapPin size={14} className="text-blue-600" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Address</p>
-                    <p className={`font-medium text-sm ${profile.address ? 'text-gray-800' : 'text-gray-400 italic'}`}>
+                    <p className={`font-semibold text-sm ${profile.address ? 'text-gray-800' : 'text-gray-400 italic'}`}>
                       {profile.address || 'Not provided'}
                     </p>
                   </div>
                   {profile.address && (
-                    <CheckCircle size={14} className="text-emerald-500 flex-shrink-0" />
+                    <CheckCircle size={14} className="text-green-500 flex-shrink-0" />
                   )}
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
-                    <Calendar size={14} className="text-purple-600" />
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                    <Calendar size={14} className="text-blue-600" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Member Since</p>
-                    <p className="font-medium text-gray-800 text-sm">{formatDate(profile.createdAt)}</p>
+                    <p className="font-semibold text-gray-800 text-sm">{formatDate(profile.createdAt)}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-lg ${roleInfo.bg} flex items-center justify-center flex-shrink-0`}>
-                    <RoleIcon size={14} className={roleInfo.color} />
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                    <RoleIcon size={14} className="text-blue-600" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Role</p>
-                    <p className={`font-medium text-sm ${roleInfo.color}`}>{roleInfo.label}</p>
+                    <p className="font-semibold text-sm text-blue-600">{roleInfo.label}</p>
                   </div>
                 </div>
 
@@ -660,26 +660,26 @@ const SimpleUserProfile = () => {
                     </h3>
                     {profile.organizationName && (
                       <div className="flex items-center gap-3 mb-2">
-                        <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center flex-shrink-0">
                           <Crown size={14} className="text-amber-600" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Organization</p>
-                          <p className="font-medium text-gray-800 text-sm truncate">{profile.organizationName}</p>
+                          <p className="font-semibold text-gray-800 text-sm truncate">{profile.organizationName}</p>
                         </div>
-                        <CheckCircle size={14} className="text-emerald-500 flex-shrink-0" />
+                        <CheckCircle size={14} className="text-green-500 flex-shrink-0" />
                       </div>
                     )}
                     {profile.gstNumber && (
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center flex-shrink-0">
-                          <Shield size={14} className="text-orange-600" />
+                        <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center flex-shrink-0">
+                          <Shield size={14} className="text-amber-600" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">GST Number</p>
-                          <p className="font-medium text-gray-800 text-sm truncate">{profile.gstNumber}</p>
+                          <p className="font-semibold text-gray-800 text-sm truncate">{profile.gstNumber}</p>
                         </div>
-                        <CheckCircle size={14} className="text-emerald-500 flex-shrink-0" />
+                        <CheckCircle size={14} className="text-green-500 flex-shrink-0" />
                       </div>
                     )}
                   </div>
@@ -692,14 +692,14 @@ const SimpleUserProfile = () => {
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => navigate("/userbooking")}
-                  className="flex items-center justify-center gap-2 px-3 py-2.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition border border-indigo-200"
+                  className="flex items-center justify-center gap-2 px-3 py-2.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-semibold hover:bg-blue-100 transition border border-blue-200"
                 >
                   <Calendar size={14} />
                   My Bookings
                 </button>
                 <button
                   onClick={() => navigate("/spaceforusers")}
-                  className="flex items-center justify-center gap-2 px-3 py-2.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-medium hover:bg-emerald-100 transition border border-emerald-200"
+                  className="flex items-center justify-center gap-2 px-3 py-2.5 bg-green-50 text-green-700 rounded-lg text-xs font-semibold hover:bg-green-100 transition border border-green-200"
                 >
                   <Shield size={14} />
                   Browse Spaces
@@ -727,22 +727,22 @@ const SimpleUserProfile = () => {
             }
           }}
         >
-          <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+          <div className="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-lg">
             <div className="sticky top-0 bg-white z-10 border-b border-gray-200 px-6 py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
-                  <Edit size={20} className="text-indigo-600" />
+                <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                  <Edit size={18} className="text-blue-600" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900">Edit Profile</h2>
+                  <h2 className="text-base font-bold text-gray-900">Edit Profile</h2>
                   <p className="text-xs text-gray-500">Update your personal and organization details</p>
                 </div>
               </div>
               <button
                 onClick={closeEditPopup}
-                className="w-8 h-8 rounded-full hover:bg-gray-100 transition-colors flex items-center justify-center text-gray-500 hover:text-gray-700"
+                className="w-8 h-8 rounded-lg hover:bg-gray-100 transition-colors flex items-center justify-center text-gray-500 hover:text-gray-700"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
 
@@ -751,12 +751,12 @@ const SimpleUserProfile = () => {
                 {/* Personal Information */}
                 <div className="md:col-span-2">
                   <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2 mb-3">
-                    <User size={14} className="text-indigo-600" /> Personal Information
+                    <User size={14} className="text-blue-600" /> Personal Information
                   </h3>
                 </div>
 
                 <div className="relative group">
-                  <User className="absolute left-3 top-3 text-gray-400 group-focus-within:text-indigo-600 transition-colors" size={16} />
+                  <User className="absolute left-3 top-3 text-gray-400 group-focus-within:text-blue-600 transition-colors" size={16} />
                   <input
                     type="text"
                     name="name"
@@ -764,12 +764,12 @@ const SimpleUserProfile = () => {
                     value={editFormData.name}
                     onChange={handleEditChange}
                     required
-                    className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none text-gray-800 placeholder:text-gray-400 text-sm"
+                    className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-gray-800 placeholder:text-gray-400 text-sm"
                   />
                 </div>
 
                 <div className="relative group">
-                  <Mail className="absolute left-3 top-3 text-gray-400 group-focus-within:text-indigo-600 transition-colors" size={16} />
+                  <Mail className="absolute left-3 top-3 text-gray-400 group-focus-within:text-blue-600 transition-colors" size={16} />
                   <input
                     type="email"
                     name="email"
@@ -777,12 +777,12 @@ const SimpleUserProfile = () => {
                     value={editFormData.email}
                     onChange={handleEditChange}
                     required
-                    className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none text-gray-800 placeholder:text-gray-400 text-sm"
+                    className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-gray-800 placeholder:text-gray-400 text-sm"
                   />
                 </div>
 
                 <div className="relative group">
-                  <Phone className="absolute left-3 top-3 text-gray-400 group-focus-within:text-indigo-600 transition-colors" size={16} />
+                  <Phone className="absolute left-3 top-3 text-gray-400 group-focus-within:text-blue-600 transition-colors" size={16} />
                   <input
                     type="text"
                     name="mobile"
@@ -790,12 +790,12 @@ const SimpleUserProfile = () => {
                     value={editFormData.mobile}
                     onChange={handleEditChange}
                     required
-                    className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none text-gray-800 placeholder:text-gray-400 text-sm"
+                    className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-gray-800 placeholder:text-gray-400 text-sm"
                   />
                 </div>
 
                 <div className="relative group md:col-span-2">
-                  <MapPin className="absolute left-3 top-3 text-gray-400 group-focus-within:text-indigo-600 transition-colors" size={16} />
+                  <MapPin className="absolute left-3 top-3 text-gray-400 group-focus-within:text-blue-600 transition-colors" size={16} />
                   <input
                     type="text"
                     name="address"
@@ -803,7 +803,7 @@ const SimpleUserProfile = () => {
                     value={editFormData.address}
                     onChange={handleEditChange}
                     required
-                    className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none text-gray-800 placeholder:text-gray-400 text-sm"
+                    className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-gray-800 placeholder:text-gray-400 text-sm"
                   />
                 </div>
 
@@ -822,7 +822,7 @@ const SimpleUserProfile = () => {
                     placeholder="Organization Name"
                     value={editFormData.organizationName}
                     onChange={handleEditChange}
-                    className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all outline-none text-gray-800 placeholder:text-gray-400 text-sm"
+                    className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all outline-none text-gray-800 placeholder:text-gray-400 text-sm"
                   />
                 </div>
 
@@ -834,7 +834,7 @@ const SimpleUserProfile = () => {
                     placeholder="GST Number"
                     value={editFormData.gstNumber}
                     onChange={handleEditChange}
-                    className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all outline-none text-gray-800 placeholder:text-gray-400 text-sm"
+                    className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all outline-none text-gray-800 placeholder:text-gray-400 text-sm"
                   />
                 </div>
               </div>
@@ -844,14 +844,14 @@ const SimpleUserProfile = () => {
                 <button
                   type="button"
                   onClick={closeEditPopup}
-                  className="px-6 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition-colors"
+                  className="px-6 py-2.5 text-sm font-semibold text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={editLoading}
-                  className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium text-sm rounded-xl hover:shadow-lg hover:shadow-indigo-500/25 transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white font-semibold text-sm rounded-lg hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {editLoading ? (
                     <>

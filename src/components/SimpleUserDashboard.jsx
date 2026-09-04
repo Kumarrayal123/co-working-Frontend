@@ -1,4 +1,4 @@
-// SimpleUserDashboard.jsx - With Type Column Added (FIXED) - Using /api/user/dashboard
+// SimpleUserDashboard.jsx - With Fixed Modal (Centered + No Overflow)
 import axios from "axios";
 import {
   Calendar,
@@ -34,9 +34,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import SimpleUserNavbar from "./SimpleUserNavbar";
-import "./Dashboard.css";
+import "./SimpleUserDashboard.css";
 
-const API_URL = "https://spaceapi.iryax.com";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5003";
 
 function SimpleUserDashboard() {
   const [user, setUser] = useState(null);
@@ -885,53 +885,52 @@ function SimpleUserDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="user-dash">
         <SimpleUserNavbar />
-        <div className="pt-24 px-4 max-w-full mx-auto">
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto"></div>
-              <p className="mt-4 text-gray-500 text-sm">Loading your bookings...</p>
-            </div>
+        <main className="p-2 sm:p-4 lg:p-6">
+          <div className="user-dash__loading">
+            <div className="user-dash__spinner" />
+            <p className="user-dash__loading-text">Loading your bookings...</p>
           </div>
-        </div>
+        </main>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="user-dash">
         <SimpleUserNavbar />
-        <div className="pt-24 px-4 max-w-full mx-auto">
-          <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center max-w-md mx-auto">
-            <XCircle size={40} className="text-red-500 mx-auto mb-3" />
-            <p className="text-red-600 font-medium">{error}</p>
-            <button 
-              onClick={fetchBookings}
-              className="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition"
-            >
-              Retry
-            </button>
+        <main className="p-2 sm:p-4 lg:p-6">
+          <div className="user-dash__card max-w-[520px] w-full">
+            <div className="user-dash__card-header">
+              <div>
+                <h3 className="user-dash__card-title">Couldn't load dashboard</h3>
+                <p className="user-dash__card-desc text-red-600 mt-1">{error}</p>
+              </div>
+              <button type="button" className="user-dash__card-link" onClick={fetchBookings}>
+                Retry
+              </button>
+            </div>
           </div>
-        </div>
+        </main>
       </div>
     );
   }
 
   return (
-    <div className="admin-dash" style={{ backgroundColor: "#ffffff" }}>
+    <div className="user-dash">
       <SimpleUserNavbar />
 
-      <div className="pt-20 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
+      <main className="p-2 sm:p-4 lg:p-6">
         
         {/* Header */}
-        <div className="admin-dash__header" style={{ marginBottom: "8px" }}>
+        <div className="user-dash__header">
           <div>
-            <h1 className="admin-dash__greeting" style={{ fontSize: "1.25rem" }}>
+            <h1 className="user-dash__greeting">
               My <span>Dashboard</span>
             </h1>
-            <p className="admin-dash__subtitle" style={{ fontSize: "11px" }}>
+            <p className="user-dash__subtitle">
               Welcome back, <span className="font-semibold text-gray-700">{getProfileName()}</span>
             </p>
           </div>
@@ -940,98 +939,29 @@ function SimpleUserDashboard() {
           </div>
         </div>
 
-        {/* Profile Completion Card */}
-        <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 rounded-xl border border-indigo-200 shadow-sm p-3 sm:p-4 mb-5">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <div className="flex-shrink-0 flex justify-center">
-              <CircularProgress 
-                percentage={animatedPercentage || completionPercentage} 
-                size={80}
-                strokeWidth={7}
-              />
-            </div>
-
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-0.5">
-                <span className="text-lg">{getCompletionEmoji(completionPercentage)}</span>
-                <h3 className="text-xs font-semibold text-gray-800">Profile Completion</h3>
-              </div>
-              
-              <div className="flex flex-wrap items-center gap-1.5">
-                <div className="flex items-center gap-1 bg-white/80 backdrop-blur-sm px-2 py-0.5 rounded-lg border border-gray-200">
-                  <span className="text-[8px] font-medium text-gray-500">Completed:</span>
-                  <span className={`text-xs font-bold ${getCompletionColor(completionPercentage)}`}>{completionPercentage}%</span>
-                </div>
-                <div className="flex items-center gap-1 bg-white/80 backdrop-blur-sm px-2 py-0.5 rounded-lg border border-gray-200">
-                  <span className="text-[8px] font-medium text-gray-500">Pending:</span>
-                  <span className="text-xs font-bold text-amber-600">{missingFields.length}</span>
-                </div>
-              </div>
-
-              {missingFields.length > 0 && (
-                <div className="mt-1 flex flex-wrap items-center gap-1 bg-white/60 backdrop-blur-sm px-2 py-1 rounded-lg border border-amber-200">
-                  <AlertTriangle size={10} className="text-amber-500 flex-shrink-0" />
-                  <p className="text-[8px] text-gray-700">
-                    <span className="font-semibold text-amber-600">{missingFields.length}</span> fields remaining
-                  </p>
-                  <button
-                    onClick={() => navigate("/userprofile")}
-                    className="inline-flex items-center gap-0.5 text-[8px] font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
-                  >
-                    Complete Now <ArrowRight size={8} />
-                  </button>
-                </div>
-              )}
-              
-              {missingFields.length === 0 && (
-                <div className="mt-1 flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
-                  <CheckCircle size={10} className="text-emerald-500" />
-                  <p className="text-[8px] font-medium text-emerald-700">100% complete! 🎉</p>
-                </div>
-              )}
-            </div>
-            
-            <button
-              onClick={() => navigate("/userprofile")}
-              className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1.5 bg-indigo-600 text-white rounded-lg text-[10px] font-medium hover:bg-indigo-700 transition-colors shadow-sm shadow-indigo-200"
-            >
-              <User size={12} />
-              View Profile
-            </button>
-          </div>
-        </div>
-
         {/* Stats Cards */}
-        <div
-          className="admin-dash__stats admin-dash__stats--six"
-          style={{ marginBottom: "16px" }}
-        >
+        <div className="user-dash__stats">
           {dashboardStatsCards.map((stat, index) => (
             <div
               key={index}
-              className={`admin-dash__stat ${isStatActive(stat.filterValue) ? "admin-dash__stat--active" : ""}`}
+              className={`user-dash__stat ${isStatActive(stat.filterValue) ? "user-dash__stat--active" : ""}`}
               onClick={stat.onClick}
-              style={{
-                padding: "12px 14px",
-                minHeight: "80px",
-              }}
               title="Click to filter"
             >
-              <div className="admin-dash__stat-top">
-                <span className="admin-dash__stat-label" style={{ fontSize: "11px" }}>
+              <div className="user-dash__stat-top">
+                <span className="user-dash__stat-label">
                   {stat.label}
                 </span>
                 <div
-                  className={`admin-dash__stat-icon admin-dash__stat-icon--${stat.color}`}
-                  style={{ width: "28px", height: "28px" }}
+                  className={`user-dash__stat-icon user-dash__stat-icon--${stat.color}`}
                 >
                   <stat.icon size={14} />
                 </div>
               </div>
-              <div className="admin-dash__stat-value" style={{ fontSize: "18px", fontWeight: "700" }}>
+              <div className="user-dash__stat-value">
                 {stat.value}
               </div>
-              <div className="admin-dash__stat-meta" style={{ fontSize: "9px" }}>
+              <div className="user-dash__stat-meta">
                 {stat.meta}
               </div>
             </div>
@@ -1039,16 +969,15 @@ function SimpleUserDashboard() {
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-3 mb-4">
-          <div className="flex flex-col sm:flex-row gap-2">
-            <div className="flex-1 relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <div className="user-dash__filters">
+          <div className="user-dash__filter-row">
+            <div className="user-dash__search-input">
+              <Search size={14} className="user-dash__search-icon" />
               <input
                 type="text"
                 placeholder="Search bookings..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
               />
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -1056,12 +985,12 @@ function SimpleUserDashboard() {
                 type="date"
                 value={filterDate}
                 onChange={(e) => setFilterDate(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                className="user-dash__filter-select"
               />
               <select
                 value={filters.status}
                 onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                className="user-dash__filter-select"
               >
                 <option value="all">All Status</option>
                 <option value="pending">Pending</option>
@@ -1073,7 +1002,7 @@ function SimpleUserDashboard() {
               <select
                 value={activeTab}
                 onChange={(e) => setActiveTab(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                className="user-dash__filter-select"
               >
                 <option value="all">All Bookings ({bookings.length})</option>
                 <option value="visits">Site Visits ({visitCount})</option>
@@ -1082,7 +1011,7 @@ function SimpleUserDashboard() {
               <select
                 value={filters.paymentStatus}
                 onChange={(e) => setFilters(prev => ({ ...prev, paymentStatus: e.target.value }))}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                className="user-dash__filter-select"
               >
                 <option value="all">Payment Status</option>
                 <option value="pending">Pending</option>
@@ -1093,7 +1022,7 @@ function SimpleUserDashboard() {
               {(filters.status !== "all" || filters.paymentStatus !== "all" || filterDate || searchTerm || activeTab !== "all") && (
                 <button
                   onClick={clearFilters}
-                  className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                  className="user-dash__btn user-dash__btn--secondary"
                   title="Clear filters"
                 >
                   <XIcon size={16} />
@@ -1106,19 +1035,19 @@ function SimpleUserDashboard() {
           </div>
         </div>
 
-        {/* Bookings Table - WITH TYPE COLUMN ADDED */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+        {/* Bookings Table */}
+        <div className="user-dash__card">
           {displayBookings.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-              <Calendar size={48} className="opacity-20 mb-3" />
-              <p className="text-sm font-medium">No bookings found</p>
+            <div className="user-dash__empty">
+              <Calendar size={48} className="user-dash__empty-icon" />
+              <p className="user-dash__empty-text">No bookings found</p>
               <p className="text-xs text-gray-400 mt-1">
                 {bookings.length === 0 ? "You haven't made any bookings yet." : "Try adjusting your filters."}
               </p>
               {bookings.length === 0 && (
                 <button
                   onClick={() => navigate("/spaceforusers")}
-                  className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition"
+                  className="user-dash__btn user-dash__btn--primary"
                 >
                   Browse Spaces
                 </button>
@@ -1126,19 +1055,18 @@ function SimpleUserDashboard() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
+              <table className="user-dash__table">
                 <thead>
-                  <tr className="bg-gray-50 border-b border-gray-100">
-                    <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">S.No</th>
-                    <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Cabin</th>
-                    <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Type</th>
-                    <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Date &amp; Time</th>
-                    <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Status</th>
-                    <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase">Amount</th>
-                    <th className="px-3 py-2.5 text-[9px] font-bold tracking-wider text-gray-500 uppercase text-center">Actions</th>
+                  <tr>
+                    <th>S.No</th>
+                    <th>Cabin</th>
+                    <th>Date &amp; Time</th>
+                    <th>Status</th>
+                    <th>Amount</th>
+                    <th className="text-center">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody>
                   {displayBookings.map((booking, idx) => {
                     const status = getStatusBadge(booking.status, booking.paymentStatus);
                     // ✅ Get space type badge
@@ -1146,11 +1074,11 @@ function SimpleUserDashboard() {
                     const SpaceIcon = spaceType.icon;
                     
                     return (
-                      <tr key={booking._id} className="hover:bg-gray-50/80 transition-colors">
-                        <td className="px-3 py-2.5">
+                      <tr key={booking._id}>
+                        <td>
                           <span className="text-[10px] font-semibold text-gray-400">{idx + 1}</span>
                         </td>
-                        <td className="px-3 py-2.5">
+                        <td>
                           <div>
                             <p className="font-semibold text-gray-900 text-sm">
                               {booking.cabin?.name || booking.cabinName || 'Unknown Cabin'}
@@ -1164,20 +1092,13 @@ function SimpleUserDashboard() {
                             </p>
                           </div>
                         </td>
-                        {/* ✅ TYPE COLUMN RENDER */}
-                        <td className="px-3 py-2.5">
-                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-[9px] font-bold rounded-lg border ${spaceType.color}`}>
-                            <SpaceIcon size={10} />
-                            {spaceType.label}
-                          </span>
-                        </td>
-                        <td className="px-3 py-2.5">
+                        <td>
                           <p className="text-sm text-gray-700">{formatDateDDMMYYYY(booking.startDate)}</p>
                           <p className="text-[9px] text-gray-400">
                             {formatTime12(booking.startTime)} - {formatTime12(booking.endTime)} ({booking.totalHours}h)
                           </p>
                         </td>
-                        <td className="px-3 py-2.5">
+                        <td>
                           <span className={`px-2.5 py-0.5 text-[9px] font-bold rounded-full ${status.color}`}>
                             {status.label}
                           </span>
@@ -1191,7 +1112,7 @@ function SimpleUserDashboard() {
                             </span>
                           )}
                         </td>
-                        <td className="px-3 py-2.5">
+                        <td>
                           <span className="text-sm font-bold text-indigo-600">
                             {formatCurrency(booking.totalPrice)}
                           </span>
@@ -1199,18 +1120,20 @@ function SimpleUserDashboard() {
                             <p className="text-[8px] text-amber-500">+₹{booking.extraCharge} seat</p>
                           )}
                         </td>
-                        <td className="px-3 py-2.5 text-center">
+                        <td className="text-center">
                           <div className="flex items-center justify-center gap-1">
                             <button
                               onClick={() => handleViewBooking(booking)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-[9px] font-medium hover:bg-indigo-100 transition"
+                              className="user-dash__btn user-dash__btn--secondary"
+                              style={{ padding: "0.375rem 0.625rem", fontSize: "0.75rem" }}
                               title="View Details"
                             >
                               <Eye size={11} /> View
                             </button>
                             <button
                               onClick={() => downloadInvoice(booking)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-[9px] font-medium hover:bg-emerald-100 transition"
+                              className="user-dash__btn user-dash__btn--secondary"
+                              style={{ padding: "0.375rem 0.625rem", fontSize: "0.75rem" }}
                               title="Download Invoice"
                             >
                               <FileDown size={11} /> Invoice
@@ -1230,7 +1153,7 @@ function SimpleUserDashboard() {
         <div className="mt-6 text-center text-[9px] text-gray-400 font-medium tracking-wider">
           © IRYAX SPACE — All Rights Reserved
         </div>
-      </div>
+      </main>
 
       {/* ============================================================ */}
       {/* MODAL */}
@@ -1457,71 +1380,5 @@ function SimpleUserDashboard() {
     </div>
   );
 }
-
-// Circular Progress Component
-const CircularProgress = ({ percentage, size = 100, strokeWidth = 8 }) => {
-  const radius = (size - strokeWidth) / 2;
-  const circumference = radius * 2 * Math.PI;
-  const offset = circumference - (percentage / 100) * circumference;
-  
-  const getColor = (p) => {
-    if (p >= 80) return '#10b981';
-    if (p >= 50) return '#f59e0b';
-    return '#ef4444';
-  };
-  const color = getColor(percentage);
-
-  return (
-    <div className="relative inline-flex items-center justify-center">
-      <svg
-        width={size}
-        height={size}
-        className="transform -rotate-90"
-      >
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          stroke="#e5e7eb"
-          strokeWidth={strokeWidth}
-          fill="none"
-        />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          stroke={color}
-          strokeWidth={strokeWidth}
-          fill="none"
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          className="transition-all duration-500 ease-in-out"
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-xl font-bold" style={{ color: color }}>
-          {percentage}%
-        </span>
-        <span className="text-[7px] font-medium text-gray-500 uppercase tracking-wider">
-          Complete
-        </span>
-      </div>
-    </div>
-  );
-};
-
-const getCompletionColor = (percentage) => {
-  if (percentage >= 80) return 'text-emerald-600';
-  if (percentage >= 50) return 'text-yellow-600';
-  return 'text-red-500';
-};
-
-const getCompletionEmoji = (percentage) => {
-  if (percentage >= 80) return '🎉';
-  if (percentage >= 50) return '📈';
-  if (percentage >= 30) return '📝';
-  return '⚠️';
-};
 
 export default SimpleUserDashboard;

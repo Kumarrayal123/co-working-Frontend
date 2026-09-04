@@ -405,7 +405,7 @@ const AllWithdrawals = () => {
   }
 
   return (
-    <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
+    <div className="admin-dash" style={{ backgroundColor: '#f8fafc' }}>
       <AdminNavbar />
 
       <div className="pt-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto pb-16">
@@ -415,15 +415,16 @@ const AllWithdrawals = () => {
             <h1 className="admin-dash__greeting">
               Withdrawal <span>Requests</span>
             </h1>
+            <p className="admin-dash__subtitle">Manage and track all withdrawal requests</p>
           </div>
           <div className="flex items-center gap-2">
             {filteredWithdrawals.length > 0 && (
-              <button onClick={exportToExcel} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors border border-indigo-200">
+              <button onClick={exportToExcel} className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-xl text-xs font-medium hover:from-indigo-600 hover:to-indigo-700 transition-all shadow-md shadow-indigo-500/20">
                 <Download size={14} />
                 <span className="hidden xs:inline">Export</span>
               </button>
             )}
-            <button onClick={fetchWithdrawals} className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors">
+            <button onClick={fetchWithdrawals} className="flex items-center gap-1.5 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-xl text-xs font-medium hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm">
               <RefreshCw size={14} />
               <span className="hidden xs:inline">Refresh</span>
             </button>
@@ -432,48 +433,81 @@ const AllWithdrawals = () => {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
-          <div className="bg-gradient-to-r from-red-600 to-orange-600 rounded-2xl p-4 text-white shadow-lg shadow-red-500/25">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-red-200">Total Requests</p>
-            <p className="text-2xl font-bold">{stats.total}</p>
-            <div className="mt-2 pt-2 border-t border-white/20 flex justify-between text-[10px]">
-              <span className="text-red-200">Amount</span>
-              <span className="font-semibold">{formatCurrency(stats.totalAmount)}</span>
+          <div className="bg-gradient-to-br from-red-500 via-red-600 to-orange-600 rounded-2xl p-5 text-white shadow-xl shadow-red-500/20 transform hover:scale-[1.02] transition-all duration-300">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-red-100">Total Requests</p>
+              <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
+                <Wallet size={16} className="text-white" />
+              </div>
+            </div>
+            <p className="text-3xl font-bold mb-2">{stats.total}</p>
+            <div className="pt-2 border-t border-white/20 flex justify-between items-center text-[10px]">
+              <span className="text-red-100">Total Amount</span>
+              <span className="font-semibold text-sm">{formatCurrency(stats.totalAmount)}</span>
             </div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm text-center">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-yellow-600">Pending</p>
-            <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
+          <div className="bg-white rounded-2xl border border-yellow-200 p-5 shadow-lg shadow-yellow-500/10 transform hover:scale-[1.02] transition-all duration-300">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-yellow-600">Pending</p>
+              <div className="w-8 h-8 rounded-lg bg-yellow-100 flex items-center justify-center">
+                <Clock size={16} className="text-yellow-600" />
+              </div>
+            </div>
+            <p className="text-3xl font-bold text-yellow-600 mb-2">{stats.pending}</p>
+            <div className="h-1.5 bg-yellow-100 rounded-full overflow-hidden">
+              <div className="h-full bg-yellow-500 rounded-full" style={{ width: `${stats.total > 0 ? (stats.pending / stats.total) * 100 : 0}%` }}></div>
+            </div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm text-center">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Completed</p>
-            <p className="text-2xl font-bold text-emerald-600">{stats.completed}</p>
+          <div className="bg-white rounded-2xl border border-emerald-200 p-5 shadow-lg shadow-emerald-500/10 transform hover:scale-[1.02] transition-all duration-300">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Completed</p>
+              <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+                <CheckCircle size={16} className="text-emerald-600" />
+              </div>
+            </div>
+            <p className="text-3xl font-bold text-emerald-600 mb-2">{stats.completed}</p>
+            <div className="h-1.5 bg-emerald-100 rounded-full overflow-hidden">
+              <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${stats.total > 0 ? (stats.completed / stats.total) * 100 : 0}%` }}></div>
+            </div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm text-center">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-purple-600">Unique Users</p>
-            <p className="text-2xl font-bold text-purple-600">{stats.uniqueUsers}</p>
+          <div className="bg-white rounded-2xl border border-purple-200 p-5 shadow-lg shadow-purple-500/10 transform hover:scale-[1.02] transition-all duration-300">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-purple-600">Unique Users</p>
+              <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
+                <Users size={16} className="text-purple-600" />
+              </div>
+            </div>
+            <p className="text-3xl font-bold text-purple-600 mb-2">{stats.uniqueUsers}</p>
+            <div className="text-[10px] text-purple-400 font-medium">Active Requesters</div>
           </div>
         </div>
 
         {/* Table Section */}
-        <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
-          <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
+        <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)' }}>
+          <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e2e8f0', padding: '1.25rem 1.5rem' }}>
             <div className="flex items-center gap-3">
-              <h3 className="admin-dash__card-title">Withdrawal Requests</h3>
-              <span className="px-2.5 py-0.5 text-xs font-bold text-indigo-700 bg-indigo-100 rounded-full">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                <Banknote size={20} className="text-white" />
+              </div>
+              <div>
+                <h3 className="admin-dash__card-title" style={{ fontSize: '1rem', fontWeight: '600' }}>Withdrawal Requests</h3>
+                <p className="text-xs text-gray-500">Manage and process withdrawals</p>
+              </div>
+              <span className="px-3 py-1 text-xs font-bold text-white bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-full shadow-md shadow-indigo-500/20">
                 {filteredWithdrawals.length}
               </span>
             </div>
           </div>
 
           {/* ─── FILTERS - ALWAYS VISIBLE ─── */}
-          <div className="px-4 pt-4 pb-3 border-b border-gray-100" style={{ backgroundColor: '#fafafa' }}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="px-5 pt-5 pb-4 border-b border-gray-100" style={{ backgroundColor: '#f8fafc' }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</label>
+                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5 block">Status</label>
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
-                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white shadow-sm"
                 >
                   <option value="all">All Status</option>
                   <option value="pending">Pending</option>
@@ -483,27 +517,27 @@ const AllWithdrawals = () => {
                 </select>
               </div>
               <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Owner</label>
+                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5 block">Owner</label>
                 <input
                   type="text"
                   placeholder="Filter by owner..."
                   value={filterOwner}
                   onChange={(e) => setFilterOwner(e.target.value)}
-                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white shadow-sm"
                 />
               </div>
               <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Bank</label>
+                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5 block">Bank</label>
                 <input
                   type="text"
                   placeholder="Filter by bank..."
                   value={filterBank}
                   onChange={(e) => setFilterBank(e.target.value)}
-                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white shadow-sm"
                 />
               </div>
               <div className="flex items-end">
-                <button onClick={clearFilters} className="w-full px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-red-600 transition-colors border border-gray-200 rounded-lg hover:border-red-300 flex items-center justify-center gap-1">
+                <button onClick={clearFilters} className="w-full px-3 py-2 text-xs font-medium text-gray-600 hover:text-red-600 transition-colors border border-gray-200 rounded-xl hover:border-red-300 hover:bg-red-50 flex items-center justify-center gap-1.5 shadow-sm">
                   <XCircleIcon size={14} /> Clear All
                 </button>
               </div>
@@ -513,15 +547,19 @@ const AllWithdrawals = () => {
           {/* Table Container */}
           <div className="admin-dash__card-body p-0 overflow-x-auto" style={{ backgroundColor: '#ffffff' }}>
             {filteredWithdrawals.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-3 py-20 text-gray-400">
-                <Banknote size={48} className="opacity-20" />
-                <p className="text-lg font-medium">No withdrawals found</p>
-                <p className="text-sm">Try adjusting your filters.</p>
+              <div className="flex flex-col items-center justify-center gap-4 py-24 text-gray-400">
+                <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center">
+                  <Banknote size={40} className="text-gray-300" />
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-semibold text-gray-500">No withdrawals found</p>
+                  <p className="text-sm text-gray-400 mt-1">Try adjusting your filters or refresh the data</p>
+                </div>
               </div>
             ) : (
               <table className="w-full min-w-[1200px] text-left">
                 <thead>
-                  <tr className="border-b border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
+                  <tr className="border-b border-gray-200" style={{ backgroundColor: '#f8fafc' }}>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">#</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Owner</th>
                     <th className="p-4 text-xs font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">Organization</th>
@@ -540,9 +578,9 @@ const AllWithdrawals = () => {
                     const ownerMobile = withdrawal.owner?.mobile || 'N/A';
                     
                     return (
-                      <tr key={withdrawal._id} className="transition-colors group hover:bg-gray-50/80">
+                      <tr key={withdrawal._id} className="transition-all duration-200 group hover:bg-gradient-to-r hover:from-indigo-50 hover:to-transparent">
                         <td className="p-4">
-                          <span className="text-sm font-semibold text-gray-400">#{idx + 1}</span>
+                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 text-gray-500 text-xs font-bold">#{idx + 1}</span>
                         </td>
                         <td className="p-4">
                           <div>
@@ -557,50 +595,53 @@ const AllWithdrawals = () => {
                           <div>
                             <p className="font-medium text-indigo-600 text-sm">{ownerOrganization}</p>
                             {withdrawal.ownerGst && withdrawal.ownerGst !== 'N/A' && (
-                              <p className="text-[10px] text-gray-400">GST: {withdrawal.ownerGst}</p>
+                              <p className="text-[10px] text-gray-400 mt-0.5">GST: {withdrawal.ownerGst}</p>
                             )}
                           </div>
                         </td>
                         <td className="p-4">
                           <div>
                             <p className="font-medium text-gray-800 text-sm">{withdrawal.bankName || 'N/A'}</p>
-                            <p className="text-[10px] text-gray-400 font-mono">IFSC: {withdrawal.ifscCode || 'N/A'}</p>
+                            <p className="text-[10px] text-gray-400 font-mono mt-0.5">IFSC: {withdrawal.ifscCode || 'N/A'}</p>
                           </div>
                         </td>
                         <td className="p-4">
-                          <span className="text-sm font-bold text-red-600">{formatCurrency(withdrawal.amount)}</span>
+                          <span className="inline-flex items-center gap-1 text-sm font-bold text-red-600 bg-red-50 px-2 py-1 rounded-lg">
+                            <IndianRupee size={12} />
+                            {withdrawal.amount.toLocaleString('en-IN')}
+                          </span>
                         </td>
                         <td className="p-4">
-                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-full ${statusBadge.color}`}>
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full shadow-sm ${statusBadge.color}`}>
                             {statusBadge.icon} {statusBadge.label}
                           </span>
                         </td>
                         <td className="p-4">
-                          <span className="text-sm text-gray-600">{formatDate(withdrawal.createdAt)}</span>
+                          <span className="text-sm text-gray-600 font-medium">{formatDate(withdrawal.createdAt)}</span>
                         </td>
                         <td className="p-4">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <button
                               onClick={() => handleViewDetails(withdrawal)}
-                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors whitespace-nowrap"
+                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 hover:shadow-md transition-all whitespace-nowrap"
                             >
                               <Eye size={13} /> View
                             </button>
                             <button
                               onClick={() => downloadWithdrawalDetails(withdrawal)}
-                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors whitespace-nowrap"
+                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:shadow-md transition-all whitespace-nowrap"
                             >
                               <FileDown size={13} /> Invoice
                             </button>
                             <button
                               onClick={() => { setEditWithdrawal(withdrawal); setEditStatus(withdrawal.status || 'pending'); setShowEditModal(true); }}
-                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-orange-50 text-orange-700 hover:bg-orange-100 transition-colors whitespace-nowrap"
+                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-orange-50 text-orange-700 hover:bg-orange-100 hover:shadow-md transition-all whitespace-nowrap"
                             >
                               <Edit size={13} /> Status
                             </button>
                             <button
                               onClick={() => { setDeleteWithdrawal(withdrawal); setShowDeleteModal(true); }}
-                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-red-50 text-red-700 hover:bg-red-100 transition-colors whitespace-nowrap"
+                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-red-50 text-red-700 hover:bg-red-100 hover:shadow-md transition-all whitespace-nowrap"
                             >
                               <Trash2 size={13} /> Delete
                             </button>
@@ -616,15 +657,27 @@ const AllWithdrawals = () => {
 
           {/* Footer with stats */}
           {!loading && filteredWithdrawals.length > 0 && (
-            <div className="px-4 py-3 border-t border-gray-100 rounded-b-2xl flex flex-wrap items-center justify-between gap-2" style={{ backgroundColor: '#fafafa' }}>
-              <span className="text-xs text-gray-500">
-                Showing <strong>{filteredWithdrawals.length}</strong> of <strong>{withdrawals.length}</strong> requests
-              </span>
-              <div className="flex items-center gap-3 text-xs text-gray-500">
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500"></span> Pending: {stats.pending}</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> Completed: {stats.completed}</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500"></span> Failed: {stats.failed}</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-indigo-500"></span> Total: {stats.total}</span>
+            <div className="px-5 py-4 border-t border-gray-100 rounded-b-2xl flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#f8fafc' }}>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500">Showing</span>
+                <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold">{filteredWithdrawals.length}</span>
+                <span className="text-xs text-gray-500">of</span>
+                <span className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded-lg text-xs font-bold">{withdrawals.length}</span>
+                <span className="text-xs text-gray-500">requests</span>
+              </div>
+              <div className="flex items-center gap-4 text-xs">
+                <span className="flex items-center gap-2 px-3 py-1.5 bg-yellow-50 rounded-lg border border-yellow-200">
+                  <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
+                  <span className="font-medium text-yellow-700">Pending: {stats.pending}</span>
+                </span>
+                <span className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-lg border border-emerald-200">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  <span className="font-medium text-emerald-700">Completed: {stats.completed}</span>
+                </span>
+                <span className="flex items-center gap-2 px-3 py-1.5 bg-red-50 rounded-lg border border-red-200">
+                  <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                  <span className="font-medium text-red-700">Failed: {stats.failed}</span>
+                </span>
               </div>
             </div>
           )}

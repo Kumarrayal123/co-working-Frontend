@@ -427,8 +427,12 @@ const CabinRevenue = () => {
     return (
       <div className="admin-dash" style={{ backgroundColor: '#ffffff' }}>
         <AdminNavbar />
-        <div className="flex justify-center items-center h-64">
-          <div className="w-12 h-12 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin" />
+        <div className="flex flex-col justify-center items-center h-64 gap-4">
+          <div className="relative">
+            <div className="w-16 h-16 border-4 border-indigo-200 rounded-full"></div>
+            <div className="w-16 h-16 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin absolute top-0 left-0"></div>
+          </div>
+          <p className="text-sm font-medium text-gray-500">Loading revenue data...</p>
         </div>
       </div>
     );
@@ -452,34 +456,46 @@ const CabinRevenue = () => {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-4 text-white shadow-lg shadow-indigo-500/25">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-200">Total Revenue</p>
-            <p className="text-2xl font-bold">{formatCurrency(stats.totalRevenue)}</p>
-            <div className="mt-2 pt-2 border-t border-white/20 flex justify-between text-[10px]">
-              <span className="text-indigo-200">Orders</span>
+          <div className="bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl p-5 text-white shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/40 transition-all duration-300 hover:-translate-y-1">
+            <div className="flex items-center gap-2 mb-2">
+              <Wallet size={16} className="text-indigo-200" />
+              <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-200">Total Revenue</p>
+            </div>
+            <p className="text-2xl sm:text-3xl font-bold">{formatCurrency(stats.totalRevenue)}</p>
+            <div className="mt-3 pt-2 border-t border-white/20 flex justify-between text-[10px]">
+              <span className="text-indigo-200">Total Orders</span>
               <span className="font-semibold">{stats.totalOrders}</span>
             </div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Active Revenue</p>
-            <p className="text-2xl font-bold text-emerald-600">{formatCurrency(stats.activeRevenue)}</p>
-            <div className="mt-2 pt-2 border-t border-gray-100 flex justify-between text-[10px]">
+          <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
+            <div className="flex items-center gap-2 mb-2">
+              <CheckCircle size={16} className="text-emerald-500" />
+              <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Active Revenue</p>
+            </div>
+            <p className="text-2xl sm:text-3xl font-bold text-emerald-600">{formatCurrency(stats.activeRevenue)}</p>
+            <div className="mt-3 pt-2 border-t border-gray-100 flex justify-between text-[10px]">
               <span className="text-gray-500">Active Orders</span>
               <span className="font-semibold text-gray-900">{orders.filter(o => o.status === 'active').length}</span>
             </div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Avg Revenue</p>
-            <p className="text-2xl font-bold text-amber-600">{formatCurrency(stats.averageRevenue)}</p>
-            <div className="mt-2 pt-2 border-t border-gray-100 flex justify-between text-[10px]">
+          <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp size={16} className="text-amber-500" />
+              <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Avg Revenue</p>
+            </div>
+            <p className="text-2xl sm:text-3xl font-bold text-amber-600">{formatCurrency(stats.averageRevenue)}</p>
+            <div className="mt-3 pt-2 border-t border-gray-100 flex justify-between text-[10px]">
               <span className="text-gray-500">Per Order</span>
-              <span className="font-semibold text-gray-900">Avg</span>
+              <span className="font-semibold text-gray-900">Average</span>
             </div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">First Cabin</p>
-            <p className="text-2xl font-bold text-indigo-600">{formatCurrency(stats.firstCabinRevenue)}</p>
-            <div className="mt-2 pt-2 border-t border-gray-100 flex justify-between text-[10px]">
+          <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
+            <div className="flex items-center gap-2 mb-2">
+              <Crown size={16} className="text-indigo-500" />
+              <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">First Cabin</p>
+            </div>
+            <p className="text-2xl sm:text-3xl font-bold text-indigo-600">{formatCurrency(stats.firstCabinRevenue)}</p>
+            <div className="mt-3 pt-2 border-t border-gray-100 flex justify-between text-[10px]">
               <span className="text-gray-500">Renewals</span>
               <span className="font-semibold text-gray-900">{formatCurrency(stats.renewalRevenue)}</span>
             </div>
@@ -487,28 +503,28 @@ const CabinRevenue = () => {
         </div>
 
         {/* Filters - Always Visible */}
-        <div className="bg-gray-50 rounded-xl p-3 mb-4 border border-gray-200">
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="min-w-[120px]">
-              <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">From Date</label>
-              <input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)} className="w-full px-3 py-1.5 text-xs border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" />
+        <div className="bg-gradient-to-r from-gray-50 to-gray-100/50 rounded-2xl p-4 mb-6 border border-gray-200 shadow-sm">
+          <div className="flex flex-wrap items-end gap-4">
+            <div className="min-w-[130px] flex-1">
+              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5 block">From Date</label>
+              <input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)} className="w-full px-3 py-2 text-xs border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200 bg-white" />
             </div>
-            <div className="min-w-[120px]">
-              <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">To Date</label>
-              <input type="date" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)} className="w-full px-3 py-1.5 text-xs border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" />
+            <div className="min-w-[130px] flex-1">
+              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5 block">To Date</label>
+              <input type="date" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)} className="w-full px-3 py-2 text-xs border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200 bg-white" />
             </div>
-            <div className="min-w-[140px]">
-              <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Cabin Name</label>
-              <select value={filterCabinName} onChange={(e) => setFilterCabinName(e.target.value)} className="w-full px-3 py-1.5 text-xs border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+            <div className="min-w-[150px] flex-1">
+              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5 block">Cabin Name</label>
+              <select value={filterCabinName} onChange={(e) => setFilterCabinName(e.target.value)} className="w-full px-3 py-2 text-xs border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200 bg-white">
                 <option value="">All Cabins</option>
                 {cabinNames.map((name, i) => (
                   <option key={i} value={name}>{name}</option>
                 ))}
               </select>
             </div>
-            <div className="min-w-[110px]">
-              <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Status</label>
-              <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="w-full px-3 py-1.5 text-xs border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+            <div className="min-w-[120px] flex-1">
+              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5 block">Status</label>
+              <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="w-full px-3 py-2 text-xs border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200 bg-white">
                 <option value="all">All</option>
                 <option value="active">Active</option>
                 <option value="expired">Expired</option>
@@ -516,61 +532,65 @@ const CabinRevenue = () => {
                 <option value="cancelled">Cancelled</option>
               </select>
             </div>
-            <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-red-600 transition-colors">
-              <XCircleIcon size={14} /> Clear
+            <button onClick={clearFilters} className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all duration-200">
+              <XCircleIcon size={14} /> Clear Filters
             </button>
           </div>
         </div>
 
         {/* Charts Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
           {/* Monthly Revenue Trend */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-all duration-300">
+            <div className="px-5 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white flex justify-between items-center">
               <div>
                 <h3 className="text-sm font-bold text-gray-800">Monthly Revenue Trend</h3>
                 <p className="text-[10px] text-gray-400">Revenue by month</p>
               </div>
-              <TrendingUp size={16} className="text-indigo-500" />
+              <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
+                <TrendingUp size={16} className="text-indigo-500" />
+              </div>
             </div>
-            <div className="p-4 h-64">
+            <div className="p-4 h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={chartData.monthlyRevenue} margin={{ top: 10, right: 10, left: -10, bottom: 5 }}>
                   <defs>
                     <linearGradient id="revenueGradient2" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
+                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4}/>
                       <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#64748b' }} />
-                  <YAxis tick={{ fontSize: 10, fill: '#64748b' }} tickFormatter={(value) => `₹${value/1000}K`} />
+                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#64748b' }} />
+                  <YAxis tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={(value) => `₹${value/1000}K`} />
                   <Tooltip content={<ChartTooltip />} />
-                  <Area type="monotone" dataKey="revenue" stroke="#6366f1" strokeWidth={2} fill="url(#revenueGradient2)" />
+                  <Area type="monotone" dataKey="revenue" stroke="#6366f1" strokeWidth={2.5} fill="url(#revenueGradient2)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           </div>
 
           {/* Status Revenue Distribution */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-all duration-300">
+            <div className="px-5 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white flex justify-between items-center">
               <div>
                 <h3 className="text-sm font-bold text-gray-800">Revenue by Status</h3>
                 <p className="text-[10px] text-gray-400">Distribution by order status</p>
               </div>
-              <PieChart size={16} className="text-purple-500" />
+              <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
+                <PieChart size={16} className="text-purple-500" />
+              </div>
             </div>
-            <div className="p-4 h-64">
+            <div className="p-4 h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <RePieChart>
                   <Pie
                     data={chartData.statusRevenue}
                     cx="50%"
                     cy="50%"
-                    innerRadius={50}
-                    outerRadius={80}
-                    paddingAngle={2}
+                    innerRadius={55}
+                    outerRadius={85}
+                    paddingAngle={3}
                     dataKey="value"
                   >
                     {chartData.statusRevenue.map((entry, index) => (
@@ -583,7 +603,7 @@ const CabinRevenue = () => {
                     height={36}
                     iconType="circle"
                     iconSize={8}
-                    wrapperStyle={{ fontSize: '10px' }}
+                    wrapperStyle={{ fontSize: '11px', fontWeight: '500' }}
                   />
                 </RePieChart>
               </ResponsiveContainer>
@@ -592,43 +612,62 @@ const CabinRevenue = () => {
         </div>
 
         {/* Additional Stats Row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-          <div className="bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
-            <p className="text-[9px] font-bold uppercase tracking-wider text-emerald-600">Active</p>
-            <p className="text-lg font-bold text-emerald-600">{formatCurrency(stats.activeRevenue)}</p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5">
+            <div className="flex items-center gap-2 mb-2">
+              <CheckCircle size={14} className="text-emerald-500" />
+              <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Active</p>
+            </div>
+            <p className="text-xl font-bold text-emerald-600">{formatCurrency(stats.activeRevenue)}</p>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
-            <p className="text-[9px] font-bold uppercase tracking-wider text-red-600">Expired</p>
-            <p className="text-lg font-bold text-red-600">{formatCurrency(stats.expiredRevenue)}</p>
+          <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5">
+            <div className="flex items-center gap-2 mb-2">
+              <XCircle size={14} className="text-red-500" />
+              <p className="text-[10px] font-bold uppercase tracking-wider text-red-600">Expired</p>
+            </div>
+            <p className="text-xl font-bold text-red-600">{formatCurrency(stats.expiredRevenue)}</p>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
-            <p className="text-[9px] font-bold uppercase tracking-wider text-yellow-600">Pending</p>
-            <p className="text-lg font-bold text-yellow-600">{formatCurrency(stats.pendingRevenue)}</p>
+          <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5">
+            <div className="flex items-center gap-2 mb-2">
+              <Clock size={14} className="text-yellow-500" />
+              <p className="text-[10px] font-bold uppercase tracking-wider text-yellow-600">Pending</p>
+            </div>
+            <p className="text-xl font-bold text-yellow-600">{formatCurrency(stats.pendingRevenue)}</p>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
-            <p className="text-[9px] font-bold uppercase tracking-wider text-gray-600">Cancelled</p>
-            <p className="text-lg font-bold text-gray-600">{formatCurrency(stats.cancelledRevenue)}</p>
+          <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5">
+            <div className="flex items-center gap-2 mb-2">
+              <XCircleIcon size={14} className="text-gray-500" />
+              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-600">Cancelled</p>
+            </div>
+            <p className="text-xl font-bold text-gray-600">{formatCurrency(stats.cancelledRevenue)}</p>
           </div>
         </div>
 
         {/* Top Cabins by Revenue */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-4">
-          <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-6 hover:shadow-md transition-all duration-300">
+          <div className="px-5 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white flex justify-between items-center">
             <div>
               <h3 className="text-sm font-bold text-gray-800">Top Cabins by Revenue</h3>
               <p className="text-[10px] text-gray-400">Highest earning cabins</p>
             </div>
-            <Building2 size={16} className="text-emerald-500" />
+            <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+              <Building2 size={16} className="text-emerald-500" />
+            </div>
           </div>
           <div className="p-4">
             {chartData.topCabins.length === 0 ? (
-              <div className="flex items-center justify-center h-20 text-gray-400 text-sm">No data available</div>
+              <div className="flex flex-col items-center justify-center h-24 text-gray-400">
+                <Building2 size={32} className="opacity-20 mb-2" />
+                <p className="text-sm">No data available</p>
+              </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {chartData.topCabins.map((cabin, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-gray-400 w-5">#{idx + 1}</span>
+                  <div key={idx} className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-white rounded-xl hover:from-indigo-50 hover:to-indigo-100/30 transition-all duration-200 border border-gray-100 hover:border-indigo-200">
+                    <div className="flex items-center gap-3">
+                      <span className={`text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center ${idx < 3 ? 'bg-gradient-to-br from-amber-400 to-amber-500 text-white' : 'bg-gray-200 text-gray-600'}`}>
+                        {idx + 1}
+                      </span>
                       <span className="text-xs font-medium text-gray-700 truncate max-w-[150px]">{cabin.name}</span>
                     </div>
                     <span className="text-xs font-bold text-indigo-600">{formatCurrency(cabin.revenue)}</span>
@@ -640,13 +679,21 @@ const CabinRevenue = () => {
         </div>
 
         {/* Revenue Details Table */}
-        <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
-          <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
+        <div className="admin-dash__card" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '16px', overflow: 'hidden' }}>
+          <div className="admin-dash__card-header flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb', padding: '16px 20px' }}>
             <div className="flex items-center gap-3">
-              <h3 className="admin-dash__card-title">Revenue Details</h3>
-              <span className="px-2.5 py-0.5 text-xs font-bold text-indigo-700 bg-indigo-100 rounded-full">
+              <h3 className="admin-dash__card-title" style={{ fontSize: '16px', fontWeight: '700', color: '#1f2937', margin: 0 }}>Revenue Details</h3>
+              <span className="px-2.5 py-0.5 text-xs font-bold text-indigo-700 bg-indigo-100 rounded-full" style={{ fontSize: '12px', fontWeight: '700', padding: '4px 10px' }}>
                 {filteredOrders.length}
               </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={fetchPayments} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-all duration-200 hover:scale-105 active:scale-95">
+                <RefreshCw size={13} /> Refresh
+              </button>
+              <button onClick={exportToExcel} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm shadow-indigo-500/25">
+                <Download size={13} /> Export Excel
+              </button>
             </div>
           </div>
 
@@ -743,84 +790,98 @@ const CabinRevenue = () => {
       {/* ORDER DETAIL MODAL */}
       {/* ====================== */}
       {showDetailModal && selectedOrder && (
-        <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setShowDetailModal(false); }}>
-          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="sticky top-0 bg-gradient-to-br from-indigo-600 to-purple-600 text-white p-6 rounded-t-3xl flex justify-between items-center">
+        <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={(e) => { if (e.target === e.currentTarget) setShowDetailModal(false); }}>
+          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+            <div className="sticky top-0 bg-gradient-to-br from-indigo-600 via-indigo-600 to-purple-600 text-white p-6 rounded-t-3xl flex justify-between items-center shadow-lg">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                  <Receipt size={20} className="text-white" />
+                <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                  <Receipt size={24} className="text-white" />
                 </div>
                 <div>
                   <h3 className="text-2xl font-bold">Revenue Details</h3>
-                  <p className="text-sm text-indigo-200">#{selectedOrder._id.slice(-6).toUpperCase()}</p>
+                  <p className="text-sm text-indigo-200 font-medium">#{selectedOrder._id.slice(-6).toUpperCase()}</p>
                 </div>
               </div>
-              <button onClick={() => setShowDetailModal(false)} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors">
+              <button onClick={() => setShowDetailModal(false)} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200 hover:scale-110">
                 <X size={20} />
               </button>
             </div>
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-5">
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Cabin</p>
-                  <p className="mt-1 font-semibold text-gray-800">{selectedOrder.cabin?.name || 'Cabin Deleted'}</p>
+                <div className="p-4 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-100 hover:border-indigo-200 transition-all duration-200">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Cabin</p>
+                  <p className="font-semibold text-gray-800 text-sm">{selectedOrder.cabin?.name || 'Cabin Deleted'}</p>
                   {selectedOrder.isFirstCabin && (
-                    <p className="text-xs text-indigo-600 font-medium mt-1">⭐ First Cabin</p>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold bg-amber-100 text-amber-700 rounded-full mt-2">
+                      <Crown size={10} /> First Cabin
+                    </span>
                   )}
                 </div>
-                <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Owner</p>
-                  <p className="mt-1 font-semibold text-gray-800">{selectedOrder.cabin?.owner?.name || selectedOrder.owner?.name || 'N/A'}</p>
+                <div className="p-4 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-100 hover:border-indigo-200 transition-all duration-200">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Owner</p>
+                  <p className="font-semibold text-gray-800 text-sm">{selectedOrder.cabin?.owner?.name || selectedOrder.owner?.name || 'N/A'}</p>
                 </div>
               </div>
 
-              <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-100">
-                <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider">Amount Breakdown</p>
-                <div className="mt-2 space-y-1.5">
-                  <div className="flex justify-between text-sm">
+              <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-5 border border-indigo-100">
+                <div className="flex items-center gap-2 mb-3">
+                  <Wallet size={16} className="text-indigo-600" />
+                  <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider">Amount Breakdown</p>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center text-sm">
                     <span className="text-gray-600">Base Amount</span>
-                    <span className="font-semibold">₹{selectedOrder.baseAmount?.toFixed(2) || selectedOrder.amount}</span>
+                    <span className="font-semibold text-gray-800">₹{selectedOrder.baseAmount?.toFixed(2) || selectedOrder.amount}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
+                  <div className="flex justify-between items-center text-sm">
                     <span className="text-gray-600">GST ({(selectedOrder.gstRate * 100).toFixed(0)}%)</span>
-                    <span className="font-semibold">₹{selectedOrder.gstAmount?.toFixed(2) || '0.00'}</span>
+                    <span className="font-semibold text-gray-800">₹{selectedOrder.gstAmount?.toFixed(2) || '0.00'}</span>
                   </div>
-                  <div className="border-t border-indigo-200 pt-1.5 flex justify-between text-sm font-bold">
-                    <span>Total</span>
+                  <div className="border-t border-indigo-200 pt-2 mt-2 flex justify-between items-center text-lg font-bold">
+                    <span className="text-gray-800">Total</span>
                     <span className="text-indigo-600">₹{selectedOrder.amount.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Order Status</p>
-                  <span className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-bold rounded-full mt-1 ${getStatusBadge(selectedOrder.status).color}`}>
+                <div className="p-4 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-100 hover:border-indigo-200 transition-all duration-200">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Order Status</p>
+                  <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full ${getStatusBadge(selectedOrder.status).color}`}>
                     {getStatusBadge(selectedOrder.status).icon} {getStatusBadge(selectedOrder.status).label}
                   </span>
                 </div>
-                <div className="p-3 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Payment Count</p>
-                  <p className="mt-1 text-2xl font-bold text-purple-600">{selectedOrder.paymentCount || 1}</p>
+                <div className="p-4 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-100 hover:border-indigo-200 transition-all duration-200">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Payment Count</p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl font-bold text-purple-600">{selectedOrder.paymentCount || 1}</span>
+                    <span className="text-xs text-gray-500">payments</span>
+                  </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Start Date</p>
-                  <p className="mt-1 font-medium text-gray-800 text-sm">{formatDate(selectedOrder.startDate)}</p>
+                <div className="p-4 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-100 hover:border-indigo-200 transition-all duration-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Calendar size={14} className="text-emerald-500" />
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Start Date</p>
+                  </div>
+                  <p className="font-medium text-gray-800 text-sm">{formatDate(selectedOrder.startDate)}</p>
                 </div>
-                <div className="p-3 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Expiry Date</p>
-                  <p className="mt-1 font-medium text-gray-800 text-sm">{formatDate(selectedOrder.expiryDate)}</p>
+                <div className="p-4 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-100 hover:border-indigo-200 transition-all duration-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Clock size={14} className="text-red-500" />
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Expiry Date</p>
+                  </div>
+                  <p className="font-medium text-gray-800 text-sm">{formatDate(selectedOrder.expiryDate)}</p>
                 </div>
               </div>
 
-              <div className="flex flex-col gap-3">
-                <button onClick={() => { setShowDetailModal(false); downloadInvoice(selectedOrder); }} className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-sm active:scale-[0.98] flex items-center justify-center gap-2">
-                  <FileDown size={16} /> Download Invoice
+              <div className="flex flex-col gap-3 pt-2">
+                <button onClick={() => { setShowDetailModal(false); downloadInvoice(selectedOrder); }} className="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-bold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg shadow-indigo-500/25 active:scale-[0.98] flex items-center justify-center gap-2">
+                  <FileDown size={18} /> Download Invoice
                 </button>
-                <button onClick={() => setShowDetailModal(false)} className="w-full py-3 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition">Close</button>
+                <button onClick={() => setShowDetailModal(false)} className="w-full py-3.5 border-2 border-gray-200 rounded-xl text-gray-600 font-bold hover:bg-gray-50 hover:border-gray-300 transition-all duration-200">Close</button>
               </div>
             </div>
           </div>

@@ -17,6 +17,7 @@ import {
   MessageCircle,
   ChevronRight,
   TrendingUp,
+  ClipboardList,
   User
 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
@@ -241,7 +242,7 @@ function AdminNavbar() {
             </li>
 
             {/* Payments Dropdown */}
-            <li className="an-nav__dropdown-wrap" ref={paymentsRef}>
+            {/* <li className="an-nav__dropdown-wrap" ref={paymentsRef}>
               <button
                 className={`an-nav__link an-nav__link--dropdown${paymentsActive ? " an-nav__link--active" : ""}`}
                 onClick={() => setPaymentsOpen(!paymentsOpen)}
@@ -268,7 +269,22 @@ function AdminNavbar() {
                   ))}
                 </div>
               )}
-            </li>
+            </li> */}
+
+            <li>
+  <Link
+    to="/cabinpayments"
+    className={`an-nav__link${
+      isActive("/cabinpayments") ? " an-nav__link--active" : ""
+    }`}
+  >
+    <CreditCard size={17} />
+    <span>Payments</span>
+    {isActive("/cabinpayments") && (
+      <span className="an-nav__link-dot" />
+    )}
+  </Link>
+</li>
 
             {/* Wallet Dropdown */}
             <li className="an-nav__dropdown-wrap" ref={walletRef}>
@@ -341,6 +357,20 @@ function AdminNavbar() {
                 {isActive("/userqueries") && <span className="an-nav__link-dot" />}
               </Link>
             </li>
+            <li>
+  <Link
+    to="/surveydetails"
+    className={`an-nav__link${
+      isActive("/surveydetails") ? " an-nav__link--active" : ""
+    }`}
+  >
+    <ClipboardList size={17} />
+    <span>Survey</span>
+    {isActive("/surveydetails") && (
+      <span className="an-nav__link-dot" />
+    )}
+  </Link>
+</li>
           </ul>
 
           <div className="an-nav__right">

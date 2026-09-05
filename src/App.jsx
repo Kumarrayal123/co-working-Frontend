@@ -72,6 +72,8 @@ import CafeRevenue from "./components/CafeRevenue";
 import CafeWallet from "./components/CafeWallet";
 import MyCafePayments from "./components/MyCafePayments";
 import AttendanceList from "./components/AttendanceList.jsx";
+import SurveyDetails from "./components/SurveyDeatils.jsx";
+import Survey from "./components/Survey.jsx";
 
 function App() {
   return (
@@ -79,6 +81,7 @@ function App() {
       <ToastContainer position="top-right" autoClose={3000} />
       <Routes>
         <Route path="/" element={<PromotionalPage />} />
+         <Route path ="/survey" element={<Survey />} />
         <Route path="/cafe" element={<CafeDiningPage />} />
         <Route path="/cafedashboard" element={<CafeDashboard />} />
         <Route path="/mycafes" element={<MyCafes />} />
@@ -146,6 +149,7 @@ function App() {
         <Route path ="/space-revenue" element={<AdminRoute><CabinRevenue /></AdminRoute>}></Route>
         <Route path ="/adminwallet" element={<AdminRoute><AdminWallet /></AdminRoute>}></Route>
         <Route path ="/adminprofile" element={<AdminRoute><AdminProfile /></AdminRoute>}></Route>
+        <Route path="/surveydetails" element={<AdminRoute><SurveyDetails /></AdminRoute>}></Route>
       
 
       </Routes>

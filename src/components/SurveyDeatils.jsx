@@ -23,7 +23,9 @@ import {
   Hash,
   Utensils,
   Edit,
-  Save
+  Save,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
 import { toast } from "react-toastify";
 import * as XLSX from "xlsx";
@@ -44,6 +46,7 @@ const SurveyDetails = () => {
   const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 20 });
   const [editingId, setEditingId] = useState(null);
   const [editData, setEditData] = useState({});
+  const [showAllQuestions, setShowAllQuestions] = useState(false);
 
   const formatDateDDMMYYYY = (dateStr) => {
     if (!dateStr) return "N/A";
@@ -208,6 +211,7 @@ const SurveyDetails = () => {
 
   const handleViewSurvey = (survey) => {
     setSelectedSurvey(survey);
+    setShowAllQuestions(false);
     setShowModal(true);
     document.body.style.overflow = "hidden";
   };
@@ -215,6 +219,7 @@ const SurveyDetails = () => {
   const closeViewModal = () => {
     setShowModal(false);
     setSelectedSurvey(null);
+    setShowAllQuestions(false);
     document.body.style.overflow = "";
   };
 
@@ -327,6 +332,16 @@ const SurveyDetails = () => {
       console.error(error);
       toast.error("Export failed");
     }
+  };
+
+  // Extract question from questions array by text prefix
+  const getQuestionAnswer = (questions, prefix) => {
+    if (!questions || !Array.isArray(questions)) return "N/A";
+    const q = questions.find(q => q.text && q.text.startsWith(prefix));
+    if (!q) return "N/A";
+    // Extract answer after the prefix
+    const answer = q.text.replace(prefix, "").trim();
+    return answer || "N/A";
   };
 
   if (loading) {
@@ -659,14 +674,14 @@ const SurveyDetails = () => {
         </div>
       </main>
 
-      {/* View Modal */}
+      {/* View Modal - Now shows ALL questions */}
       {showModal && selectedSurvey && (
         <div
           className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
           onClick={closeViewModal}
         >
           <div
-            className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto"
+            className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="sticky top-0 z-10 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 rounded-t-2xl flex justify-between items-center">
@@ -683,6 +698,7 @@ const SurveyDetails = () => {
             </div>
 
             <div className="p-5 space-y-3">
+              {/* Basic Info Section */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-2.5 bg-gray-50 rounded-lg">
                   <p className="text-[9px] font-semibold text-gray-400 uppercase">Name</p>
@@ -745,6 +761,48 @@ const SurveyDetails = () => {
                   <Calendar size={10} /> Submitted On
                 </p>
                 <p className="font-semibold text-gray-800">{formatDateTime(selectedSurvey.createdAt)}</p>
+              </div>
+
+              {/* Survey Questions Section */}
+              <div className="border-t border-gray-200 pt-3 mt-2">
+                <div 
+                  className="flex items-center justify-between cursor-pointer"
+                  onClick={() => setShowAllQuestions(!showAllQuestions)}
+                >
+                  <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <FileText size={14} className="text-blue-600" />
+                    Survey Answers
+                    <span className="text-xs text-gray-400 font-normal ml-1">
+                      ({selectedSurvey.questions?.length || 0} questions)
+                    </span>
+                  </h4>
+                  <button className="p-1 text-gray-400 hover:text-gray-600 transition-colors">
+                    {showAllQuestions ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  </button>
+                </div>
+
+                {showAllQuestions && selectedSurvey.questions && (
+                  <div className="mt-3 space-y-2 max-h-96 overflow-y-auto pr-1">
+                    {selectedSurvey.questions.map((q, index) => (
+                      <div key={q._id || index} className="p-2.5 bg-gray-50 rounded-lg border border-gray-100">
+                        <p className="text-xs text-gray-600 font-medium">
+                          <span className="text-gray-400">Q{index + 1}:</span> {q.text}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {!showAllQuestions && selectedSurvey.questions && selectedSurvey.questions.length > 0 && (
+                  <div className="mt-2 p-2.5 bg-gray-50 rounded-lg border border-gray-100">
+                    <p className="text-xs text-gray-600">
+                      <span className="text-gray-400">Preview:</span> {selectedSurvey.questions[0]?.text || "No questions"}
+                      {selectedSurvey.questions.length > 1 && (
+                        <span className="text-gray-400"> ... and {selectedSurvey.questions.length - 1} more</span>
+                      )}
+                    </p>
+                  </div>
+                )}
               </div>
 
               <button

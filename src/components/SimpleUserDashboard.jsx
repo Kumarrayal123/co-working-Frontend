@@ -36,7 +36,7 @@ import { toast } from "react-toastify";
 import SimpleUserNavbar from "./SimpleUserNavbar";
 import "./SimpleUserDashboard.css";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5003";
+const API_URL = import.meta.env.VITE_API_URL || "https://spaceapi.iryax.com";
 
 function SimpleUserDashboard() {
   const [user, setUser] = useState(null);
